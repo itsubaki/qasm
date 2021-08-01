@@ -13,3 +13,12 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# goland
+.idea/
+.DS_Store
+
+# test
+cover.html
+cover.out
+coverage.txt
