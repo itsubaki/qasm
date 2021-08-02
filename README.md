@@ -11,7 +11,7 @@ go install github.com/itsubaki/qasm@latest
 ## Example
 
 ```shell
-$ cat pkg/_testdata/bell.qasm 
+$ cat testdata/bell.qasm 
 OPENQASM 3.0;
 include "stdgates.qasm";
 
@@ -28,7 +28,7 @@ c[1] = measure q[1];
 ```
 
 ```shell
-$ qasm lex -f pkg/_testdata/bell.qasm 
+$ qasm lex -f testdata/bell.qasm 
 OPENQASM FLOAT ; 
 INCLUDE STRING ; 
 QUBIT [ INT ] IDENT ; 

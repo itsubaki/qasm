@@ -19,7 +19,7 @@ func TestLexer(t *testing.T) {
 		want []item
 	}{
 		{
-			in: "../_testdata/bell.qasm",
+			in: "../../testdata/bell.qasm",
 			want: []item{
 				{lexer.OPENQASM, "OPENQASM"},
 				{lexer.FLOAT, "3.0"},
