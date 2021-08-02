@@ -11,14 +11,31 @@ go install github.com/itsubaki/qasm@latest
 ## Example
 
 ```shell
+$ cat pkg/_testdata/bell.qasm 
+OPENQASM 3.0;
+include "stdgates.qasm";
+
+qubit[2] q;
+bit[2]   c;
+
+reset q;
+
+h  q[0];
+cx q[0], q[1];
+
+c[0] = measure q[0];
+c[1] = measure q[1];
+```
+
+```shell
 $ qasm lex -f pkg/_testdata/bell.qasm 
-OPENQASM OPENQASM 3.0 FLOAT ; ; 
-include INCLUDE "stdgates.qasm" STRING ; ; 
-qubit QUBIT [ [ 2 INT ] ] q IDENT ; ; 
-bit BIT [ [ 2 INT ] ] c IDENT ; ; 
-reset RESET q IDENT ; ; 
-h H q IDENT [ [ 0 INT ] ] ; ; 
-cx CX q IDENT [ [ 0 INT ] ] , , q IDENT [ [ 1 INT ] ] ; ; 
-c IDENT [ [ 0 INT ] ] = = measure MEASURE q IDENT [ [ 0 INT ] ] ; ; 
-c IDENT [ [ 1 INT ] ] = = measure MEASURE q IDENT [ [ 1 INT ] ] ; ; 
+OPENQASM FLOAT ; 
+INCLUDE STRING ; 
+QUBIT [ INT ] IDENT ; 
+BIT [ INT ] IDENT ; 
+RESET IDENT ; 
+H IDENT [ INT ] ; 
+CX IDENT [ INT ] , IDENT [ INT ] ; 
+IDENT [ INT ] = MEASURE IDENT [ INT ] ; 
+IDENT [ INT ] = MEASURE IDENT [ INT ] ; 
 ```

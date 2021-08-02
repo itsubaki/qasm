@@ -17,14 +17,13 @@ func Action(c *cli.Context) error {
 	}
 
 	lex := lexer.New(strings.NewReader(string(bin)))
-
 	for {
-		token, str := lex.Tokenize()
+		token, _ := lex.Tokenize()
 		if token == lexer.EOF {
 			break
 		}
 
-		fmt.Printf("%v %v ", str, lexer.Tokens[token])
+		fmt.Printf("%v ", lexer.Tokens[token])
 
 		if token == lexer.SEMICOLON {
 			fmt.Println()
