@@ -10,7 +10,7 @@ const (
 
 	// Literals
 	literal_begin
-	IDENTIFIER
+	IDENT
 	STRING
 	INT
 	FLOAT
@@ -51,17 +51,17 @@ const (
 	keyword_end
 )
 
-var tokens = [...]string{
+var Tokens = [...]string{
 	// Specials
 	ILLEGAL:    "ILLEGAL",
 	EOF:        "EOF",
 	WHITESPACE: "WHITESPACE",
 
 	// Literals
-	IDENTIFIER: "IDENTIFIER",
-	STRING:     "STRING",
-	INT:        "INT",
-	FLOAT:      "FLOAT",
+	IDENT:  "IDENT",
+	STRING: "STRING",
+	INT:    "INT",
+	FLOAT:  "FLOAT",
 
 	// Operators
 	LBRACKET:  "[",
@@ -84,12 +84,12 @@ var tokens = [...]string{
 
 	// Keywords
 	OPENQASM: "OPENQASM",
-	INCLUDE:  "include",
-	QUBIT:    "qubit",
-	BIT:      "bit",
-	RESET:    "reset",
-	U:        "u",
-	H:        "h",
-	CX:       "cx",
-	MEASURE:  "measure",
+	INCLUDE:  "INCLUDE",
+	QUBIT:    "QUBIT",
+	BIT:      "BIT",
+	RESET:    "RESET",
+	U:        "U",
+	H:        "H",
+	CX:       "CX",
+	MEASURE:  "MEASURE",
 }

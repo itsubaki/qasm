@@ -1,26 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/itsubaki/qasm/cmd/lex"
 	"github.com/urfave/cli/v2"
 )
 
-var date, hash, goversion string
-
-func New(version string) *cli.App {
+func New() *cli.App {
 	app := cli.NewApp()
 
 	app.Name = "qasm"
 	app.Usage = "Run Quantum Computation Simulator with OpenQASM 3.0"
-	app.Version = version
+	app.Version = "0.1.0"
 
 	lexer := cli.Command{
 		Name:   "lex",
 		Action: lex.Action,
-		Usage:  "",
+		Usage:  "convert to a sequence of tokens",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "file",
@@ -37,8 +34,7 @@ func New(version string) *cli.App {
 }
 
 func main() {
-	v := fmt.Sprintf("%s %s %s", date, hash, goversion)
-	if err := New(v).Run(os.Args); err != nil {
+	if err := New().Run(os.Args); err != nil {
 		panic(err)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"strings"
 )
 
 var (
@@ -13,11 +14,11 @@ var (
 
 func init() {
 	for i := operator_begin + 1; i < operator_end; i++ {
-		operator[tokens[i]] = i
+		operator[Tokens[i]] = i
 	}
 
 	for i := keyword_begin + 1; i < keyword_end; i++ {
-		keyword[tokens[i]] = i
+		keyword[Tokens[i]] = i
 	}
 }
 
@@ -68,11 +69,12 @@ func (l *Lexer) Scan() (Token, string) {
 		l.unread()
 		str := l.scan()
 
-		if v, ok := keyword[str]; ok {
+		key := strings.ToUpper(str)
+		if v, ok := keyword[key]; ok {
 			return v, str
 		}
 
-		return IDENTIFIER, str
+		return IDENT, str
 	}
 
 	if isDigit(ch) {
