@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/itsubaki/qasm/cmd/lex"
+	"github.com/itsubaki/qasm/cmd/parse"
 	"github.com/urfave/cli/v2"
 )
 
@@ -26,8 +27,21 @@ func New() *cli.App {
 		},
 	}
 
+	parser := cli.Command{
+		Name:   "parse",
+		Action: parse.Action,
+		Usage:  "",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "file",
+				Aliases: []string{"f"},
+			},
+		},
+	}
+
 	app.Commands = []*cli.Command{
 		&lexer,
+		&parser,
 	}
 
 	return app
