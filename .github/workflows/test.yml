@@ -24,4 +24,4 @@ jobs:
 
       - name: Tests
         run: |
-          bash test.sh
+          make test
