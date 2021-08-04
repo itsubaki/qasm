@@ -9,12 +9,14 @@ import (
 )
 
 type Evaluator struct {
+	bit   map[string][]int
 	qubit map[string][]q.Qubit
 	QSim  *q.Q
 }
 
 func New(qsim *q.Q) *Evaluator {
 	return &Evaluator{
+		bit:   make(map[string][]int),
 		qubit: make(map[string][]q.Qubit),
 		QSim:  qsim,
 	}
@@ -22,6 +24,7 @@ func New(qsim *q.Q) *Evaluator {
 
 func Default() *Evaluator {
 	return &Evaluator{
+		bit:   make(map[string][]int),
 		qubit: make(map[string][]q.Qubit),
 		QSim:  q.New(),
 	}
@@ -63,16 +66,29 @@ func (e *Evaluator) evalLetStmt(s *ast.LetStmt) error {
 
 		q := e.QSim.ZeroWith(n)
 		e.qubit[s.Name.Value] = q
+
+		return nil
 	}
 
-	return nil
+	if s.Kind == lexer.BIT {
+		n := 1
+		if s.Name.Index != nil {
+			n = s.Name.IndexValue()
+		}
+
+		e.bit[s.Name.Value] = make([]int, n)
+
+		return nil
+	}
+
+	return fmt.Errorf("invalid token=%v", s.Kind)
 }
 
 func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 	for _, n := range s.Name {
 		q, ok := e.qubit[n.Value]
 		if !ok {
-			return fmt.Errorf("invalid ident=%v", n.String())
+			return fmt.Errorf("invalid ident=%v", n.Value)
 		}
 
 		e.QSim.Reset(q...)
@@ -84,7 +100,7 @@ func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 	qb, ok := e.qubit[s.Name.Value]
 	if !ok {
-		return fmt.Errorf("invalid ident=%v", s.Name.String())
+		return fmt.Errorf("invalid ident=%v", s.Name.Value)
 	}
 
 	if s.Name.Index != nil {
@@ -111,7 +127,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) error {
 	q, ok := e.qubit[s.Name.Value]
 	if !ok {
-		return fmt.Errorf("invalid ident=%v", s.Name.String())
+		return fmt.Errorf("invalid ident=%v", s.Name.Value)
 	}
 
 	e.QSim.Measure(q...)
