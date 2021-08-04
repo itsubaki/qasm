@@ -54,8 +54,13 @@ func ExampleEvaluator_Eval() {
 
 	fmt.Println(p)
 
-	if err := evaluator.New().Eval(p); err != nil {
+	e := evaluator.New()
+	if err := e.Eval(p); err != nil {
 		fmt.Println(err)
+	}
+
+	for _, s := range e.Qsim().State() {
+		fmt.Println(s)
 	}
 
 	// Output:
@@ -64,5 +69,5 @@ func ExampleEvaluator_Eval() {
 	// x q[0];
 	// measure q;
 	//
-	// [10][  2]( 1.0000 0.0000i): 1.0000
+	// [10][  1]( 1.0000 0.0000i): 1.0000
 }

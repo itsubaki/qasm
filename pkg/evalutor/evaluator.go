@@ -20,6 +20,10 @@ func New() *Evaluator {
 	}
 }
 
+func (e *Evaluator) QSim() *q.Q {
+	return e.qsim
+}
+
 func (e *Evaluator) Eval(p *ast.Program) error {
 	for _, stmt := range p.Statements {
 		switch s := stmt.(type) {
@@ -40,12 +44,8 @@ func (e *Evaluator) Eval(p *ast.Program) error {
 				return fmt.Errorf("eval measure: %v", err)
 			}
 		default:
-			return fmt.Errorf("invalid stmt=%v", s)
+			return fmt.Errorf("invalid stmt=%v", stmt)
 		}
-	}
-
-	for _, s := range e.qsim.State() {
-		fmt.Println(s)
 	}
 
 	return nil
