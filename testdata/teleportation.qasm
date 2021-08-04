@@ -9,10 +9,10 @@ reset phi, q;
 
 x phi;
 
-h  q[0]
-cx q[0], q[1]
-cx phi,  q[0]
-h  phi
+h  q[0];
+cx q[0], q[1];
+cx phi,  q[0];
+h  phi;
 
 cx q[0], q[1];
 cz phi,  q[1];

@@ -50,6 +50,7 @@ const (
 	Z        // z
 	CX       // cx
 	CCX      // ccx
+	CZ       // cz
 	SWAP     // swap
 	MEASURE  // measure
 	keyword_end
@@ -98,6 +99,7 @@ var Tokens = [...]string{
 	Z:        "Z",
 	CX:       "CX",
 	CCX:      "CCX",
+	CZ:       "CZ",
 	SWAP:     "SWAP",
 	MEASURE:  "MEASURE",
 }
