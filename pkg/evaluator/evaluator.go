@@ -70,7 +70,7 @@ func (e *Evaluator) evalLetStmt(s *ast.LetStmt) error {
 
 func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 	for _, n := range s.Name {
-		q, ok := e.qubit[n.String()]
+		q, ok := e.qubit[n.Value]
 		if !ok {
 			return fmt.Errorf("invalid ident=%v", n.String())
 		}
@@ -109,7 +109,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 }
 
 func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) error {
-	q, ok := e.qubit[s.Name.String()]
+	q, ok := e.qubit[s.Name.Value]
 	if !ok {
 		return fmt.Errorf("invalid ident=%v", s.Name.String())
 	}
