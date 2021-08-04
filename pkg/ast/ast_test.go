@@ -20,8 +20,8 @@ func ExampleProgram_String() {
 			},
 			&ast.ResetStmt{
 				Kind: lexer.RESET,
-				Name: []ast.Stmt{
-					&ast.Ident{
+				Name: []ast.Ident{
+					{
 						Kind:  lexer.STRING,
 						Value: "q",
 					},
@@ -150,8 +150,8 @@ func TestResetStmtString(t *testing.T) {
 		{
 			ast.ResetStmt{
 				Kind: lexer.RESET,
-				Name: []ast.Stmt{
-					&ast.Ident{
+				Name: []ast.Ident{
+					{
 						Kind:  lexer.STRING,
 						Value: "q",
 					},
@@ -162,12 +162,12 @@ func TestResetStmtString(t *testing.T) {
 		{
 			ast.ResetStmt{
 				Kind: lexer.RESET,
-				Name: []ast.Stmt{
-					&ast.Ident{
+				Name: []ast.Ident{
+					{
 						Kind:  lexer.STRING,
 						Value: "q",
 					},
-					&ast.Ident{
+					{
 						Kind:  lexer.STRING,
 						Value: "p",
 						Index: &ast.Index{

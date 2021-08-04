@@ -3,6 +3,7 @@ package ast
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
@@ -57,8 +58,22 @@ func (i *Ident) String() string {
 	return fmt.Sprintf("%s%s", i.Value, i.Index.String())
 }
 
+func (i *Ident) IndexValue() int {
+	if i.Index == nil {
+		return -1
+	}
+
+	str := i.Index.String()
+	v, err := strconv.Atoi(str[1 : len(str)-1]) // [123] -> 123
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
 type Index struct {
-	Kind  lexer.Token // lexer.STRING, lexer.INT, lexer.FLOAT
+	Kind  lexer.Token // lexer.INT
 	Value string
 }
 
@@ -101,7 +116,7 @@ func (s *LetStmt) String() string {
 
 type ResetStmt struct {
 	Kind lexer.Token // lexer.RESET
-	Name []Stmt
+	Name []Ident
 }
 
 func (s *ResetStmt) stmtNode() {}
@@ -128,7 +143,7 @@ func (s *ResetStmt) String() string {
 
 type ApplyStmt struct {
 	Kind lexer.Token // lexer.X, lexer.CX, ...
-	Name Stmt
+	Name *Ident
 }
 
 func (s *ApplyStmt) stmtNode() {}
@@ -149,7 +164,7 @@ func (s *ApplyStmt) String() string {
 
 type MeasureStmt struct {
 	Kind lexer.Token // lexer.MEASURE
-	Name Stmt
+	Name *Ident
 }
 
 func (s *MeasureStmt) stmtNode() {}
