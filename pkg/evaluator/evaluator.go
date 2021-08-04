@@ -10,18 +10,21 @@ import (
 
 type Evaluator struct {
 	qubit map[string][]q.Qubit
-	qsim  *q.Q
+	QSim  *q.Q
 }
 
-func New() *Evaluator {
+func New(qsim *q.Q) *Evaluator {
 	return &Evaluator{
 		qubit: make(map[string][]q.Qubit),
-		qsim:  q.New(),
+		QSim:  qsim,
 	}
 }
 
-func (e *Evaluator) QSim() *q.Q {
-	return e.qsim
+func Default() *Evaluator {
+	return &Evaluator{
+		qubit: make(map[string][]q.Qubit),
+		QSim:  q.New(),
+	}
 }
 
 func (e *Evaluator) Eval(p *ast.Program) error {
@@ -58,7 +61,7 @@ func (e *Evaluator) evalLetStmt(s *ast.LetStmt) error {
 			n = s.Name.IndexValue()
 		}
 
-		q := e.qsim.ZeroWith(n)
+		q := e.QSim.ZeroWith(n)
 		e.qubit[s.Name.Value] = q
 	}
 
@@ -72,7 +75,7 @@ func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 			return fmt.Errorf("invalid ident=%v", n.String())
 		}
 
-		e.qsim.Reset(q...)
+		e.QSim.Reset(q...)
 	}
 
 	return nil
@@ -91,13 +94,13 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 
 	switch s.Kind {
 	case lexer.X:
-		e.qsim.X(qb...)
+		e.QSim.X(qb...)
 	case lexer.Y:
-		e.qsim.Y(qb...)
+		e.QSim.Y(qb...)
 	case lexer.Z:
-		e.qsim.Z(qb...)
+		e.QSim.Z(qb...)
 	case lexer.H:
-		e.qsim.H(qb...)
+		e.QSim.H(qb...)
 	default:
 		return fmt.Errorf("invalid token=%v", s.Kind)
 	}
@@ -111,6 +114,6 @@ func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) error {
 		return fmt.Errorf("invalid ident=%v", s.Name.String())
 	}
 
-	e.qsim.Measure(q...)
+	e.QSim.Measure(q...)
 	return nil
 }

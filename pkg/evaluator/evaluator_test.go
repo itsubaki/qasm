@@ -36,10 +36,6 @@ func ExampleEvaluator_Eval() {
 				Name: &ast.Ident{
 					Kind:  lexer.STRING,
 					Value: "q",
-					Index: &ast.Index{
-						Kind:  lexer.INT,
-						Value: "0",
-					},
 				},
 			},
 			&ast.MeasureStmt{
@@ -54,20 +50,20 @@ func ExampleEvaluator_Eval() {
 
 	fmt.Println(p)
 
-	e := evaluator.New()
+	e := evaluator.Default()
 	if err := e.Eval(p); err != nil {
 		fmt.Println(err)
 	}
 
-	for _, s := range e.Qsim().State() {
+	for _, s := range e.QSim.State() {
 		fmt.Println(s)
 	}
 
 	// Output:
 	// qubit q[2];
 	// reset q;
-	// x q[0];
+	// x q;
 	// measure q;
 	//
-	// [10][  1]( 1.0000 0.0000i): 1.0000
+	// [11][  3]( 1.0000 0.0000i): 1.0000
 }
