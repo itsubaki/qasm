@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"io"
-	"strings"
 )
 
 var (
@@ -75,8 +74,7 @@ func (l *Lexer) Scan() (Token, string) {
 		l.unread()
 		str := l.scan()
 
-		key := strings.ToUpper(str)
-		if v, ok := keyword[key]; ok {
+		if v, ok := keyword[str]; ok {
 			return v, str
 		}
 
