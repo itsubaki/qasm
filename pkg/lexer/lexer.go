@@ -23,15 +23,21 @@ func init() {
 }
 
 type Lexer struct {
-	eof rune
-	r   *bufio.Reader
+	eof    rune
+	r      *bufio.Reader
+	errors []error
 }
 
 func New(r io.Reader) *Lexer {
 	return &Lexer{
-		eof: rune(-1),
-		r:   bufio.NewReader(r),
+		eof:    rune(-1),
+		r:      bufio.NewReader(r),
+		errors: make([]error, 0),
 	}
+}
+
+func (l *Lexer) Errors() []error {
+	return l.errors
 }
 
 func (l *Lexer) Tokenize() (Token, string) {
@@ -96,7 +102,9 @@ func (l *Lexer) Scan() (Token, string) {
 
 func (l *Lexer) scan() string {
 	var buf bytes.Buffer
-	_, _ = buf.WriteRune(l.read())
+	if _, err := buf.WriteRune(l.read()); err != nil {
+		l.errors = append(l.errors, err)
+	}
 
 	for {
 		ch := l.read()
@@ -105,7 +113,10 @@ func (l *Lexer) scan() string {
 		}
 
 		if isLetter(ch) || isDigit(ch) {
-			_, _ = buf.WriteRune(ch)
+			if _, err := buf.WriteRune(ch); err != nil {
+				l.errors = append(l.errors, err)
+			}
+
 			continue
 		}
 
@@ -118,7 +129,9 @@ func (l *Lexer) scan() string {
 
 func (l *Lexer) scanString() string {
 	var buf bytes.Buffer
-	_, _ = buf.WriteRune(l.read())
+	if _, err := buf.WriteRune(l.read()); err != nil {
+		l.errors = append(l.errors, err)
+	}
 
 	for {
 		ch := l.read()
@@ -126,7 +139,9 @@ func (l *Lexer) scanString() string {
 			break
 		}
 
-		_, _ = buf.WriteRune(ch)
+		if _, err := buf.WriteRune(ch); err != nil {
+			l.errors = append(l.errors, err)
+		}
 
 		if isString(ch) {
 			break
@@ -138,7 +153,9 @@ func (l *Lexer) scanString() string {
 
 func (l *Lexer) scanNumber() (Token, string) {
 	var buf bytes.Buffer
-	_, _ = buf.WriteRune(l.read())
+	if _, err := buf.WriteRune(l.read()); err != nil {
+		l.errors = append(l.errors, err)
+	}
 
 	token := INT
 	for {
@@ -148,13 +165,19 @@ func (l *Lexer) scanNumber() (Token, string) {
 		}
 
 		if ch == '.' {
-			_, _ = buf.WriteRune(ch)
+			if _, err := buf.WriteRune(ch); err != nil {
+				l.errors = append(l.errors, err)
+			}
+
 			token = FLOAT
 			continue
 		}
 
 		if isDigit(ch) {
-			_, _ = buf.WriteRune(ch)
+			if _, err := buf.WriteRune(ch); err != nil {
+				l.errors = append(l.errors, err)
+			}
+
 			continue
 		}
 
@@ -167,7 +190,9 @@ func (l *Lexer) scanNumber() (Token, string) {
 
 func (l *Lexer) whitespace() (Token, string) {
 	var buf bytes.Buffer
-	_, _ = buf.WriteRune(l.read())
+	if _, err := buf.WriteRune(l.read()); err != nil {
+		l.errors = append(l.errors, err)
+	}
 
 	for {
 		ch := l.read()
@@ -176,7 +201,10 @@ func (l *Lexer) whitespace() (Token, string) {
 		}
 
 		if isWhitespace(ch) {
-			buf.WriteRune(ch)
+			if _, err := buf.WriteRune(ch); err != nil {
+				l.errors = append(l.errors, err)
+			}
+
 			continue
 		}
 
@@ -197,7 +225,9 @@ func (l *Lexer) read() rune {
 }
 
 func (l *Lexer) unread() {
-	_ = l.r.UnreadRune()
+	if err := l.r.UnreadRune(); err != nil {
+		l.errors = append(l.errors, err)
+	}
 }
 
 func isWhitespace(ch rune) bool {

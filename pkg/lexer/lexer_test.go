@@ -107,6 +107,10 @@ func TestLexer(t *testing.T) {
 				t.Errorf("got=%v:%v, want=%v:%v", token, str, w.token, w.str)
 			}
 		}
+
+		if len(lex.Errors()) != 0 {
+			t.Errorf("errors=%v", lex.Errors())
+		}
 	}
 }
 
@@ -133,6 +137,10 @@ func TestLexerTokenize(t *testing.T) {
 			if got, _ := lex.TokenizeIgnore(); got != w {
 				t.Fail()
 			}
+		}
+
+		if len(lex.Errors()) != 0 {
+			t.Errorf("errors=%v", lex.Errors())
 		}
 	}
 }

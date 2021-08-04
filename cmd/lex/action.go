@@ -30,5 +30,12 @@ func Action(c *cli.Context) error {
 		}
 	}
 
+	errs := lex.Errors()
+	if len(errs) != 0 {
+		for _, err := range errs {
+			fmt.Println(err)
+		}
+	}
+
 	return nil
 }
