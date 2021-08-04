@@ -41,7 +41,7 @@ type Expr interface {
 type Ident struct {
 	Kind  lexer.Token // lexer.STRING, lexer.INT, lexer.FLOAT
 	Value string
-	Index Stmt
+	Index *Index
 }
 
 func (i *Ident) stmtNode() {}
@@ -63,8 +63,7 @@ func (i *Ident) IndexValue() int {
 		return -1
 	}
 
-	str := i.Index.String()
-	v, err := strconv.Atoi(str[1 : len(str)-1]) // [123] -> 123
+	v, err := strconv.Atoi(i.Index.Value)
 	if err != nil {
 		panic(err)
 	}
