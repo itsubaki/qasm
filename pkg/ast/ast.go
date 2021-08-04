@@ -2,12 +2,12 @@ package ast
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
 type Program struct {
-	Path       string
 	Statements []Stmt
 }
 
@@ -15,14 +15,15 @@ func (p *Program) String() string {
 	var buf bytes.Buffer
 
 	for _, s := range p.Statements {
-		buf.WriteString(s.String())
+		str := fmt.Sprintf("%s;\n", s.String())
+		buf.WriteString(str)
 	}
 
 	return buf.String()
 }
 
 type Node interface {
-	Literal() string
+	Token() string
 	String() string
 }
 
@@ -37,94 +38,156 @@ type Expr interface {
 }
 
 type Ident struct {
-	Token lexer.Token
+	Kind  lexer.Token // lexer.STRING, lexer.INT, lexer.FLOAT
 	Value string
+	Index Expr
 }
 
 func (i *Ident) exprNode() {}
 
-func (i *Ident) Literal() string {
-	return lexer.Tokens[i.Token]
+func (i *Ident) Token() string {
+	return lexer.Tokens[i.Kind]
 }
 
 func (i *Ident) String() string {
-	return i.Value
-}
-
-type RegStmt struct {
-	Token lexer.Token
-	Name  *Ident
-	Type  Expr
-}
-
-func (r *RegStmt) stmtNode() {}
-
-func (r *RegStmt) Literal() string {
-	return lexer.Tokens[r.Token]
-}
-
-func (r *RegStmt) String() string {
-	var buf bytes.Buffer
-
-	buf.WriteString(r.Literal())
-	buf.WriteString(" ")
-
-	buf.WriteString(r.Name.String())
-	if r.Type != nil {
-		buf.WriteString(r.Type.String())
+	if i.Index == nil {
+		return i.Value
 	}
 
-	buf.WriteString(";")
+	return fmt.Sprintf("%s%s", i.Value, i.Index.String())
+}
+
+type Index struct {
+	Kind  lexer.Token // lexer.STRING, lexer.INT, lexer.FLOAT
+	Value string
+}
+
+func (i *Index) exprNode() {}
+
+func (i *Index) Token() string {
+	return lexer.Tokens[i.Kind]
+}
+
+func (i *Index) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(lexer.Tokens[lexer.LBRACKET])
+	buf.WriteString(i.Value)
+	buf.WriteString(lexer.Tokens[lexer.RBRACKET])
 
 	return buf.String()
 }
 
-type Array struct {
-	Lbrack lexer.Token
-	Rbrack lexer.Token
-	Token  lexer.Token
-	Index  *Ident
+type LetStmt struct {
+	Kind lexer.Token // lexer.QUBIT, lexer.BIT
+	Name *Ident
 }
 
-func (a *Array) exprNode() {}
+func (s *LetStmt) stmtNode() {}
 
-func (a *Array) Literal() string {
-	return lexer.Tokens[a.Token]
+func (s *LetStmt) Token() string {
+	return lexer.Tokens[s.Kind]
 }
 
-func (a *Array) String() string {
+func (s *LetStmt) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(lexer.Tokens[a.Lbrack])
-	buf.WriteString(a.Index.Value)
-	buf.WriteString(lexer.Tokens[a.Rbrack])
+	buf.WriteString(s.Token())
+	buf.WriteString(" ")
+	buf.WriteString(s.Name.String())
 
 	return buf.String()
 }
 
 type ResetStmt struct {
-	Token  lexer.Token
-	Target *RegStmt
+	Kind lexer.Token // lexer.RESET
+	Name []Expr
 }
 
-func (r *ResetStmt) stmtNode() {}
+func (s *ResetStmt) stmtNode() {}
 
-func (r *ResetStmt) Literal() string {
-	return lexer.Tokens[r.Token]
+func (s *ResetStmt) Token() string {
+	return lexer.Tokens[s.Kind]
 }
 
-func (r *ResetStmt) String() string {
+func (s *ResetStmt) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(r.Literal())
+	buf.WriteString(s.Token())
 	buf.WriteString(" ")
+	for i, e := range s.Name {
+		buf.WriteString(e.String())
 
-	buf.WriteString(r.Target.Name.Value)
-	if r.Target.Type != nil {
-		buf.WriteString(r.Target.Type.String())
+		if len(s.Name)-1 != i {
+			buf.WriteString(", ")
+		}
 	}
 
-	buf.WriteString(";")
+	return buf.String()
+}
+
+type ApplyStmt struct {
+	Kind lexer.Token // lexer.X, lexer.CX, ...
+	Name Expr
+}
+
+func (s *ApplyStmt) stmtNode() {}
+
+func (s *ApplyStmt) Token() string {
+	return lexer.Tokens[s.Kind]
+}
+
+func (s *ApplyStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Token())
+	buf.WriteString(" ")
+	buf.WriteString(s.Name.String())
+
+	return buf.String()
+}
+
+type MeasureStmt struct {
+	Kind lexer.Token // lexer.MEASURE
+	Name Expr
+}
+
+func (s *MeasureStmt) stmtNode() {}
+
+func (s *MeasureStmt) Token() string {
+	return lexer.Tokens[s.Kind]
+}
+
+func (s *MeasureStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Token())
+	buf.WriteString(" ")
+	buf.WriteString(s.Name.String())
+
+	return buf.String()
+}
+
+type AssignStmt struct {
+	Kind  lexer.Token // lexer.EQUALS
+	Left  *Ident
+	Right Stmt
+}
+
+func (s *AssignStmt) stmtNode() {}
+
+func (s *AssignStmt) Token() string {
+	return lexer.Tokens[s.Kind]
+}
+
+func (s *AssignStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Left.String())
+	buf.WriteString(" ")
+	buf.WriteString(s.Token())
+	buf.WriteString(" ")
+	buf.WriteString(s.Right.String())
 
 	return buf.String()
 }

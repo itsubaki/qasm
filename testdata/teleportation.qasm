@@ -5,8 +5,7 @@ qubit    phi;
 qubit[2] q;
 bit[2]   c;
 
-reset phi;
-reset q;
+reset phi, q;
 
 x phi;
 
