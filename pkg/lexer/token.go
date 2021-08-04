@@ -44,9 +44,13 @@ const (
 	QUBIT    // qubit
 	BIT      // bit
 	RESET    // reset
-	U        // u
 	H        // h
+	X        // x
+	Y        // y
+	Z        // z
 	CX       // cx
+	CCX      // ccx
+	SWAP     // swap
 	MEASURE  // measure
 	keyword_end
 )
@@ -88,8 +92,12 @@ var Tokens = [...]string{
 	QUBIT:    "QUBIT",
 	BIT:      "BIT",
 	RESET:    "RESET",
-	U:        "U",
 	H:        "H",
+	X:        "X",
+	Y:        "Y",
+	Z:        "Z",
 	CX:       "CX",
+	CCX:      "CCX",
+	SWAP:     "SWAP",
 	MEASURE:  "MEASURE",
 }
