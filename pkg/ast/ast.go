@@ -40,10 +40,10 @@ type Expr interface {
 type Ident struct {
 	Kind  lexer.Token // lexer.STRING, lexer.INT, lexer.FLOAT
 	Value string
-	Index Expr
+	Index Stmt
 }
 
-func (i *Ident) exprNode() {}
+func (i *Ident) stmtNode() {}
 
 func (i *Ident) Token() string {
 	return lexer.Tokens[i.Kind]
@@ -62,7 +62,7 @@ type Index struct {
 	Value string
 }
 
-func (i *Index) exprNode() {}
+func (i *Index) stmtNode() {}
 
 func (i *Index) Token() string {
 	return lexer.Tokens[i.Kind]
@@ -101,7 +101,7 @@ func (s *LetStmt) String() string {
 
 type ResetStmt struct {
 	Kind lexer.Token // lexer.RESET
-	Name []Expr
+	Name []Stmt
 }
 
 func (s *ResetStmt) stmtNode() {}
@@ -128,7 +128,7 @@ func (s *ResetStmt) String() string {
 
 type ApplyStmt struct {
 	Kind lexer.Token // lexer.X, lexer.CX, ...
-	Name Expr
+	Name Stmt
 }
 
 func (s *ApplyStmt) stmtNode() {}
@@ -149,7 +149,7 @@ func (s *ApplyStmt) String() string {
 
 type MeasureStmt struct {
 	Kind lexer.Token // lexer.MEASURE
-	Name Expr
+	Name Stmt
 }
 
 func (s *MeasureStmt) stmtNode() {}

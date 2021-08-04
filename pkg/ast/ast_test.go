@@ -20,7 +20,7 @@ func ExampleProgram_String() {
 			},
 			&ast.ResetStmt{
 				Kind: lexer.RESET,
-				Name: []ast.Expr{
+				Name: []ast.Stmt{
 					&ast.Ident{
 						Kind:  lexer.STRING,
 						Value: "q",
@@ -150,7 +150,7 @@ func TestResetStmtString(t *testing.T) {
 		{
 			ast.ResetStmt{
 				Kind: lexer.RESET,
-				Name: []ast.Expr{
+				Name: []ast.Stmt{
 					&ast.Ident{
 						Kind:  lexer.STRING,
 						Value: "q",
@@ -162,7 +162,7 @@ func TestResetStmtString(t *testing.T) {
 		{
 			ast.ResetStmt{
 				Kind: lexer.RESET,
-				Name: []ast.Expr{
+				Name: []ast.Stmt{
 					&ast.Ident{
 						Kind:  lexer.STRING,
 						Value: "q",
