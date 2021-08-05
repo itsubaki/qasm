@@ -11,6 +11,9 @@ import (
 func ExampleEvaluator() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
+		Includes: []string{
+			"stdgates.qasm",
+		},
 		Statements: []ast.Stmt{
 			&ast.LetStmt{
 				Kind: lexer.QUBIT,
@@ -92,6 +95,7 @@ func ExampleEvaluator() {
 
 	// Output:
 	// OPENQASM 3.0;
+	// include "stdgates.qasm";
 	// qubit[2] q;
 	// bit[2] c;
 	// reset q;
@@ -107,6 +111,9 @@ func ExampleEvaluator() {
 func ExampleEvaluator_pRint() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
+		Includes: []string{
+			"stdgates.qasm",
+		},
 		Statements: []ast.Stmt{
 			&ast.LetStmt{
 				Kind: lexer.QUBIT,

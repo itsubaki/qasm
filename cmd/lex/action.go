@@ -35,6 +35,8 @@ func Action(c *cli.Context) error {
 		for _, err := range errs {
 			fmt.Println(err)
 		}
+
+		return fmt.Errorf("tokenize: %v", errs)
 	}
 
 	return nil

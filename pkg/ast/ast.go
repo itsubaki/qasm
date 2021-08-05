@@ -10,6 +10,7 @@ import (
 
 type OpenQASM struct {
 	Version    string
+	Includes   []string
 	Statements []Stmt
 }
 
@@ -18,6 +19,12 @@ func (p *OpenQASM) String() string {
 
 	version := fmt.Sprintf("OPENQASM %v;\n", p.Version)
 	buf.WriteString(version)
+
+	for _, i := range p.Includes {
+		str := fmt.Sprintf("include \"%s\";\n", i)
+		buf.WriteString(str)
+	}
+
 	for _, s := range p.Statements {
 		str := fmt.Sprintf("%s;\n", s.String())
 		buf.WriteString(str)

@@ -11,6 +11,9 @@ import (
 func ExampleOpenQASM_String() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
+		Includes: []string{
+			"stdgates.qasm",
+		},
 		Statements: []ast.Stmt{
 			&ast.LetStmt{
 				Kind: lexer.QUBIT,
@@ -56,6 +59,7 @@ func ExampleOpenQASM_String() {
 
 	// Output:
 	// OPENQASM 3.0;
+	// include "stdgates.qasm";
 	// qubit q;
 	// reset q;
 	// x q;
