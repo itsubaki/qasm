@@ -11,6 +11,7 @@ import (
 
 func Action(c *cli.Context) error {
 	path := c.String("file")
+
 	f, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("read file=%s: %v", path, err)
