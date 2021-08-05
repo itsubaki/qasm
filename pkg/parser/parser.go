@@ -16,5 +16,10 @@ func New(l *lexer.Lexer) *Parser {
 }
 
 func (p *Parser) Parse() *ast.OpenQASM {
-	return &ast.OpenQASM{}
+	qasm := &ast.OpenQASM{
+		Version:    3.0,
+		Statements: make([]ast.Stmt, 0),
+	}
+
+	return qasm
 }

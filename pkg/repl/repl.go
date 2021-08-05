@@ -44,6 +44,7 @@ func New(in io.Reader, out io.Writer) {
 				}
 			}
 		}
+
 		io.WriteString(out, "\n")
 	}
 }
