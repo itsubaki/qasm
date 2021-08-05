@@ -16,6 +16,7 @@ type OpenQASM struct {
 func (p *OpenQASM) String() string {
 	var buf bytes.Buffer
 
+	buf.WriteString(fmt.Sprintf("OPENQASM %.1f;\n", p.Version))
 	for _, s := range p.Statements {
 		str := fmt.Sprintf("%s;\n", s.String())
 		buf.WriteString(str)

@@ -91,6 +91,7 @@ func ExampleEvaluator_Eval() {
 	}
 
 	// Output:
+	// OPENQASM 3.0;
 	// qubit[2] q;
 	// bit[2] c;
 	// reset q;

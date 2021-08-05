@@ -55,6 +55,7 @@ func ExampleOpenQASM_String() {
 	fmt.Println(p)
 
 	// Output:
+	// OPENQASM 3.0;
 	// qubit q;
 	// reset q;
 	// x q;
