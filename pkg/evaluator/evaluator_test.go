@@ -108,7 +108,7 @@ func ExampleEvaluator() {
 	// [11][  3]( 1.0000 0.0000i): 1.0000
 }
 
-func ExampleEvaluator_pRint() {
+func ExampleEvaluator_print() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
 		Includes: []string{

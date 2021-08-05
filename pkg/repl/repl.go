@@ -12,16 +12,16 @@ import (
 )
 
 func New(in io.Reader, out io.Writer) {
-	scanner := bufio.NewScanner(in)
-	eval := evaluator.Default()
+	s := bufio.NewScanner(in)
+	e := evaluator.Default()
 
 	for {
 		fmt.Printf(">> ")
-		if ok := scanner.Scan(); !ok {
+		if ok := s.Scan(); !ok {
 			return
 		}
 
-		txt := scanner.Text()
+		txt := s.Text()
 		if len(txt) < 1 {
 			continue
 		}
@@ -30,8 +30,8 @@ func New(in io.Reader, out io.Writer) {
 			break
 		}
 
-		lex := lexer.New(strings.NewReader(txt))
-		p := parser.New(lex)
+		l := lexer.New(strings.NewReader(txt))
+		p := parser.New(l)
 
 		ast := p.Parse()
 		if errs := p.Errors(); len(errs) != 0 {
@@ -42,7 +42,7 @@ func New(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		if err := eval.Eval(ast); err != nil {
+		if err := e.Eval(ast); err != nil {
 			msg := fmt.Sprintf("eval: %v\n", err)
 			io.WriteString(out, msg)
 		}

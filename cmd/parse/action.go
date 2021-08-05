@@ -18,7 +18,9 @@ func Action(c *cli.Context) error {
 		return fmt.Errorf("read file=%s: %v", path, err)
 	}
 
-	p := parser.New(lexer.New(strings.NewReader(string(f))))
+	l := lexer.New(strings.NewReader(string(f)))
+	p := parser.New(l)
+
 	ast := p.Parse()
 	fmt.Print(ast)
 

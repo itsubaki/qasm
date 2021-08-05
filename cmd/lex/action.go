@@ -17,9 +17,9 @@ func Action(c *cli.Context) error {
 		return fmt.Errorf("read file=%s: %v", path, err)
 	}
 
-	lex := lexer.New(strings.NewReader(string(f)))
+	l := lexer.New(strings.NewReader(string(f)))
 	for {
-		token, _ := lex.Tokenize()
+		token, _ := l.Tokenize()
 		if token == lexer.EOF {
 			break
 		}
@@ -31,7 +31,7 @@ func Action(c *cli.Context) error {
 		}
 	}
 
-	if errs := lex.Errors(); len(errs) != 0 {
+	if errs := l.Errors(); len(errs) != 0 {
 		for _, err := range errs {
 			fmt.Println(err)
 		}
