@@ -38,19 +38,19 @@ type Expr interface {
 	exprNode()
 }
 
-type Ident struct {
+type IdentExpr struct {
 	Kind  lexer.Token // lexer.STRING, lexer.INT, lexer.FLOAT
 	Value string
-	Index *Index
+	Index *IndexExpr
 }
 
-func (i *Ident) stmtNode() {}
+func (i *IdentExpr) exprNode() {}
 
-func (i *Ident) Token() string {
+func (i *IdentExpr) Token() string {
 	return lexer.Tokens[i.Kind]
 }
 
-func (i *Ident) String() string {
+func (i *IdentExpr) String() string {
 	if i.Index == nil {
 		return i.Value
 	}
@@ -58,7 +58,7 @@ func (i *Ident) String() string {
 	return fmt.Sprintf("%s%s", i.Value, i.Index.String())
 }
 
-func (i *Ident) IndexValue() int {
+func (i *IdentExpr) IndexValue() int {
 	if i.Index == nil {
 		return -1
 	}
@@ -71,30 +71,32 @@ func (i *Ident) IndexValue() int {
 	return v
 }
 
-type Index struct {
-	Kind  lexer.Token // lexer.INT
-	Value string
+type IndexExpr struct {
+	LBRACKET lexer.Token
+	RBRACKET lexer.Token
+	Kind     lexer.Token // lexer.INT
+	Value    string
 }
 
-func (i *Index) stmtNode() {}
+func (i *IndexExpr) exprNode() {}
 
-func (i *Index) Token() string {
+func (i *IndexExpr) Token() string {
 	return lexer.Tokens[i.Kind]
 }
 
-func (i *Index) String() string {
+func (i *IndexExpr) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(lexer.Tokens[lexer.LBRACKET])
+	buf.WriteString(lexer.Tokens[i.LBRACKET])
 	buf.WriteString(i.Value)
-	buf.WriteString(lexer.Tokens[lexer.RBRACKET])
+	buf.WriteString(lexer.Tokens[i.RBRACKET])
 
 	return buf.String()
 }
 
 type LetStmt struct {
 	Kind lexer.Token // lexer.QUBIT, lexer.BIT
-	Name *Ident
+	Name *IdentExpr
 }
 
 func (s *LetStmt) stmtNode() {}
@@ -114,8 +116,8 @@ func (s *LetStmt) String() string {
 }
 
 type ResetStmt struct {
-	Kind lexer.Token // lexer.RESET
-	Name []Ident
+	Kind   lexer.Token // lexer.RESET
+	Target []IdentExpr
 }
 
 func (s *ResetStmt) stmtNode() {}
@@ -129,10 +131,10 @@ func (s *ResetStmt) String() string {
 
 	buf.WriteString(s.Token())
 	buf.WriteString(" ")
-	for i, e := range s.Name {
+	for i, e := range s.Target {
 		buf.WriteString(e.String())
 
-		if len(s.Name)-1 != i {
+		if len(s.Target)-1 != i {
 			buf.WriteString(", ")
 		}
 	}
@@ -141,8 +143,8 @@ func (s *ResetStmt) String() string {
 }
 
 type ApplyStmt struct {
-	Kind lexer.Token // lexer.X, lexer.CX, ...
-	Name *Ident
+	Kind   lexer.Token // lexer.X, lexer.CX, ...
+	Target *IdentExpr
 }
 
 func (s *ApplyStmt) stmtNode() {}
@@ -156,14 +158,14 @@ func (s *ApplyStmt) String() string {
 
 	buf.WriteString(s.Token())
 	buf.WriteString(" ")
-	buf.WriteString(s.Name.String())
+	buf.WriteString(s.Target.String())
 
 	return buf.String()
 }
 
 type MeasureStmt struct {
-	Kind lexer.Token // lexer.MEASURE
-	Name *Ident
+	Kind   lexer.Token // lexer.MEASURE
+	Target *IdentExpr
 }
 
 func (s *MeasureStmt) stmtNode() {}
@@ -177,14 +179,14 @@ func (s *MeasureStmt) String() string {
 
 	buf.WriteString(s.Token())
 	buf.WriteString(" ")
-	buf.WriteString(s.Name.String())
+	buf.WriteString(s.Target.String())
 
 	return buf.String()
 }
 
 type AssignStmt struct {
 	Kind  lexer.Token // lexer.EQUALS
-	Left  *Ident
+	Left  *IdentExpr
 	Right Stmt
 }
 

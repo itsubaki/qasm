@@ -9,25 +9,21 @@ import (
 )
 
 type Evaluator struct {
-	bit   map[string][]int
-	qubit map[string][]q.Qubit
-	QSim  *q.Q
+	Bit   map[string][]int
+	Qubit map[string][]q.Qubit
+	Q     *q.Q
 }
 
 func New(qsim *q.Q) *Evaluator {
 	return &Evaluator{
-		bit:   make(map[string][]int),
-		qubit: make(map[string][]q.Qubit),
-		QSim:  qsim,
+		Bit:   make(map[string][]int),
+		Qubit: make(map[string][]q.Qubit),
+		Q:     qsim,
 	}
 }
 
 func Default() *Evaluator {
-	return &Evaluator{
-		bit:   make(map[string][]int),
-		qubit: make(map[string][]q.Qubit),
-		QSim:  q.New(),
-	}
+	return New(q.New())
 }
 
 func (e *Evaluator) Eval(p *ast.Program) error {
@@ -49,6 +45,10 @@ func (e *Evaluator) Eval(p *ast.Program) error {
 			if err := e.evalMeasureStmt(s); err != nil {
 				return fmt.Errorf("eval measure: %v", err)
 			}
+		case *ast.AssignStmt:
+			if err := e.evalAssignStmt(s); err != nil {
+				return fmt.Errorf("eval assign: %v", err)
+			}
 		default:
 			return fmt.Errorf("invalid stmt=%v", stmt)
 		}
@@ -58,25 +58,25 @@ func (e *Evaluator) Eval(p *ast.Program) error {
 }
 
 func (e *Evaluator) evalLetStmt(s *ast.LetStmt) error {
-	if s.Kind == lexer.QUBIT {
-		n := 1
-		if s.Name.Index != nil {
-			n = s.Name.IndexValue()
+	num := func(i *ast.IdentExpr) int {
+		if i.Index == nil {
+			return 1
 		}
 
-		q := e.QSim.ZeroWith(n)
-		e.qubit[s.Name.Value] = q
+		return i.IndexValue()
+	}
+
+	if s.Kind == lexer.QUBIT {
+		n := num(s.Name)
+		qb := e.Q.ZeroWith(n)
+		e.Qubit[s.Name.Value] = qb
 
 		return nil
 	}
 
 	if s.Kind == lexer.BIT {
-		n := 1
-		if s.Name.Index != nil {
-			n = s.Name.IndexValue()
-		}
-
-		e.bit[s.Name.Value] = make([]int, n)
+		n := num(s.Name)
+		e.Bit[s.Name.Value] = make([]int, n)
 
 		return nil
 	}
@@ -85,51 +85,74 @@ func (e *Evaluator) evalLetStmt(s *ast.LetStmt) error {
 }
 
 func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
-	for _, n := range s.Name {
-		q, ok := e.qubit[n.Value]
+	for _, n := range s.Target {
+		qb, ok := e.Qubit[n.Value]
 		if !ok {
 			return fmt.Errorf("invalid ident=%v", n.Value)
 		}
 
-		e.QSim.Reset(q...)
+		e.Q.Reset(qb...)
 	}
 
 	return nil
 }
 
 func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
-	qb, ok := e.qubit[s.Name.Value]
+	qb, ok := e.Qubit[s.Target.Value]
 	if !ok {
-		return fmt.Errorf("invalid ident=%v", s.Name.Value)
+		return fmt.Errorf("invalid ident=%v", s.Target.Value)
 	}
 
-	if s.Name.Index != nil {
-		index := s.Name.IndexValue()
+	if s.Target.Index != nil {
+		index := s.Target.IndexValue()
 		qb = append(make([]q.Qubit, 0), qb[index])
 	}
 
 	switch s.Kind {
 	case lexer.X:
-		e.QSim.X(qb...)
+		e.Q.X(qb...)
 	case lexer.Y:
-		e.QSim.Y(qb...)
+		e.Q.Y(qb...)
 	case lexer.Z:
-		e.QSim.Z(qb...)
+		e.Q.Z(qb...)
 	case lexer.H:
-		e.QSim.H(qb...)
+		e.Q.H(qb...)
 	default:
 		return fmt.Errorf("invalid token=%v", s.Kind)
 	}
 
 	return nil
 }
+func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
+	c := e.Bit[s.Left.Value]
 
-func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) error {
-	q, ok := e.qubit[s.Name.Value]
-	if !ok {
-		return fmt.Errorf("invalid ident=%v", s.Name.Value)
+	switch s := s.Right.(type) {
+	case *ast.MeasureStmt:
+		if err := e.evalMeasureStmt(s); err != nil {
+			return fmt.Errorf("eval measure: %v", err)
+		}
+
+		qb, ok := e.Qubit[s.Target.Value]
+		if !ok {
+			return fmt.Errorf("invalid ident=%v", s.Target.Value)
+		}
+
+		for _, q := range qb {
+			c[q] = e.Q.State(q)[0].Int[0]
+		}
+	default:
+		return fmt.Errorf("invalid stmt=%v", s)
 	}
 
-	e.QSim.Measure(q...)
+	return nil
+}
+
+func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) error {
+	qb, ok := e.Qubit[s.Target.Value]
+	if !ok {
+		return fmt.Errorf("invalid ident=%v", s.Target.Value)
+	}
+
+	e.Q.Measure(qb...)
 	return nil
 }
