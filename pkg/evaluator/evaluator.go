@@ -58,26 +58,19 @@ func (e *Evaluator) Eval(p *ast.Program) error {
 }
 
 func (e *Evaluator) evalLetStmt(s *ast.LetStmt) error {
-	num := func(i *ast.IdentExpr) int {
-		if i.Index == nil {
-			return 1
-		}
-
-		return i.IndexValue()
+	n := 1
+	if s.Index != nil {
+		n = s.Index.Int()
 	}
 
 	if s.Kind == lexer.QUBIT {
-		n := num(s.Name)
 		qb := e.Q.ZeroWith(n)
 		e.Qubit[s.Name.Value] = qb
-
 		return nil
 	}
 
 	if s.Kind == lexer.BIT {
-		n := num(s.Name)
 		e.Bit[s.Name.Value] = make([]int, n)
-
 		return nil
 	}
 
@@ -104,7 +97,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 	}
 
 	if s.Target.Index != nil {
-		index := s.Target.IndexValue()
+		index := s.Target.Index.Int()
 		qb = append(make([]q.Qubit, 0), qb[index])
 	}
 

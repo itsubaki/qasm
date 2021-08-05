@@ -58,19 +58,6 @@ func (i *IdentExpr) String() string {
 	return fmt.Sprintf("%s%s", i.Value, i.Index.String())
 }
 
-func (i *IdentExpr) IndexValue() int {
-	if i.Index == nil {
-		return -1
-	}
-
-	v, err := strconv.Atoi(i.Index.Value)
-	if err != nil {
-		panic(err)
-	}
-
-	return v
-}
-
 type IndexExpr struct {
 	LBRACKET lexer.Token
 	RBRACKET lexer.Token
@@ -94,9 +81,19 @@ func (i *IndexExpr) String() string {
 	return buf.String()
 }
 
+func (i *IndexExpr) Int() int {
+	v, err := strconv.Atoi(i.Value)
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
 type LetStmt struct {
-	Kind lexer.Token // lexer.QUBIT, lexer.BIT
-	Name *IdentExpr
+	Kind  lexer.Token // lexer.QUBIT, lexer.BIT
+	Name  *IdentExpr
+	Index *IndexExpr
 }
 
 func (s *LetStmt) stmtNode() {}
@@ -109,6 +106,9 @@ func (s *LetStmt) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(s.Token())
+	if s.Index != nil {
+		buf.WriteString(s.Index.String())
+	}
 	buf.WriteString(" ")
 	buf.WriteString(s.Name.String())
 

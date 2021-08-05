@@ -13,28 +13,28 @@ func ExampleEvaluator_Eval() {
 		Statements: []ast.Stmt{
 			&ast.LetStmt{
 				Kind: lexer.QUBIT,
+				Index: &ast.IndexExpr{
+					LBRACKET: lexer.LBRACKET,
+					RBRACKET: lexer.RBRACKET,
+					Kind:     lexer.INT,
+					Value:    "2",
+				},
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
 					Value: "q",
-					Index: &ast.IndexExpr{
-						LBRACKET: lexer.LBRACKET,
-						RBRACKET: lexer.RBRACKET,
-						Kind:     lexer.INT,
-						Value:    "2",
-					},
 				},
 			},
 			&ast.LetStmt{
 				Kind: lexer.BIT,
+				Index: &ast.IndexExpr{
+					LBRACKET: lexer.LBRACKET,
+					RBRACKET: lexer.RBRACKET,
+					Kind:     lexer.INT,
+					Value:    "2",
+				},
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
 					Value: "c",
-					Index: &ast.IndexExpr{
-						LBRACKET: lexer.LBRACKET,
-						RBRACKET: lexer.RBRACKET,
-						Kind:     lexer.INT,
-						Value:    "2",
-					},
 				},
 			},
 			&ast.ResetStmt{
@@ -90,8 +90,8 @@ func ExampleEvaluator_Eval() {
 	}
 
 	// Output:
-	// qubit q[2];
-	// bit c[2];
+	// qubit[2] q;
+	// bit[2] c;
 	// reset q;
 	// x q;
 	// c = measure q;

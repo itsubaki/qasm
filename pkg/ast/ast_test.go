@@ -123,18 +123,18 @@ func TestLetStmtString(t *testing.T) {
 		{
 			ast.LetStmt{
 				Kind: lexer.QUBIT,
+				Index: &ast.IndexExpr{
+					LBRACKET: lexer.LBRACKET,
+					RBRACKET: lexer.RBRACKET,
+					Kind:     lexer.INT,
+					Value:    "2",
+				},
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
 					Value: "q",
-					Index: &ast.IndexExpr{
-						LBRACKET: lexer.LBRACKET,
-						RBRACKET: lexer.RBRACKET,
-						Kind:     lexer.INT,
-						Value:    "2",
-					},
 				},
 			},
-			"qubit q[2]",
+			"qubit[2] q",
 		},
 	}
 
