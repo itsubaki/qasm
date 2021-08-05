@@ -10,7 +10,7 @@ import (
 
 func ExampleEvaluator() {
 	p := &ast.OpenQASM{
-		Version: 3.0,
+		Version: "3.0",
 		Statements: []ast.Stmt{
 			&ast.LetStmt{
 				Kind: lexer.QUBIT,
@@ -106,7 +106,7 @@ func ExampleEvaluator() {
 
 func ExampleEvaluator_pRint() {
 	p := &ast.OpenQASM{
-		Version: 3.0,
+		Version: "3.0",
 		Statements: []ast.Stmt{
 			&ast.LetStmt{
 				Kind: lexer.QUBIT,
@@ -130,10 +130,6 @@ func ExampleEvaluator_pRint() {
 			},
 			&ast.PrintStmt{
 				Kind: lexer.PRINT,
-				Target: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "q",
-				},
 			},
 		},
 	}

@@ -9,14 +9,15 @@ import (
 )
 
 type OpenQASM struct {
-	Version    float32
+	Version    string
 	Statements []Stmt
 }
 
 func (p *OpenQASM) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(fmt.Sprintf("OPENQASM %.1f;\n", p.Version))
+	version := fmt.Sprintf("OPENQASM %v;\n", p.Version)
+	buf.WriteString(version)
 	for _, s := range p.Statements {
 		str := fmt.Sprintf("%s;\n", s.String())
 		buf.WriteString(str)
@@ -211,8 +212,7 @@ func (s *AssignStmt) String() string {
 }
 
 type PrintStmt struct {
-	Kind   lexer.Token // lexer.PRINT
-	Target *IdentExpr
+	Kind lexer.Token // lexer.PRINT
 }
 
 func (s *PrintStmt) stmtNode() {}
@@ -222,11 +222,5 @@ func (s *PrintStmt) Token() string {
 }
 
 func (s *PrintStmt) String() string {
-	var buf bytes.Buffer
-
-	buf.WriteString(s.Token())
-	buf.WriteString(" ")
-	buf.WriteString(s.Target.String())
-
-	return buf.String()
+	return "print"
 }

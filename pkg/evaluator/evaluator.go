@@ -31,27 +31,27 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 		switch s := stmt.(type) {
 		case *ast.LetStmt:
 			if err := e.evalLetStmt(s); err != nil {
-				return fmt.Errorf("eval let: %v", err)
+				return fmt.Errorf("let: %v", err)
 			}
 		case *ast.ResetStmt:
 			if err := e.evalResetStmt(s); err != nil {
-				return fmt.Errorf("eval reset: %v", err)
+				return fmt.Errorf("reset: %v", err)
 			}
 		case *ast.ApplyStmt:
 			if err := e.evalApplyStmt(s); err != nil {
-				return fmt.Errorf("eval apply: %v", err)
+				return fmt.Errorf("apply: %v", err)
 			}
 		case *ast.MeasureStmt:
 			if _, err := e.evalMeasureStmt(s); err != nil {
-				return fmt.Errorf("eval measure: %v", err)
+				return fmt.Errorf("measure: %v", err)
 			}
 		case *ast.AssignStmt:
 			if err := e.evalAssignStmt(s); err != nil {
-				return fmt.Errorf("eval assign: %v", err)
+				return fmt.Errorf("assign: %v", err)
 			}
 		case *ast.PrintStmt:
 			if err := e.evalPrintStmt(s); err != nil {
-				return fmt.Errorf("eval print: %v", err)
+				return fmt.Errorf("print: %v", err)
 			}
 		default:
 			return fmt.Errorf("invalid stmt=%v", stmt)
@@ -68,12 +68,20 @@ func (e *Evaluator) evalLetStmt(s *ast.LetStmt) error {
 	}
 
 	if s.Kind == lexer.QUBIT {
+		if _, ok := e.Qubit[s.Name.Value]; ok {
+			return fmt.Errorf("already exists=%v", s.Name.Value)
+		}
+
 		qb := e.Q.ZeroWith(n)
 		e.Qubit[s.Name.Value] = qb
 		return nil
 	}
 
 	if s.Kind == lexer.BIT {
+		if _, ok := e.Bit[s.Name.Value]; ok {
+			return fmt.Errorf("already exists=%v", s.Name.Value)
+		}
+
 		e.Bit[s.Name.Value] = make([]int, n)
 		return nil
 	}
@@ -127,7 +135,7 @@ func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 	case *ast.MeasureStmt:
 		qb, err := e.evalMeasureStmt(s)
 		if err != nil {
-			return fmt.Errorf("eval measure: %v", err)
+			return fmt.Errorf("measure: %v", err)
 		}
 		for _, q := range qb {
 			c[q] = e.Q.State(q)[0].Int[0]
@@ -149,12 +157,11 @@ func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 }
 
 func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
-	qb, ok := e.Qubit[s.Target.Value]
-	if !ok {
-		return fmt.Errorf("invalid ident=%v", s.Target.Value)
+	if len(e.Qubit) == 0 {
+		return nil
 	}
 
-	for _, s := range e.Q.State(qb) {
+	for _, s := range e.Q.State() {
 		fmt.Println(s)
 	}
 

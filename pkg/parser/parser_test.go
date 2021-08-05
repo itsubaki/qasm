@@ -10,7 +10,7 @@ import (
 )
 
 func ExampleParser() {
-	f, err := os.ReadFile("../../testdata/bell.qasm")
+	f, err := os.ReadFile("../../testdata/print.qasm")
 	if err != nil {
 		fmt.Printf("read file: %v", err)
 		return
@@ -18,8 +18,18 @@ func ExampleParser() {
 
 	p := parser.New(lexer.New(strings.NewReader(string(f))))
 	ast := p.Parse()
-	fmt.Println(ast)
+	fmt.Printf("%v\n", ast)
+
+	if errs := p.Errors(); len(errs) != 0 {
+		for _, err := range errs {
+			fmt.Println(err)
+		}
+	}
 
 	// Output:
 	// OPENQASM 3.0;
+	// qubit q;
+	// reset q;
+	// h q;
+	// print;
 }

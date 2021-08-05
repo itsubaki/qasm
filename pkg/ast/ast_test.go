@@ -10,7 +10,7 @@ import (
 
 func ExampleOpenQASM_String() {
 	p := &ast.OpenQASM{
-		Version: 3.0,
+		Version: "3.0",
 		Statements: []ast.Stmt{
 			&ast.LetStmt{
 				Kind: lexer.QUBIT,
@@ -348,28 +348,8 @@ func TestPrintStmtString(t *testing.T) {
 		{
 			ast.PrintStmt{
 				Kind: lexer.PRINT,
-				Target: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "q",
-				},
 			},
-			"print q",
-		},
-		{
-			ast.PrintStmt{
-				Kind: lexer.PRINT,
-				Target: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "q",
-					Index: &ast.IndexExpr{
-						LBRACKET: lexer.LBRACKET,
-						RBRACKET: lexer.RBRACKET,
-						Kind:     lexer.INT,
-						Value:    "2",
-					},
-				},
-			},
-			"print q[2]",
+			"print",
 		},
 	}
 
