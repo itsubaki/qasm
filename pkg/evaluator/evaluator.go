@@ -42,7 +42,7 @@ func (e *Evaluator) Eval(p *ast.Program) error {
 				return fmt.Errorf("eval apply: %v", err)
 			}
 		case *ast.MeasureStmt:
-			if err := e.evalMeasureStmt(s); err != nil {
+			if _, err := e.evalMeasureStmt(s); err != nil {
 				return fmt.Errorf("eval measure: %v", err)
 			}
 		case *ast.AssignStmt:
@@ -123,36 +123,29 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 
 	return nil
 }
+
 func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 	c := e.Bit[s.Left.Value]
-
 	switch s := s.Right.(type) {
 	case *ast.MeasureStmt:
-		if err := e.evalMeasureStmt(s); err != nil {
+		qb, err := e.evalMeasureStmt(s)
+		if err != nil {
 			return fmt.Errorf("eval measure: %v", err)
 		}
-
-		qb, ok := e.Qubit[s.Target.Value]
-		if !ok {
-			return fmt.Errorf("invalid ident=%v", s.Target.Value)
-		}
-
 		for _, q := range qb {
 			c[q] = e.Q.State(q)[0].Int[0]
 		}
 	default:
 		return fmt.Errorf("invalid stmt=%v", s)
 	}
-
 	return nil
 }
 
-func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) error {
+func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 	qb, ok := e.Qubit[s.Target.Value]
 	if !ok {
-		return fmt.Errorf("invalid ident=%v", s.Target.Value)
+		return nil, fmt.Errorf("invalid ident=%v", s.Target.Value)
 	}
-
 	e.Q.Measure(qb...)
-	return nil
+	return qb, nil
 }
