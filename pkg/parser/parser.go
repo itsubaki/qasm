@@ -6,12 +6,14 @@ import (
 )
 
 type Parser struct {
-	l *lexer.Lexer
+	l      *lexer.Lexer
+	errors []error
 }
 
 func New(l *lexer.Lexer) *Parser {
 	return &Parser{
-		l: l,
+		l:      l,
+		errors: make([]error, 0),
 	}
 }
 
@@ -22,4 +24,8 @@ func (p *Parser) Parse() *ast.OpenQASM {
 	}
 
 	return qasm
+}
+
+func (p *Parser) Errors() []error {
+	return p.errors
 }

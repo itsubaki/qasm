@@ -10,13 +10,13 @@ import (
 )
 
 func Action(c *cli.Context) error {
-	f := c.String("file")
-	bin, err := os.ReadFile(f)
+	path := c.String("file")
+	f, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("read file=%s: %v", f, err)
+		return fmt.Errorf("read file=%s: %v", path, err)
 	}
 
-	lex := lexer.New(strings.NewReader(string(bin)))
+	lex := lexer.New(strings.NewReader(string(f)))
 	for {
 		token, _ := lex.Tokenize()
 		if token == lexer.EOF {
