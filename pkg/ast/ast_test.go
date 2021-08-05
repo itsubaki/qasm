@@ -8,8 +8,9 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-func ExampleProgram_String() {
-	p := &ast.Program{
+func ExampleOpenQASM_String() {
+	p := &ast.OpenQASM{
+		Version: 3.0,
 		Statements: []ast.Stmt{
 			&ast.LetStmt{
 				Kind: lexer.QUBIT,

@@ -8,11 +8,12 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-type Program struct {
+type OpenQASM struct {
+	Version    float32
 	Statements []Stmt
 }
 
-func (p *Program) String() string {
+func (p *OpenQASM) String() string {
 	var buf bytes.Buffer
 
 	for _, s := range p.Statements {

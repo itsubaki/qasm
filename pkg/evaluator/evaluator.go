@@ -26,7 +26,7 @@ func Default() *Evaluator {
 	return New(q.New())
 }
 
-func (e *Evaluator) Eval(p *ast.Program) error {
+func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	for _, stmt := range p.Statements {
 		switch s := stmt.(type) {
 		case *ast.LetStmt:

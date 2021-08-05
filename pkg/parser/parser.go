@@ -15,6 +15,6 @@ func New(l *lexer.Lexer) *Parser {
 	}
 }
 
-func (p *Parser) Parse() *ast.Program {
-	return &ast.Program{}
+func (p *Parser) Parse() *ast.OpenQASM {
+	return &ast.OpenQASM{}
 }

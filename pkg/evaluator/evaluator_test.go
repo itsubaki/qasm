@@ -9,7 +9,8 @@ import (
 )
 
 func ExampleEvaluator_Eval() {
-	p := &ast.Program{
+	p := &ast.OpenQASM{
+		Version: 3.0,
 		Statements: []ast.Stmt{
 			&ast.LetStmt{
 				Kind: lexer.QUBIT,
