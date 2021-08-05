@@ -8,7 +8,7 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-func ExampleEvaluator_Eval() {
+func ExampleEvaluator() {
 	p := &ast.OpenQASM{
 		Version: 3.0,
 		Statements: []ast.Stmt{
@@ -102,4 +102,50 @@ func ExampleEvaluator_Eval() {
 	// c[1]: 1
 	//
 	// [11][  3]( 1.0000 0.0000i): 1.0000
+}
+
+func ExampleEvaluator_pRint() {
+	p := &ast.OpenQASM{
+		Version: 3.0,
+		Statements: []ast.Stmt{
+			&ast.LetStmt{
+				Kind: lexer.QUBIT,
+				Index: &ast.IndexExpr{
+					LBRACKET: lexer.LBRACKET,
+					RBRACKET: lexer.RBRACKET,
+					Kind:     lexer.INT,
+					Value:    "2",
+				},
+				Name: &ast.IdentExpr{
+					Kind:  lexer.STRING,
+					Value: "q",
+				},
+			},
+			&ast.ApplyStmt{
+				Kind: lexer.H,
+				Target: &ast.IdentExpr{
+					Kind:  lexer.STRING,
+					Value: "q",
+				},
+			},
+			&ast.PrintStmt{
+				Kind: lexer.PRINT,
+				Target: &ast.IdentExpr{
+					Kind:  lexer.STRING,
+					Value: "q",
+				},
+			},
+		},
+	}
+
+	if err := evaluator.Default().Eval(p); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// Output:
+	// [00][  0]( 0.5000 0.0000i): 0.2500
+	// [01][  1]( 0.5000 0.0000i): 0.2500
+	// [10][  2]( 0.5000 0.0000i): 0.2500
+	// [11][  3]( 0.5000 0.0000i): 0.2500
 }

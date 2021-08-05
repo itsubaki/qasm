@@ -129,6 +129,7 @@ func TestLexerTokenize(t *testing.T) {
 		{" \t\n", []lexer.Token{lexer.WHITESPACE}},
 		{"\\", []lexer.Token{lexer.ILLEGAL}},
 		{"\"a", []lexer.Token{lexer.STRING, lexer.EOF}},
+		{"print", []lexer.Token{lexer.PRINT}},
 	}
 
 	for _, c := range cases {

@@ -49,6 +49,10 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 			if err := e.evalAssignStmt(s); err != nil {
 				return fmt.Errorf("eval assign: %v", err)
 			}
+		case *ast.PrintStmt:
+			if err := e.evalPrintStmt(s); err != nil {
+				return fmt.Errorf("eval print: %v", err)
+			}
 		default:
 			return fmt.Errorf("invalid stmt=%v", stmt)
 		}
@@ -139,6 +143,20 @@ func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 	if !ok {
 		return nil, fmt.Errorf("invalid ident=%v", s.Target.Value)
 	}
+
 	e.Q.Measure(qb...)
 	return qb, nil
+}
+
+func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
+	qb, ok := e.Qubit[s.Target.Value]
+	if !ok {
+		return fmt.Errorf("invalid ident=%v", s.Target.Value)
+	}
+
+	for _, s := range e.Q.State(qb) {
+		fmt.Println(s)
+	}
+
+	return nil
 }

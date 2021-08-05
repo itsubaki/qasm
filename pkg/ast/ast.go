@@ -209,3 +209,24 @@ func (s *AssignStmt) String() string {
 
 	return buf.String()
 }
+
+type PrintStmt struct {
+	Kind   lexer.Token // lexer.PRINT
+	Target *IdentExpr
+}
+
+func (s *PrintStmt) stmtNode() {}
+
+func (s *PrintStmt) Token() string {
+	return lexer.Tokens[s.Kind]
+}
+
+func (s *PrintStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Token())
+	buf.WriteString(" ")
+	buf.WriteString(s.Target.String())
+
+	return buf.String()
+}

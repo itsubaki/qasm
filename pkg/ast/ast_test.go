@@ -339,3 +339,44 @@ func TestAssignStmtString(t *testing.T) {
 		}
 	}
 }
+
+func TestPrintStmtString(t *testing.T) {
+	var cases = []struct {
+		in   ast.PrintStmt
+		want string
+	}{
+		{
+			ast.PrintStmt{
+				Kind: lexer.PRINT,
+				Target: &ast.IdentExpr{
+					Kind:  lexer.STRING,
+					Value: "q",
+				},
+			},
+			"print q",
+		},
+		{
+			ast.PrintStmt{
+				Kind: lexer.PRINT,
+				Target: &ast.IdentExpr{
+					Kind:  lexer.STRING,
+					Value: "q",
+					Index: &ast.IndexExpr{
+						LBRACKET: lexer.LBRACKET,
+						RBRACKET: lexer.RBRACKET,
+						Kind:     lexer.INT,
+						Value:    "2",
+					},
+				},
+			},
+			"print q[2]",
+		},
+	}
+
+	for _, c := range cases {
+		got := c.in.String()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}

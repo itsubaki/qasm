@@ -53,6 +53,7 @@ const (
 	CZ       // cz
 	SWAP     // swap
 	MEASURE  // measure
+	PRINT    // print
 	keyword_end
 )
 
@@ -102,4 +103,5 @@ var Tokens = [...]string{
 	CZ:       "cz",
 	SWAP:     "swap",
 	MEASURE:  "measure",
+	PRINT:    "print",
 }
