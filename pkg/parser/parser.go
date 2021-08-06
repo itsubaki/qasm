@@ -9,45 +9,53 @@ import (
 
 type Parser struct {
 	l      *lexer.Lexer
+	qasm   *ast.OpenQASM
 	errors []error
+	cur    lexer.Token
 }
 
 func New(l *lexer.Lexer) *Parser {
 	return &Parser{
-		l:      l,
+		l: l,
+		qasm: &ast.OpenQASM{
+			Version:    "3.0",
+			Includes:   make([]ast.Expr, 0),
+			Statements: make([]ast.Stmt, 0),
+		},
 		errors: make([]error, 0),
 	}
 }
 
 func (p *Parser) Parse() *ast.OpenQASM {
-	qasm := &ast.OpenQASM{
-		Statements: make([]ast.Stmt, 0),
-	}
-
 	for {
 		token, _ := p.l.Tokenize()
 		switch token {
 		case lexer.OPENQASM:
-			qasm.Version = p.parseVersion()
+			p.qasm.Version = p.parseVersion()
+		case lexer.INCLUDE:
+			p.appendIncl(p.parseInclude())
 		case lexer.QUBIT, lexer.BIT:
-			stmt := p.parseLet(token)
-			qasm.Statements = append(qasm.Statements, stmt)
+			p.appendStmt(p.parseLet(token))
 		case lexer.RESET:
-			stmt := p.parseReset()
-			qasm.Statements = append(qasm.Statements, stmt)
+			p.appendStmt(p.parseReset())
 		case lexer.MEASURE:
-			stmt := p.parseMeasure()
-			qasm.Statements = append(qasm.Statements, stmt)
+			p.appendStmt(p.parseMeasure())
 		case lexer.PRINT:
-			stmt := p.parsePrint()
-			qasm.Statements = append(qasm.Statements, stmt)
+			p.appendStmt(p.parsePrint())
 		case lexer.X, lexer.Y, lexer.Z, lexer.H:
-			stmt := p.parseApply(token)
-			qasm.Statements = append(qasm.Statements, stmt)
+			p.appendStmt(p.parseApply(token))
 		case lexer.EOF:
-			return qasm
+			return p.qasm
 		}
 	}
+}
+
+func (p *Parser) appendIncl(s ast.Expr) {
+	p.qasm.Includes = append(p.qasm.Includes, s)
+}
+
+func (p *Parser) appendStmt(s ast.Stmt) {
+	p.qasm.Statements = append(p.qasm.Statements, s)
 }
 
 func (p *Parser) parseVersion() string {
@@ -61,18 +69,43 @@ func (p *Parser) parseVersion() string {
 	return version
 }
 
-func (p *Parser) parseLet(kind lexer.Token) ast.Stmt {
-	token, value := p.l.Tokenize()
-	if token != lexer.IDENT {
-		msg := fmt.Errorf("invalid token=%v", value)
-		p.errors = append(p.errors, msg)
+func (p *Parser) parseInclude() ast.Expr {
+	token, path := p.l.Tokenize()
+	return &ast.IdentExpr{
+		Kind:  token,
+		Value: path,
 	}
+}
+
+func (p *Parser) parseLet(kind lexer.Token) ast.Stmt {
+	// qubit q
+	token, value := p.l.Tokenize()
+	if token == lexer.IDENT {
+		return &ast.LetStmt{
+			Kind: kind,
+			Name: &ast.IdentExpr{
+				Kind:  token,
+				Value: value,
+			},
+		}
+	}
+
+	// qubit[2] q
+	index, idxv := p.l.Tokenize()  // '2'
+	rbtok, _ := p.l.Tokenize()     // ']'
+	ident, value := p.l.Tokenize() // q
 
 	return &ast.LetStmt{
 		Kind: kind,
 		Name: &ast.IdentExpr{
-			Kind:  token,
+			Kind:  ident,
 			Value: value,
+		},
+		Index: &ast.IndexExpr{
+			LBRACKET: token,
+			RBRACKET: rbtok,
+			Kind:     index,
+			Value:    idxv,
 		},
 	}
 }
@@ -93,7 +126,6 @@ func (p *Parser) parseReset() ast.Stmt {
 
 func (p *Parser) parseApply(kind lexer.Token) ast.Stmt {
 	token, value := p.l.Tokenize()
-
 	return &ast.ApplyStmt{
 		Kind: kind,
 		Target: &ast.IdentExpr{
@@ -105,7 +137,6 @@ func (p *Parser) parseApply(kind lexer.Token) ast.Stmt {
 
 func (p *Parser) parseMeasure() ast.Stmt {
 	token, value := p.l.Tokenize()
-
 	return &ast.MeasureStmt{
 		Kind: lexer.MEASURE,
 		Target: &ast.IdentExpr{

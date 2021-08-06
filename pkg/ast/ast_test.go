@@ -11,8 +11,11 @@ import (
 func ExampleOpenQASM_String() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Includes: []string{
-			"stdgates.qasm",
+		Includes: []ast.Expr{
+			&ast.IdentExpr{
+				Kind:  lexer.STRING,
+				Value: "\"stdgates.qasm\"",
+			},
 		},
 		Statements: []ast.Stmt{
 			&ast.LetStmt{
