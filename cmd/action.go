@@ -39,8 +39,13 @@ func Action(c *cli.Context) error {
 
 	fmt.Println(ast)
 
-	if err := evaluator.Default().Eval(ast); err != nil {
+	e := evaluator.Default()
+	if err := e.Eval(ast); err != nil {
 		return fmt.Errorf("eval: %v\n", err)
+	}
+
+	for _, s := range e.Q.State() {
+		fmt.Println(s)
 	}
 
 	return nil

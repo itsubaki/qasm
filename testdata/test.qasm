@@ -5,4 +5,3 @@ qubit q;
 reset q;
 
 h q;
-print;
