@@ -262,7 +262,7 @@ func TestApplyStmtString(t *testing.T) {
 		{
 			ast.ApplyStmt{
 				Kind: lexer.CX,
-				Control: []ast.IdentExpr{
+				Target: []ast.IdentExpr{
 					{
 						Kind:  lexer.STRING,
 						Value: "p",
@@ -273,8 +273,6 @@ func TestApplyStmtString(t *testing.T) {
 							Value:    "0",
 						},
 					},
-				},
-				Target: []ast.IdentExpr{
 					{
 						Kind:  lexer.STRING,
 						Value: "p",
@@ -292,7 +290,7 @@ func TestApplyStmtString(t *testing.T) {
 		{
 			ast.ApplyStmt{
 				Kind: lexer.CCX,
-				Control: []ast.IdentExpr{
+				Target: []ast.IdentExpr{
 					{
 						Kind:  lexer.STRING,
 						Value: "p",
@@ -313,8 +311,6 @@ func TestApplyStmtString(t *testing.T) {
 							Value:    "1",
 						},
 					},
-				},
-				Target: []ast.IdentExpr{
 					{
 						Kind:  lexer.STRING,
 						Value: "p",

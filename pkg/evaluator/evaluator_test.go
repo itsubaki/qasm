@@ -62,33 +62,31 @@ func ExampleEvaluator() {
 					},
 				},
 			},
-			// &ast.ApplyStmt{
-			// 	Kind: lexer.CX,
-			// 	Control: []ast.IdentExpr{
-			// 		{
-			// 			Kind:  lexer.STRING,
-			// 			Value: "q",
-			// 			Index: &ast.IndexExpr{
-			// 				LBRACKET: lexer.LBRACKET,
-			// 				RBRACKET: lexer.RBRACKET,
-			// 				Kind:     lexer.INT,
-			// 				Value:    "0",
-			// 			},
-			// 		},
-			// 	},
-			// 	Target: []ast.IdentExpr{
-			// 		{
-			// 			Kind:  lexer.STRING,
-			// 			Value: "q",
-			// 			Index: &ast.IndexExpr{
-			// 				LBRACKET: lexer.LBRACKET,
-			// 				RBRACKET: lexer.RBRACKET,
-			// 				Kind:     lexer.INT,
-			// 				Value:    "1",
-			// 			},
-			// 		},
-			// 	},
-			// },
+			&ast.ApplyStmt{
+				Kind: lexer.CX,
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "q",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "0",
+						},
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "q",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "1",
+						},
+					},
+				},
+			},
 			&ast.AssignStmt{
 				Kind: lexer.EQUALS,
 				Left: &ast.IdentExpr{
@@ -134,12 +132,13 @@ func ExampleEvaluator() {
 	// bit[2] c;
 	// reset q;
 	// x q;
+	// cx q[0], q[1];
 	// c = measure q;
 	//
 	// c[0]: 1
-	// c[1]: 1
+	// c[1]: 0
 	//
-	// [11][  3]( 1.0000 0.0000i): 1.0000
+	// [10][  2]( 1.0000 0.0000i): 1.0000
 }
 
 func ExampleEvaluator_print() {

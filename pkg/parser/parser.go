@@ -50,6 +50,8 @@ func (p *Parser) Parse() *ast.OpenQASM {
 			p.appendStmt(p.parsePrint())
 		case lexer.X, lexer.Y, lexer.Z, lexer.H:
 			p.appendStmt(p.parseApply())
+		case lexer.CX, lexer.CZ, lexer.CCX:
+			p.appendStmt(p.parseApply())
 		case lexer.EOF:
 			return p.qasm
 		}

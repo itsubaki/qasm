@@ -108,6 +108,7 @@ func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 }
 
 func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
+	in := make([]q.Qubit, 0)
 	for _, t := range s.Target {
 		qb, ok := e.Qubit[t.Value]
 		if !ok {
@@ -123,18 +124,26 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 			qb = append(make([]q.Qubit, 0), qb[index])
 		}
 
-		switch s.Kind {
-		case lexer.X:
-			e.Q.X(qb...)
-		case lexer.Y:
-			e.Q.Y(qb...)
-		case lexer.Z:
-			e.Q.Z(qb...)
-		case lexer.H:
-			e.Q.H(qb...)
-		default:
-			return fmt.Errorf("gate=%v not found", s.Kind)
-		}
+		in = append(in, qb...)
+	}
+
+	switch s.Kind {
+	case lexer.X:
+		e.Q.X(in...)
+	case lexer.Y:
+		e.Q.Y(in...)
+	case lexer.Z:
+		e.Q.Z(in...)
+	case lexer.H:
+		e.Q.H(in...)
+	case lexer.CX:
+		e.Q.CNOT(in[0], in[1])
+	case lexer.CZ:
+		e.Q.CZ(in[0], in[1])
+	case lexer.CCX:
+		e.Q.CCNOT(in[0], in[1], in[2])
+	default:
+		return fmt.Errorf("gate=%v not found", s.Kind)
 	}
 
 	return nil
