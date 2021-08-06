@@ -9,18 +9,18 @@ import (
 )
 
 func TestLexer(t *testing.T) {
-	type item struct {
-		token lexer.Token
-		str   string
+	type Token struct {
+		token   lexer.Token
+		literal string
 	}
 
 	var cases = []struct {
 		in   string
-		want []item
+		want []Token
 	}{
 		{
 			in: "../../testdata/bell.qasm",
-			want: []item{
+			want: []Token{
 				{lexer.OPENQASM, "OPENQASM"},
 				{lexer.FLOAT, "3.0"},
 				{lexer.SEMICOLON, ";"},
@@ -102,9 +102,9 @@ func TestLexer(t *testing.T) {
 
 		lex := lexer.New(strings.NewReader(string(f)))
 		for _, w := range c.want {
-			token, str := lex.Tokenize()
-			if token != w.token || str != w.str {
-				t.Errorf("got=%v:%v, want=%v:%v", token, str, w.token, w.str)
+			token, literal := lex.Tokenize()
+			if token != w.token || literal != w.literal {
+				t.Errorf("got=%v:%v, want=%v:%v", token, literal, w.token, w.literal)
 			}
 		}
 

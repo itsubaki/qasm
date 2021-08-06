@@ -34,7 +34,7 @@ func (p *OpenQASM) String() string {
 }
 
 type Node interface {
-	Token() string
+	Literal() string
 	String() string
 }
 
@@ -56,7 +56,7 @@ type IdentExpr struct {
 
 func (i *IdentExpr) exprNode() {}
 
-func (i *IdentExpr) Token() string {
+func (i *IdentExpr) Literal() string {
 	return lexer.Tokens[i.Kind]
 }
 
@@ -77,7 +77,7 @@ type IndexExpr struct {
 
 func (i *IndexExpr) exprNode() {}
 
-func (i *IndexExpr) Token() string {
+func (i *IndexExpr) Literal() string {
 	return lexer.Tokens[i.Kind]
 }
 
@@ -108,14 +108,14 @@ type LetStmt struct {
 
 func (s *LetStmt) stmtNode() {}
 
-func (s *LetStmt) Token() string {
+func (s *LetStmt) Literal() string {
 	return lexer.Tokens[s.Kind]
 }
 
 func (s *LetStmt) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(s.Token())
+	buf.WriteString(s.Literal())
 	if s.Index != nil {
 		buf.WriteString(s.Index.String())
 	}
@@ -132,14 +132,14 @@ type ResetStmt struct {
 
 func (s *ResetStmt) stmtNode() {}
 
-func (s *ResetStmt) Token() string {
+func (s *ResetStmt) Literal() string {
 	return lexer.Tokens[s.Kind]
 }
 
 func (s *ResetStmt) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(s.Token())
+	buf.WriteString(s.Literal())
 	buf.WriteString(" ")
 	for i, t := range s.Target {
 		buf.WriteString(t.String())
@@ -160,14 +160,14 @@ type ApplyStmt struct {
 
 func (s *ApplyStmt) stmtNode() {}
 
-func (s *ApplyStmt) Token() string {
+func (s *ApplyStmt) Literal() string {
 	return lexer.Tokens[s.Kind]
 }
 
 func (s *ApplyStmt) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(s.Token())
+	buf.WriteString(s.Literal())
 	buf.WriteString(" ")
 	for _, t := range s.Control {
 		buf.WriteString(t.String())
@@ -192,14 +192,14 @@ type MeasureStmt struct {
 
 func (s *MeasureStmt) stmtNode() {}
 
-func (s *MeasureStmt) Token() string {
+func (s *MeasureStmt) Literal() string {
 	return lexer.Tokens[s.Kind]
 }
 
 func (s *MeasureStmt) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(s.Token())
+	buf.WriteString(s.Literal())
 	buf.WriteString(" ")
 	for i, t := range s.Target {
 		buf.WriteString(t.String())
@@ -220,7 +220,7 @@ type AssignStmt struct {
 
 func (s *AssignStmt) stmtNode() {}
 
-func (s *AssignStmt) Token() string {
+func (s *AssignStmt) Literal() string {
 	return lexer.Tokens[s.Kind]
 }
 
@@ -229,7 +229,7 @@ func (s *AssignStmt) String() string {
 
 	buf.WriteString(s.Left.String())
 	buf.WriteString(" ")
-	buf.WriteString(s.Token())
+	buf.WriteString(s.Literal())
 	buf.WriteString(" ")
 	buf.WriteString(s.Right.String())
 
@@ -242,7 +242,7 @@ type PrintStmt struct {
 
 func (s *PrintStmt) stmtNode() {}
 
-func (s *PrintStmt) Token() string {
+func (s *PrintStmt) Literal() string {
 	return lexer.Tokens[s.Kind]
 }
 

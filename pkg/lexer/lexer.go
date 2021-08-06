@@ -50,12 +50,12 @@ func (l *Lexer) TokenizeIgnore(t ...Token) (Token, string) {
 	}
 
 	for {
-		token, str := l.Scan()
+		token, literal := l.Scan()
 		if _, ok := ignore[token]; ok {
 			continue
 		}
 
-		return token, str
+		return token, literal
 	}
 }
 
