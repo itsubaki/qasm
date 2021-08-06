@@ -10,7 +10,7 @@ import (
 )
 
 func ExampleParser() {
-	f, err := os.ReadFile("../../testdata/print.qasm")
+	f, err := os.ReadFile("../../testdata/test.qasm")
 	if err != nil {
 		fmt.Printf("read file: %v", err)
 		return

@@ -4,5 +4,5 @@ include "stdgates.qasm";
 qubit q;
 reset q;
 
-h  q;
+h q;
 print;

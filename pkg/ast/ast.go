@@ -153,8 +153,9 @@ func (s *ResetStmt) String() string {
 }
 
 type ApplyStmt struct {
-	Kind   lexer.Token // lexer.X, lexer.CX, ...
-	Target []IdentExpr
+	Kind    lexer.Token // lexer.X, lexer.CX, ...
+	Control []IdentExpr
+	Target  []IdentExpr
 }
 
 func (s *ApplyStmt) stmtNode() {}
@@ -168,6 +169,11 @@ func (s *ApplyStmt) String() string {
 
 	buf.WriteString(s.Token())
 	buf.WriteString(" ")
+	for _, t := range s.Control {
+		buf.WriteString(t.String())
+		buf.WriteString(", ")
+	}
+
 	for i, t := range s.Target {
 		buf.WriteString(t.String())
 

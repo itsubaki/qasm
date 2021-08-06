@@ -259,6 +259,76 @@ func TestApplyStmtString(t *testing.T) {
 			},
 			"x p[0], p[1]",
 		},
+		{
+			ast.ApplyStmt{
+				Kind: lexer.CX,
+				Control: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "p",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "0",
+						},
+					},
+				},
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "p",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "1",
+						},
+					},
+				},
+			},
+			"cx p[0], p[1]",
+		},
+		{
+			ast.ApplyStmt{
+				Kind: lexer.CCX,
+				Control: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "p",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "0",
+						},
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "p",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "1",
+						},
+					},
+				},
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "p",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "2",
+						},
+					},
+				},
+			},
+			"ccx p[0], p[1], p[2]",
+		},
 	}
 
 	for _, c := range cases {
