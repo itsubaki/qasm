@@ -55,9 +55,11 @@ func ExampleEvaluator() {
 			},
 			&ast.ApplyStmt{
 				Kind: lexer.X,
-				Target: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "q",
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "q",
+					},
 				},
 			},
 			&ast.AssignStmt{
@@ -68,9 +70,11 @@ func ExampleEvaluator() {
 				},
 				Right: &ast.MeasureStmt{
 					Kind: lexer.MEASURE,
-					Target: &ast.IdentExpr{
-						Kind:  lexer.STRING,
-						Value: "q",
+					Target: []ast.IdentExpr{
+						{
+							Kind:  lexer.STRING,
+							Value: "q",
+						},
 					},
 				},
 			},
@@ -136,9 +140,11 @@ func ExampleEvaluator_print() {
 			},
 			&ast.ApplyStmt{
 				Kind: lexer.H,
-				Target: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "q",
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "q",
+					},
 				},
 			},
 			&ast.PrintStmt{

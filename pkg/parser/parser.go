@@ -128,9 +128,11 @@ func (p *Parser) parseApply(kind lexer.Token) ast.Stmt {
 	token, value := p.l.Tokenize()
 	return &ast.ApplyStmt{
 		Kind: kind,
-		Target: &ast.IdentExpr{
-			Kind:  token,
-			Value: value,
+		Target: []ast.IdentExpr{
+			{
+				Kind:  token,
+				Value: value,
+			},
 		},
 	}
 }
@@ -139,9 +141,11 @@ func (p *Parser) parseMeasure() ast.Stmt {
 	token, value := p.l.Tokenize()
 	return &ast.MeasureStmt{
 		Kind: lexer.MEASURE,
-		Target: &ast.IdentExpr{
-			Kind:  token,
-			Value: value,
+		Target: []ast.IdentExpr{
+			{
+				Kind:  token,
+				Value: value,
+			},
 		},
 	}
 }

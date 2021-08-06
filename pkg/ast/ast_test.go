@@ -36,9 +36,11 @@ func ExampleOpenQASM_String() {
 			},
 			&ast.ApplyStmt{
 				Kind: lexer.X,
-				Target: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "q",
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "q",
+					},
 				},
 			},
 			&ast.AssignStmt{
@@ -49,9 +51,11 @@ func ExampleOpenQASM_String() {
 				},
 				Right: &ast.MeasureStmt{
 					Kind: lexer.MEASURE,
-					Target: &ast.IdentExpr{
-						Kind:  lexer.STRING,
-						Value: "q",
+					Target: []ast.IdentExpr{
+						{
+							Kind:  lexer.STRING,
+							Value: "q",
+						},
 					},
 				},
 			},
@@ -178,7 +182,13 @@ func TestResetStmtString(t *testing.T) {
 				Target: []ast.IdentExpr{
 					{
 						Kind:  lexer.STRING,
-						Value: "q",
+						Value: "p",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "0",
+						},
 					},
 					{
 						Kind:  lexer.STRING,
@@ -187,12 +197,12 @@ func TestResetStmtString(t *testing.T) {
 							LBRACKET: lexer.LBRACKET,
 							RBRACKET: lexer.RBRACKET,
 							Kind:     lexer.INT,
-							Value:    "2",
+							Value:    "1",
 						},
 					},
 				},
 			},
-			"reset q, p[2]",
+			"reset p[0], p[1]",
 		},
 	}
 
@@ -212,9 +222,11 @@ func TestApplyStmtString(t *testing.T) {
 		{
 			ast.ApplyStmt{
 				Kind: lexer.X,
-				Target: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "q",
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "q",
+					},
 				},
 			},
 			"x q",
@@ -222,18 +234,30 @@ func TestApplyStmtString(t *testing.T) {
 		{
 			ast.ApplyStmt{
 				Kind: lexer.X,
-				Target: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "p",
-					Index: &ast.IndexExpr{
-						LBRACKET: lexer.LBRACKET,
-						RBRACKET: lexer.RBRACKET,
-						Kind:     lexer.INT,
-						Value:    "2",
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "p",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "0",
+						},
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "p",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "1",
+						},
 					},
 				},
 			},
-			"x p[2]",
+			"x p[0], p[1]",
 		},
 	}
 
@@ -253,9 +277,11 @@ func TestMeasureStmtString(t *testing.T) {
 		{
 			ast.MeasureStmt{
 				Kind: lexer.MEASURE,
-				Target: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "q",
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "q",
+					},
 				},
 			},
 			"measure q",
@@ -263,18 +289,30 @@ func TestMeasureStmtString(t *testing.T) {
 		{
 			ast.MeasureStmt{
 				Kind: lexer.MEASURE,
-				Target: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "p",
-					Index: &ast.IndexExpr{
-						LBRACKET: lexer.LBRACKET,
-						RBRACKET: lexer.RBRACKET,
-						Kind:     lexer.INT,
-						Value:    "2",
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "p",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "0",
+						},
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "p",
+						Index: &ast.IndexExpr{
+							LBRACKET: lexer.LBRACKET,
+							RBRACKET: lexer.RBRACKET,
+							Kind:     lexer.INT,
+							Value:    "1",
+						},
 					},
 				},
 			},
-			"measure p[2]",
+			"measure p[0], p[1]",
 		},
 	}
 
@@ -300,9 +338,11 @@ func TestAssignStmtString(t *testing.T) {
 				},
 				Right: &ast.MeasureStmt{
 					Kind: lexer.MEASURE,
-					Target: &ast.IdentExpr{
-						Kind:  lexer.STRING,
-						Value: "q",
+					Target: []ast.IdentExpr{
+						{
+							Kind:  lexer.STRING,
+							Value: "q",
+						},
 					},
 				},
 			},
@@ -318,24 +358,26 @@ func TestAssignStmtString(t *testing.T) {
 						LBRACKET: lexer.LBRACKET,
 						RBRACKET: lexer.RBRACKET,
 						Kind:     lexer.INT,
-						Value:    "2",
+						Value:    "0",
 					},
 				},
 				Right: &ast.MeasureStmt{
 					Kind: lexer.MEASURE,
-					Target: &ast.IdentExpr{
-						Kind:  lexer.STRING,
-						Value: "q",
-						Index: &ast.IndexExpr{
-							LBRACKET: lexer.LBRACKET,
-							RBRACKET: lexer.RBRACKET,
-							Kind:     lexer.INT,
-							Value:    "2",
+					Target: []ast.IdentExpr{
+						{
+							Kind:  lexer.STRING,
+							Value: "q",
+							Index: &ast.IndexExpr{
+								LBRACKET: lexer.LBRACKET,
+								RBRACKET: lexer.RBRACKET,
+								Kind:     lexer.INT,
+								Value:    "0",
+							},
 						},
 					},
 				},
 			},
-			"c[2] = measure q[2]",
+			"c[0] = measure q[0]",
 		},
 	}
 

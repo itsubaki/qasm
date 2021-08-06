@@ -103,27 +103,29 @@ func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 }
 
 func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
-	qb, ok := e.Qubit[s.Target.Value]
-	if !ok {
-		return fmt.Errorf("invalid ident=%v", s.Target.Value)
-	}
+	for _, t := range s.Target {
+		qb, ok := e.Qubit[t.Value]
+		if !ok {
+			return fmt.Errorf("invalid ident=%v", t.Value)
+		}
 
-	if s.Target.Index != nil {
-		index := s.Target.Index.Int()
-		qb = append(make([]q.Qubit, 0), qb[index])
-	}
+		if t.Index != nil {
+			index := t.Index.Int()
+			qb = append(make([]q.Qubit, 0), qb[index])
+		}
 
-	switch s.Kind {
-	case lexer.X:
-		e.Q.X(qb...)
-	case lexer.Y:
-		e.Q.Y(qb...)
-	case lexer.Z:
-		e.Q.Z(qb...)
-	case lexer.H:
-		e.Q.H(qb...)
-	default:
-		return fmt.Errorf("invalid token=%v", s.Kind)
+		switch s.Kind {
+		case lexer.X:
+			e.Q.X(qb...)
+		case lexer.Y:
+			e.Q.Y(qb...)
+		case lexer.Z:
+			e.Q.Z(qb...)
+		case lexer.H:
+			e.Q.H(qb...)
+		default:
+			return fmt.Errorf("invalid token=%v", s.Kind)
+		}
 	}
 
 	return nil
@@ -146,14 +148,17 @@ func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 	return nil
 }
 
-func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
-	qb, ok := e.Qubit[s.Target.Value]
-	if !ok {
-		return nil, fmt.Errorf("invalid ident=%v", s.Target.Value)
+func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) (qb []q.Qubit, err error) {
+	for _, t := range s.Target {
+		qb, ok := e.Qubit[t.Value]
+		if !ok {
+			return nil, fmt.Errorf("invalid ident=%v", t.Value)
+		}
+
+		e.Q.Measure(qb...)
 	}
 
-	e.Q.Measure(qb...)
-	return qb, nil
+	return
 }
 
 func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {

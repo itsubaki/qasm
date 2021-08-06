@@ -141,8 +141,8 @@ func (s *ResetStmt) String() string {
 
 	buf.WriteString(s.Token())
 	buf.WriteString(" ")
-	for i, e := range s.Target {
-		buf.WriteString(e.String())
+	for i, t := range s.Target {
+		buf.WriteString(t.String())
 
 		if len(s.Target)-1 != i {
 			buf.WriteString(", ")
@@ -154,7 +154,7 @@ func (s *ResetStmt) String() string {
 
 type ApplyStmt struct {
 	Kind   lexer.Token // lexer.X, lexer.CX, ...
-	Target *IdentExpr
+	Target []IdentExpr
 }
 
 func (s *ApplyStmt) stmtNode() {}
@@ -168,14 +168,20 @@ func (s *ApplyStmt) String() string {
 
 	buf.WriteString(s.Token())
 	buf.WriteString(" ")
-	buf.WriteString(s.Target.String())
+	for i, t := range s.Target {
+		buf.WriteString(t.String())
+
+		if len(s.Target)-1 != i {
+			buf.WriteString(", ")
+		}
+	}
 
 	return buf.String()
 }
 
 type MeasureStmt struct {
 	Kind   lexer.Token // lexer.MEASURE
-	Target *IdentExpr
+	Target []IdentExpr
 }
 
 func (s *MeasureStmt) stmtNode() {}
@@ -189,7 +195,13 @@ func (s *MeasureStmt) String() string {
 
 	buf.WriteString(s.Token())
 	buf.WriteString(" ")
-	buf.WriteString(s.Target.String())
+	for i, t := range s.Target {
+		buf.WriteString(t.String())
+
+		if len(s.Target)-1 != i {
+			buf.WriteString(", ")
+		}
+	}
 
 	return buf.String()
 }
