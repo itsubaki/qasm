@@ -11,7 +11,7 @@ go install github.com/itsubaki/qasm@latest
 ## Example
 
 ```shell
-$ qasm -f testdata/print.qasm
+$ qasm -f testdata/test.qasm
 OPENQASM 3.0;
 include "stdgates.qasm";
 
