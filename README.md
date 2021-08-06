@@ -11,17 +11,18 @@ go install github.com/itsubaki/qasm@latest
 ## Example
 
 ```shell
-$ qasm -f testdata/print.qasm
+$ qasm -f testdata/bell.qasm
 OPENQASM 3.0;
 include "stdgates.qasm";
 
-qubit q;
+qubit[2] q;
 reset q;
 
-h q;
+h q[0];
+cx q[0], q[1];
 
-[0][  0]( 0.7071 0.0000i): 0.5000
-[1][  1]( 0.7071 0.0000i): 0.5000
+[00][  0]( 0.7071 0.0000i): 0.5000
+[11][  3]( 0.7071 0.0000i): 0.5000
 ```
 
 ## REPL

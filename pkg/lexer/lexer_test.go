@@ -19,7 +19,7 @@ func TestLexer(t *testing.T) {
 		want []Token
 	}{
 		{
-			in: "../../testdata/bell.qasm",
+			in: "../../testdata/test.qasm",
 			want: []Token{
 				{lexer.OPENQASM, "OPENQASM"},
 				{lexer.FLOAT, "3.0"},

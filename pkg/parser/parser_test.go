@@ -30,12 +30,10 @@ func ExampleParser() {
 	// Output:
 	// OPENQASM 3.0;
 	// include "stdgates.qasm";
-	// qubit q;
+	// qubit[2] q;
 	// reset q;
-	// h q;
-	// x q;
-	// y q;
-	// z q;
+	// h q[0];
+	// cx q[0], q[1];
 }
 
 func TestParseVersion(t *testing.T) {
