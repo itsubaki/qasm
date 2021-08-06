@@ -145,20 +145,18 @@ func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 	default:
 		return fmt.Errorf("invalid stmt=%v", s)
 	}
+
 	return nil
 }
 
-func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) (qb []q.Qubit, err error) {
-	for _, t := range s.Target {
-		qb, ok := e.Qubit[t.Value]
-		if !ok {
-			return nil, fmt.Errorf("invalid ident=%v", t.Value)
-		}
-
-		e.Q.Measure(qb...)
+func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
+	qb, ok := e.Qubit[s.Target[0].Value]
+	if !ok {
+		return nil, fmt.Errorf("invalid ident=%v", s.Target[0].Value)
 	}
 
-	return
+	e.Q.Measure(qb...)
+	return qb, nil
 }
 
 func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
