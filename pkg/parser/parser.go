@@ -109,7 +109,6 @@ func (p Parser) parseIdentList() []ast.IdentExpr {
 		}
 
 		out = append(out, p.parseIdent())
-		p.next()
 	}
 
 	return out
@@ -132,6 +131,8 @@ func (p *Parser) parseIdent() ast.IdentExpr {
 	}
 
 	expr.Index = p.parseIndex()
+	p.next()
+
 	return expr
 }
 
@@ -151,7 +152,6 @@ func (p *Parser) parseIndex() *ast.IndexExpr {
 		p.appendErr(fmt.Errorf("RBRACKET not found"))
 	}
 
-	p.next()
 	return &ast.IndexExpr{
 		LBRACKET: lbracket.Token,
 		RBRACKET: rbracket.Token,
