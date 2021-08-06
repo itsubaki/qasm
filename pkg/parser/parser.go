@@ -15,7 +15,7 @@ type Cursor struct {
 type Parser struct {
 	l      *lexer.Lexer
 	qasm   *ast.OpenQASM
-	errors []error
+	errors []string
 	cur    *Cursor
 }
 
@@ -27,12 +27,15 @@ func New(l *lexer.Lexer) *Parser {
 			Includes:   make([]ast.Expr, 0),
 			Statements: make([]ast.Stmt, 0),
 		},
-		errors: make([]error, 0),
+		errors: make([]string, 0),
 	}
 }
 
-func (p *Parser) Parse() *ast.OpenQASM {
+func (p *Parser) Errors() []string {
+	return p.errors
+}
 
+func (p *Parser) Parse() *ast.OpenQASM {
 	for {
 		p.next()
 		switch p.cur.Token {
@@ -66,7 +69,14 @@ func (p *Parser) next() *Cursor {
 	}
 
 	return p.cur
+}
 
+func (p *Parser) expect(t lexer.Token) {
+	if p.cur.Token == t {
+		return
+	}
+
+	p.appendErr(fmt.Errorf("%v not found", lexer.Tokens[t]))
 }
 
 func (p *Parser) appendIncl(s ast.Expr) {
@@ -78,24 +88,23 @@ func (p *Parser) appendStmt(s ast.Stmt) {
 }
 
 func (p *Parser) appendErr(e error) {
-	p.errors = append(p.errors, e)
+	p.errors = append(p.errors, e.Error())
 }
 
 func (p *Parser) parseVersion() string {
-	c := p.next()
-	if c.Token != lexer.FLOAT {
-		p.appendErr(fmt.Errorf("FLOAT not found"))
-		return ""
-	}
+	p.next()
+	p.expect(lexer.FLOAT)
 
-	return c.Literal
+	return p.cur.Literal
 }
 
 func (p *Parser) parseInclude() ast.Expr {
-	c := p.next()
+	p.next()
+	p.expect(lexer.STRING)
+
 	return &ast.IdentExpr{
-		Kind:  c.Token,
-		Value: c.Literal,
+		Kind:  p.cur.Token,
+		Value: p.cur.Literal,
 	}
 }
 
@@ -116,17 +125,15 @@ func (p Parser) parseIdentList() []ast.IdentExpr {
 
 func (p *Parser) parseIdent() ast.IdentExpr {
 	ident := p.next()
-
-	if ident.Token != lexer.IDENT {
-		p.appendErr(fmt.Errorf("IDENT not found"))
-	}
+	p.expect(lexer.IDENT)
 
 	expr := ast.IdentExpr{
 		Kind:  ident.Token,
 		Value: ident.Literal,
 	}
 
-	if p.next().Token != lexer.LBRACKET {
+	p.next()
+	if p.cur.Token != lexer.LBRACKET {
 		return expr
 	}
 
@@ -138,19 +145,13 @@ func (p *Parser) parseIdent() ast.IdentExpr {
 
 func (p *Parser) parseIndex() *ast.IndexExpr {
 	lbracket := p.cur
-	if p.cur.Token != lexer.LBRACKET {
-		p.appendErr(fmt.Errorf("LBRACKET not found"))
-	}
+	p.expect(lexer.LBRACKET)
 
 	index := p.next()
-	if p.cur.Token != lexer.INT {
-		p.appendErr(fmt.Errorf("INT not found"))
-	}
+	p.expect(lexer.INT)
 
 	rbracket := p.next()
-	if p.cur.Token != lexer.RBRACKET {
-		p.appendErr(fmt.Errorf("RBRACKET not found"))
-	}
+	p.expect(lexer.RBRACKET)
 
 	return &ast.IndexExpr{
 		LBRACKET: lbracket.Token,
@@ -161,39 +162,31 @@ func (p *Parser) parseIndex() *ast.IndexExpr {
 }
 
 func (p *Parser) parseLet() ast.Stmt {
-	kind := p.cur.Token
+	kind := p.cur.Token // lexer.QUBIT, lexer.BIT
+	c := p.next()       // ident or lbracket
 
 	// qubit q
-	c := p.next()
-	if c.Token == lexer.IDENT {
+	if p.cur.Token == lexer.IDENT {
 		return &ast.LetStmt{
 			Kind: kind,
 			Name: &ast.IdentExpr{
-				Kind:  c.Token,
-				Value: c.Literal,
+				Kind:  p.cur.Token,
+				Value: p.cur.Literal,
 			},
 		}
 	}
 
-	if p.cur.Token != lexer.LBRACKET {
-		p.appendErr(fmt.Errorf("LBRACKET not found"))
-	}
-
 	// qubit[2] q
-	index := p.next() // '2'
-	if p.cur.Token != lexer.INT {
-		p.appendErr(fmt.Errorf("INT not found"))
-	}
+	p.expect(lexer.LBRACKET)
 
-	brack := p.next() // ']'
-	if p.cur.Token != lexer.RBRACKET {
-		p.appendErr(fmt.Errorf("RBRACKET not found"))
-	}
+	index := p.next()
+	p.expect(lexer.INT)
 
-	ident := p.next() // q
-	if p.cur.Token != lexer.IDENT {
-		p.appendErr(fmt.Errorf("IDENT not found"))
-	}
+	brack := p.next()
+	p.expect(lexer.RBRACKET)
+
+	ident := p.next()
+	p.expect(lexer.IDENT)
 
 	return &ast.LetStmt{
 		Kind: kind,
@@ -211,8 +204,10 @@ func (p *Parser) parseLet() ast.Stmt {
 }
 
 func (p *Parser) parseReset() ast.Stmt {
+	p.expect(lexer.RESET)
+
 	return &ast.ResetStmt{
-		Kind:   lexer.RESET,
+		Kind:   p.cur.Token,
 		Target: p.parseIdentList(),
 	}
 }
@@ -225,18 +220,18 @@ func (p *Parser) parseApply() ast.Stmt {
 }
 
 func (p *Parser) parseMeasure() ast.Stmt {
+	p.expect(lexer.MEASURE)
+
 	return &ast.MeasureStmt{
-		Kind:   lexer.MEASURE,
+		Kind:   p.cur.Token,
 		Target: p.parseIdentList(),
 	}
 }
 
 func (p *Parser) parsePrint() ast.Stmt {
+	p.expect(lexer.PRINT)
+
 	return &ast.PrintStmt{
 		Kind: lexer.PRINT,
 	}
-}
-
-func (p *Parser) Errors() []error {
-	return p.errors
 }

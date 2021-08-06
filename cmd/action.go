@@ -31,7 +31,7 @@ func Action(c *cli.Context) error {
 	ast := p.Parse()
 	if errs := p.Errors(); len(errs) != 0 {
 		for _, err := range errs {
-			fmt.Println(err)
+			fmt.Printf("[ERROR] %v\n", err)
 		}
 
 		return fmt.Errorf("parse: %v", errs)
@@ -41,7 +41,7 @@ func Action(c *cli.Context) error {
 
 	e := evaluator.Default()
 	if err := e.Eval(ast); err != nil {
-		return fmt.Errorf("eval: %v\n", err)
+		return fmt.Errorf("[ERROR] eval: %v\n", err)
 	}
 
 	for _, s := range e.Q.State() {

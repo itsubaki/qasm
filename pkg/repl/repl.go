@@ -40,14 +40,14 @@ func New(in io.Reader, out io.Writer) {
 		ast := p.Parse()
 		if errs := p.Errors(); len(errs) != 0 {
 			for _, err := range errs {
-				fmt.Println(err)
+				fmt.Printf("[ERROR] %v\n", err)
 			}
 
 			continue
 		}
 
 		if err := e.Eval(ast); err != nil {
-			msg := fmt.Sprintf("eval: %v\n", err)
+			msg := fmt.Sprintf("[ERROR] eval: %v\n", err)
 			io.WriteString(out, msg)
 		}
 	}
