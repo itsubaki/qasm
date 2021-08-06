@@ -11,7 +11,7 @@ go install github.com/itsubaki/qasm@latest
 ## Example
 
 ```shell
-$ qasm -f testdata/test.qasm
+$ qasm -f testdata/print.qasm
 OPENQASM 3.0;
 include "stdgates.qasm";
 
@@ -35,4 +35,4 @@ $ qasm
 [1][  1]( 0.7071 0.0000i): 0.5000
 ```
 
- * `print` is built-in operation
+ * `print` is `built-in` operation

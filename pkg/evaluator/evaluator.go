@@ -90,10 +90,15 @@ func (e *Evaluator) evalLetStmt(s *ast.LetStmt) error {
 }
 
 func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
-	for _, n := range s.Target {
-		qb, ok := e.Qubit[n.Value]
+	for _, t := range s.Target {
+		qb, ok := e.Qubit[t.Value]
 		if !ok {
-			return fmt.Errorf("invalid ident=%v", n.Value)
+			return fmt.Errorf("IDENT=%v not found", t.Value)
+		}
+
+		if t.Index != nil {
+			e.Q.Reset(qb[t.Index.Int()])
+			continue
 		}
 
 		e.Q.Reset(qb...)
@@ -106,11 +111,15 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 	for _, t := range s.Target {
 		qb, ok := e.Qubit[t.Value]
 		if !ok {
-			return fmt.Errorf("invalid ident=%v", t.Value)
+			return fmt.Errorf("IDENT=%v not found", t.Value)
 		}
 
 		if t.Index != nil {
 			index := t.Index.Int()
+			if index > len(qb)-1 {
+				return fmt.Errorf("index out of range[%v] with length %v", index, len(qb))
+			}
+
 			qb = append(make([]q.Qubit, 0), qb[index])
 		}
 
@@ -124,7 +133,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 		case lexer.H:
 			e.Q.H(qb...)
 		default:
-			return fmt.Errorf("invalid token=%v", s.Kind)
+			return fmt.Errorf("gate=%v not found", s.Kind)
 		}
 	}
 
@@ -150,13 +159,21 @@ func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 }
 
 func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
-	qb, ok := e.Qubit[s.Target[0].Value]
-	if !ok {
-		return nil, fmt.Errorf("invalid ident=%v", s.Target[0].Value)
+	for _, t := range s.Target {
+		qb, ok := e.Qubit[t.Value]
+		if !ok {
+			return nil, fmt.Errorf("IDENT=%v not found", t.Value)
+		}
+
+		if t.Index != nil {
+			index := t.Index.Int()
+			qb = append(make([]q.Qubit, 0), qb[index])
+		}
+
+		e.Q.Measure(qb...)
 	}
 
-	e.Q.Measure(qb...)
-	return qb, nil
+	return e.Qubit[s.Target[0].Value], nil
 }
 
 func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {

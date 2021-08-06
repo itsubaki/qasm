@@ -32,6 +32,7 @@ func New(l *lexer.Lexer) *Parser {
 }
 
 func (p *Parser) Parse() *ast.OpenQASM {
+
 	for {
 		p.next()
 		switch p.cur.Token {
@@ -81,7 +82,7 @@ func (p *Parser) appendErr(e error) {
 func (p *Parser) parseVersion() string {
 	c := p.next()
 	if c.Token != lexer.FLOAT {
-		p.appendErr(fmt.Errorf("invalid token=%v", c.Literal))
+		p.appendErr(fmt.Errorf("FLOAT not found"))
 		return ""
 	}
 
@@ -96,12 +97,65 @@ func (p *Parser) parseInclude() ast.Expr {
 	}
 }
 
-func (p *Parser) parseIdent() *ast.IdentExpr {
-	return &ast.IdentExpr{}
+func (p Parser) parseIdentList() []ast.IdentExpr {
+	out := make([]ast.IdentExpr, 0)
+	out = append(out, p.parseIdent())
+
+	for {
+		if p.cur.Token != lexer.COMMA {
+			break
+		}
+
+		out = append(out, p.parseIdent())
+		p.next()
+	}
+
+	return out
+}
+
+func (p *Parser) parseIdent() ast.IdentExpr {
+	ident := p.next()
+
+	if ident.Token != lexer.IDENT {
+		p.appendErr(fmt.Errorf("IDENT not found"))
+	}
+
+	expr := ast.IdentExpr{
+		Kind:  ident.Token,
+		Value: ident.Literal,
+	}
+
+	if p.next().Token != lexer.LBRACKET {
+		return expr
+	}
+
+	expr.Index = p.parseIndex()
+	return expr
 }
 
 func (p *Parser) parseIndex() *ast.IndexExpr {
-	return &ast.IndexExpr{}
+	lbracket := p.cur
+	if p.cur.Token != lexer.LBRACKET {
+		p.appendErr(fmt.Errorf("LBRACKET not found"))
+	}
+
+	index := p.next()
+	if p.cur.Token != lexer.INT {
+		p.appendErr(fmt.Errorf("INT not found"))
+	}
+
+	rbracket := p.next()
+	if p.cur.Token != lexer.RBRACKET {
+		p.appendErr(fmt.Errorf("RBRACKET not found"))
+	}
+
+	p.next()
+	return &ast.IndexExpr{
+		LBRACKET: lbracket.Token,
+		RBRACKET: rbracket.Token,
+		Kind:     index.Token,
+		Value:    index.Literal,
+	}
 }
 
 func (p *Parser) parseLet() ast.Stmt {
@@ -119,11 +173,25 @@ func (p *Parser) parseLet() ast.Stmt {
 		}
 	}
 
+	if p.cur.Token != lexer.LBRACKET {
+		p.appendErr(fmt.Errorf("LBRACKET not found"))
+	}
+
 	// qubit[2] q
-	// TODO check token
 	index := p.next() // '2'
+	if p.cur.Token != lexer.INT {
+		p.appendErr(fmt.Errorf("INT not found"))
+	}
+
 	brack := p.next() // ']'
+	if p.cur.Token != lexer.RBRACKET {
+		p.appendErr(fmt.Errorf("RBRACKET not found"))
+	}
+
 	ident := p.next() // q
+	if p.cur.Token != lexer.IDENT {
+		p.appendErr(fmt.Errorf("IDENT not found"))
+	}
 
 	return &ast.LetStmt{
 		Kind: kind,
@@ -141,45 +209,23 @@ func (p *Parser) parseLet() ast.Stmt {
 }
 
 func (p *Parser) parseReset() ast.Stmt {
-	c := p.next()
-
 	return &ast.ResetStmt{
-		Kind: lexer.RESET,
-		Target: []ast.IdentExpr{
-			{
-				Kind:  c.Token,
-				Value: c.Literal,
-			},
-		},
+		Kind:   lexer.RESET,
+		Target: p.parseIdentList(),
 	}
 }
 
 func (p *Parser) parseApply() ast.Stmt {
-	kind := p.cur.Token
-	c := p.next()
-
 	return &ast.ApplyStmt{
-		Kind: kind,
-		Target: []ast.IdentExpr{
-			{
-				Kind:  c.Token,
-				Value: c.Literal,
-			},
-		},
+		Kind:   p.cur.Token,
+		Target: p.parseIdentList(),
 	}
 }
 
 func (p *Parser) parseMeasure() ast.Stmt {
-	c := p.next()
-
 	return &ast.MeasureStmt{
-		Kind: lexer.MEASURE,
-		Target: []ast.IdentExpr{
-			{
-				Kind:  c.Token,
-				Value: c.Literal,
-			},
-		},
+		Kind:   lexer.MEASURE,
+		Target: p.parseIdentList(),
 	}
 }
 

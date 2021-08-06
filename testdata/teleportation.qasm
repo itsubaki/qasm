@@ -1,21 +1,21 @@
 OPENQASM 3.0;
 include "stdgates.qasm";
 
-qubit    phi;
+qubit    p;
 qubit[2] q;
 bit[2]   c;
 
-reset phi, q;
+reset p, q;
 
-x phi;
+x p;
 
 h  q[0];
 cx q[0], q[1];
-cx phi,  q[0];
-h  phi;
+cx p,  q[0];
+h  p;
 
 cx q[0], q[1];
-cz phi,  q[1];
+cz p, q[1];
 
-c[0] = measure phi;
+c[0] = measure p;
 c[1] = measure q[0];

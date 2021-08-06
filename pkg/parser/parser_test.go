@@ -33,6 +33,9 @@ func ExampleParser() {
 	// qubit q;
 	// reset q;
 	// h q;
+	// x q;
+	// y q;
+	// z q;
 }
 
 func TestParseVersion(t *testing.T) {
@@ -103,6 +106,14 @@ func TestParseStmt(t *testing.T) {
 		{
 			"print",
 			"print",
+		},
+		{
+			"x p, q",
+			"x p, q",
+		},
+		{
+			"x p[0], q[1]",
+			"x p[0], q[1]",
 		},
 	}
 

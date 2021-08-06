@@ -62,6 +62,33 @@ func ExampleEvaluator() {
 					},
 				},
 			},
+			// &ast.ApplyStmt{
+			// 	Kind: lexer.CX,
+			// 	Control: []ast.IdentExpr{
+			// 		{
+			// 			Kind:  lexer.STRING,
+			// 			Value: "q",
+			// 			Index: &ast.IndexExpr{
+			// 				LBRACKET: lexer.LBRACKET,
+			// 				RBRACKET: lexer.RBRACKET,
+			// 				Kind:     lexer.INT,
+			// 				Value:    "0",
+			// 			},
+			// 		},
+			// 	},
+			// 	Target: []ast.IdentExpr{
+			// 		{
+			// 			Kind:  lexer.STRING,
+			// 			Value: "q",
+			// 			Index: &ast.IndexExpr{
+			// 				LBRACKET: lexer.LBRACKET,
+			// 				RBRACKET: lexer.RBRACKET,
+			// 				Kind:     lexer.INT,
+			// 				Value:    "1",
+			// 			},
+			// 		},
+			// 	},
+			// },
 			&ast.AssignStmt{
 				Kind: lexer.EQUALS,
 				Left: &ast.IdentExpr{

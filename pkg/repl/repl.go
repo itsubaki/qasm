@@ -30,6 +30,10 @@ func New(in io.Reader, out io.Writer) {
 			break
 		}
 
+		if txt == "clear" {
+			e = evaluator.Default()
+		}
+
 		l := lexer.New(strings.NewReader(txt))
 		p := parser.New(l)
 
