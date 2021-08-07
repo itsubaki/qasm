@@ -136,12 +136,22 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 		e.Q.Z(in...)
 	case lexer.H:
 		e.Q.H(in...)
+	case lexer.T:
+		e.Q.T(in...)
+	case lexer.S:
+		e.Q.S(in...)
 	case lexer.CX:
 		e.Q.CNOT(in[0], in[1])
 	case lexer.CZ:
 		e.Q.CZ(in[0], in[1])
 	case lexer.CCX:
 		e.Q.CCNOT(in[0], in[1], in[2])
+	case lexer.SWAP:
+		e.Q.Swap(in...)
+	case lexer.QFT:
+		e.Q.QFT(in...)
+	case lexer.IQFT:
+		e.Q.InvQFT(in...)
 	default:
 		return fmt.Errorf("gate=%v not found", s.Kind)
 	}

@@ -29,7 +29,7 @@ func ExampleParser() {
 
 	// Output:
 	// OPENQASM 3.0;
-	// include "stdgates.qasm";
+	// include "itsubaki/q.qasm";
 	// qubit[2] q;
 	// bit[2] c;
 	// reset q;

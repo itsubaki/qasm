@@ -26,7 +26,7 @@ func TestLexer(t *testing.T) {
 				{lexer.SEMICOLON, ";"},
 
 				{lexer.INCLUDE, "include"},
-				{lexer.STRING, "\"stdgates.qasm\""},
+				{lexer.STRING, "\"itsubaki/q.qasm\""},
 				{lexer.SEMICOLON, ";"},
 
 				{lexer.QUBIT, "qubit"},

@@ -1,5 +1,5 @@
 OPENQASM 3.0;
-include "stdgates.qasm";
+include "itsubaki/q.qasm";
 
 qubit    p;
 qubit[2] q;

@@ -13,7 +13,7 @@ go install github.com/itsubaki/qasm@latest
 ```shell
 $ qasm -f testdata/bell.qasm
 OPENQASM 3.0;
-include "stdgates.qasm";
+include "itsubaki/q.qasm";
 
 qubit[2] q;
 reset q;
@@ -30,19 +30,25 @@ cx q[0], q[1];
 ```shell
 $ qasm
 >> OPENQASM 3.0;
->> include "stdgates.qasm";
+>> include "itsubaki/q.qasm";
 >> 
 >> qubit q
+[0][  0]( 1.0000 0.0000i): 1.0000
 >> qubit p
->> reset q, p
->> 
+[00][  0]( 1.0000 0.0000i): 1.0000
 >> h q
+[00][  0]( 0.7071 0.0000i): 0.5000
+[10][  2]( 0.7071 0.0000i): 0.5000
 >> cx q, p
->> 
->> print
 [00][  0]( 0.7071 0.0000i): 0.5000
 [11][  3]( 0.7071 0.0000i): 0.5000
 >> quit
 ```
 
- * `print` is `built-in` operation
+## built-in
+
+ * `print`
+ * `x`, `y`, `z`, `h`, `s`, `t`
+ * `cx`, `cz`
+ * `ccx`
+ * `swap`, `qft`, `iqft`

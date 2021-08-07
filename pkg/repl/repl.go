@@ -16,7 +16,7 @@ func New(in io.Reader, out io.Writer) {
 	e := evaluator.Default()
 
 	fmt.Println(">> OPENQASM 3.0;")
-	fmt.Println(">> include \"stdgates.qasm\";")
+	fmt.Println(">> include \"itsubaki/q.qasm\";")
 	for {
 		fmt.Printf(">> ")
 		if ok := s.Scan(); !ok {
@@ -34,6 +34,7 @@ func New(in io.Reader, out io.Writer) {
 
 		if txt == "clear" {
 			e = evaluator.Default()
+			continue
 		}
 
 		l := lexer.New(strings.NewReader(txt))
@@ -51,6 +52,14 @@ func New(in io.Reader, out io.Writer) {
 		if err := e.Eval(ast); err != nil {
 			msg := fmt.Sprintf("[ERROR] eval: %v\n", err)
 			io.WriteString(out, msg)
+		}
+
+		if len(e.Qubit) == 0 {
+			continue
+		}
+
+		for _, s := range e.Q.State() {
+			fmt.Println(s)
 		}
 	}
 }
