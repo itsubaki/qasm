@@ -33,7 +33,7 @@ func New(in io.Reader, out io.Writer) {
 		}
 
 		if txt == "clear" {
-			e = evaluator.Default()
+			e.Clear()
 			continue
 		}
 
@@ -54,7 +54,7 @@ func New(in io.Reader, out io.Writer) {
 			io.WriteString(out, msg)
 		}
 
-		if e.Print || len(e.Qubit) == 0 {
+		if txt == "print" || len(e.Qubit) == 0 {
 			continue
 		}
 

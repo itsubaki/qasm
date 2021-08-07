@@ -12,7 +12,6 @@ type Evaluator struct {
 	Bit   map[string][]int
 	Qubit map[string][]q.Qubit
 	Q     *q.Q
-	Print bool
 }
 
 func New(qsim *q.Q) *Evaluator {
@@ -25,6 +24,12 @@ func New(qsim *q.Q) *Evaluator {
 
 func Default() *Evaluator {
 	return New(q.New())
+}
+
+func (e *Evaluator) Clear() {
+	e.Bit = make(map[string][]int)
+	e.Qubit = make(map[string][]q.Qubit)
+	e.Q = q.New()
 }
 
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
@@ -204,7 +209,6 @@ func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
 	for _, s := range e.Q.State() {
 		fmt.Println(s)
 	}
-	e.Print = true
 
 	return nil
 }
