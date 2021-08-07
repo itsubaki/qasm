@@ -54,7 +54,7 @@ func New(in io.Reader, out io.Writer) {
 			io.WriteString(out, msg)
 		}
 
-		if len(e.Qubit) == 0 {
+		if e.Print || len(e.Qubit) == 0 {
 			continue
 		}
 

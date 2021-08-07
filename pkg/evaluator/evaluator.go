@@ -12,6 +12,7 @@ type Evaluator struct {
 	Bit   map[string][]int
 	Qubit map[string][]q.Qubit
 	Q     *q.Q
+	Print bool
 }
 
 func New(qsim *q.Q) *Evaluator {
@@ -203,6 +204,7 @@ func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
 	for _, s := range e.Q.State() {
 		fmt.Println(s)
 	}
+	e.Print = true
 
 	return nil
 }
