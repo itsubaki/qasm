@@ -5,7 +5,7 @@ qubit    p;
 qubit[2] q;
 reset p, q;
 
-x p;
+h p;
 
 h  q[0];
 cx q[0], q[1];
