@@ -15,6 +15,9 @@ func New(in io.Reader, out io.Writer) {
 	s := bufio.NewScanner(in)
 	e := evaluator.Default()
 
+	fmt.Println(">> OPENQASM 3.0;")
+	fmt.Println(">> include \"stdgates.qasm\";")
+	fmt.Println(">> include \"itsubaki/q.qasm\";")
 	for {
 		fmt.Printf(">> ")
 		if ok := s.Scan(); !ok {
