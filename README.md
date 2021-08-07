@@ -47,8 +47,8 @@ $ qasm
 
 ## built-in
 
- * `print`
  * `x`, `y`, `z`, `h`, `s`, `t`
  * `cx`, `cz`
  * `ccx`
  * `swap`, `qft`, `iqft`
+ * `print`
