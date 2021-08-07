@@ -31,7 +31,6 @@ cx q[0], q[1];
 $ qasm
 >> OPENQASM 3.0;
 >> include "stdgates.qasm";
->> include "itsubaki/q.qasm";
 >> 
 >> qubit q
 >> qubit p

@@ -17,7 +17,6 @@ func New(in io.Reader, out io.Writer) {
 
 	fmt.Println(">> OPENQASM 3.0;")
 	fmt.Println(">> include \"stdgates.qasm\";")
-	fmt.Println(">> include \"itsubaki/q.qasm\";")
 	for {
 		fmt.Printf(">> ")
 		if ok := s.Scan(); !ok {
