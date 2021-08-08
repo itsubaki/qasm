@@ -101,7 +101,7 @@ func (i *IndexExpr) Int() int {
 }
 
 type DeclStmt struct {
-	Kind  lexer.Token // lexer.QUBIT
+	Kind  lexer.Token // lexer.QUBIT, lexer.BIT
 	Name  *IdentExpr
 	Index *IndexExpr
 }
