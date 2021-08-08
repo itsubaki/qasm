@@ -11,5 +11,3 @@ x r1[3];
 h r0;
 cmodexp2 a, N, r0, r1;
 iqft r0;
-
-measure r1;
