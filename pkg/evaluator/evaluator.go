@@ -9,6 +9,7 @@ import (
 )
 
 type Evaluator struct {
+	Const map[string]int
 	Bit   map[string][]int
 	Qubit map[string][]q.Qubit
 	Q     *q.Q
@@ -16,6 +17,7 @@ type Evaluator struct {
 
 func New(qsim *q.Q) *Evaluator {
 	return &Evaluator{
+		Const: make(map[string]int),
 		Bit:   make(map[string][]int),
 		Qubit: make(map[string][]q.Qubit),
 		Q:     qsim,
@@ -35,8 +37,12 @@ func (e *Evaluator) Clear() {
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	for _, stmt := range p.Statements {
 		switch s := stmt.(type) {
-		case *ast.LetStmt:
-			if err := e.evalLetStmt(s); err != nil {
+		case *ast.DeclConstStmt:
+			if err := e.evalDeclConstStmt(s); err != nil {
+				return fmt.Errorf("let: %v", err)
+			}
+		case *ast.DeclStmt:
+			if err := e.evalDeclStmt(s); err != nil {
 				return fmt.Errorf("let: %v", err)
 			}
 		case *ast.ResetStmt:
@@ -67,7 +73,16 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	return nil
 }
 
-func (e *Evaluator) evalLetStmt(s *ast.LetStmt) error {
+func (e *Evaluator) evalDeclConstStmt(s *ast.DeclConstStmt) error {
+	if _, ok := e.Const[s.Name.Value]; ok {
+		return fmt.Errorf("already exists=%v", s.Name.Value)
+	}
+
+	e.Const[s.Name.Value] = s.Int()
+	return nil
+}
+
+func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 	n := 1
 	if s.Index != nil {
 		n = s.Index.Int()
@@ -114,6 +129,16 @@ func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 }
 
 func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
+	if s.Kind == lexer.CMODEXP2 {
+		a, _ := e.Const[s.Target[0].Value]
+		N, _ := e.Const[s.Target[1].Value]
+		r0, _ := e.Qubit[s.Target[2].Value]
+		r1, _ := e.Qubit[s.Target[3].Value]
+
+		e.Q.CModExp2(a, N, r0, r1)
+		return nil
+	}
+
 	in := make([]q.Qubit, 0)
 	for _, t := range s.Target {
 		qb, ok := e.Qubit[t.Value]

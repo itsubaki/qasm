@@ -41,6 +41,7 @@ const (
 	keyword_begin
 	OPENQASM // OPENQASM
 	INCLUDE  // include
+	CONST    // const
 	QUBIT    // qubit
 	BIT      // bit
 	RESET    // reset
@@ -96,6 +97,7 @@ var Tokens = [...]string{
 	// Keywords
 	OPENQASM: "OPENQASM",
 	INCLUDE:  "include",
+	CONST:    "const",
 	QUBIT:    "qubit",
 	BIT:      "bit",
 	RESET:    "reset",

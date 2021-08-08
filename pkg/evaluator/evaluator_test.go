@@ -18,7 +18,7 @@ func ExampleEvaluator() {
 			},
 		},
 		Statements: []ast.Stmt{
-			&ast.LetStmt{
+			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Index: &ast.IndexExpr{
 					LBRACKET: lexer.LBRACKET,
@@ -31,7 +31,7 @@ func ExampleEvaluator() {
 					Value: "q",
 				},
 			},
-			&ast.LetStmt{
+			&ast.DeclStmt{
 				Kind: lexer.BIT,
 				Index: &ast.IndexExpr{
 					LBRACKET: lexer.LBRACKET,
@@ -151,7 +151,7 @@ func ExampleEvaluator_print() {
 			},
 		},
 		Statements: []ast.Stmt{
-			&ast.LetStmt{
+			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Index: &ast.IndexExpr{
 					LBRACKET: lexer.LBRACKET,

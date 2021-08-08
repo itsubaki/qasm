@@ -100,19 +100,19 @@ func (i *IndexExpr) Int() int {
 	return v
 }
 
-type LetStmt struct {
-	Kind  lexer.Token // lexer.QUBIT, lexer.BIT
+type DeclStmt struct {
+	Kind  lexer.Token // lexer.QUBIT
 	Name  *IdentExpr
 	Index *IndexExpr
 }
 
-func (s *LetStmt) stmtNode() {}
+func (s *DeclStmt) stmtNode() {}
 
-func (s *LetStmt) Literal() string {
+func (s *DeclStmt) Literal() string {
 	return lexer.Tokens[s.Kind]
 }
 
-func (s *LetStmt) String() string {
+func (s *DeclStmt) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(s.Literal())
@@ -123,6 +123,41 @@ func (s *LetStmt) String() string {
 	buf.WriteString(s.Name.String())
 
 	return buf.String()
+}
+
+type DeclConstStmt struct {
+	Kind  lexer.Token // lexer.CONST
+	Name  *IdentExpr
+	Value string
+}
+
+func (s *DeclConstStmt) stmtNode() {}
+
+func (s *DeclConstStmt) Literal() string {
+	return lexer.Tokens[s.Kind]
+}
+
+func (s *DeclConstStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Literal())
+	buf.WriteString(" ")
+	buf.WriteString(s.Name.String())
+	buf.WriteString(" ")
+	buf.WriteString(lexer.Tokens[lexer.EQUALS])
+	buf.WriteString(" ")
+	buf.WriteString(s.Value)
+
+	return buf.String()
+}
+
+func (s *DeclConstStmt) Int() int {
+	v, err := strconv.Atoi(s.Value)
+	if err != nil {
+		panic(err)
+	}
+
+	return v
 }
 
 type ResetStmt struct {

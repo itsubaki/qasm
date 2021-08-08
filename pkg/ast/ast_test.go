@@ -18,7 +18,7 @@ func ExampleOpenQASM_String() {
 			},
 		},
 		Statements: []ast.Stmt{
-			&ast.LetStmt{
+			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
@@ -108,13 +108,13 @@ func TestIdentExprString(t *testing.T) {
 	}
 }
 
-func TestLetStmtString(t *testing.T) {
+func TestDeclStmtString(t *testing.T) {
 	var cases = []struct {
-		in   ast.LetStmt
+		in   ast.Stmt
 		want string
 	}{
 		{
-			ast.LetStmt{
+			&ast.DeclStmt{
 				Kind: lexer.BIT,
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
@@ -124,7 +124,7 @@ func TestLetStmtString(t *testing.T) {
 			"bit c",
 		},
 		{
-			ast.LetStmt{
+			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
@@ -134,7 +134,7 @@ func TestLetStmtString(t *testing.T) {
 			"qubit q",
 		},
 		{
-			ast.LetStmt{
+			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Index: &ast.IndexExpr{
 					LBRACKET: lexer.LBRACKET,
@@ -148,6 +148,17 @@ func TestLetStmtString(t *testing.T) {
 				},
 			},
 			"qubit[2] q",
+		},
+		{
+			&ast.DeclConstStmt{
+				Kind: lexer.CONST,
+				Name: &ast.IdentExpr{
+					Kind:  lexer.STRING,
+					Value: "N",
+				},
+				Value: "15",
+			},
+			"const N = 15",
 		},
 	}
 

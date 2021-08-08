@@ -43,8 +43,10 @@ func (p *Parser) Parse() *ast.OpenQASM {
 			p.qasm.Version = p.parseVersion()
 		case lexer.INCLUDE:
 			p.appendIncl(p.parseInclude())
+		case lexer.CONST:
+			p.appendStmt(p.parseConstDecl())
 		case lexer.QUBIT, lexer.BIT:
-			p.appendStmt(p.parseLet())
+			p.appendStmt(p.parseDecl())
 		case lexer.RESET:
 			p.appendStmt(p.parseReset())
 		case lexer.MEASURE:
@@ -169,13 +171,35 @@ func (p *Parser) parseIndex() *ast.IndexExpr {
 	}
 }
 
-func (p *Parser) parseLet() ast.Stmt {
+func (p *Parser) parseConstDecl() ast.Stmt {
+	kind := p.cur.Token // lexer.CONST
+
+	n := p.next()
+	p.expect(lexer.IDENT)
+
+	p.next()
+	p.expect(lexer.EQUALS)
+
+	v := p.next()
+	p.expect(lexer.INT)
+
+	return &ast.DeclConstStmt{
+		Kind: kind,
+		Name: &ast.IdentExpr{
+			Kind:  n.Token,
+			Value: n.Literal,
+		},
+		Value: v.Literal,
+	}
+}
+
+func (p *Parser) parseDecl() ast.Stmt {
 	kind := p.cur.Token // lexer.QUBIT, lexer.BIT
 	c := p.next()       // ident or lbracket
 
 	// qubit q
 	if p.cur.Token == lexer.IDENT {
-		return &ast.LetStmt{
+		return &ast.DeclStmt{
 			Kind: kind,
 			Name: &ast.IdentExpr{
 				Kind:  p.cur.Token,
@@ -196,7 +220,7 @@ func (p *Parser) parseLet() ast.Stmt {
 	ident := p.next()
 	p.expect(lexer.IDENT)
 
-	return &ast.LetStmt{
+	return &ast.DeclStmt{
 		Kind: kind,
 		Name: &ast.IdentExpr{
 			Kind:  ident.Token,
