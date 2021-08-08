@@ -44,7 +44,7 @@ func (p *Parser) Parse() *ast.OpenQASM {
 		case lexer.INCLUDE:
 			p.appendIncl(p.parseInclude())
 		case lexer.CONST:
-			p.appendStmt(p.parseConstDecl())
+			p.appendStmt(p.parseDeclConst())
 		case lexer.QUBIT, lexer.BIT:
 			p.appendStmt(p.parseDecl())
 		case lexer.RESET:
@@ -171,7 +171,7 @@ func (p *Parser) parseIndex() *ast.IndexExpr {
 	}
 }
 
-func (p *Parser) parseConstDecl() ast.Stmt {
+func (p *Parser) parseDeclConst() ast.Stmt {
 	kind := p.cur.Token // lexer.CONST
 
 	n := p.next()

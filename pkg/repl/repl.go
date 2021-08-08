@@ -54,12 +54,13 @@ func New(in io.Reader, out io.Writer) {
 			io.WriteString(out, msg)
 		}
 
-		if txt == "print" || len(e.Qubit) == 0 {
+		if txt == "print" {
 			continue
 		}
 
-		for _, s := range e.Q.State() {
-			fmt.Println(s)
+		if err := e.Println(); err != nil {
+			msg := fmt.Sprintf("[ERROR] println: %v\n", err)
+			io.WriteString(out, msg)
 		}
 	}
 }

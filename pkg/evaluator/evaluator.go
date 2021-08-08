@@ -12,6 +12,7 @@ type Evaluator struct {
 	Const map[string]int
 	Bit   map[string][]int
 	Qubit map[string][]q.Qubit
+	Order []string
 	Q     *q.Q
 }
 
@@ -20,6 +21,7 @@ func New(qsim *q.Q) *Evaluator {
 		Const: make(map[string]int),
 		Bit:   make(map[string][]int),
 		Qubit: make(map[string][]q.Qubit),
+		Order: make([]string, 0),
 		Q:     qsim,
 	}
 }
@@ -31,6 +33,7 @@ func Default() *Evaluator {
 func (e *Evaluator) Clear() {
 	e.Bit = make(map[string][]int)
 	e.Qubit = make(map[string][]q.Qubit)
+	e.Order = make([]string, 0)
 	e.Q = q.New()
 }
 
@@ -50,6 +53,14 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 				return fmt.Errorf("reset: %v", err)
 			}
 		case *ast.ApplyStmt:
+			if s.Kind == lexer.CMODEXP2 {
+				if err := e.evalApplyCModExp2(s); err != nil {
+					return fmt.Errorf("apply: %v", err)
+				}
+
+				continue
+			}
+
 			if err := e.evalApplyStmt(s); err != nil {
 				return fmt.Errorf("apply: %v", err)
 			}
@@ -74,11 +85,12 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 }
 
 func (e *Evaluator) evalDeclConstStmt(s *ast.DeclConstStmt) error {
-	if _, ok := e.Const[s.Name.Value]; ok {
-		return fmt.Errorf("already exists=%v", s.Name.Value)
+	ident := s.Name.Value
+	if _, ok := e.Const[ident]; ok {
+		return fmt.Errorf("already exists=%v", ident)
 	}
 
-	e.Const[s.Name.Value] = s.Int()
+	e.Const[ident] = s.Int()
 	return nil
 }
 
@@ -87,23 +99,25 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 	if s.Index != nil {
 		n = s.Index.Int()
 	}
+	ident := s.Name.Value
 
 	if s.Kind == lexer.QUBIT {
-		if _, ok := e.Qubit[s.Name.Value]; ok {
-			return fmt.Errorf("already exists=%v", s.Name.Value)
+		if _, ok := e.Qubit[ident]; ok {
+			return fmt.Errorf("already exists=%v", ident)
 		}
 
 		qb := e.Q.ZeroWith(n)
-		e.Qubit[s.Name.Value] = qb
+		e.Qubit[ident] = qb
+		e.Order = append(e.Order, ident)
 		return nil
 	}
 
 	if s.Kind == lexer.BIT {
-		if _, ok := e.Bit[s.Name.Value]; ok {
-			return fmt.Errorf("already exists=%v", s.Name.Value)
+		if _, ok := e.Bit[ident]; ok {
+			return fmt.Errorf("already exists=%v", ident)
 		}
 
-		e.Bit[s.Name.Value] = make([]int, n)
+		e.Bit[ident] = make([]int, n)
 		return nil
 	}
 
@@ -112,9 +126,10 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 
 func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 	for _, t := range s.Target {
-		qb, ok := e.Qubit[t.Value]
+		ident := t.Value
+		qb, ok := e.Qubit[ident]
 		if !ok {
-			return fmt.Errorf("IDENT=%v not found", t.Value)
+			return fmt.Errorf("IDENT=%v not found", ident)
 		}
 
 		if t.Index != nil {
@@ -128,22 +143,42 @@ func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 	return nil
 }
 
-func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
-	if s.Kind == lexer.CMODEXP2 {
-		a, _ := e.Const[s.Target[0].Value]
-		N, _ := e.Const[s.Target[1].Value]
-		r0, _ := e.Qubit[s.Target[2].Value]
-		r1, _ := e.Qubit[s.Target[3].Value]
-
-		e.Q.CModExp2(a, N, r0, r1)
-		return nil
+func (e *Evaluator) evalApplyCModExp2(s *ast.ApplyStmt) error {
+	if len(s.Target) != 4 {
+		return fmt.Errorf("invalid target length %v", len(s.Target))
 	}
 
+	a, ok := e.Const[s.Target[0].Value]
+	if !ok {
+		return fmt.Errorf("IDENT=%v not found", s.Target[0].Value)
+	}
+
+	N, ok := e.Const[s.Target[1].Value]
+	if !ok {
+		return fmt.Errorf("IDENT=%v not found", s.Target[1].Value)
+	}
+
+	r0, ok := e.Qubit[s.Target[2].Value]
+	if !ok {
+		return fmt.Errorf("IDENT=%v not found", s.Target[2].Value)
+	}
+
+	r1, ok := e.Qubit[s.Target[3].Value]
+	if !ok {
+		return fmt.Errorf("IDENT=%v not found", s.Target[3].Value)
+	}
+
+	e.Q.CModExp2(a, N, r0, r1)
+	return nil
+}
+
+func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 	in := make([]q.Qubit, 0)
 	for _, t := range s.Target {
-		qb, ok := e.Qubit[t.Value]
+		ident := t.Value
+		qb, ok := e.Qubit[ident]
 		if !ok {
-			return fmt.Errorf("IDENT=%v not found", t.Value)
+			return fmt.Errorf("IDENT=%v not found", ident)
 		}
 
 		if t.Index != nil {
@@ -210,9 +245,10 @@ func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 
 func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 	for _, t := range s.Target {
-		qb, ok := e.Qubit[t.Value]
+		ident := t.Value
+		qb, ok := e.Qubit[ident]
 		if !ok {
-			return nil, fmt.Errorf("IDENT=%v not found", t.Value)
+			return nil, fmt.Errorf("IDENT=%v not found", ident)
 		}
 
 		if t.Index != nil {
@@ -227,11 +263,25 @@ func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 }
 
 func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
+	return e.Println()
+}
+
+func (e *Evaluator) Println() error {
 	if len(e.Qubit) == 0 {
 		return nil
 	}
 
-	for _, s := range e.Q.State() {
+	index := make([][]int, 0)
+	for _, ident := range e.Order {
+		qb, ok := e.Qubit[ident]
+		if !ok {
+			return fmt.Errorf("IDENT=%v not found", ident)
+		}
+
+		index = append(index, q.Index(qb...))
+	}
+
+	for _, s := range e.Q.Raw().State(index...) {
 		fmt.Println(s)
 	}
 
