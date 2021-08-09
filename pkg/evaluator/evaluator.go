@@ -30,13 +30,6 @@ func Default() *Evaluator {
 	return New(q.New())
 }
 
-func (e *Evaluator) Clear() {
-	e.Bit = make(map[string][]int)
-	e.Qubit = make(map[string][]q.Qubit)
-	e.Order = make([]string, 0)
-	e.Q = q.New()
-}
-
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	for _, stmt := range p.Statements {
 		switch s := stmt.(type) {

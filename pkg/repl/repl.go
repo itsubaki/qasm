@@ -33,7 +33,7 @@ func Run(in io.Reader, out io.Writer) error {
 		}
 
 		if txt == "clear" {
-			e.Clear()
+			e = evaluator.Default()
 			continue
 		}
 
