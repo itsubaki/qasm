@@ -6,6 +6,7 @@ import (
 	"github.com/itsubaki/qasm/cmd"
 	"github.com/itsubaki/qasm/cmd/lex"
 	"github.com/itsubaki/qasm/cmd/parse"
+	"github.com/itsubaki/qasm/cmd/repl"
 	"github.com/urfave/cli/v2"
 )
 
@@ -47,9 +48,16 @@ func New() *cli.App {
 		},
 	}
 
+	repl := cli.Command{
+		Name:   "repl",
+		Action: repl.Action,
+		Usage:  "",
+	}
+
 	app.Commands = []*cli.Command{
 		&lexer,
 		&parser,
+		&repl,
 	}
 
 	return app

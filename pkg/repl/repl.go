@@ -11,7 +11,7 @@ import (
 	"github.com/itsubaki/qasm/pkg/parser"
 )
 
-func New(in io.Reader, out io.Writer) {
+func Run(in io.Reader, out io.Writer) error {
 	s := bufio.NewScanner(in)
 	e := evaluator.Default()
 
@@ -20,7 +20,7 @@ func New(in io.Reader, out io.Writer) {
 	for {
 		fmt.Printf(">> ")
 		if ok := s.Scan(); !ok {
-			return
+			return fmt.Errorf("scanner.Scan")
 		}
 
 		txt := s.Text()
@@ -63,4 +63,6 @@ func New(in io.Reader, out io.Writer) {
 			io.WriteString(out, msg)
 		}
 	}
+
+	return nil
 }

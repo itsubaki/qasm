@@ -12,6 +12,10 @@ import (
 
 func Action(c *cli.Context) error {
 	path := c.String("file")
+	if len(path) == 0 {
+		cli.ShowAppHelp(c)
+		return nil
+	}
 
 	f, err := os.ReadFile(path)
 	if err != nil {

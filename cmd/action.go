@@ -8,15 +8,13 @@ import (
 	"github.com/itsubaki/qasm/pkg/evaluator"
 	"github.com/itsubaki/qasm/pkg/lexer"
 	"github.com/itsubaki/qasm/pkg/parser"
-	"github.com/itsubaki/qasm/pkg/repl"
 	"github.com/urfave/cli/v2"
 )
 
 func Action(c *cli.Context) error {
 	path := c.String("file")
-
 	if len(path) == 0 {
-		repl.New(os.Stdin, os.Stdout)
+		cli.ShowAppHelp(c)
 		return nil
 	}
 
