@@ -53,14 +53,6 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 				return fmt.Errorf("reset: %v", err)
 			}
 		case *ast.ApplyStmt:
-			if s.Kind == lexer.CMODEXP2 {
-				if err := e.evalApplyCModExp2(s); err != nil {
-					return fmt.Errorf("apply: %v", err)
-				}
-
-				continue
-			}
-
 			if err := e.evalApplyStmt(s); err != nil {
 				return fmt.Errorf("apply: %v", err)
 			}
@@ -173,6 +165,14 @@ func (e *Evaluator) evalApplyCModExp2(s *ast.ApplyStmt) error {
 }
 
 func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
+	if s.Kind == lexer.CMODEXP2 {
+		if err := e.evalApplyCModExp2(s); err != nil {
+			return fmt.Errorf("apply: %v", err)
+		}
+
+		return nil
+	}
+
 	in := make([]q.Qubit, 0)
 	for _, t := range s.Target {
 		ident := t.Value
