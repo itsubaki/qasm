@@ -51,4 +51,5 @@ $ qasm repl
  * `cx`, `cz`
  * `ccx`
  * `swap`, `qft`, `iqft`
+ * `cmodepx2`
  * `print`
