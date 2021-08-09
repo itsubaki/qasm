@@ -28,7 +28,7 @@ cx q[0], q[1];
 ## REPL
 
 ```shell
-$ qasm
+$ qasm repl
 >> OPENQASM 3.0;
 >> include "itsubaki/q.qasm";
 >> 
