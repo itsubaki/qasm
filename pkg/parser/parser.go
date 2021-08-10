@@ -118,7 +118,7 @@ func (p *Parser) parseInclude() ast.Expr {
 	}
 }
 
-func (p Parser) parseIdentList() []ast.IdentExpr {
+func (p *Parser) parseIdentList() []ast.IdentExpr {
 	out := make([]ast.IdentExpr, 0)
 	out = append(out, p.parseIdent())
 
@@ -239,14 +239,15 @@ func (p *Parser) parseReset() ast.Stmt {
 	p.expect(lexer.RESET)
 
 	return &ast.ResetStmt{
-		Kind:   p.cur.Token,
+		Kind:   lexer.RESET,
 		Target: p.parseIdentList(),
 	}
 }
 
 func (p *Parser) parseApply() ast.Stmt {
+	kind := p.cur.Token
 	return &ast.ApplyStmt{
-		Kind:   p.cur.Token,
+		Kind:   kind,
 		Target: p.parseIdentList(),
 	}
 }
@@ -254,9 +255,20 @@ func (p *Parser) parseApply() ast.Stmt {
 func (p *Parser) parseMeasure() ast.Stmt {
 	p.expect(lexer.MEASURE)
 
-	return &ast.MeasureStmt{
-		Kind:   p.cur.Token,
+	s := &ast.MeasureStmt{
+		Kind:   lexer.MEASURE,
 		Target: p.parseIdentList(),
+	}
+
+	if p.cur.Token != lexer.ARROW {
+		return s
+	}
+
+	r := p.parseIdent()
+	return &ast.ArrowStmt{
+		Kind:  lexer.ARROW,
+		Left:  s,
+		Right: &r,
 	}
 }
 
@@ -264,6 +276,6 @@ func (p *Parser) parsePrint() ast.Stmt {
 	p.expect(lexer.PRINT)
 
 	return &ast.PrintStmt{
-		Kind: p.cur.Token,
+		Kind: lexer.PRINT,
 	}
 }

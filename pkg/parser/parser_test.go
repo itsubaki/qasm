@@ -37,6 +37,7 @@ func ExampleParser() {
 	// cx q[0], q[1];
 	// measure q[0];
 	// measure q[1];
+	// measure q -> c;
 }
 
 func TestParseVersion(t *testing.T) {
@@ -115,6 +116,10 @@ func TestParseStmt(t *testing.T) {
 		{
 			"x p[0], q[1]",
 			"x p[0], q[1]",
+		},
+		{
+			"measure q -> c",
+			"measure q -> c",
 		},
 	}
 

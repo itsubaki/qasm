@@ -57,6 +57,10 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 			if _, err := e.evalMeasureStmt(s); err != nil {
 				return fmt.Errorf("measure: %v", err)
 			}
+		case *ast.ArrowStmt:
+			if err := e.evalArrowStmt(s); err != nil {
+				return fmt.Errorf("arrow: %v", err)
+			}
 		case *ast.AssignStmt:
 			if err := e.evalAssignStmt(s); err != nil {
 				return fmt.Errorf("assign: %v", err)
@@ -224,6 +228,10 @@ func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 		return fmt.Errorf("invalid stmt=%v", s)
 	}
 
+	return nil
+}
+
+func (e *Evaluator) evalArrowStmt(s *ast.ArrowStmt) error {
 	return nil
 }
 

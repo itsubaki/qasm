@@ -89,6 +89,13 @@ func TestLexer(t *testing.T) {
 				{lexer.INT, "1"},
 				{lexer.RBRACKET, "]"},
 				{lexer.SEMICOLON, ";"},
+
+				{lexer.MEASURE, "measure"},
+				{lexer.IDENT, "q"},
+				{lexer.ARROW, "->"},
+				{lexer.IDENT, "c"},
+				{lexer.SEMICOLON, ";"},
+
 				{lexer.EOF, ""},
 			},
 		},
