@@ -22,6 +22,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Tests
+      - name: Unit Tests
         run: |
           make test
+
+      - name: Integration Tests
+        run: |
+          make testdata
