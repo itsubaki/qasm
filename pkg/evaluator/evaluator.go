@@ -8,44 +8,9 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-type Qubit struct {
-	Name  []string
-	Value map[string][]q.Qubit
-}
-
-func (qb *Qubit) Add(name string, value []q.Qubit) {
-	qb.Name = append(qb.Name, name)
-	qb.Value[name] = value
-}
-
-func (qb *Qubit) Exists(name string) bool {
-	_, ok := qb.Value[name]
-	return ok
-}
-
-func (qb *Qubit) Get(name string, expr ...*ast.IndexExpr) ([]q.Qubit, error) {
-	out, ok := qb.Value[name]
-	if !ok {
-		return nil, fmt.Errorf("IDENT=%v not found", name)
-	}
-	if len(expr) == 0 {
-		return out, nil
-	}
-	if expr[0] == nil {
-		return out, nil
-	}
-
-	index := expr[0].Int()
-	if index > len(out)-1 {
-		return out, fmt.Errorf("index out of range[%v] with length %v", index, len(out))
-	}
-
-	return append(make([]q.Qubit, 0), out[index]), nil
-}
-
 type Evaluator struct {
 	Const map[string]int
-	Bit   map[string][]int
+	Bit   *Bit
 	Qubit *Qubit
 	Q     *q.Q
 }
@@ -53,7 +18,10 @@ type Evaluator struct {
 func New(qsim *q.Q) *Evaluator {
 	return &Evaluator{
 		Const: make(map[string]int),
-		Bit:   make(map[string][]int),
+		Bit: &Bit{
+			Name:  make([]string, 0),
+			Value: make(map[string][]int),
+		},
 		Qubit: &Qubit{
 			Name:  make([]string, 0),
 			Value: make(map[string][]q.Qubit),
@@ -133,11 +101,11 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 	}
 
 	if s.Kind == lexer.BIT {
-		if _, ok := e.Bit[ident]; ok {
+		if ok := e.Bit.Exists(ident); ok {
 			return fmt.Errorf("already exists=%v", ident)
 		}
 
-		e.Bit[ident] = make([]int, n)
+		e.Bit.Add(ident, make([]int, n))
 		return nil
 	}
 
@@ -238,7 +206,11 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 }
 
 func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
-	c := e.Bit[s.Left.Value]
+	c, err := e.Bit.Get(s.Left.Value)
+	if err != nil {
+		return fmt.Errorf("get bit: %v", err)
+	}
+
 	switch s := s.Right.(type) {
 	case *ast.MeasureStmt:
 		qb, err := e.evalMeasureStmt(s)

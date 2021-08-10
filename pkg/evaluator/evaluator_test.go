@@ -114,12 +114,18 @@ func ExampleEvaluator() {
 		return
 	}
 
-	for k, v := range e.Bit {
-		for i, vv := range v {
-			fmt.Printf("%v[%v]: %v\n", k, i, vv)
+	for _, n := range e.Bit.Name {
+		fmt.Printf("%v: ", n)
+		c, err := e.Bit.Get(n)
+		if err != nil {
+			fmt.Println(err)
+			return
 		}
+		for _, v := range c {
+			fmt.Printf("%v", v)
+		}
+		fmt.Println()
 	}
-	fmt.Println()
 
 	for _, s := range e.Q.State() {
 		fmt.Println(s)
@@ -135,9 +141,7 @@ func ExampleEvaluator() {
 	// cx q[0], q[1];
 	// c = measure q;
 	//
-	// c[0]: 1
-	// c[1]: 0
-	//
+	// c: 10
 	// [10][  2]( 1.0000 0.0000i): 1.0000
 }
 

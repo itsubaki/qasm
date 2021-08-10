@@ -6,6 +6,13 @@ test:
 run:
 	go run main.go
 
+.PHONY: testdata
+testdata:
+	go run main.go -f testdata/test.qasm
+	go run main.go -f testdata/bell.qasm
+	go run main.go -f testdata/shor.qasm
+	go run main.go -f testdata/teleportation.qasm
+
 install:
 	-rm ${GOPATH}/bin/qasm
 	go mod tidy
