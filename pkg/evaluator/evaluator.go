@@ -31,6 +31,9 @@ func (qb *Qubit) Get(name string, expr ...*ast.IndexExpr) ([]q.Qubit, error) {
 	if len(expr) == 0 {
 		return out, nil
 	}
+	if expr[0] == nil {
+		return out, nil
+	}
 
 	index := expr[0].Int()
 	if index > len(out)-1 {
