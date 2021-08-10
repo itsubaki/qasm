@@ -264,6 +264,6 @@ func (p *Parser) parsePrint() ast.Stmt {
 	p.expect(lexer.PRINT)
 
 	return &ast.PrintStmt{
-		Kind: lexer.PRINT,
+		Kind: p.cur.Token,
 	}
 }

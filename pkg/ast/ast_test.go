@@ -59,6 +59,22 @@ func ExampleOpenQASM_String() {
 					},
 				},
 			},
+			&ast.ArrowStmt{
+				Kind: lexer.ARROW,
+				Left: &ast.MeasureStmt{
+					Kind: lexer.MEASURE,
+					Target: []ast.IdentExpr{
+						{
+							Kind:  lexer.STRING,
+							Value: "q",
+						},
+					},
+				},
+				Right: &ast.IdentExpr{
+					Kind:  lexer.STRING,
+					Value: "c",
+				},
+			},
 		},
 	}
 
@@ -71,6 +87,7 @@ func ExampleOpenQASM_String() {
 	// reset q;
 	// x q;
 	// c = measure q;
+	// measure q -> c;
 }
 
 func TestIdentExprString(t *testing.T) {

@@ -91,6 +91,14 @@ func (l *Lexer) Scan() (Token, string) {
 		return STRING, l.scanString()
 	}
 
+	if ch == '-' {
+		if l.read() == '>' {
+			return ARROW, "->"
+		}
+
+		l.unread()
+	}
+
 	if v, ok := operator[string(ch)]; ok {
 		return v, string(ch)
 	}

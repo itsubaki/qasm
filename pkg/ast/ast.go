@@ -242,6 +242,30 @@ func (s *MeasureStmt) String() string {
 	return buf.String()
 }
 
+type ArrowStmt struct {
+	Kind  lexer.Token // lexer.ARROW
+	Left  Stmt
+	Right *IdentExpr
+}
+
+func (s *ArrowStmt) stmtNode() {}
+
+func (s *ArrowStmt) Literal() string {
+	return lexer.Tokens[s.Kind]
+}
+
+func (s *ArrowStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Left.String())
+	buf.WriteString(" ")
+	buf.WriteString(s.Literal())
+	buf.WriteString(" ")
+	buf.WriteString(s.Right.String())
+
+	return buf.String()
+}
+
 type AssignStmt struct {
 	Kind  lexer.Token // lexer.EQUALS
 	Left  *IdentExpr
