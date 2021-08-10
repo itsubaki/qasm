@@ -13,14 +13,31 @@ type Qubit struct {
 	Value map[string][]q.Qubit
 }
 
-func (q *Qubit) Add(name string, value []q.Qubit) {
-	q.Name = append(q.Name, name)
-	q.Value[name] = value
+func (qb *Qubit) Add(name string, value []q.Qubit) {
+	qb.Name = append(qb.Name, name)
+	qb.Value[name] = value
 }
 
-func (q *Qubit) Get(name string) ([]q.Qubit, bool) {
-	qb, ok := q.Value[name]
-	return qb, ok
+func (qb *Qubit) Exists(name string) bool {
+	_, ok := qb.Value[name]
+	return ok
+}
+
+func (qb *Qubit) Get(name string, expr ...*ast.IndexExpr) ([]q.Qubit, error) {
+	out, ok := qb.Value[name]
+	if !ok {
+		return nil, fmt.Errorf("IDENT=%v not found", name)
+	}
+	if len(expr) == 0 {
+		return out, nil
+	}
+
+	index := expr[0].Int()
+	if index > len(out)-1 {
+		return out, fmt.Errorf("index out of range[%v] with length %v", index, len(out))
+	}
+
+	return append(make([]q.Qubit, 0), out[index]), nil
 }
 
 type Evaluator struct {
@@ -103,7 +120,7 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 	ident := s.Name.Value
 
 	if s.Kind == lexer.QUBIT {
-		if _, ok := e.Qubit.Get(ident); ok {
+		if ok := e.Qubit.Exists(ident); ok {
 			return fmt.Errorf("already exists=%v", ident)
 		}
 
@@ -126,15 +143,9 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 
 func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 	for _, t := range s.Target {
-		ident := t.Value
-		qb, ok := e.Qubit.Get(ident)
-		if !ok {
-			return fmt.Errorf("IDENT=%v not found", ident)
-		}
-
-		if t.Index != nil {
-			e.Q.Reset(qb[t.Index.Int()])
-			continue
+		qb, err := e.Qubit.Get(t.Value, t.Index)
+		if err != nil {
+			return fmt.Errorf("get qubit: %v", err)
 		}
 
 		e.Q.Reset(qb...)
@@ -158,14 +169,14 @@ func (e *Evaluator) evalApplyCModExp2(s *ast.ApplyStmt) error {
 		return fmt.Errorf("IDENT=%v not found", s.Target[1].Value)
 	}
 
-	r0, ok := e.Qubit.Get(s.Target[2].Value)
-	if !ok {
-		return fmt.Errorf("IDENT=%v not found", s.Target[2].Value)
+	r0, err := e.Qubit.Get(s.Target[2].Value)
+	if err != nil {
+		return fmt.Errorf("get qubit: %v", err)
 	}
 
-	r1, ok := e.Qubit.Get(s.Target[3].Value)
-	if !ok {
-		return fmt.Errorf("IDENT=%v not found", s.Target[3].Value)
+	r1, err := e.Qubit.Get(s.Target[3].Value)
+	if err != nil {
+		return fmt.Errorf("get qubit: %v", err)
 	}
 
 	e.Q.CModExp2(a, N, r0, r1)
@@ -183,19 +194,9 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 
 	in := make([]q.Qubit, 0)
 	for _, t := range s.Target {
-		ident := t.Value
-		qb, ok := e.Qubit.Get(ident)
-		if !ok {
-			return fmt.Errorf("IDENT=%v not found", ident)
-		}
-
-		if t.Index != nil {
-			index := t.Index.Int()
-			if index > len(qb)-1 {
-				return fmt.Errorf("index out of range[%v] with length %v", index, len(qb))
-			}
-
-			qb = append(make([]q.Qubit, 0), qb[index])
+		qb, err := e.Qubit.Get(t.Value, t.Index)
+		if err != nil {
+			return fmt.Errorf("get qubit: %v", err)
 		}
 
 		in = append(in, qb...)
@@ -252,28 +253,18 @@ func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 }
 
 func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
+	out := make([]q.Qubit, 0)
 	for _, t := range s.Target {
-		ident := t.Value
-		qb, ok := e.Qubit.Get(ident)
-		if !ok {
-			return nil, fmt.Errorf("IDENT=%v not found", ident)
-		}
-
-		if t.Index != nil {
-			index := t.Index.Int()
-			qb = append(make([]q.Qubit, 0), qb[index])
+		qb, err := e.Qubit.Get(t.Value, t.Index)
+		if err != nil {
+			return nil, fmt.Errorf("get qubit: %v", err)
 		}
 
 		e.Q.Measure(qb...)
+		out = append(out, qb...)
 	}
 
-	ident := s.Target[0].Value
-	qb, ok := e.Qubit.Get(ident)
-	if !ok {
-		return nil, fmt.Errorf("IDENT=%v not found", ident)
-	}
-
-	return qb, nil
+	return out, nil
 }
 
 func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
@@ -287,9 +278,9 @@ func (e *Evaluator) Println() error {
 
 	index := make([][]int, 0)
 	for _, ident := range e.Qubit.Name {
-		qb, ok := e.Qubit.Get(ident)
-		if !ok {
-			return fmt.Errorf("IDENT=%v not found", ident)
+		qb, err := e.Qubit.Get(ident)
+		if err != nil {
+			return fmt.Errorf("get qubit: %v", err)
 		}
 
 		index = append(index, q.Index(qb...))
