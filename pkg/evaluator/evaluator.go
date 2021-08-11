@@ -120,7 +120,7 @@ func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 	for _, t := range s.Target {
 		qb, err := e.Qubit.Get(t.Value, t.Index)
 		if err != nil {
-			return fmt.Errorf("get qubit: %v", err)
+			return fmt.Errorf("get qubit=%v: %v", t.Value, err)
 		}
 
 		e.Q.Reset(qb...)
@@ -146,12 +146,12 @@ func (e *Evaluator) evalApplyCModExp2(s *ast.ApplyStmt) error {
 
 	r0, err := e.Qubit.Get(s.Target[2].Value)
 	if err != nil {
-		return fmt.Errorf("get qubit: %v", err)
+		return fmt.Errorf("get qubit=%v: %v", s.Target[2].Value, err)
 	}
 
 	r1, err := e.Qubit.Get(s.Target[3].Value)
 	if err != nil {
-		return fmt.Errorf("get qubit: %v", err)
+		return fmt.Errorf("get qubit=%v: %v", s.Target[3].Value, err)
 	}
 
 	e.Q.CModExp2(a, N, r0, r1)
@@ -171,7 +171,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 	for _, t := range s.Target {
 		qb, err := e.Qubit.Get(t.Value, t.Index)
 		if err != nil {
-			return fmt.Errorf("get qubit: %v", err)
+			return fmt.Errorf("get qubit=%v: %v", t.Value, err)
 		}
 
 		in = append(in, qb...)
@@ -212,7 +212,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 	c, err := e.Bit.Get(s.Left.Value)
 	if err != nil {
-		return fmt.Errorf("get bit: %v", err)
+		return fmt.Errorf("get bit=%v: %v", s.Left.Value, err)
 	}
 
 	switch s := s.Right.(type) {
@@ -232,7 +232,11 @@ func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 }
 
 func (e *Evaluator) evalArrowStmt(s *ast.ArrowStmt) error {
-	return nil
+	return e.evalAssignStmt(&ast.AssignStmt{
+		Kind:  lexer.EQUALS,
+		Left:  s.Right,
+		Right: s.Left,
+	})
 }
 
 func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
@@ -240,7 +244,7 @@ func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 	for _, t := range s.Target {
 		qb, err := e.Qubit.Get(t.Value, t.Index)
 		if err != nil {
-			return nil, fmt.Errorf("get qubit: %v", err)
+			return nil, fmt.Errorf("get qubit=%v: %v", t.Value, err)
 		}
 
 		e.Q.Measure(qb...)
@@ -255,6 +259,18 @@ func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
 }
 
 func (e *Evaluator) Println() error {
+	for _, n := range e.Bit.Name {
+		fmt.Printf("%v: ", n)
+		c, err := e.Bit.Get(n)
+		if err != nil {
+			return fmt.Errorf("get bit=%v: %v", n, err)
+		}
+		for _, v := range c {
+			fmt.Printf("%v", v)
+		}
+		fmt.Println()
+	}
+
 	if len(e.Qubit.Name) == 0 {
 		return nil
 	}
@@ -263,7 +279,7 @@ func (e *Evaluator) Println() error {
 	for _, ident := range e.Qubit.Name {
 		qb, err := e.Qubit.Get(ident)
 		if err != nil {
-			return fmt.Errorf("get qubit: %v", err)
+			return fmt.Errorf("get qubit=%v: %v", ident, err)
 		}
 
 		index = append(index, q.Index(qb...))
