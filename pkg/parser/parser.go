@@ -102,19 +102,19 @@ func (p *Parser) appendErr(e error) {
 }
 
 func (p *Parser) parseVersion() string {
-	p.next()
+	c := p.next()
 	p.expect(lexer.FLOAT)
 
-	return p.cur.Literal
+	return c.Literal
 }
 
 func (p *Parser) parseInclude() ast.Expr {
-	p.next()
+	c := p.next()
 	p.expect(lexer.STRING)
 
 	return &ast.IdentExpr{
-		Kind:  p.cur.Token,
-		Value: p.cur.Literal,
+		Kind:  c.Token,
+		Value: c.Literal,
 	}
 }
 
@@ -154,20 +154,24 @@ func (p *Parser) parseIdent() ast.IdentExpr {
 }
 
 func (p *Parser) parseIndex() *ast.IndexExpr {
-	lbracket := p.cur
+	lbrack := p.cur
 	p.expect(lexer.LBRACKET)
 
-	index := p.next()
+	s := p.next()
+	v := s.Literal
+	if s.Token == lexer.MINUS {
+		v = fmt.Sprintf("%s%s", v, p.next().Literal)
+	}
 	p.expect(lexer.INT)
 
-	rbracket := p.next()
+	rbrack := p.next()
 	p.expect(lexer.RBRACKET)
 
 	return &ast.IndexExpr{
-		LBRACKET: lbracket.Token,
-		RBRACKET: rbracket.Token,
-		Kind:     index.Token,
-		Value:    index.Literal,
+		LBRACKET: lbrack.Token,
+		RBRACKET: rbrack.Token,
+		Kind:     lexer.INT,
+		Value:    v,
 	}
 }
 
@@ -198,12 +202,12 @@ func (p *Parser) parseDecl() ast.Stmt {
 	c := p.next()       // ident or lbracket
 
 	// qubit q
-	if p.cur.Token == lexer.IDENT {
+	if c.Token == lexer.IDENT {
 		return &ast.DeclStmt{
 			Kind: kind,
 			Name: &ast.IdentExpr{
-				Kind:  p.cur.Token,
-				Value: p.cur.Literal,
+				Kind:  c.Token,
+				Value: c.Literal,
 			},
 		}
 	}
