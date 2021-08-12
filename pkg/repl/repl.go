@@ -58,7 +58,7 @@ func Run(in io.Reader, out io.Writer) error {
 			continue
 		}
 
-		if err := e.Print(); err != nil {
+		if err := e.Println(); err != nil {
 			msg := fmt.Sprintf("[ERROR] print: %v\n", err)
 			io.WriteString(out, msg)
 		}

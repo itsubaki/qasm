@@ -256,7 +256,7 @@ func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 
 func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
 	if s.Target == nil || len(s.Target) == 0 {
-		return e.Print()
+		return e.Println()
 	}
 
 	name := make([]string, 0)
@@ -264,10 +264,10 @@ func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
 		name = append(name, t.Value)
 	}
 
-	return e.Print(name...)
+	return e.Println(name...)
 }
 
-func (e *Evaluator) Print(name ...string) error {
+func (e *Evaluator) Println(name ...string) error {
 	if len(e.Qubit.Name) == 0 {
 		return nil
 	}

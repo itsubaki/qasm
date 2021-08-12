@@ -130,20 +130,12 @@ func ExampleEvaluator() {
 		return
 	}
 
-	for _, n := range e.Bit.Name {
-		fmt.Printf("%v: ", n)
-		c, err := e.Bit.Get(n)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		for _, v := range c {
-			fmt.Printf("%v", v)
-		}
-		fmt.Println()
+	if err := e.Bit.Println(); err != nil {
+		fmt.Println(err)
+		return
 	}
 
-	if err := e.Print(); err != nil {
+	if err := e.Println(); err != nil {
 		fmt.Println(err)
 		return
 	}

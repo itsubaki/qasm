@@ -84,3 +84,22 @@ func (b *Bit) Get(name string, expr ...*ast.IndexExpr) ([]int, error) {
 
 	return append(make([]int, 0), out[index]), nil
 }
+
+func (b *Bit) Println() error {
+	for _, n := range b.Name {
+		fmt.Printf("%v: ", n)
+
+		c, err := b.Get(n)
+		if err != nil {
+			return fmt.Errorf("get bit=%v: %v", n, err)
+		}
+
+		for _, v := range c {
+			fmt.Printf("%v", v)
+		}
+
+		fmt.Println()
+	}
+
+	return nil
+}
