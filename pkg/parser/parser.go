@@ -88,7 +88,7 @@ func (p *Parser) expect(t lexer.Token) {
 		return
 	}
 
-	p.appendErr(fmt.Errorf("%v not found", lexer.Tokens[t]))
+	p.appendErr(fmt.Errorf("%v not found. cursor=%#v", lexer.Tokens[t], p.cur))
 }
 
 func (p *Parser) appendIncl(s ast.Expr) {
@@ -136,23 +136,26 @@ func (p *Parser) parseIdentList() []ast.IdentExpr {
 }
 
 func (p *Parser) parseIdent() ast.IdentExpr {
-	ident := p.next()
+	c := p.cur
+	if p.cur.Token != lexer.IDENT {
+		c = p.next()
+	}
 	p.expect(lexer.IDENT)
 
-	expr := ast.IdentExpr{
-		Kind:  ident.Token,
-		Value: ident.Literal,
+	ident := ast.IdentExpr{
+		Kind:  c.Token,
+		Value: c.Literal,
 	}
 
 	p.next()
 	if p.cur.Token != lexer.LBRACKET {
-		return expr
+		return ident
 	}
 
-	expr.Index = p.parseIndex()
+	ident.Index = p.parseIndex()
 	p.next()
 
-	return expr
+	return ident
 }
 
 func (p *Parser) parseIndex() *ast.IndexExpr {
@@ -251,7 +254,7 @@ func (p *Parser) parseReset() ast.Stmt {
 }
 
 func (p *Parser) parseApply() ast.Stmt {
-	kind := p.cur.Token
+	kind := p.cur.Token // lexer.X, lexer.Y, ..., lexer.CX, ...
 	return &ast.ApplyStmt{
 		Kind:   kind,
 		Target: p.parseIdentList(),
@@ -261,45 +264,45 @@ func (p *Parser) parseApply() ast.Stmt {
 func (p *Parser) parseMeasure() ast.Stmt {
 	p.expect(lexer.MEASURE)
 
-	s := &ast.MeasureStmt{
+	// measure q -> c
+	left := ast.MeasureStmt{
 		Kind:   lexer.MEASURE,
 		Target: p.parseIdentList(),
 	}
 
 	if p.cur.Token != lexer.ARROW {
-		return s
+		return &left
 	}
 
-	r := p.parseIdent()
+	right := p.parseIdent()
 	return &ast.ArrowStmt{
 		Kind:  lexer.ARROW,
-		Left:  s,
-		Right: &r,
+		Left:  &left,
+		Right: &right,
 	}
 }
 
 func (p *Parser) parseAssign() ast.Stmt {
 	p.expect(lexer.IDENT)
 
-	ident := p.cur
-	expr := ast.IdentExpr{
-		Kind:  ident.Token,
-		Value: ident.Literal,
-	}
-
-	p.next()
+	// c = measure q
+	left := p.parseIdent()
 	p.expect(lexer.EQUALS)
 
 	p.next()
 	p.expect(lexer.MEASURE)
 
-	return &ast.AssignStmt{
-		Kind: lexer.EQUALS,
-		Left: &expr,
-		Right: &ast.MeasureStmt{
-			Kind:   lexer.MEASURE,
-			Target: p.parseIdentList(),
+	right := ast.MeasureStmt{
+		Kind: lexer.MEASURE,
+		Target: []ast.IdentExpr{
+			p.parseIdent(),
 		},
+	}
+
+	return &ast.AssignStmt{
+		Kind:  lexer.EQUALS,
+		Left:  &left,
+		Right: &right,
 	}
 }
 
