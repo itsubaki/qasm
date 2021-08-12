@@ -494,6 +494,34 @@ func TestPrintStmtString(t *testing.T) {
 			},
 			"print",
 		},
+		{
+			ast.PrintStmt{
+				Kind: lexer.PRINT,
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "q",
+					},
+				},
+			},
+			"print q",
+		},
+		{
+			ast.PrintStmt{
+				Kind: lexer.PRINT,
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "q",
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "p",
+					},
+				},
+			},
+			"print q, p",
+		},
 	}
 
 	for _, c := range cases {

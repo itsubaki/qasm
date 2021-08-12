@@ -291,7 +291,8 @@ func (s *AssignStmt) String() string {
 }
 
 type PrintStmt struct {
-	Kind lexer.Token // lexer.PRINT
+	Kind   lexer.Token // lexer.PRINT
+	Target []IdentExpr
 }
 
 func (s *PrintStmt) stmtNode() {}
@@ -301,5 +302,21 @@ func (s *PrintStmt) Literal() string {
 }
 
 func (s *PrintStmt) String() string {
-	return "print"
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Literal())
+	if s.Target == nil || len(s.Target) == 0 {
+		return buf.String()
+	}
+
+	buf.WriteString(" ")
+	for i, t := range s.Target {
+		buf.WriteString(t.String())
+
+		if len(s.Target)-1 != i {
+			buf.WriteString(", ")
+		}
+	}
+
+	return buf.String()
 }
