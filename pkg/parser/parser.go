@@ -65,6 +65,8 @@ func (p *Parser) Parse() *ast.OpenQASM {
 			p.appendStmt(p.parseApply())
 		case lexer.CMODEXP2:
 			p.appendStmt(p.parseApply())
+		case lexer.IDENT:
+			p.appendStmt(p.parseAssign())
 		case lexer.EOF:
 			return p.qasm
 		}
@@ -273,6 +275,31 @@ func (p *Parser) parseMeasure() ast.Stmt {
 		Kind:  lexer.ARROW,
 		Left:  s,
 		Right: &r,
+	}
+}
+
+func (p *Parser) parseAssign() ast.Stmt {
+	p.expect(lexer.IDENT)
+
+	ident := p.cur
+	expr := ast.IdentExpr{
+		Kind:  ident.Token,
+		Value: ident.Literal,
+	}
+
+	p.next()
+	p.expect(lexer.EQUALS)
+
+	p.next()
+	p.expect(lexer.MEASURE)
+
+	return &ast.AssignStmt{
+		Kind: lexer.EQUALS,
+		Left: &expr,
+		Right: &ast.MeasureStmt{
+			Kind:   lexer.MEASURE,
+			Target: p.parseIdentList(),
+		},
 	}
 }
 

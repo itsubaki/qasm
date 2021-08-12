@@ -87,22 +87,6 @@ func ExampleEvaluator() {
 					},
 				},
 			},
-			&ast.AssignStmt{
-				Kind: lexer.EQUALS,
-				Left: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "c",
-				},
-				Right: &ast.MeasureStmt{
-					Kind: lexer.MEASURE,
-					Target: []ast.IdentExpr{
-						{
-							Kind:  lexer.STRING,
-							Value: "q",
-						},
-					},
-				},
-			},
 			&ast.ArrowStmt{
 				Kind: lexer.ARROW,
 				Left: &ast.MeasureStmt{
@@ -117,6 +101,22 @@ func ExampleEvaluator() {
 				Right: &ast.IdentExpr{
 					Kind:  lexer.STRING,
 					Value: "c",
+				},
+			},
+			&ast.AssignStmt{
+				Kind: lexer.EQUALS,
+				Left: &ast.IdentExpr{
+					Kind:  lexer.STRING,
+					Value: "c",
+				},
+				Right: &ast.MeasureStmt{
+					Kind: lexer.MEASURE,
+					Target: []ast.IdentExpr{
+						{
+							Kind:  lexer.STRING,
+							Value: "q",
+						},
+					},
 				},
 			},
 		},
@@ -155,8 +155,8 @@ func ExampleEvaluator() {
 	// reset q;
 	// x q;
 	// cx q[0], q[1];
-	// c = measure q;
 	// measure q -> c;
+	// c = measure q;
 	//
 	// c: 10
 	// [10][  2]( 1.0000 0.0000i): 1.0000

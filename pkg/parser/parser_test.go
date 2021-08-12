@@ -11,7 +11,7 @@ import (
 )
 
 func ExampleParser() {
-	f, err := os.ReadFile("../../testdata/parser.qasm")
+	f, err := os.ReadFile("../../testdata/test_parser.qasm")
 	if err != nil {
 		fmt.Printf("read file: %v", err)
 		return
@@ -36,6 +36,7 @@ func ExampleParser() {
 	// h q[0];
 	// cx q[0], q[1];
 	// measure q -> c;
+	// c = measure q;
 }
 
 func TestParseVersion(t *testing.T) {
@@ -100,14 +101,6 @@ func TestParseStmt(t *testing.T) {
 			"x q",
 		},
 		{
-			"measure q",
-			"measure q",
-		},
-		{
-			"print",
-			"print",
-		},
-		{
 			"x p, q",
 			"x p, q",
 		},
@@ -116,8 +109,20 @@ func TestParseStmt(t *testing.T) {
 			"x p[0], q[1]",
 		},
 		{
+			"measure q",
+			"measure q",
+		},
+		{
 			"measure q -> c",
 			"measure q -> c",
+		},
+		{
+			"c = measure q",
+			"c = measure q",
+		},
+		{
+			"print",
+			"print",
 		},
 	}
 

@@ -35,12 +35,12 @@ func (qb *Qubit) Get(name string, expr ...*ast.IndexExpr) ([]q.Qubit, error) {
 	}
 
 	index := expr[0].Int()
-	if index > len(out)-1 {
-		return out, fmt.Errorf("index out of range[%v] with length %v", index, len(out))
-	}
-
 	if index < 0 {
 		index = len(out) + index
+	}
+
+	if index > len(out)-1 || index < 0 {
+		return out, fmt.Errorf("index out of range[%v] with length %v", index, len(out))
 	}
 
 	return append(make([]q.Qubit, 0), out[index]), nil
@@ -74,12 +74,12 @@ func (b *Bit) Get(name string, expr ...*ast.IndexExpr) ([]int, error) {
 	}
 
 	index := expr[0].Int()
-	if index > len(out)-1 {
-		return out, fmt.Errorf("index out of range[%v] with length %v", index, len(out))
-	}
-
 	if index < 0 {
 		index = len(out) + index
+	}
+
+	if index > len(out)-1 || index < 0 {
+		return out, fmt.Errorf("index out of range[%v] with length %v", index, len(out))
 	}
 
 	return append(make([]int, 0), out[index]), nil
