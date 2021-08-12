@@ -126,6 +126,18 @@ func TestParseStmt(t *testing.T) {
 			"print",
 			"print",
 		},
+		{
+			"print q",
+			"print q",
+		},
+		{
+			"print q, p",
+			"print q, p",
+		},
+		{
+			"print q, p[0]",
+			"print q, p[0]",
+		},
 	}
 
 	for _, c := range cases {

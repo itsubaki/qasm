@@ -255,31 +255,32 @@ func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 }
 
 func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
-	return e.Println()
-}
-
-func (e *Evaluator) Println() error {
-	for _, n := range e.Bit.Name {
-		fmt.Printf("%v: ", n)
-		c, err := e.Bit.Get(n)
-		if err != nil {
-			return fmt.Errorf("get bit=%v: %v", n, err)
-		}
-		for _, v := range c {
-			fmt.Printf("%v", v)
-		}
-		fmt.Println()
+	if s.Target == nil || len(s.Target) == 0 {
+		return e.Print()
 	}
 
+	name := make([]string, 0)
+	for _, t := range s.Target {
+		name = append(name, t.Value)
+	}
+
+	return e.Print(name...)
+}
+
+func (e *Evaluator) Print(name ...string) error {
 	if len(e.Qubit.Name) == 0 {
 		return nil
 	}
 
+	if len(name) == 0 {
+		name = e.Qubit.Name
+	}
+
 	index := make([][]int, 0)
-	for _, ident := range e.Qubit.Name {
-		qb, err := e.Qubit.Get(ident)
+	for _, n := range name {
+		qb, err := e.Qubit.Get(n)
 		if err != nil {
-			return fmt.Errorf("get qubit=%v: %v", ident, err)
+			return fmt.Errorf("get qubit=%v: %v", n, err)
 		}
 
 		index = append(index, q.Index(qb...))

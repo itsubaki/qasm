@@ -309,7 +309,16 @@ func (p *Parser) parseAssign() ast.Stmt {
 func (p *Parser) parsePrint() ast.Stmt {
 	p.expect(lexer.PRINT)
 
+	c := p.next()
+	if c.Token != lexer.IDENT {
+		return &ast.PrintStmt{
+			Kind: lexer.PRINT,
+		}
+	}
+	p.expect(lexer.IDENT)
+
 	return &ast.PrintStmt{
-		Kind: lexer.PRINT,
+		Kind:   lexer.PRINT,
+		Target: p.parseIdentList(),
 	}
 }

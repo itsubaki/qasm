@@ -3,8 +3,8 @@ SHELL := /bin/bash
 test:
 	go test -cover $(shell go list ./... | grep -v /vendor/ | grep -v /build/) -v -coverprofile=coverage.txt -covermode=atomic
 
-run:
-	go run main.go
+repl:
+	go run main.go repl
 
 .PHONY: testdata
 testdata:

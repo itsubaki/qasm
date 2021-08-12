@@ -54,12 +54,12 @@ func Run(in io.Reader, out io.Writer) error {
 			io.WriteString(out, msg)
 		}
 
-		if txt == "print" {
+		if strings.HasPrefix(txt, "print") {
 			continue
 		}
 
-		if err := e.Println(); err != nil {
-			msg := fmt.Sprintf("[ERROR] println: %v\n", err)
+		if err := e.Print(); err != nil {
+			msg := fmt.Sprintf("[ERROR] print: %v\n", err)
 			io.WriteString(out, msg)
 		}
 	}

@@ -143,8 +143,9 @@ func ExampleEvaluator() {
 		fmt.Println()
 	}
 
-	for _, s := range e.Q.State() {
-		fmt.Println(s)
+	if err := e.Print(); err != nil {
+		fmt.Println(err)
+		return
 	}
 
 	// Output:
