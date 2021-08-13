@@ -5,40 +5,42 @@ import (
 	"reflect"
 )
 
+var indent = []byte(". ")
+
 func Print(x interface{}) {
-	print(reflect.ValueOf(x))
+	p := printer{}
+	p.print(reflect.ValueOf(x))
 }
 
-func printf(format string, args ...interface{}) {
-	if _, err := fmt.Printf(format, args...); err != nil {
+type printer struct {
+	indent int
+}
+
+func (p *printer) Write(data []byte) (int, error) {
+	return fmt.Print(string(data))
+}
+
+func (p *printer) printf(format string, args ...interface{}) {
+	if _, err := fmt.Fprintf(p, format, args...); err != nil {
 		panic(err)
 	}
 }
 
-func isNil(v reflect.Value) bool {
-	switch v.Kind() {
-	case reflect.Interface, reflect.Ptr, reflect.Slice:
-		return v.IsNil()
-	}
-
-	return false
-}
-
-func print(x reflect.Value) {
+func (p *printer) print(x reflect.Value) {
 	if isNil(x) {
-		printf("nil")
+		p.printf("nil")
 		return
 	}
 
 	switch x.Kind() {
 	case reflect.Interface:
-		print(x.Elem())
+		p.print(x.Elem())
 	case reflect.Ptr:
-		printf("*")
-		print(x.Elem())
+		p.printf("*")
+		p.print(x.Elem())
 	case reflect.Struct:
 		t := x.Type()
-		printf("%s {", t)
+		p.printf("%s {", t)
 
 		first := true
 		for i, n := 0, t.NumField(); i < n; i++ {
@@ -55,46 +57,55 @@ func print(x reflect.Value) {
 			}
 
 			if first {
-				printf("\n")
+				p.printf("\n")
 				first = false
 			}
 
 			name := t.Field(i).Name
-			printf("%s: ", name)
-			print(value)
-			printf("\n")
+			p.printf("%s: ", name)
+			p.print(value)
+			p.printf("\n")
 		}
-		printf("}")
+		p.printf("}")
 	case reflect.Array:
-		printf("%s {", x.Type())
+		p.printf("%s {", x.Type())
 		if x.Len() > 0 {
-			printf("\n")
+			p.printf("\n")
 			for i, n := 0, x.Len(); i < n; i++ {
-				printf("%d: ", i)
-				print(x.Index(i))
-				printf("\n")
+				p.printf("%d: ", i)
+				p.print(x.Index(i))
+				p.printf("\n")
 			}
 		}
-		printf("}")
+		p.printf("}")
 	case reflect.Slice:
-		printf("%s {", x.Type())
+		p.printf("%s {", x.Type())
 		if x.Len() > 0 {
-			printf("\n")
+			p.printf("\n")
 			for i, n := 0, x.Len(); i < n; i++ {
-				printf("%d: ", i)
-				print(x.Index(i))
-				printf("\n")
+				p.printf("%d: ", i)
+				p.print(x.Index(i))
+				p.printf("\n")
 			}
 		}
-		printf("}")
+		p.printf("}")
 	default:
 		v := x.Interface()
 		switch v := v.(type) {
 		case string:
-			printf("%q", v)
+			p.printf("%q", v)
 			return
 		default:
-			printf("%v", x)
+			p.printf("%v", x)
 		}
 	}
+}
+
+func isNil(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Interface, reflect.Ptr, reflect.Slice:
+		return v.IsNil()
+	}
+
+	return false
 }
