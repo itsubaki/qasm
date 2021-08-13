@@ -3,6 +3,8 @@ package ast
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
 var indent = []byte(". ")
@@ -63,6 +65,13 @@ func (p *printer) print(x reflect.Value) {
 
 			name := t.Field(i).Name
 			p.printf("%s: ", name)
+			if name == "Kind" {
+				lit := lexer.Tokens[value.Int()]
+				p.print(reflect.ValueOf(lit))
+				p.printf("\n")
+				continue
+			}
+
 			p.print(value)
 			p.printf("\n")
 		}

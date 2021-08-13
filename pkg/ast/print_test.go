@@ -82,15 +82,15 @@ func ExamplePrint() {
 	// Version: "3.0"
 	// Includes: []ast.Expr {
 	// 0: *ast.IdentExpr {
-	// Kind: 5
+	// Kind: "STRING"
 	// Value: "\"stdgates.qasm\""
 	// }
 	// }
 	// Statements: []ast.Stmt {
 	// 0: *ast.DeclStmt {
-	// Kind: 32
+	// Kind: "qubit"
 	// Name: *ast.IdentExpr {
-	// Kind: 5
+	// Kind: "STRING"
 	// Value: "q"
 	// }
 	// }
