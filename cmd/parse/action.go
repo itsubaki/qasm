@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/itsubaki/qasm/pkg/ast"
 	"github.com/itsubaki/qasm/pkg/lexer"
 	"github.com/itsubaki/qasm/pkg/parser"
 	"github.com/urfave/cli/v2"
@@ -25,9 +26,7 @@ func Action(c *cli.Context) error {
 	l := lexer.New(strings.NewReader(string(f)))
 	p := parser.New(l)
 
-	ast := p.Parse()
-	fmt.Print(ast)
-
+	a := p.Parse()
 	if errs := p.Errors(); len(errs) != 0 {
 		for _, err := range errs {
 			fmt.Println(err)
@@ -36,5 +35,6 @@ func Action(c *cli.Context) error {
 		return fmt.Errorf("parse: %v", errs)
 	}
 
+	ast.Print(a)
 	return nil
 }

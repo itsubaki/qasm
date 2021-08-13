@@ -167,7 +167,7 @@ func TestDeclStmtString(t *testing.T) {
 			"qubit[2] q",
 		},
 		{
-			&ast.DeclConstStmt{
+			&ast.DeclStmt{
 				Kind: lexer.CONST,
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,

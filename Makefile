@@ -6,6 +6,16 @@ test:
 repl:
 	go run main.go repl
 
+lex:
+	go run main.go lex -f testdata/bell.qasm
+	go run main.go lex -f testdata/teleportation.qasm
+	go run main.go lex -f testdata/shor.qasm
+
+parse:
+	go run main.go parse -f testdata/bell.qasm
+	go run main.go parse -f testdata/teleportation.qasm
+	go run main.go parse -f testdata/shor.qasm
+
 .PHONY: testdata
 testdata:
 	go run main.go -f testdata/bell.qasm

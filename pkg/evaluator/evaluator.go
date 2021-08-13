@@ -37,10 +37,6 @@ func Default() *Evaluator {
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	for _, stmt := range p.Statements {
 		switch s := stmt.(type) {
-		case *ast.DeclConstStmt:
-			if err := e.evalDeclConstStmt(s); err != nil {
-				return fmt.Errorf("let: %v", err)
-			}
 		case *ast.DeclStmt:
 			if err := e.evalDeclStmt(s); err != nil {
 				return fmt.Errorf("let: %v", err)
@@ -77,31 +73,21 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	return nil
 }
 
-func (e *Evaluator) evalDeclConstStmt(s *ast.DeclConstStmt) error {
-	ident := s.Name.Value
-	if _, ok := e.Const[ident]; ok {
-		return fmt.Errorf("already exists=%v", ident)
-	}
-
-	e.Const[ident] = s.Int()
-	return nil
-}
-
 func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
-	n := 1
-	if s.Index != nil {
-		n = s.Index.Int()
-	}
 	ident := s.Name.Value
 
-	if s.Kind == lexer.QUBIT {
-		if ok := e.Qubit.Exists(ident); ok {
+	if s.Kind == lexer.CONST {
+		if _, ok := e.Const[ident]; ok {
 			return fmt.Errorf("already exists=%v", ident)
 		}
 
-		qb := e.Q.ZeroWith(n)
-		e.Qubit.Add(ident, qb)
+		e.Const[ident] = s.Int()
 		return nil
+	}
+
+	n := 1
+	if s.Index != nil {
+		n = s.Index.Int()
 	}
 
 	if s.Kind == lexer.BIT {
@@ -110,6 +96,16 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 		}
 
 		e.Bit.Add(ident, make([]int, n))
+		return nil
+	}
+
+	if s.Kind == lexer.QUBIT {
+		if ok := e.Qubit.Exists(ident); ok {
+			return fmt.Errorf("already exists=%v", ident)
+		}
+
+		qb := e.Q.ZeroWith(n)
+		e.Qubit.Add(ident, qb)
 		return nil
 	}
 

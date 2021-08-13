@@ -43,9 +43,7 @@ func (p *Parser) Parse() *ast.OpenQASM {
 			p.qasm.Version = p.parseVersion()
 		case lexer.INCLUDE:
 			p.appendIncl(p.parseInclude())
-		case lexer.CONST:
-			p.appendStmt(p.parseDeclConst())
-		case lexer.QUBIT, lexer.BIT:
+		case lexer.QUBIT, lexer.BIT, lexer.CONST:
 			p.appendStmt(p.parseDecl())
 		case lexer.RESET:
 			p.appendStmt(p.parseReset())
@@ -88,7 +86,7 @@ func (p *Parser) expect(t lexer.Token) {
 		return
 	}
 
-	p.appendErr(fmt.Errorf("%v not found. cursor=%#v", lexer.Tokens[t], p.cur))
+	p.appendErr(fmt.Errorf("got=%v, want=%v", lexer.Tokens[p.cur.Token], lexer.Tokens[t]))
 }
 
 func (p *Parser) appendIncl(s ast.Expr) {
@@ -180,31 +178,30 @@ func (p *Parser) parseIndex() *ast.IndexExpr {
 	}
 }
 
-func (p *Parser) parseDeclConst() ast.Stmt {
-	kind := p.cur.Token // lexer.CONST
-
-	n := p.next()
-	p.expect(lexer.IDENT)
-
-	p.next()
-	p.expect(lexer.EQUALS)
-
-	v := p.next()
-	p.expect(lexer.INT)
-
-	return &ast.DeclConstStmt{
-		Kind: kind,
-		Name: &ast.IdentExpr{
-			Kind:  n.Token,
-			Value: n.Literal,
-		},
-		Value: v.Literal,
-	}
-}
-
 func (p *Parser) parseDecl() ast.Stmt {
-	kind := p.cur.Token // lexer.QUBIT, lexer.BIT
-	c := p.next()       // ident or lbracket
+	kind := p.cur.Token // lexer.QUBIT, lexer.BIT, lexer.CONST
+
+	if kind == lexer.CONST {
+		n := p.next()
+		p.expect(lexer.IDENT)
+
+		p.next()
+		p.expect(lexer.EQUALS)
+
+		v := p.next()
+		p.expect(lexer.INT)
+
+		return &ast.DeclStmt{
+			Kind: kind,
+			Name: &ast.IdentExpr{
+				Kind:  n.Token,
+				Value: n.Literal,
+			},
+			Value: v.Literal,
+		}
+	}
+
+	c := p.next() // ident or lbracket
 
 	// qubit q
 	if c.Token == lexer.IDENT {
