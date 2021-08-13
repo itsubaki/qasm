@@ -161,7 +161,7 @@ func (e *Evaluator) evalApplyCModExp2(s *ast.ApplyStmt) error {
 func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 	if s.Kind == lexer.CMODEXP2 {
 		if err := e.evalApplyCModExp2(s); err != nil {
-			return fmt.Errorf("apply: %v", err)
+			return fmt.Errorf("cmodexp2: %v", err)
 		}
 
 		return nil
