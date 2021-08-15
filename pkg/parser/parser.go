@@ -44,6 +44,8 @@ func (p *Parser) Parse() *ast.OpenQASM {
 			p.qasm.Version = p.parseVersion()
 		case lexer.INCLUDE:
 			p.appendIncl(p.parseInclude())
+		case lexer.GATE:
+			p.appendGate(p.parseGate())
 		case lexer.QUBIT, lexer.BIT, lexer.CONST:
 			p.appendStmt(p.parseDecl())
 		case lexer.RESET:
@@ -317,5 +319,11 @@ func (p *Parser) parsePrint() ast.Stmt {
 	return &ast.PrintStmt{
 		Kind:   lexer.PRINT,
 		Target: p.parseIdentList(),
+	}
+}
+
+func (p *Parser) parseGate() ast.Stmt {
+	return &ast.GateStmt{
+		Kind: lexer.GATE,
 	}
 }
