@@ -26,15 +26,13 @@ func Action(c *cli.Context) error {
 	l := lexer.New(strings.NewReader(string(f)))
 	p := parser.New(l)
 
-	ast := p.Parse()
+	a := p.Parse()
 	if errs := p.Errors(); len(errs) != 0 {
 		return fmt.Errorf("parse: %v", errs)
 	}
 
-	fmt.Println(ast)
-
 	e := evaluator.Default()
-	if err := e.Eval(ast); err != nil {
+	if err := e.Eval(a); err != nil {
 		return fmt.Errorf("eval: %v\n", err)
 	}
 

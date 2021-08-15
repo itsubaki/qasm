@@ -36,5 +36,6 @@ func Action(c *cli.Context) error {
 	}
 
 	ast.Print(a)
+	fmt.Println()
 	return nil
 }
