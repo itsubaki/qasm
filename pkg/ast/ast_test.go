@@ -501,3 +501,59 @@ func TestPrintStmtString(t *testing.T) {
 		}
 	}
 }
+
+func TestGateStmtString(t *testing.T) {
+	var cases = []struct {
+		in   ast.GateStmt
+		want string
+	}{
+		{
+			ast.GateStmt{
+				Kind: lexer.GATE,
+				Name: "bell",
+				QArgs: []ast.Expr{
+					&ast.IdentExpr{
+						Kind:  lexer.STRING,
+						Value: "q0",
+					},
+					&ast.IdentExpr{
+						Kind:  lexer.STRING,
+						Value: "q1",
+					},
+				},
+				Statements: []ast.Stmt{
+					&ast.ApplyStmt{
+						Kind: lexer.H,
+						Target: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "q0",
+							},
+						},
+					},
+					&ast.ApplyStmt{
+						Kind: lexer.CX,
+						Target: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "q0",
+							},
+							{
+								Kind:  lexer.IDENT,
+								Value: "q1",
+							},
+						},
+					},
+				},
+			},
+			"gate bell q0, q1 { h q0; cx q0, q1; }",
+		},
+	}
+
+	for _, c := range cases {
+		got := c.in.String()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
