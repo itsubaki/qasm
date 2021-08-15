@@ -11,13 +11,13 @@ import (
 func ExampleEvaluator() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Includes: []ast.Expr{
+		Include: []ast.Expr{
 			&ast.IncludeExpr{
 				Kind:  lexer.STRING,
 				Value: "\"stdgates.qasm\"",
 			},
 		},
-		Statements: []ast.Stmt{
+		Statement: []ast.Stmt{
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Index: &ast.IndexExpr{
@@ -150,13 +150,13 @@ func ExampleEvaluator() {
 func ExampleEvaluator_print() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Includes: []ast.Expr{
+		Include: []ast.Expr{
 			&ast.IdentExpr{
 				Kind:  lexer.STRING,
 				Value: "\"stdgates.qasm\"",
 			},
 		},
-		Statements: []ast.Stmt{
+		Statement: []ast.Stmt{
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Index: &ast.IndexExpr{

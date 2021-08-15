@@ -23,9 +23,10 @@ func New(l *lexer.Lexer) *Parser {
 	return &Parser{
 		l: l,
 		qasm: &ast.OpenQASM{
-			Version:    "3.0",
-			Includes:   make([]ast.Expr, 0),
-			Statements: make([]ast.Stmt, 0),
+			Version:   "3.0",
+			Include:   make([]ast.Expr, 0),
+			Gate:      make([]ast.Stmt, 0),
+			Statement: make([]ast.Stmt, 0),
 		},
 		errors: make([]string, 0),
 	}
@@ -90,11 +91,15 @@ func (p *Parser) expect(t lexer.Token) {
 }
 
 func (p *Parser) appendIncl(s ast.Expr) {
-	p.qasm.Includes = append(p.qasm.Includes, s)
+	p.qasm.Include = append(p.qasm.Include, s)
+}
+
+func (p *Parser) appendGate(s ast.Stmt) {
+	p.qasm.Gate = append(p.qasm.Gate, s)
 }
 
 func (p *Parser) appendStmt(s ast.Stmt) {
-	p.qasm.Statements = append(p.qasm.Statements, s)
+	p.qasm.Statement = append(p.qasm.Statement, s)
 }
 
 func (p *Parser) appendErr(e error) {

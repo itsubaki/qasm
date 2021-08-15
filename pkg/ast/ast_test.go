@@ -11,13 +11,13 @@ import (
 func ExampleOpenQASM_String() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Includes: []ast.Expr{
+		Include: []ast.Expr{
 			&ast.IncludeExpr{
 				Kind:  lexer.STRING,
 				Value: "\"stdgates.qasm\"",
 			},
 		},
-		Statements: []ast.Stmt{
+		Statement: []ast.Stmt{
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Name: &ast.IdentExpr{
@@ -511,7 +511,7 @@ func TestGateStmtString(t *testing.T) {
 			ast.GateStmt{
 				Kind: lexer.GATE,
 				Name: "bell",
-				QArgs: []ast.Expr{
+				QArg: []ast.Expr{
 					&ast.IdentExpr{
 						Kind:  lexer.STRING,
 						Value: "q0",
@@ -521,7 +521,7 @@ func TestGateStmtString(t *testing.T) {
 						Value: "q1",
 					},
 				},
-				Statements: []ast.Stmt{
+				Statement: []ast.Stmt{
 					&ast.ApplyStmt{
 						Kind: lexer.H,
 						Target: []ast.IdentExpr{

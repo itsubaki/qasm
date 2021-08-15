@@ -8,13 +8,13 @@ import (
 func ExamplePrint() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Includes: []ast.Expr{
+		Include: []ast.Expr{
 			&ast.IncludeExpr{
 				Kind:  lexer.STRING,
 				Value: "\"stdgates.qasm\"",
 			},
 		},
-		Statements: []ast.Stmt{
+		Statement: []ast.Stmt{
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Name: &ast.IdentExpr{
@@ -80,13 +80,13 @@ func ExamplePrint() {
 	// Output:
 	// *ast.OpenQASM {
 	// .  Version: 3.0
-	// .  Includes: []ast.Expr {
+	// .  Include: []ast.Expr {
 	// .  .  0: *ast.IncludeExpr {
 	// .  .  .  Kind: STRING
 	// .  .  .  Value: "stdgates.qasm"
 	// .  .  }
 	// .  }
-	// .  Statements: []ast.Stmt {
+	// .  Statement: []ast.Stmt {
 	// .  .  0: *ast.DeclStmt {
 	// .  .  .  Kind: qubit
 	// .  .  .  Name: *ast.IdentExpr {
@@ -142,6 +142,89 @@ func ExamplePrint() {
 	// .  .  .  Right: *ast.IdentExpr {
 	// .  .  .  .  Kind: STRING
 	// .  .  .  .  Value: c
+	// .  .  .  }
+	// .  .  }
+	// .  }
+	// }
+}
+
+func ExamplePrint_gate() {
+	g := &ast.GateStmt{
+		Kind: lexer.GATE,
+		Name: "bell",
+		QArg: []ast.Expr{
+			&ast.IdentExpr{
+				Kind:  lexer.STRING,
+				Value: "q0",
+			},
+			&ast.IdentExpr{
+				Kind:  lexer.STRING,
+				Value: "q1",
+			},
+		},
+		Statement: []ast.Stmt{
+			&ast.ApplyStmt{
+				Kind: lexer.H,
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.IDENT,
+						Value: "q0",
+					},
+				},
+			},
+			&ast.ApplyStmt{
+				Kind: lexer.CX,
+				Target: []ast.IdentExpr{
+					{
+						Kind:  lexer.IDENT,
+						Value: "q0",
+					},
+					{
+						Kind:  lexer.IDENT,
+						Value: "q1",
+					},
+				},
+			},
+		},
+	}
+
+	ast.Print(g)
+
+	// Output:
+	// *ast.GateStmt {
+	// .  Kind: gate
+	// .  Name: bell
+	// .  QArg: []ast.Expr {
+	// .  .  0: *ast.IdentExpr {
+	// .  .  .  Kind: STRING
+	// .  .  .  Value: q0
+	// .  .  }
+	// .  .  1: *ast.IdentExpr {
+	// .  .  .  Kind: STRING
+	// .  .  .  Value: q1
+	// .  .  }
+	// .  }
+	// .  Statement: []ast.Stmt {
+	// .  .  0: *ast.ApplyStmt {
+	// .  .  .  Kind: h
+	// .  .  .  Target: []ast.IdentExpr {
+	// .  .  .  .  0: ast.IdentExpr {
+	// .  .  .  .  .  Kind: IDENT
+	// .  .  .  .  .  Value: q0
+	// .  .  .  .  }
+	// .  .  .  }
+	// .  .  }
+	// .  .  1: *ast.ApplyStmt {
+	// .  .  .  Kind: cx
+	// .  .  .  Target: []ast.IdentExpr {
+	// .  .  .  .  0: ast.IdentExpr {
+	// .  .  .  .  .  Kind: IDENT
+	// .  .  .  .  .  Value: q0
+	// .  .  .  .  }
+	// .  .  .  .  1: ast.IdentExpr {
+	// .  .  .  .  .  Kind: IDENT
+	// .  .  .  .  .  Value: q1
+	// .  .  .  .  }
 	// .  .  .  }
 	// .  .  }
 	// .  }

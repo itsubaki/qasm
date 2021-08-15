@@ -35,7 +35,7 @@ func Default() *Evaluator {
 }
 
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
-	for _, stmt := range p.Statements {
+	for _, stmt := range p.Statement {
 		switch s := stmt.(type) {
 		case *ast.DeclStmt:
 			if err := e.evalDeclStmt(s); err != nil {
