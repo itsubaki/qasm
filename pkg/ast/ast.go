@@ -48,6 +48,21 @@ type Expr interface {
 	exprNode()
 }
 
+type IncludeExpr struct {
+	Kind  lexer.Token // lexer.STRING
+	Value string
+}
+
+func (i *IncludeExpr) exprNode() {}
+
+func (i *IncludeExpr) Literal() string {
+	return lexer.Tokens[i.Kind]
+}
+
+func (i *IncludeExpr) String() string {
+	return i.Value
+}
+
 type IdentExpr struct {
 	Kind  lexer.Token // lexer.STRING, lexer.INT, lexer.FLOAT
 	Value string

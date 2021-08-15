@@ -112,7 +112,7 @@ func (p *Parser) parseInclude() ast.Expr {
 	c := p.next()
 	p.expect(lexer.STRING)
 
-	return &ast.IdentExpr{
+	return &ast.IncludeExpr{
 		Kind:  c.Token,
 		Value: c.Literal,
 	}

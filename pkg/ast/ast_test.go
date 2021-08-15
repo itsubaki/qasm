@@ -12,7 +12,7 @@ func ExampleOpenQASM_String() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
 		Includes: []ast.Expr{
-			&ast.IdentExpr{
+			&ast.IncludeExpr{
 				Kind:  lexer.STRING,
 				Value: "\"stdgates.qasm\"",
 			},

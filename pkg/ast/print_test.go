@@ -9,7 +9,7 @@ func ExamplePrint() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
 		Includes: []ast.Expr{
-			&ast.IdentExpr{
+			&ast.IncludeExpr{
 				Kind:  lexer.STRING,
 				Value: "\"stdgates.qasm\"",
 			},
@@ -81,7 +81,7 @@ func ExamplePrint() {
 	// *ast.OpenQASM {
 	// Version: 3.0
 	// Includes: []ast.Expr {
-	// 0: *ast.IdentExpr {
+	// 0: *ast.IncludeExpr {
 	// Kind: STRING
 	// Value: "stdgates.qasm"
 	// }
