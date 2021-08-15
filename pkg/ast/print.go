@@ -113,7 +113,7 @@ func (p *printer) print(x reflect.Value) {
 		p.printf("}")
 
 	case reflect.Slice:
-		p.printf("%s {", x.Type())
+		p.printf("%s (len = %d) {", x.Type(), x.Len())
 		if x.Len() > 0 {
 			p.indent++
 			p.printf("\n")

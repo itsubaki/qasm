@@ -80,13 +80,13 @@ func ExamplePrint() {
 	// Output:
 	// *ast.OpenQASM {
 	// .  Version: 3.0
-	// .  Include: []ast.Expr {
+	// .  Include: []ast.Expr (len = 1) {
 	// .  .  0: *ast.IncludeExpr {
 	// .  .  .  Kind: STRING
 	// .  .  .  Value: "stdgates.qasm"
 	// .  .  }
 	// .  }
-	// .  Statement: []ast.Stmt {
+	// .  Statement: []ast.Stmt (len = 5) {
 	// .  .  0: *ast.DeclStmt {
 	// .  .  .  Kind: qubit
 	// .  .  .  Name: *ast.IdentExpr {
@@ -96,7 +96,7 @@ func ExamplePrint() {
 	// .  .  }
 	// .  .  1: *ast.ResetStmt {
 	// .  .  .  Kind: reset
-	// .  .  .  Target: []ast.IdentExpr {
+	// .  .  .  Target: []ast.IdentExpr (len = 1) {
 	// .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  Kind: STRING
 	// .  .  .  .  .  Value: q
@@ -105,7 +105,7 @@ func ExamplePrint() {
 	// .  .  }
 	// .  .  2: *ast.ApplyStmt {
 	// .  .  .  Kind: x
-	// .  .  .  Target: []ast.IdentExpr {
+	// .  .  .  Target: []ast.IdentExpr (len = 1) {
 	// .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  Kind: STRING
 	// .  .  .  .  .  Value: q
@@ -120,7 +120,7 @@ func ExamplePrint() {
 	// .  .  .  }
 	// .  .  .  Right: *ast.MeasureStmt {
 	// .  .  .  .  Kind: measure
-	// .  .  .  .  Target: []ast.IdentExpr {
+	// .  .  .  .  Target: []ast.IdentExpr (len = 1) {
 	// .  .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  .  Kind: STRING
 	// .  .  .  .  .  .  Value: q
@@ -132,7 +132,7 @@ func ExamplePrint() {
 	// .  .  .  Kind: ->
 	// .  .  .  Left: *ast.MeasureStmt {
 	// .  .  .  .  Kind: measure
-	// .  .  .  .  Target: []ast.IdentExpr {
+	// .  .  .  .  Target: []ast.IdentExpr (len = 1) {
 	// .  .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  .  Kind: STRING
 	// .  .  .  .  .  .  Value: q
@@ -194,7 +194,7 @@ func ExamplePrint_gate() {
 	// *ast.GateStmt {
 	// .  Kind: gate
 	// .  Name: bell
-	// .  QArg: []ast.Expr {
+	// .  QArg: []ast.Expr (len = 2) {
 	// .  .  0: *ast.IdentExpr {
 	// .  .  .  Kind: STRING
 	// .  .  .  Value: q0
@@ -204,10 +204,10 @@ func ExamplePrint_gate() {
 	// .  .  .  Value: q1
 	// .  .  }
 	// .  }
-	// .  Statement: []ast.Stmt {
+	// .  Statement: []ast.Stmt (len = 2) {
 	// .  .  0: *ast.ApplyStmt {
 	// .  .  .  Kind: h
-	// .  .  .  Target: []ast.IdentExpr {
+	// .  .  .  Target: []ast.IdentExpr (len = 1) {
 	// .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  Kind: IDENT
 	// .  .  .  .  .  Value: q0
@@ -216,7 +216,7 @@ func ExamplePrint_gate() {
 	// .  .  }
 	// .  .  1: *ast.ApplyStmt {
 	// .  .  .  Kind: cx
-	// .  .  .  Target: []ast.IdentExpr {
+	// .  .  .  Target: []ast.IdentExpr (len = 2) {
 	// .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  Kind: IDENT
 	// .  .  .  .  .  Value: q0
