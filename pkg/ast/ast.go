@@ -69,10 +69,8 @@ func (i *IdentExpr) String() string {
 }
 
 type IndexExpr struct {
-	LBRACKET lexer.Token
-	RBRACKET lexer.Token
-	Kind     lexer.Token // lexer.INT
-	Value    string
+	Kind  lexer.Token // lexer.INT
+	Value string
 }
 
 func (i *IndexExpr) exprNode() {}
@@ -84,9 +82,9 @@ func (i *IndexExpr) Literal() string {
 func (i *IndexExpr) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(lexer.Tokens[i.LBRACKET])
+	buf.WriteString(lexer.Tokens[lexer.LBRACKET])
 	buf.WriteString(i.Value)
-	buf.WriteString(lexer.Tokens[i.RBRACKET])
+	buf.WriteString(lexer.Tokens[lexer.RBRACKET])
 
 	return buf.String()
 }

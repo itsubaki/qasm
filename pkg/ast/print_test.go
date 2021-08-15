@@ -79,19 +79,19 @@ func ExamplePrint() {
 
 	// Output:
 	// *ast.OpenQASM {
-	// Version: "3.0"
+	// Version: 3.0
 	// Includes: []ast.Expr {
 	// 0: *ast.IdentExpr {
-	// Kind: "STRING"
-	// Value: "\"stdgates.qasm\""
+	// Kind: STRING
+	// Value: "stdgates.qasm"
 	// }
 	// }
 	// Statements: []ast.Stmt {
 	// 0: *ast.DeclStmt {
-	// Kind: "qubit"
+	// Kind: qubit
 	// Name: *ast.IdentExpr {
-	// Kind: "STRING"
-	// Value: "q"
+	// Kind: STRING
+	// Value: q
 	// }
 	// }
 	// }

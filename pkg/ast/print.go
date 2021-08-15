@@ -22,8 +22,8 @@ func (p *printer) Write(data []byte) (int, error) {
 	return fmt.Print(string(data))
 }
 
-func (p *printer) printf(format string, args ...interface{}) {
-	if _, err := fmt.Fprintf(p, format, args...); err != nil {
+func (p *printer) printf(format string, a ...interface{}) {
+	if _, err := fmt.Fprintf(p, format, a...); err != nil {
 		panic(err)
 	}
 }
@@ -99,14 +99,7 @@ func (p *printer) print(x reflect.Value) {
 		}
 		p.printf("}")
 	default:
-		v := x.Interface()
-		switch v := v.(type) {
-		case string:
-			p.printf("%q", v)
-			return
-		default:
-			p.printf("%v", x)
-		}
+		p.printf("%v", x)
 	}
 }
 

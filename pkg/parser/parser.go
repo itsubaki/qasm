@@ -157,7 +157,6 @@ func (p *Parser) parseIdent() ast.IdentExpr {
 }
 
 func (p *Parser) parseIndex() *ast.IndexExpr {
-	lbrack := p.cur
 	p.expect(lexer.LBRACKET)
 
 	s := p.next()
@@ -167,14 +166,12 @@ func (p *Parser) parseIndex() *ast.IndexExpr {
 	}
 	p.expect(lexer.INT)
 
-	rbrack := p.next()
+	p.next()
 	p.expect(lexer.RBRACKET)
 
 	return &ast.IndexExpr{
-		LBRACKET: lbrack.Token,
-		RBRACKET: rbrack.Token,
-		Kind:     lexer.INT,
-		Value:    v,
+		Kind:  lexer.INT,
+		Value: v,
 	}
 }
 
@@ -220,7 +217,7 @@ func (p *Parser) parseDecl() ast.Stmt {
 	index := p.next()
 	p.expect(lexer.INT)
 
-	brack := p.next()
+	p.next()
 	p.expect(lexer.RBRACKET)
 
 	ident := p.next()
@@ -233,10 +230,8 @@ func (p *Parser) parseDecl() ast.Stmt {
 			Value: ident.Literal,
 		},
 		Index: &ast.IndexExpr{
-			LBRACKET: c.Token,
-			RBRACKET: brack.Token,
-			Kind:     index.Token,
-			Value:    index.Literal,
+			Kind:  index.Token,
+			Value: index.Literal,
 		},
 	}
 }

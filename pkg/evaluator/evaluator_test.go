@@ -21,10 +21,8 @@ func ExampleEvaluator() {
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Index: &ast.IndexExpr{
-					LBRACKET: lexer.LBRACKET,
-					RBRACKET: lexer.RBRACKET,
-					Kind:     lexer.INT,
-					Value:    "2",
+					Kind:  lexer.INT,
+					Value: "2",
 				},
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
@@ -34,10 +32,8 @@ func ExampleEvaluator() {
 			&ast.DeclStmt{
 				Kind: lexer.BIT,
 				Index: &ast.IndexExpr{
-					LBRACKET: lexer.LBRACKET,
-					RBRACKET: lexer.RBRACKET,
-					Kind:     lexer.INT,
-					Value:    "2",
+					Kind:  lexer.INT,
+					Value: "2",
 				},
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
@@ -69,20 +65,16 @@ func ExampleEvaluator() {
 						Kind:  lexer.STRING,
 						Value: "q",
 						Index: &ast.IndexExpr{
-							LBRACKET: lexer.LBRACKET,
-							RBRACKET: lexer.RBRACKET,
-							Kind:     lexer.INT,
-							Value:    "0",
+							Kind:  lexer.INT,
+							Value: "0",
 						},
 					},
 					{
 						Kind:  lexer.STRING,
 						Value: "q",
 						Index: &ast.IndexExpr{
-							LBRACKET: lexer.LBRACKET,
-							RBRACKET: lexer.RBRACKET,
-							Kind:     lexer.INT,
-							Value:    "1",
+							Kind:  lexer.INT,
+							Value: "1",
 						},
 					},
 				},
@@ -168,10 +160,8 @@ func ExampleEvaluator_print() {
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Index: &ast.IndexExpr{
-					LBRACKET: lexer.LBRACKET,
-					RBRACKET: lexer.RBRACKET,
-					Kind:     lexer.INT,
-					Value:    "2",
+					Kind:  lexer.INT,
+					Value: "2",
 				},
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
