@@ -59,6 +59,7 @@ const (
 	IQFT     // iqft
 	CMODEXP2 // cmodexp2
 	MEASURE  // measure
+	GATE     // gate
 	PRINT    // print
 	keyword_end
 )
@@ -115,5 +116,6 @@ var Tokens = [...]string{
 	IQFT:     "iqft",
 	CMODEXP2: "cmodexp2",
 	MEASURE:  "measure",
+	GATE:     "gate",
 	PRINT:    "print",
 }

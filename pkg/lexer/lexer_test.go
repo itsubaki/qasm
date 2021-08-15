@@ -19,6 +19,29 @@ func TestLexer(t *testing.T) {
 		want []Token
 	}{
 		{
+			in: "../../testdata/gate.qasm",
+			want: []Token{
+				{lexer.GATE, "gate"},
+				{lexer.IDENT, "bell"},
+				{lexer.IDENT, "q0"},
+				{lexer.COMMA, ","},
+				{lexer.IDENT, "q1"},
+				{lexer.LBRACE, "{"},
+
+				{lexer.H, "h"},
+				{lexer.IDENT, "q0"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.CX, "cx"},
+				{lexer.IDENT, "q0"},
+				{lexer.COMMA, ","},
+				{lexer.IDENT, "q1"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.RBRACE, "}"},
+			},
+		},
+		{
 			in: "../../testdata/test_lexer.qasm",
 			want: []Token{
 				{lexer.OPENQASM, "OPENQASM"},
