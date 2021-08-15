@@ -3,23 +3,40 @@ package ast
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-var indent = []byte(". ")
+var indent = []byte(".  ")
 
 func Print(x interface{}) {
-	p := printer{}
+	p := printer{
+		indent: 0,
+		last:   0,
+	}
+
 	p.print(reflect.ValueOf(x))
 }
 
 type printer struct {
 	indent int
+	last   byte
 }
 
 func (p *printer) Write(data []byte) (int, error) {
-	return fmt.Print(string(data))
+	indent := strings.Repeat(string(indent), p.indent)
+
+	for _, b := range data {
+		if p.last == '\n' {
+			fmt.Printf(indent)
+		}
+
+		fmt.Printf(string(b))
+		p.last = b
+	}
+
+	return len(data), nil
 }
 
 func (p *printer) printf(format string, a ...interface{}) {
@@ -37,12 +54,15 @@ func (p *printer) print(x reflect.Value) {
 	switch x.Kind() {
 	case reflect.Interface:
 		p.print(x.Elem())
+
 	case reflect.Ptr:
 		p.printf("*")
 		p.print(x.Elem())
+
 	case reflect.Struct:
 		t := x.Type()
 		p.printf("%s {", t)
+		p.indent++
 
 		first := true
 		for i, n := 0, t.NumField(); i < n; i++ {
@@ -75,29 +95,37 @@ func (p *printer) print(x reflect.Value) {
 			p.print(value)
 			p.printf("\n")
 		}
+		p.indent--
 		p.printf("}")
+
 	case reflect.Array:
 		p.printf("%s {", x.Type())
 		if x.Len() > 0 {
+			p.indent++
 			p.printf("\n")
 			for i, n := 0, x.Len(); i < n; i++ {
 				p.printf("%d: ", i)
 				p.print(x.Index(i))
 				p.printf("\n")
 			}
+			p.indent--
 		}
 		p.printf("}")
+
 	case reflect.Slice:
 		p.printf("%s {", x.Type())
 		if x.Len() > 0 {
+			p.indent++
 			p.printf("\n")
 			for i, n := 0, x.Len(); i < n; i++ {
 				p.printf("%d: ", i)
 				p.print(x.Index(i))
 				p.printf("\n")
 			}
+			p.indent--
 		}
 		p.printf("}")
+
 	default:
 		p.printf("%v", x)
 	}
