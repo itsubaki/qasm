@@ -7,6 +7,8 @@ import (
 	"github.com/itsubaki/qasm/pkg/ast"
 )
 
+type Const map[string]int
+
 type Qubit struct {
 	Name  []string
 	Value map[string][]q.Qubit

@@ -9,7 +9,7 @@ import (
 )
 
 type Evaluator struct {
-	Const map[string]int
+	Const Const
 	Bit   *Bit
 	Qubit *Qubit
 	Q     *q.Q
