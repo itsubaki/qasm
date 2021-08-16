@@ -151,16 +151,16 @@ func TestDeclStmtString(t *testing.T) {
 		{
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
-				Index: &ast.IndexExpr{
-					Kind:  lexer.INT,
-					Value: "2",
-				},
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
 					Value: "q",
+					Index: &ast.IndexExpr{
+						Kind:  lexer.INT,
+						Value: "2",
+					},
 				},
 			},
-			"qubit[2] q",
+			"qubit q[2]",
 		},
 		{
 			&ast.DeclStmt{

@@ -205,20 +205,22 @@ func (p *Parser) parseDecl() ast.Stmt {
 		}
 	}
 
-	c := p.next() // ident or lbracket
+	ident := p.next()
+	p.expect(lexer.IDENT)
 
 	// qubit q
-	if c.Token == lexer.IDENT {
+	p.next()
+	if p.cur.Token != lexer.LBRACKET {
 		return &ast.DeclStmt{
 			Kind: kind,
 			Name: &ast.IdentExpr{
-				Kind:  c.Token,
-				Value: c.Literal,
+				Kind:  ident.Token,
+				Value: ident.Literal,
 			},
 		}
 	}
 
-	// qubit[2] q
+	// qubit q[2]
 	p.expect(lexer.LBRACKET)
 
 	index := p.next()
@@ -227,18 +229,15 @@ func (p *Parser) parseDecl() ast.Stmt {
 	p.next()
 	p.expect(lexer.RBRACKET)
 
-	ident := p.next()
-	p.expect(lexer.IDENT)
-
 	return &ast.DeclStmt{
 		Kind: kind,
 		Name: &ast.IdentExpr{
 			Kind:  ident.Token,
 			Value: ident.Literal,
-		},
-		Index: &ast.IndexExpr{
-			Kind:  index.Token,
-			Value: index.Literal,
+			Index: &ast.IndexExpr{
+				Kind:  lexer.INT,
+				Value: index.Literal,
+			},
 		},
 	}
 }

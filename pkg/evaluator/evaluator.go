@@ -86,8 +86,8 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 	}
 
 	n := 1
-	if s.Index != nil {
-		n = s.Index.Int()
+	if s.Name.Index != nil {
+		n = s.Name.Index.Int()
 	}
 
 	if s.Kind == lexer.BIT {

@@ -4,8 +4,8 @@ include "itsubaki/q.qasm";
 const N = 15;
 const a = 7;
 
-qubit[3] r0;
-qubit[4] r1;
+qubit r0[3];
+qubit r1[4];
 
 x r1[-1];
 h r0;

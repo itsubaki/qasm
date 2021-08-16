@@ -122,7 +122,6 @@ func (i *IndexExpr) Int() int {
 type DeclStmt struct {
 	Kind  lexer.Token // lexer.QUBIT, lexer.BIT, lexer.CONST
 	Name  *IdentExpr
-	Index *IndexExpr
 	Value string
 }
 
@@ -148,9 +147,6 @@ func (s *DeclStmt) String() string {
 	}
 
 	buf.WriteString(s.Literal())
-	if s.Index != nil {
-		buf.WriteString(s.Index.String())
-	}
 	buf.WriteString(" ")
 	buf.WriteString(s.Name.String())
 

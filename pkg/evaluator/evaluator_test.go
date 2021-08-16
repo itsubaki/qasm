@@ -20,24 +20,24 @@ func ExampleEvaluator() {
 		Statement: []ast.Stmt{
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
-				Index: &ast.IndexExpr{
-					Kind:  lexer.INT,
-					Value: "2",
-				},
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
 					Value: "q",
+					Index: &ast.IndexExpr{
+						Kind:  lexer.INT,
+						Value: "2",
+					},
 				},
 			},
 			&ast.DeclStmt{
 				Kind: lexer.BIT,
-				Index: &ast.IndexExpr{
-					Kind:  lexer.INT,
-					Value: "2",
-				},
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
 					Value: "c",
+					Index: &ast.IndexExpr{
+						Kind:  lexer.INT,
+						Value: "2",
+					},
 				},
 			},
 			&ast.ResetStmt{
@@ -135,8 +135,8 @@ func ExampleEvaluator() {
 	// Output:
 	// OPENQASM 3.0;
 	// include "stdgates.qasm";
-	// qubit[2] q;
-	// bit[2] c;
+	// qubit q[2];
+	// bit c[2];
 	// reset q;
 	// x q;
 	// cx q[0], q[1];
@@ -159,13 +159,13 @@ func ExampleEvaluator_print() {
 		Statement: []ast.Stmt{
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
-				Index: &ast.IndexExpr{
-					Kind:  lexer.INT,
-					Value: "2",
-				},
 				Name: &ast.IdentExpr{
 					Kind:  lexer.STRING,
 					Value: "q",
+					Index: &ast.IndexExpr{
+						Kind:  lexer.INT,
+						Value: "2",
+					},
 				},
 			},
 			&ast.ApplyStmt{
