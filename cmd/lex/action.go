@@ -30,7 +30,7 @@ func Action(c *cli.Context) error {
 
 		fmt.Printf("%v ", lexer.Tokens[token])
 
-		if token == lexer.SEMICOLON {
+		if token == lexer.SEMICOLON || token == lexer.LBRACE || token == lexer.RBRACE {
 			fmt.Println()
 		}
 	}

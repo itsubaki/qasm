@@ -74,7 +74,7 @@ func TestParseIncludes(t *testing.T) {
 
 	for _, c := range cases {
 		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		got := p.Parse().Include[0].String()
+		got := p.Parse().Includes[0].String()
 		if got != c.want {
 			t.Errorf("got=%v, want=%v", got, c.want)
 		}
@@ -142,7 +142,7 @@ func TestParseStmt(t *testing.T) {
 
 	for _, c := range cases {
 		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		got := p.Parse().Statement[0].String()
+		got := p.Parse().Statements[0].String()
 		if got != c.want {
 			t.Errorf("got=%v, want=%v", got, c.want)
 		}
@@ -162,7 +162,7 @@ func TestParseGate(t *testing.T) {
 
 	for _, c := range cases {
 		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		got := p.Parse().Gate[0].String()
+		got := p.Parse().Gates[0].String()
 		if got != c.want {
 			t.Errorf("got=%v, want=%v", got, c.want)
 		}

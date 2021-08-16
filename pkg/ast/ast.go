@@ -9,10 +9,10 @@ import (
 )
 
 type OpenQASM struct {
-	Version   string
-	Include   []Expr
-	Gate      []Stmt
-	Statement []Stmt
+	Version    string
+	Includes   []Expr
+	Gates      []Stmt
+	Statements []Stmt
 }
 
 func (p *OpenQASM) String() string {
@@ -21,17 +21,17 @@ func (p *OpenQASM) String() string {
 	version := fmt.Sprintf("OPENQASM %v;\n", p.Version)
 	buf.WriteString(version)
 
-	for _, i := range p.Include {
+	for _, i := range p.Includes {
 		str := fmt.Sprintf("include %s;\n", i)
 		buf.WriteString(str)
 	}
 
-	for _, g := range p.Gate {
+	for _, g := range p.Gates {
 		str := fmt.Sprintf("%s\n", g.String())
 		buf.WriteString(str)
 	}
 
-	for _, s := range p.Statement {
+	for _, s := range p.Statements {
 		str := fmt.Sprintf("%s;\n", s.String())
 		buf.WriteString(str)
 	}
@@ -324,10 +324,11 @@ func (s *PrintStmt) String() string {
 }
 
 type GateStmt struct {
-	Kind      lexer.Token // lexer.GATE
-	Name      string
-	QArg      []IdentExpr
-	Statement []Stmt
+	Kind       lexer.Token // lexer.GATE
+	Name       string
+	Params     []IdentExpr
+	QArgs      []IdentExpr
+	Statements []Stmt
 }
 
 func (s *GateStmt) stmtNode() {}
@@ -343,10 +344,10 @@ func (s *GateStmt) String() string {
 	buf.WriteString(" ")
 	buf.WriteString(s.Name)
 	buf.WriteString(" ")
-	for i, a := range s.QArg {
+	for i, a := range s.QArgs {
 		buf.WriteString(a.String())
 
-		if len(s.QArg)-1 != i {
+		if len(s.QArgs)-1 != i {
 			buf.WriteString(", ")
 		}
 	}
@@ -354,7 +355,7 @@ func (s *GateStmt) String() string {
 	buf.WriteString(" ")
 	buf.WriteString(lexer.Tokens[lexer.LBRACE])
 	buf.WriteString(" ")
-	for _, stmt := range s.Statement {
+	for _, stmt := range s.Statements {
 		msg := fmt.Sprintf("%s; ", stmt.String())
 		buf.WriteString(msg)
 	}

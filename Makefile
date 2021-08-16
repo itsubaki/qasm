@@ -16,6 +16,7 @@ parse:
 	go run main.go parse -f testdata/bell.qasm
 	go run main.go parse -f testdata/teleportation.qasm
 	go run main.go parse -f testdata/shor.qasm
+	go run main.go parse -f testdata/gate.qasm
 
 .PHONY: testdata
 testdata:

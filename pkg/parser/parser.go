@@ -23,10 +23,10 @@ func New(l *lexer.Lexer) *Parser {
 	return &Parser{
 		l: l,
 		qasm: &ast.OpenQASM{
-			Version:   "3.0",
-			Include:   make([]ast.Expr, 0),
-			Gate:      make([]ast.Stmt, 0),
-			Statement: make([]ast.Stmt, 0),
+			Version:    "3.0",
+			Includes:   make([]ast.Expr, 0),
+			Gates:      make([]ast.Stmt, 0),
+			Statements: make([]ast.Stmt, 0),
 		},
 		errors: make([]string, 0),
 	}
@@ -93,15 +93,15 @@ func (p *Parser) expect(t lexer.Token) {
 }
 
 func (p *Parser) appendIncl(s ast.Expr) {
-	p.qasm.Include = append(p.qasm.Include, s)
+	p.qasm.Includes = append(p.qasm.Includes, s)
 }
 
 func (p *Parser) appendGate(s ast.Stmt) {
-	p.qasm.Gate = append(p.qasm.Gate, s)
+	p.qasm.Gates = append(p.qasm.Gates, s)
 }
 
 func (p *Parser) appendStmt(s ast.Stmt) {
-	p.qasm.Statement = append(p.qasm.Statement, s)
+	p.qasm.Statements = append(p.qasm.Statements, s)
 }
 
 func (p *Parser) appendErr(e error) {
@@ -322,28 +322,37 @@ func (p *Parser) parsePrint() ast.Stmt {
 }
 
 func (p *Parser) parseGate() ast.Stmt {
-	n := p.next()
+	name := p.next()
 	p.expect(lexer.IDENT)
 	p.next()
 
-	a := p.parseIdentList()
+	params := make([]ast.IdentExpr, 0)
+	if p.cur.Token == lexer.LPAREN {
+		params = p.parseIdentList()
+		p.expect(lexer.RPAREN)
+		p.next()
+	}
+	p.expect(lexer.IDENT)
+
+	args := p.parseIdentList()
 	p.expect(lexer.LBRACE)
 
-	s := make([]ast.Stmt, 0)
+	stmts := make([]ast.Stmt, 0)
 	for {
 		p.next()
 		if p.cur.Token == lexer.RBRACE {
 			break
 		}
 
-		s = append(s, p.parseApply())
+		stmts = append(stmts, p.parseApply())
 	}
 	p.expect(lexer.RBRACE)
 
 	return &ast.GateStmt{
-		Kind:      lexer.GATE,
-		Name:      n.Literal,
-		QArg:      a,
-		Statement: s,
+		Kind:       lexer.GATE,
+		Name:       name.Literal,
+		Params:     params,
+		QArgs:      args,
+		Statements: stmts,
 	}
 }

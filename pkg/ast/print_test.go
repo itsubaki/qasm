@@ -8,13 +8,13 @@ import (
 func ExamplePrint() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Include: []ast.Expr{
+		Includes: []ast.Expr{
 			&ast.IncludeExpr{
 				Kind:  lexer.STRING,
 				Value: "\"stdgates.qasm\"",
 			},
 		},
-		Statement: []ast.Stmt{
+		Statements: []ast.Stmt{
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Name: &ast.IdentExpr{
@@ -80,13 +80,13 @@ func ExamplePrint() {
 	// Output:
 	// *ast.OpenQASM {
 	// .  Version: 3.0
-	// .  Include: []ast.Expr (len = 1) {
+	// .  Includes: []ast.Expr (len = 1) {
 	// .  .  0: *ast.IncludeExpr {
 	// .  .  .  Kind: STRING
 	// .  .  .  Value: "stdgates.qasm"
 	// .  .  }
 	// .  }
-	// .  Statement: []ast.Stmt (len = 5) {
+	// .  Statements: []ast.Stmt (len = 5) {
 	// .  .  0: *ast.DeclStmt {
 	// .  .  .  Kind: qubit
 	// .  .  .  Name: *ast.IdentExpr {
@@ -152,7 +152,7 @@ func ExamplePrint_gate() {
 	g := &ast.GateStmt{
 		Kind: lexer.GATE,
 		Name: "bell",
-		QArg: []ast.IdentExpr{
+		QArgs: []ast.IdentExpr{
 			{
 				Kind:  lexer.STRING,
 				Value: "q0",
@@ -162,7 +162,7 @@ func ExamplePrint_gate() {
 				Value: "q1",
 			},
 		},
-		Statement: []ast.Stmt{
+		Statements: []ast.Stmt{
 			&ast.ApplyStmt{
 				Kind: lexer.H,
 				Target: []ast.IdentExpr{
@@ -194,7 +194,7 @@ func ExamplePrint_gate() {
 	// *ast.GateStmt {
 	// .  Kind: gate
 	// .  Name: bell
-	// .  QArg: []ast.IdentExpr (len = 2) {
+	// .  QArgs: []ast.IdentExpr (len = 2) {
 	// .  .  0: ast.IdentExpr {
 	// .  .  .  Kind: STRING
 	// .  .  .  Value: q0
@@ -204,7 +204,7 @@ func ExamplePrint_gate() {
 	// .  .  .  Value: q1
 	// .  .  }
 	// .  }
-	// .  Statement: []ast.Stmt (len = 2) {
+	// .  Statements: []ast.Stmt (len = 2) {
 	// .  .  0: *ast.ApplyStmt {
 	// .  .  .  Kind: h
 	// .  .  .  Target: []ast.IdentExpr (len = 1) {

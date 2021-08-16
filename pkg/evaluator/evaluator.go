@@ -5,30 +5,19 @@ import (
 
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/pkg/ast"
+	"github.com/itsubaki/qasm/pkg/evaluator/register"
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
 type Evaluator struct {
-	Gate  Gate
-	Const Const
-	Bit   *Bit
-	Qubit *Qubit
-	Q     *q.Q
+	Q *q.Q
+	R *register.Register
 }
 
 func New(qsim *q.Q) *Evaluator {
 	return &Evaluator{
-		Gate:  make(map[string]ast.GateStmt),
-		Const: make(map[string]int),
-		Bit: &Bit{
-			Name:  make([]string, 0),
-			Value: make(map[string][]int),
-		},
-		Qubit: &Qubit{
-			Name:  make([]string, 0),
-			Value: make(map[string][]q.Qubit),
-		},
 		Q: qsim,
+		R: register.New(),
 	}
 }
 
@@ -37,7 +26,7 @@ func Default() *Evaluator {
 }
 
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
-	for _, stmt := range p.Statement {
+	for _, stmt := range p.Statements {
 		switch s := stmt.(type) {
 		case *ast.GateStmt:
 			if err := e.evalGateStmt(s); err != nil {
@@ -83,11 +72,11 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 	ident := s.Name.Value
 
 	if s.Kind == lexer.CONST {
-		if _, ok := e.Const[ident]; ok {
+		if _, ok := e.R.Const[ident]; ok {
 			return fmt.Errorf("already exists=%v", ident)
 		}
 
-		e.Const[ident] = s.Int()
+		e.R.Const[ident] = s.Int()
 		return nil
 	}
 
@@ -97,21 +86,21 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 	}
 
 	if s.Kind == lexer.BIT {
-		if ok := e.Bit.Exists(ident); ok {
+		if ok := e.R.Bit.Exists(ident); ok {
 			return fmt.Errorf("already exists=%v", ident)
 		}
 
-		e.Bit.Add(ident, make([]int, n))
+		e.R.Bit.Add(ident, make([]int, n))
 		return nil
 	}
 
 	if s.Kind == lexer.QUBIT {
-		if ok := e.Qubit.Exists(ident); ok {
+		if ok := e.R.Qubit.Exists(ident); ok {
 			return fmt.Errorf("already exists=%v", ident)
 		}
 
 		qb := e.Q.ZeroWith(n)
-		e.Qubit.Add(ident, qb)
+		e.R.Qubit.Add(ident, qb)
 		return nil
 	}
 
@@ -120,7 +109,7 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 
 func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 	for _, t := range s.Target {
-		qb, err := e.Qubit.Get(t.Value, t.Index)
+		qb, err := e.R.Qubit.Get(t.Value, t.Index)
 		if err != nil {
 			return fmt.Errorf("get qubit=%v: %v", t.Value, err)
 		}
@@ -136,22 +125,22 @@ func (e *Evaluator) evalApplyCModExp2(s *ast.ApplyStmt) error {
 		return fmt.Errorf("invalid target length %v", len(s.Target))
 	}
 
-	a, ok := e.Const[s.Target[0].Value]
+	a, ok := e.R.Const[s.Target[0].Value]
 	if !ok {
 		return fmt.Errorf("IDENT=%v not found", s.Target[0].Value)
 	}
 
-	N, ok := e.Const[s.Target[1].Value]
+	N, ok := e.R.Const[s.Target[1].Value]
 	if !ok {
 		return fmt.Errorf("IDENT=%v not found", s.Target[1].Value)
 	}
 
-	r0, err := e.Qubit.Get(s.Target[2].Value)
+	r0, err := e.R.Qubit.Get(s.Target[2].Value)
 	if err != nil {
 		return fmt.Errorf("get qubit=%v: %v", s.Target[2].Value, err)
 	}
 
-	r1, err := e.Qubit.Get(s.Target[3].Value)
+	r1, err := e.R.Qubit.Get(s.Target[3].Value)
 	if err != nil {
 		return fmt.Errorf("get qubit=%v: %v", s.Target[3].Value, err)
 	}
@@ -171,7 +160,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 
 	in := make([]q.Qubit, 0)
 	for _, t := range s.Target {
-		qb, err := e.Qubit.Get(t.Value, t.Index)
+		qb, err := e.R.Qubit.Get(t.Value, t.Index)
 		if err != nil {
 			return fmt.Errorf("get qubit=%v: %v", t.Value, err)
 		}
@@ -212,7 +201,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 }
 
 func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
-	c, err := e.Bit.Get(s.Left.Value)
+	c, err := e.R.Bit.Get(s.Left.Value)
 	if err != nil {
 		return fmt.Errorf("get bit=%v: %v", s.Left.Value, err)
 	}
@@ -244,7 +233,7 @@ func (e *Evaluator) evalArrowStmt(s *ast.ArrowStmt) error {
 func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 	out := make([]q.Qubit, 0)
 	for _, t := range s.Target {
-		qb, err := e.Qubit.Get(t.Value, t.Index)
+		qb, err := e.R.Qubit.Get(t.Value, t.Index)
 		if err != nil {
 			return nil, fmt.Errorf("get qubit=%v: %v", t.Value, err)
 		}
@@ -257,7 +246,7 @@ func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 }
 
 func (e *Evaluator) evalGateStmt(s *ast.GateStmt) error {
-	e.Gate[s.Name] = *s
+	e.R.Gate[s.Name] = *s
 	return nil
 }
 
@@ -275,17 +264,17 @@ func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
 }
 
 func (e *Evaluator) Println(name ...string) error {
-	if len(e.Qubit.Name) == 0 {
+	if len(e.R.Qubit.Name) == 0 {
 		return nil
 	}
 
 	if len(name) == 0 {
-		name = e.Qubit.Name
+		name = e.R.Qubit.Name
 	}
 
 	index := make([][]int, 0)
 	for _, n := range name {
-		qb, err := e.Qubit.Get(n)
+		qb, err := e.R.Qubit.Get(n)
 		if err != nil {
 			return fmt.Errorf("get qubit=%v: %v", n, err)
 		}
