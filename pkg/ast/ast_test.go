@@ -511,12 +511,12 @@ func TestGateStmtString(t *testing.T) {
 			ast.GateStmt{
 				Kind: lexer.GATE,
 				Name: "bell",
-				QArg: []ast.Expr{
-					&ast.IdentExpr{
+				QArg: []ast.IdentExpr{
+					{
 						Kind:  lexer.STRING,
 						Value: "q0",
 					},
-					&ast.IdentExpr{
+					{
 						Kind:  lexer.STRING,
 						Value: "q1",
 					},

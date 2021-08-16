@@ -148,3 +148,23 @@ func TestParseStmt(t *testing.T) {
 		}
 	}
 }
+
+func TestParseGate(t *testing.T) {
+	var cases = []struct {
+		in   string
+		want string
+	}{
+		{
+			"gate bell q0, q1 { h q0; cx q0, q1; }",
+			"gate bell q0, q1 { h q0; cx q0, q1; }",
+		},
+	}
+
+	for _, c := range cases {
+		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
+		got := p.Parse().Gate[0].String()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}

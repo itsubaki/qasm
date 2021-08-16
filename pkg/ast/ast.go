@@ -326,7 +326,7 @@ func (s *PrintStmt) String() string {
 type GateStmt struct {
 	Kind      lexer.Token // lexer.GATE
 	Name      string
-	QArg      []Expr
+	QArg      []IdentExpr
 	Statement []Stmt
 }
 

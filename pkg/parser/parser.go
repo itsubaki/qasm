@@ -322,7 +322,28 @@ func (p *Parser) parsePrint() ast.Stmt {
 }
 
 func (p *Parser) parseGate() ast.Stmt {
+	n := p.next()
+	p.expect(lexer.IDENT)
+	p.next()
+
+	a := p.parseIdentList()
+	p.expect(lexer.LBRACE)
+
+	s := make([]ast.Stmt, 0)
+	for {
+		p.next()
+		if p.cur.Token == lexer.RBRACE {
+			break
+		}
+
+		s = append(s, p.parseApply())
+	}
+	p.expect(lexer.RBRACE)
+
 	return &ast.GateStmt{
-		Kind: lexer.GATE,
+		Kind:      lexer.GATE,
+		Name:      n.Literal,
+		QArg:      a,
+		Statement: s,
 	}
 }
