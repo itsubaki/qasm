@@ -46,8 +46,10 @@ func (p *Parser) Parse() *ast.OpenQASM {
 			p.appendIncl(p.parseInclude())
 		case lexer.GATE:
 			p.appendGate(p.parseGate())
-		case lexer.QUBIT, lexer.BIT, lexer.CONST:
+		case lexer.QUBIT, lexer.BIT:
 			p.appendStmt(p.parseDecl())
+		case lexer.CONST:
+			p.appendStmt(p.parseConst())
 		case lexer.RESET:
 			p.appendStmt(p.parseReset())
 		case lexer.MEASURE:
@@ -182,28 +184,30 @@ func (p *Parser) parseIndex() *ast.IndexExpr {
 	}
 }
 
-func (p *Parser) parseDecl() ast.Stmt {
-	kind := p.cur.Token // lexer.QUBIT, lexer.BIT, lexer.CONST
+func (p *Parser) parseConst() ast.Stmt {
+	kind := p.cur.Token // lexer.CONST
 
-	if kind == lexer.CONST {
-		n := p.next()
-		p.expect(lexer.IDENT)
+	n := p.next()
+	p.expect(lexer.IDENT)
 
-		p.next()
-		p.expect(lexer.EQUALS)
+	p.next()
+	p.expect(lexer.EQUALS)
 
-		v := p.next()
-		p.expect(lexer.INT)
+	v := p.next()
+	p.expect(lexer.INT)
 
-		return &ast.DeclStmt{
-			Kind: kind,
-			Name: &ast.IdentExpr{
-				Kind:  n.Token,
-				Value: n.Literal,
-			},
-			Value: v.Literal,
-		}
+	return &ast.ConstStmt{
+		Kind: kind,
+		Name: &ast.IdentExpr{
+			Kind:  n.Token,
+			Value: n.Literal,
+		},
+		Value: v.Literal,
 	}
+}
+
+func (p *Parser) parseDecl() ast.Stmt {
+	kind := p.cur.Token // lexer.QUBIT, lexer.BIT
 
 	ident := p.next()
 	p.expect(lexer.IDENT)

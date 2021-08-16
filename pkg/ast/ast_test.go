@@ -123,6 +123,32 @@ func TestIdentExprString(t *testing.T) {
 	}
 }
 
+func TestConstStmtString(t *testing.T) {
+	var cases = []struct {
+		in   ast.Stmt
+		want string
+	}{
+		{
+			&ast.ConstStmt{
+				Kind: lexer.CONST,
+				Name: &ast.IdentExpr{
+					Kind:  lexer.STRING,
+					Value: "N",
+				},
+				Value: "15",
+			},
+			"const N = 15",
+		},
+	}
+
+	for _, c := range cases {
+		got := c.in.String()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
+
 func TestDeclStmtString(t *testing.T) {
 	var cases = []struct {
 		in   ast.Stmt
@@ -161,17 +187,6 @@ func TestDeclStmtString(t *testing.T) {
 				},
 			},
 			"qubit q[2]",
-		},
-		{
-			&ast.DeclStmt{
-				Kind: lexer.CONST,
-				Name: &ast.IdentExpr{
-					Kind:  lexer.STRING,
-					Value: "N",
-				},
-				Value: "15",
-			},
-			"const N = 15",
 		},
 	}
 

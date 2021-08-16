@@ -32,6 +32,10 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 			if err := e.evalGateStmt(s); err != nil {
 				return fmt.Errorf("gate: %v", err)
 			}
+		case *ast.ConstStmt:
+			if err := e.evalConstStmt(s); err != nil {
+				return fmt.Errorf("const: %v", err)
+			}
 		case *ast.DeclStmt:
 			if err := e.evalDeclStmt(s); err != nil {
 				return fmt.Errorf("decl: %v", err)
@@ -68,17 +72,18 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	return nil
 }
 
+func (e *Evaluator) evalConstStmt(s *ast.ConstStmt) error {
+	ident := s.Name.Value
+	if _, ok := e.R.Const[ident]; ok {
+		return fmt.Errorf("already exists=%v", ident)
+	}
+
+	e.R.Const[ident] = s.Int()
+	return nil
+}
+
 func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 	ident := s.Name.Value
-
-	if s.Kind == lexer.CONST {
-		if _, ok := e.R.Const[ident]; ok {
-			return fmt.Errorf("already exists=%v", ident)
-		}
-
-		e.R.Const[ident] = s.Int()
-		return nil
-	}
 
 	n := 1
 	if s.Name.Index != nil {
