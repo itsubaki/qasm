@@ -9,6 +9,7 @@ import (
 )
 
 type Evaluator struct {
+	Gate  Gate
 	Const Const
 	Bit   *Bit
 	Qubit *Qubit
@@ -17,6 +18,7 @@ type Evaluator struct {
 
 func New(qsim *q.Q) *Evaluator {
 	return &Evaluator{
+		Gate:  make(map[string]ast.GateStmt),
 		Const: make(map[string]int),
 		Bit: &Bit{
 			Name:  make([]string, 0),
@@ -37,9 +39,13 @@ func Default() *Evaluator {
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	for _, stmt := range p.Statement {
 		switch s := stmt.(type) {
+		case *ast.GateStmt:
+			if err := e.evalGateStmt(s); err != nil {
+				return fmt.Errorf("gate: %v", err)
+			}
 		case *ast.DeclStmt:
 			if err := e.evalDeclStmt(s); err != nil {
-				return fmt.Errorf("let: %v", err)
+				return fmt.Errorf("decl: %v", err)
 			}
 		case *ast.ResetStmt:
 			if err := e.evalResetStmt(s); err != nil {
@@ -199,7 +205,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 	case lexer.IQFT:
 		e.Q.InvQFT(in...)
 	default:
-		return fmt.Errorf("gate=%v not found", s.Kind)
+		return fmt.Errorf("gate=%v(%v) not found", s.Kind, s.Literal())
 	}
 
 	return nil
@@ -248,6 +254,11 @@ func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 	}
 
 	return out, nil
+}
+
+func (e *Evaluator) evalGateStmt(s *ast.GateStmt) error {
+	e.Gate[s.Name] = *s
+	return nil
 }
 
 func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
