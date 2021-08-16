@@ -8,11 +8,8 @@ import (
 func ExamplePrint() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Includes: []ast.Expr{
-			&ast.IncludeExpr{
-				Kind:  lexer.STRING,
-				Value: "\"stdgates.qasm\"",
-			},
+		Includes: []string{
+			"\"stdgates.qasm\"",
 		},
 		Statements: []ast.Stmt{
 			&ast.DeclStmt{
@@ -80,11 +77,8 @@ func ExamplePrint() {
 	// Output:
 	// *ast.OpenQASM {
 	// .  Version: 3.0
-	// .  Includes: []ast.Expr (len = 1) {
-	// .  .  0: *ast.IncludeExpr {
-	// .  .  .  Kind: STRING
-	// .  .  .  Value: "stdgates.qasm"
-	// .  .  }
+	// .  Includes: []string (len = 1) {
+	// .  .  0: "stdgates.qasm"
 	// .  }
 	// .  Statements: []ast.Stmt (len = 5) {
 	// .  .  0: *ast.DeclStmt {

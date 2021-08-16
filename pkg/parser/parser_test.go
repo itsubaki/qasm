@@ -19,7 +19,7 @@ func ExampleParser() {
 
 	p := parser.New(lexer.New(strings.NewReader(string(f))))
 	ast := p.Parse()
-	fmt.Printf("%v\n", ast)
+	fmt.Println(ast)
 
 	if errs := p.Errors(); len(errs) != 0 {
 		for _, err := range errs {
@@ -74,7 +74,7 @@ func TestParseIncludes(t *testing.T) {
 
 	for _, c := range cases {
 		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		got := p.Parse().Includes[0].String()
+		got := p.Parse().Includes[0]
 		if got != c.want {
 			t.Errorf("got=%v, want=%v", got, c.want)
 		}

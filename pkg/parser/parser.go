@@ -24,7 +24,7 @@ func New(l *lexer.Lexer) *Parser {
 		l: l,
 		qasm: &ast.OpenQASM{
 			Version:    "3.0",
-			Includes:   make([]ast.Expr, 0),
+			Includes:   make([]string, 0),
 			Gates:      make([]ast.Expr, 0),
 			Statements: make([]ast.Stmt, 0),
 		},
@@ -94,7 +94,7 @@ func (p *Parser) expect(t lexer.Token) {
 	p.appendErr(fmt.Errorf("got=%v, want=%v", lexer.Tokens[p.cur.Token], lexer.Tokens[t]))
 }
 
-func (p *Parser) appendIncl(s ast.Expr) {
+func (p *Parser) appendIncl(s string) {
 	p.qasm.Includes = append(p.qasm.Includes, s)
 }
 
@@ -117,14 +117,11 @@ func (p *Parser) parseVersion() string {
 	return c.Literal
 }
 
-func (p *Parser) parseInclude() ast.Expr {
+func (p *Parser) parseInclude() string {
 	c := p.next()
 	p.expect(lexer.STRING)
 
-	return &ast.IncludeExpr{
-		Kind:  c.Token,
-		Value: c.Literal,
-	}
+	return c.Literal
 }
 
 func (p *Parser) parseIdentList() []ast.IdentExpr {

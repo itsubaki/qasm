@@ -10,7 +10,7 @@ import (
 
 type OpenQASM struct {
 	Version    string
-	Includes   []Expr
+	Includes   []string
 	Gates      []Expr
 	Statements []Stmt
 }
@@ -52,21 +52,6 @@ type Stmt interface {
 type Expr interface {
 	Node
 	exprNode()
-}
-
-type IncludeExpr struct {
-	Kind  lexer.Token // lexer.STRING
-	Value string
-}
-
-func (i *IncludeExpr) exprNode() {}
-
-func (i *IncludeExpr) Literal() string {
-	return lexer.Tokens[i.Kind]
-}
-
-func (i *IncludeExpr) String() string {
-	return i.Value
 }
 
 type IdentExpr struct {
@@ -139,6 +124,19 @@ func (s *GateExpr) String() string {
 	buf.WriteString(s.Literal())
 	buf.WriteString(" ")
 	buf.WriteString(s.Name)
+
+	if len(s.Params) > 0 {
+		buf.WriteString(lexer.Tokens[lexer.LPAREN])
+		for i, p := range s.Params {
+			buf.WriteString(p.String())
+
+			if len(s.Params)-1 != i {
+				buf.WriteString(", ")
+			}
+		}
+		buf.WriteString(lexer.Tokens[lexer.RPAREN])
+	}
+
 	buf.WriteString(" ")
 	for i, a := range s.QArgs {
 		buf.WriteString(a.String())
@@ -158,6 +156,51 @@ func (s *GateExpr) String() string {
 	buf.WriteString(lexer.Tokens[lexer.RBRACE])
 
 	return buf.String()
+}
+
+type CallStmt struct {
+	Kind   lexer.Token // lexer.IDENT
+	Name   string
+	Params []IdentExpr
+	QArgs  []IdentExpr
+}
+
+func (s *CallStmt) stmtNode() {}
+
+func (s *CallStmt) Literal() string {
+	return lexer.Tokens[s.Kind]
+}
+
+func (s *CallStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Name)
+	if len(s.Params) > 0 {
+		buf.WriteString(lexer.Tokens[lexer.LPAREN])
+		for i, p := range s.Params {
+			buf.WriteString(p.String())
+
+			if len(s.Params)-1 != i {
+				buf.WriteString(", ")
+			}
+		}
+		buf.WriteString(lexer.Tokens[lexer.RPAREN])
+	}
+
+	buf.WriteString(" ")
+	for i, a := range s.QArgs {
+		buf.WriteString(a.String())
+
+		if len(s.QArgs)-1 != i {
+			buf.WriteString(", ")
+		}
+	}
+
+	return buf.String()
+}
+
+type ExprStmt struct {
+	X Expr
 }
 
 type ConstStmt struct {

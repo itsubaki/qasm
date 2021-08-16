@@ -11,11 +11,8 @@ import (
 func ExampleEvaluator() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Includes: []ast.Expr{
-			&ast.IncludeExpr{
-				Kind:  lexer.STRING,
-				Value: "\"stdgates.qasm\"",
-			},
+		Includes: []string{
+			"\"stdgates.qasm\"",
 		},
 		Statements: []ast.Stmt{
 			&ast.DeclStmt{
@@ -150,11 +147,8 @@ func ExampleEvaluator() {
 func ExampleEvaluator_print() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Includes: []ast.Expr{
-			&ast.IdentExpr{
-				Kind:  lexer.STRING,
-				Value: "\"stdgates.qasm\"",
-			},
+		Includes: []string{
+			"\"stdgates.qasm\"",
 		},
 		Statements: []ast.Stmt{
 			&ast.DeclStmt{

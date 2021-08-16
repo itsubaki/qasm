@@ -11,11 +11,8 @@ import (
 func ExampleOpenQASM_String() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Includes: []ast.Expr{
-			&ast.IncludeExpr{
-				Kind:  lexer.STRING,
-				Value: "\"stdgates.qasm\"",
-			},
+		Includes: []string{
+			"\"stdgates.qasm\"",
 		},
 		Statements: []ast.Stmt{
 			&ast.DeclStmt{
@@ -112,6 +109,202 @@ func TestIdentExprString(t *testing.T) {
 				},
 			},
 			"q[2]",
+		},
+	}
+
+	for _, c := range cases {
+		got := c.in.String()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
+
+func TestGateExprString(t *testing.T) {
+	var cases = []struct {
+		in   ast.GateExpr
+		want string
+	}{
+		{
+			ast.GateExpr{
+				Kind: lexer.GATE,
+				Name: "bell",
+				QArgs: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "q0",
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "q1",
+					},
+				},
+				Statements: []ast.Stmt{
+					&ast.ApplyStmt{
+						Kind: lexer.H,
+						Target: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "q0",
+							},
+						},
+					},
+					&ast.ApplyStmt{
+						Kind: lexer.CX,
+						Target: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "q0",
+							},
+							{
+								Kind:  lexer.IDENT,
+								Value: "q1",
+							},
+						},
+					},
+				},
+			},
+			"gate bell q0, q1 { h q0; cx q0, q1; }",
+		},
+		{
+			ast.GateExpr{
+				Kind: lexer.GATE,
+				Name: "shor",
+				Params: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "a",
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "N",
+					},
+				},
+				QArgs: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "r0",
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "r1",
+					},
+				},
+				Statements: []ast.Stmt{
+					&ast.ApplyStmt{
+						Kind: lexer.X,
+						Target: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "r1",
+								Index: &ast.IndexExpr{
+									Kind:  lexer.INT,
+									Value: "-1",
+								},
+							},
+						},
+					},
+					&ast.ApplyStmt{
+						Kind: lexer.H,
+						Target: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "r0",
+							},
+						},
+					},
+					&ast.ApplyStmt{
+						Kind: lexer.CMODEXP2,
+						Target: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "a",
+							},
+							{
+								Kind:  lexer.IDENT,
+								Value: "N",
+							},
+							{
+								Kind:  lexer.IDENT,
+								Value: "r0",
+							},
+							{
+								Kind:  lexer.IDENT,
+								Value: "r1",
+							},
+						},
+					},
+					&ast.ApplyStmt{
+						Kind: lexer.IQFT,
+						Target: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "r0",
+							},
+						},
+					},
+				},
+			},
+			"gate shor(a, N) r0, r1 { x r1[-1]; h r0; cmodexp2 a, N, r0, r1; iqft r0; }",
+		},
+	}
+
+	for _, c := range cases {
+		got := c.in.String()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
+
+func TestCallStmtString(t *testing.T) {
+	var cases = []struct {
+		in   ast.CallStmt
+		want string
+	}{
+		{
+			ast.CallStmt{
+				Kind: lexer.IDENT,
+				Name: "bell",
+				QArgs: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "q0",
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "q1",
+					},
+				},
+			},
+			"bell q0, q1",
+		},
+		{
+			ast.CallStmt{
+				Kind: lexer.IDENT,
+				Name: "shor",
+				Params: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "a",
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "N",
+					},
+				},
+				QArgs: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "r0",
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "r1",
+					},
+				},
+			},
+			"shor(a, N) r0, r1",
 		},
 	}
 
@@ -506,62 +699,6 @@ func TestPrintStmtString(t *testing.T) {
 				},
 			},
 			"print q, p",
-		},
-	}
-
-	for _, c := range cases {
-		got := c.in.String()
-		if got != c.want {
-			t.Errorf("got=%v, want=%v", got, c.want)
-		}
-	}
-}
-
-func TestGateStmtString(t *testing.T) {
-	var cases = []struct {
-		in   ast.GateExpr
-		want string
-	}{
-		{
-			ast.GateExpr{
-				Kind: lexer.GATE,
-				Name: "bell",
-				QArgs: []ast.IdentExpr{
-					{
-						Kind:  lexer.STRING,
-						Value: "q0",
-					},
-					{
-						Kind:  lexer.STRING,
-						Value: "q1",
-					},
-				},
-				Statements: []ast.Stmt{
-					&ast.ApplyStmt{
-						Kind: lexer.H,
-						Target: []ast.IdentExpr{
-							{
-								Kind:  lexer.IDENT,
-								Value: "q0",
-							},
-						},
-					},
-					&ast.ApplyStmt{
-						Kind: lexer.CX,
-						Target: []ast.IdentExpr{
-							{
-								Kind:  lexer.IDENT,
-								Value: "q0",
-							},
-							{
-								Kind:  lexer.IDENT,
-								Value: "q1",
-							},
-						},
-					},
-				},
-			},
-			"gate bell q0, q1 { h q0; cx q0, q1; }",
 		},
 	}
 
