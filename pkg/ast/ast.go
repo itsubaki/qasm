@@ -11,7 +11,7 @@ import (
 type OpenQASM struct {
 	Version    string
 	Includes   []Expr
-	Gates      []Stmt
+	Gates      []Expr
 	Statements []Stmt
 }
 
@@ -117,6 +117,47 @@ func (i *IndexExpr) Int() int {
 	}
 
 	return v
+}
+
+type GateExpr struct {
+	Kind       lexer.Token // lexer.GATE
+	Name       string
+	Params     []IdentExpr
+	QArgs      []IdentExpr
+	Statements []Stmt
+}
+
+func (s *GateExpr) exprNode() {}
+
+func (s *GateExpr) Literal() string {
+	return lexer.Tokens[s.Kind]
+}
+
+func (s *GateExpr) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Literal())
+	buf.WriteString(" ")
+	buf.WriteString(s.Name)
+	buf.WriteString(" ")
+	for i, a := range s.QArgs {
+		buf.WriteString(a.String())
+
+		if len(s.QArgs)-1 != i {
+			buf.WriteString(", ")
+		}
+	}
+
+	buf.WriteString(" ")
+	buf.WriteString(lexer.Tokens[lexer.LBRACE])
+	buf.WriteString(" ")
+	for _, stmt := range s.Statements {
+		msg := fmt.Sprintf("%s; ", stmt.String())
+		buf.WriteString(msg)
+	}
+	buf.WriteString(lexer.Tokens[lexer.RBRACE])
+
+	return buf.String()
 }
 
 type ConstStmt struct {
@@ -332,47 +373,6 @@ func (s *PrintStmt) String() string {
 			buf.WriteString(", ")
 		}
 	}
-
-	return buf.String()
-}
-
-type GateStmt struct {
-	Kind       lexer.Token // lexer.GATE
-	Name       string
-	Params     []IdentExpr
-	QArgs      []IdentExpr
-	Statements []Stmt
-}
-
-func (s *GateStmt) stmtNode() {}
-
-func (s *GateStmt) Literal() string {
-	return lexer.Tokens[s.Kind]
-}
-
-func (s *GateStmt) String() string {
-	var buf bytes.Buffer
-
-	buf.WriteString(s.Literal())
-	buf.WriteString(" ")
-	buf.WriteString(s.Name)
-	buf.WriteString(" ")
-	for i, a := range s.QArgs {
-		buf.WriteString(a.String())
-
-		if len(s.QArgs)-1 != i {
-			buf.WriteString(", ")
-		}
-	}
-
-	buf.WriteString(" ")
-	buf.WriteString(lexer.Tokens[lexer.LBRACE])
-	buf.WriteString(" ")
-	for _, stmt := range s.Statements {
-		msg := fmt.Sprintf("%s; ", stmt.String())
-		buf.WriteString(msg)
-	}
-	buf.WriteString(lexer.Tokens[lexer.RBRACE])
 
 	return buf.String()
 }

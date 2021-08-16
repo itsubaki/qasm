@@ -25,7 +25,7 @@ func New(l *lexer.Lexer) *Parser {
 		qasm: &ast.OpenQASM{
 			Version:    "3.0",
 			Includes:   make([]ast.Expr, 0),
-			Gates:      make([]ast.Stmt, 0),
+			Gates:      make([]ast.Expr, 0),
 			Statements: make([]ast.Stmt, 0),
 		},
 		errors: make([]string, 0),
@@ -98,8 +98,8 @@ func (p *Parser) appendIncl(s ast.Expr) {
 	p.qasm.Includes = append(p.qasm.Includes, s)
 }
 
-func (p *Parser) appendGate(s ast.Stmt) {
-	p.qasm.Gates = append(p.qasm.Gates, s)
+func (p *Parser) appendGate(e ast.Expr) {
+	p.qasm.Gates = append(p.qasm.Gates, e)
 }
 
 func (p *Parser) appendStmt(s ast.Stmt) {
@@ -325,7 +325,7 @@ func (p *Parser) parsePrint() ast.Stmt {
 	}
 }
 
-func (p *Parser) parseGate() ast.Stmt {
+func (p *Parser) parseGate() ast.Expr {
 	name := p.next()
 	p.expect(lexer.IDENT)
 	p.next()
@@ -352,7 +352,7 @@ func (p *Parser) parseGate() ast.Stmt {
 	}
 	p.expect(lexer.RBRACE)
 
-	return &ast.GateStmt{
+	return &ast.GateExpr{
 		Kind:       lexer.GATE,
 		Name:       name.Literal,
 		Params:     params,

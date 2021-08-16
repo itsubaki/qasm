@@ -519,11 +519,11 @@ func TestPrintStmtString(t *testing.T) {
 
 func TestGateStmtString(t *testing.T) {
 	var cases = []struct {
-		in   ast.GateStmt
+		in   ast.GateExpr
 		want string
 	}{
 		{
-			ast.GateStmt{
+			ast.GateExpr{
 				Kind: lexer.GATE,
 				Name: "bell",
 				QArgs: []ast.IdentExpr{

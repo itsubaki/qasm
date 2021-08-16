@@ -26,12 +26,17 @@ func Default() *Evaluator {
 }
 
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
+	for _, expr := range p.Gates {
+		switch g := expr.(type) {
+		case *ast.GateExpr:
+			e.R.Gate[expr.Literal()] = *g
+		default:
+			return fmt.Errorf("invalid expr=%v", g)
+		}
+	}
+
 	for _, stmt := range p.Statements {
 		switch s := stmt.(type) {
-		case *ast.GateStmt:
-			if err := e.evalGateStmt(s); err != nil {
-				return fmt.Errorf("gate: %v", err)
-			}
 		case *ast.ConstStmt:
 			if err := e.evalConstStmt(s); err != nil {
 				return fmt.Errorf("const: %v", err)
@@ -248,11 +253,6 @@ func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 	}
 
 	return out, nil
-}
-
-func (e *Evaluator) evalGateStmt(s *ast.GateStmt) error {
-	e.R.Gate[s.Name] = *s
-	return nil
 }
 
 func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {

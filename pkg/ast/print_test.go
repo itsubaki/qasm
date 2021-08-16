@@ -149,7 +149,7 @@ func ExamplePrint() {
 }
 
 func ExamplePrint_gate() {
-	g := &ast.GateStmt{
+	g := &ast.GateExpr{
 		Kind: lexer.GATE,
 		Name: "bell",
 		QArgs: []ast.IdentExpr{
@@ -191,7 +191,7 @@ func ExamplePrint_gate() {
 	ast.Print(g)
 
 	// Output:
-	// *ast.GateStmt {
+	// *ast.GateExpr {
 	// .  Kind: gate
 	// .  Name: bell
 	// .  QArgs: []ast.IdentExpr (len = 2) {
