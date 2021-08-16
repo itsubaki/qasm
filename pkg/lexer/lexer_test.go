@@ -19,7 +19,7 @@ func TestLexer(t *testing.T) {
 		want []Token
 	}{
 		{
-			in: "../../testdata/gate.qasm",
+			in: "../../testdata/test_lexer_gate.qasm",
 			want: []Token{
 				{lexer.GATE, "gate"},
 				{lexer.IDENT, "bell"},

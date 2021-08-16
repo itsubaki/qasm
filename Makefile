@@ -10,13 +10,11 @@ lex:
 	go run main.go lex -f testdata/bell.qasm
 	go run main.go lex -f testdata/teleportation.qasm
 	go run main.go lex -f testdata/shor.qasm
-	go run main.go lex -f testdata/gate.qasm
 
 parse:
 	go run main.go parse -f testdata/bell.qasm
 	go run main.go parse -f testdata/teleportation.qasm
 	go run main.go parse -f testdata/shor.qasm
-	go run main.go parse -f testdata/gate.qasm
 
 .PHONY: testdata
 testdata:
