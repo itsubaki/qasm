@@ -22,6 +22,7 @@ func Action(c *cli.Context) error {
 	}
 
 	l := lexer.New(strings.NewReader(string(f)))
+	newline := true
 	for {
 		token, _ := l.Tokenize()
 		if token == lexer.EOF {
@@ -30,7 +31,19 @@ func Action(c *cli.Context) error {
 
 		fmt.Printf("%v ", lexer.Tokens[token])
 
-		if token == lexer.SEMICOLON || token == lexer.LBRACE || token == lexer.RBRACE {
+		if token == lexer.LBRACE {
+			newline = false
+		}
+
+		if token == lexer.RBRACE {
+			newline = true
+		}
+
+		if !newline {
+			continue
+		}
+
+		if token == lexer.SEMICOLON || token == lexer.RBRACE {
 			fmt.Println()
 		}
 	}

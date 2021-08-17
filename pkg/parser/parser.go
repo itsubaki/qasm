@@ -15,8 +15,8 @@ type Cursor struct {
 type Parser struct {
 	l      *lexer.Lexer
 	qasm   *ast.OpenQASM
-	errors []string
 	cur    *Cursor
+	errors []string
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -347,8 +347,18 @@ func (p *Parser) parse() ast.Stmt {
 	p.expect(lexer.IDENT)
 
 	left := p.parseIdent()
-	if p.cur.Token == lexer.IDENT || p.cur.Token == lexer.LPAREN {
+	if p.cur.Token == lexer.IDENT {
 		// bell q, p
+		return &ast.CallStmt{
+			Kind:   lexer.IDENT,
+			Name:   left.String(),
+			Params: make([]ast.IdentExpr, 0),
+			QArgs:  p.parseIdentList(),
+		}
+	}
+
+	if p.cur.Token == lexer.LPAREN {
+		// shor(a, N) r0, r1
 		return &ast.CallStmt{
 			Kind:   lexer.IDENT,
 			Name:   left.String(),
@@ -357,22 +367,23 @@ func (p *Parser) parse() ast.Stmt {
 		}
 	}
 
-	// c = measure q
-	p.expect(lexer.EQUALS)
+	if p.cur.Token == lexer.EQUALS {
+		// c = measure q
+		p.next()
+		p.expect(lexer.MEASURE)
 
-	p.next()
-	p.expect(lexer.MEASURE)
-
-	right := ast.MeasureStmt{
-		Kind: lexer.MEASURE,
-		QArgs: []ast.IdentExpr{
-			p.parseIdent(),
-		},
+		return &ast.AssignStmt{
+			Kind: lexer.EQUALS,
+			Left: &left,
+			Right: &ast.MeasureStmt{
+				Kind: lexer.MEASURE,
+				QArgs: []ast.IdentExpr{
+					p.parseIdent(),
+				},
+			},
+		}
 	}
 
-	return &ast.AssignStmt{
-		Kind:  lexer.EQUALS,
-		Left:  &left,
-		Right: &right,
-	}
+	p.appendErr(fmt.Errorf("invalid token=%v, literal=%v", p.cur.Token, p.cur.Literal))
+	return nil
 }

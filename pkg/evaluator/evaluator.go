@@ -182,6 +182,12 @@ func (e *Evaluator) evalCallStmt(c *ast.CallStmt) error {
 					return fmt.Errorf("get qubit=%v: %v", a.Value, err)
 				}
 
+				if t.Index != nil {
+					index := register.Index(t.Index.Int(), len(qb))
+					qargs = append(qargs, []q.Qubit{qb[index]})
+					continue
+				}
+
 				qargs = append(qargs, qb)
 			}
 

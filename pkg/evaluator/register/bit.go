@@ -33,11 +33,7 @@ func (b *Bit) Get(name string, expr ...*ast.IndexExpr) ([]int, error) {
 		return out, nil
 	}
 
-	index := expr[0].Int()
-	if index < 0 {
-		index = len(out) + index
-	}
-
+	index := Index(expr[0].Int(), len(out))
 	if index > len(out)-1 || index < 0 {
 		return out, fmt.Errorf("index out of range[%v] with length %v", index, len(out))
 	}
