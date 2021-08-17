@@ -39,7 +39,7 @@ func ExampleEvaluator() {
 			},
 			&ast.ResetStmt{
 				Kind: lexer.RESET,
-				Target: []ast.IdentExpr{
+				QArgs: []ast.IdentExpr{
 					{
 						Kind:  lexer.STRING,
 						Value: "q",
@@ -48,7 +48,7 @@ func ExampleEvaluator() {
 			},
 			&ast.ApplyStmt{
 				Kind: lexer.X,
-				Target: []ast.IdentExpr{
+				QArgs: []ast.IdentExpr{
 					{
 						Kind:  lexer.STRING,
 						Value: "q",
@@ -57,7 +57,7 @@ func ExampleEvaluator() {
 			},
 			&ast.ApplyStmt{
 				Kind: lexer.CX,
-				Target: []ast.IdentExpr{
+				QArgs: []ast.IdentExpr{
 					{
 						Kind:  lexer.STRING,
 						Value: "q",
@@ -80,7 +80,7 @@ func ExampleEvaluator() {
 				Kind: lexer.ARROW,
 				Left: &ast.MeasureStmt{
 					Kind: lexer.MEASURE,
-					Target: []ast.IdentExpr{
+					QArgs: []ast.IdentExpr{
 						{
 							Kind:  lexer.STRING,
 							Value: "q",
@@ -100,7 +100,7 @@ func ExampleEvaluator() {
 				},
 				Right: &ast.MeasureStmt{
 					Kind: lexer.MEASURE,
-					Target: []ast.IdentExpr{
+					QArgs: []ast.IdentExpr{
 						{
 							Kind:  lexer.STRING,
 							Value: "q",
@@ -164,7 +164,7 @@ func ExampleEvaluator_print() {
 			},
 			&ast.ApplyStmt{
 				Kind: lexer.H,
-				Target: []ast.IdentExpr{
+				QArgs: []ast.IdentExpr{
 					{
 						Kind:  lexer.STRING,
 						Value: "q",

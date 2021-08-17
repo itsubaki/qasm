@@ -69,7 +69,7 @@ func (p *Parser) Parse() *ast.OpenQASM {
 		case lexer.CMODEXP2:
 			p.appendStmt(p.parseApply())
 		case lexer.IDENT:
-			p.appendStmt(p.parseAssign())
+			p.appendStmt(p.parse())
 		case lexer.EOF:
 			return p.qasm
 		}
@@ -247,16 +247,25 @@ func (p *Parser) parseReset() ast.Stmt {
 	p.expect(lexer.RESET)
 
 	return &ast.ResetStmt{
-		Kind:   lexer.RESET,
-		Target: p.parseIdentList(),
+		Kind:  lexer.RESET,
+		QArgs: p.parseIdentList(),
 	}
 }
 
 func (p *Parser) parseApply() ast.Stmt {
 	kind := p.cur.Token // lexer.X, lexer.Y, ..., lexer.CX, ...
+	params := make([]ast.IdentExpr, 0)
+
+	p.next()
+	if p.cur.Token == lexer.LPAREN {
+		params = p.parseIdentList()
+		p.expect(lexer.RPAREN)
+	}
+
 	return &ast.ApplyStmt{
 		Kind:   kind,
-		Target: p.parseIdentList(),
+		Params: params,
+		QArgs:  p.parseIdentList(),
 	}
 }
 
@@ -265,8 +274,8 @@ func (p *Parser) parseMeasure() ast.Stmt {
 
 	// measure q -> c
 	left := ast.MeasureStmt{
-		Kind:   lexer.MEASURE,
-		Target: p.parseIdentList(),
+		Kind:  lexer.MEASURE,
+		QArgs: p.parseIdentList(),
 	}
 
 	if p.cur.Token != lexer.ARROW {
@@ -276,30 +285,6 @@ func (p *Parser) parseMeasure() ast.Stmt {
 	right := p.parseIdent()
 	return &ast.ArrowStmt{
 		Kind:  lexer.ARROW,
-		Left:  &left,
-		Right: &right,
-	}
-}
-
-func (p *Parser) parseAssign() ast.Stmt {
-	p.expect(lexer.IDENT)
-
-	// c = measure q
-	left := p.parseIdent()
-	p.expect(lexer.EQUALS)
-
-	p.next()
-	p.expect(lexer.MEASURE)
-
-	right := ast.MeasureStmt{
-		Kind: lexer.MEASURE,
-		Target: []ast.IdentExpr{
-			p.parseIdent(),
-		},
-	}
-
-	return &ast.AssignStmt{
-		Kind:  lexer.EQUALS,
 		Left:  &left,
 		Right: &right,
 	}
@@ -317,8 +302,8 @@ func (p *Parser) parsePrint() ast.Stmt {
 	p.expect(lexer.IDENT)
 
 	return &ast.PrintStmt{
-		Kind:   lexer.PRINT,
-		Target: p.parseIdentList(),
+		Kind:  lexer.PRINT,
+		QArgs: p.parseIdentList(),
 	}
 }
 
@@ -355,5 +340,39 @@ func (p *Parser) parseGate() ast.Expr {
 		Params:     params,
 		QArgs:      args,
 		Statements: stmts,
+	}
+}
+
+func (p *Parser) parse() ast.Stmt {
+	p.expect(lexer.IDENT)
+
+	left := p.parseIdent()
+	if p.cur.Token == lexer.IDENT || p.cur.Token == lexer.LPAREN {
+		// bell q, p
+		return &ast.CallStmt{
+			Kind:   lexer.IDENT,
+			Name:   left.String(),
+			Params: p.parseIdentList(),
+			QArgs:  p.parseIdentList(),
+		}
+	}
+
+	// c = measure q
+	p.expect(lexer.EQUALS)
+
+	p.next()
+	p.expect(lexer.MEASURE)
+
+	right := ast.MeasureStmt{
+		Kind: lexer.MEASURE,
+		QArgs: []ast.IdentExpr{
+			p.parseIdent(),
+		},
+	}
+
+	return &ast.AssignStmt{
+		Kind:  lexer.EQUALS,
+		Left:  &left,
+		Right: &right,
 	}
 }

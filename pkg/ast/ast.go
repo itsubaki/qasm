@@ -260,8 +260,8 @@ func (s *DeclStmt) String() string {
 }
 
 type ResetStmt struct {
-	Kind   lexer.Token // lexer.RESET
-	Target []IdentExpr
+	Kind  lexer.Token // lexer.RESET
+	QArgs []IdentExpr
 }
 
 func (s *ResetStmt) stmtNode() {}
@@ -275,10 +275,10 @@ func (s *ResetStmt) String() string {
 
 	buf.WriteString(s.Literal())
 	buf.WriteString(" ")
-	for i, t := range s.Target {
+	for i, t := range s.QArgs {
 		buf.WriteString(t.String())
 
-		if len(s.Target)-1 != i {
+		if len(s.QArgs)-1 != i {
 			buf.WriteString(", ")
 		}
 	}
@@ -288,7 +288,8 @@ func (s *ResetStmt) String() string {
 
 type ApplyStmt struct {
 	Kind   lexer.Token // lexer.X, lexer.CX, ...
-	Target []IdentExpr
+	Params []IdentExpr
+	QArgs  []IdentExpr
 }
 
 func (s *ApplyStmt) stmtNode() {}
@@ -301,12 +302,23 @@ func (s *ApplyStmt) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(s.Literal())
-	buf.WriteString(" ")
+	if len(s.Params) > 0 {
+		buf.WriteString(lexer.Tokens[lexer.LPAREN])
+		for i, p := range s.Params {
+			buf.WriteString(p.String())
 
-	for i, t := range s.Target {
+			if len(s.Params)-1 != i {
+				buf.WriteString(", ")
+			}
+		}
+		buf.WriteString(lexer.Tokens[lexer.RPAREN])
+	}
+
+	buf.WriteString(" ")
+	for i, t := range s.QArgs {
 		buf.WriteString(t.String())
 
-		if len(s.Target)-1 != i {
+		if len(s.QArgs)-1 != i {
 			buf.WriteString(", ")
 		}
 	}
@@ -315,8 +327,8 @@ func (s *ApplyStmt) String() string {
 }
 
 type MeasureStmt struct {
-	Kind   lexer.Token // lexer.MEASURE
-	Target []IdentExpr
+	Kind  lexer.Token // lexer.MEASURE
+	QArgs []IdentExpr
 }
 
 func (s *MeasureStmt) stmtNode() {}
@@ -330,10 +342,10 @@ func (s *MeasureStmt) String() string {
 
 	buf.WriteString(s.Literal())
 	buf.WriteString(" ")
-	for i, t := range s.Target {
+	for i, t := range s.QArgs {
 		buf.WriteString(t.String())
 
-		if len(s.Target)-1 != i {
+		if len(s.QArgs)-1 != i {
 			buf.WriteString(", ")
 		}
 	}
@@ -390,8 +402,8 @@ func (s *AssignStmt) String() string {
 }
 
 type PrintStmt struct {
-	Kind   lexer.Token // lexer.PRINT
-	Target []IdentExpr
+	Kind  lexer.Token // lexer.PRINT
+	QArgs []IdentExpr
 }
 
 func (s *PrintStmt) stmtNode() {}
@@ -404,15 +416,15 @@ func (s *PrintStmt) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(s.Literal())
-	if s.Target == nil || len(s.Target) == 0 {
+	if s.QArgs == nil || len(s.QArgs) == 0 {
 		return buf.String()
 	}
 
 	buf.WriteString(" ")
-	for i, t := range s.Target {
+	for i, t := range s.QArgs {
 		buf.WriteString(t.String())
 
-		if len(s.Target)-1 != i {
+		if len(s.QArgs)-1 != i {
 			buf.WriteString(", ")
 		}
 	}

@@ -29,7 +29,7 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	for _, expr := range p.Gates {
 		switch g := expr.(type) {
 		case *ast.GateExpr:
-			e.R.Gate[expr.Literal()] = *g
+			e.R.Gate[g.Name] = *g
 		default:
 			return fmt.Errorf("invalid expr=%v", g)
 		}
@@ -68,6 +68,10 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 		case *ast.PrintStmt:
 			if err := e.evalPrintStmt(s); err != nil {
 				return fmt.Errorf("print: %v", err)
+			}
+		case *ast.CallStmt:
+			if err := e.evalCallStmt(s); err != nil {
+				return fmt.Errorf("call: %v", err)
 			}
 		default:
 			return fmt.Errorf("invalid stmt=%v", stmt)
@@ -118,7 +122,7 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 }
 
 func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
-	for _, t := range s.Target {
+	for _, t := range s.QArgs {
 		qb, err := e.R.Qubit.Get(t.Value, t.Index)
 		if err != nil {
 			return fmt.Errorf("get qubit=%v: %v", t.Value, err)
@@ -130,55 +134,88 @@ func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 	return nil
 }
 
-func (e *Evaluator) evalApplyCModExp2(s *ast.ApplyStmt) error {
-	if len(s.Target) != 4 {
-		return fmt.Errorf("invalid target length %v", len(s.Target))
-	}
-
-	a, ok := e.R.Const[s.Target[0].Value]
-	if !ok {
-		return fmt.Errorf("IDENT=%v not found", s.Target[0].Value)
-	}
-
-	N, ok := e.R.Const[s.Target[1].Value]
-	if !ok {
-		return fmt.Errorf("IDENT=%v not found", s.Target[1].Value)
-	}
-
-	r0, err := e.R.Qubit.Get(s.Target[2].Value)
-	if err != nil {
-		return fmt.Errorf("get qubit=%v: %v", s.Target[2].Value, err)
-	}
-
-	r1, err := e.R.Qubit.Get(s.Target[3].Value)
-	if err != nil {
-		return fmt.Errorf("get qubit=%v: %v", s.Target[3].Value, err)
-	}
-
-	e.Q.CModExp2(a, N, r0, r1)
-	return nil
-}
-
 func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
-	if s.Kind == lexer.CMODEXP2 {
-		if err := e.evalApplyCModExp2(s); err != nil {
-			return fmt.Errorf("cmodexp2: %v", err)
+	params := make([]int, 0)
+	for _, t := range s.Params {
+		if a, ok := e.R.Const[t.Value]; ok {
+			params = append(params, a)
+		}
+	}
+
+	qargs := make([][]q.Qubit, 0)
+	for _, t := range s.QArgs {
+		if !e.R.Qubit.Exists(t.Value) {
+			continue
 		}
 
-		return nil
-	}
-
-	in := make([]q.Qubit, 0)
-	for _, t := range s.Target {
 		qb, err := e.R.Qubit.Get(t.Value, t.Index)
 		if err != nil {
 			return fmt.Errorf("get qubit=%v: %v", t.Value, err)
 		}
 
-		in = append(in, qb...)
+		qargs = append(qargs, qb)
 	}
 
-	switch s.Kind {
+	return e.apply(s.Kind, params, qargs)
+
+}
+
+func (e *Evaluator) evalCallStmt(c *ast.CallStmt) error {
+	g, ok := e.R.Gate[c.Name]
+	if !ok {
+		return fmt.Errorf("gate=%v not found", c.Name)
+	}
+
+	for _, stmt := range g.Statements {
+		switch s := stmt.(type) {
+		case *ast.ApplyStmt:
+			args := make(map[string]ast.IdentExpr)
+			for i, a := range g.QArgs {
+				args[a.Value] = c.QArgs[i]
+			}
+
+			qargs := make([][]q.Qubit, 0)
+			for _, t := range s.QArgs {
+				a := args[t.Value]
+				qb, err := e.R.Qubit.Get(a.Value, a.Index)
+				if err != nil {
+					return fmt.Errorf("get qubit=%v: %v", a.Value, err)
+				}
+
+				qargs = append(qargs, qb)
+			}
+
+			prms := make(map[string]ast.IdentExpr)
+			for i, p := range g.Params {
+				prms[p.Value] = c.Params[i]
+			}
+
+			params := make([]int, 0)
+			for _, t := range s.Params {
+				p := prms[t.Value]
+				if a, ok := e.R.Const[p.Value]; ok {
+					params = append(params, a)
+				}
+			}
+
+			if err := e.apply(s.Kind, params, qargs); err != nil {
+				return fmt.Errorf("apply=%v: %v", stmt, err)
+			}
+		default:
+			return fmt.Errorf("invalid stmt=%v", stmt)
+		}
+	}
+
+	return nil
+}
+
+func (e *Evaluator) apply(kind lexer.Token, params []int, qargs [][]q.Qubit) error {
+	in := make([]q.Qubit, 0)
+	for _, q := range qargs {
+		in = append(in, q...)
+	}
+
+	switch kind {
 	case lexer.X:
 		e.Q.X(in...)
 	case lexer.Y:
@@ -191,20 +228,22 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 		e.Q.T(in...)
 	case lexer.S:
 		e.Q.S(in...)
-	case lexer.CX:
-		e.Q.CNOT(in[0], in[1])
-	case lexer.CZ:
-		e.Q.CZ(in[0], in[1])
-	case lexer.CCX:
-		e.Q.CCNOT(in[0], in[1], in[2])
 	case lexer.SWAP:
 		e.Q.Swap(in...)
 	case lexer.QFT:
 		e.Q.QFT(in...)
 	case lexer.IQFT:
 		e.Q.InvQFT(in...)
+	case lexer.CX:
+		e.Q.CNOT(in[0], in[1])
+	case lexer.CZ:
+		e.Q.CZ(in[0], in[1])
+	case lexer.CCX:
+		e.Q.CCNOT(in[0], in[1], in[2])
+	case lexer.CMODEXP2:
+		e.Q.CModExp2(params[0], params[1], qargs[0], qargs[1])
 	default:
-		return fmt.Errorf("gate=%v(%v) not found", s.Kind, s.Literal())
+		return fmt.Errorf("gate=%v(%v) not found", kind, lexer.Tokens[kind])
 	}
 
 	return nil
@@ -242,7 +281,7 @@ func (e *Evaluator) evalArrowStmt(s *ast.ArrowStmt) error {
 
 func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 	out := make([]q.Qubit, 0)
-	for _, t := range s.Target {
+	for _, t := range s.QArgs {
 		qb, err := e.R.Qubit.Get(t.Value, t.Index)
 		if err != nil {
 			return nil, fmt.Errorf("get qubit=%v: %v", t.Value, err)
@@ -256,12 +295,12 @@ func (e *Evaluator) evalMeasureStmt(s *ast.MeasureStmt) ([]q.Qubit, error) {
 }
 
 func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
-	if s.Target == nil || len(s.Target) == 0 {
+	if s.QArgs == nil || len(s.QArgs) == 0 {
 		return e.Println()
 	}
 
 	name := make([]string, 0)
-	for _, t := range s.Target {
+	for _, t := range s.QArgs {
 		name = append(name, t.Value)
 	}
 

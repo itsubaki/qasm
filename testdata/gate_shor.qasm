@@ -4,7 +4,7 @@ include "itsubaki/q.qasm";
 gate shor(a, N) r0, r1 {
     x r1[-1];
     h r0;
-    cmodexp2 a, N, r0, r1;
+    cmodexp2(a, N) r0, r1;
     iqft r0;
 }
 

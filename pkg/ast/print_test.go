@@ -21,7 +21,7 @@ func ExamplePrint() {
 			},
 			&ast.ResetStmt{
 				Kind: lexer.RESET,
-				Target: []ast.IdentExpr{
+				QArgs: []ast.IdentExpr{
 					{
 						Kind:  lexer.STRING,
 						Value: "q",
@@ -30,7 +30,7 @@ func ExamplePrint() {
 			},
 			&ast.ApplyStmt{
 				Kind: lexer.X,
-				Target: []ast.IdentExpr{
+				QArgs: []ast.IdentExpr{
 					{
 						Kind:  lexer.STRING,
 						Value: "q",
@@ -45,7 +45,7 @@ func ExamplePrint() {
 				},
 				Right: &ast.MeasureStmt{
 					Kind: lexer.MEASURE,
-					Target: []ast.IdentExpr{
+					QArgs: []ast.IdentExpr{
 						{
 							Kind:  lexer.STRING,
 							Value: "q",
@@ -57,7 +57,7 @@ func ExamplePrint() {
 				Kind: lexer.ARROW,
 				Left: &ast.MeasureStmt{
 					Kind: lexer.MEASURE,
-					Target: []ast.IdentExpr{
+					QArgs: []ast.IdentExpr{
 						{
 							Kind:  lexer.STRING,
 							Value: "q",
@@ -90,7 +90,7 @@ func ExamplePrint() {
 	// .  .  }
 	// .  .  1: *ast.ResetStmt {
 	// .  .  .  Kind: reset
-	// .  .  .  Target: []ast.IdentExpr (len = 1) {
+	// .  .  .  QArgs: []ast.IdentExpr (len = 1) {
 	// .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  Kind: STRING
 	// .  .  .  .  .  Value: q
@@ -99,7 +99,7 @@ func ExamplePrint() {
 	// .  .  }
 	// .  .  2: *ast.ApplyStmt {
 	// .  .  .  Kind: x
-	// .  .  .  Target: []ast.IdentExpr (len = 1) {
+	// .  .  .  QArgs: []ast.IdentExpr (len = 1) {
 	// .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  Kind: STRING
 	// .  .  .  .  .  Value: q
@@ -114,7 +114,7 @@ func ExamplePrint() {
 	// .  .  .  }
 	// .  .  .  Right: *ast.MeasureStmt {
 	// .  .  .  .  Kind: measure
-	// .  .  .  .  Target: []ast.IdentExpr (len = 1) {
+	// .  .  .  .  QArgs: []ast.IdentExpr (len = 1) {
 	// .  .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  .  Kind: STRING
 	// .  .  .  .  .  .  Value: q
@@ -126,7 +126,7 @@ func ExamplePrint() {
 	// .  .  .  Kind: ->
 	// .  .  .  Left: *ast.MeasureStmt {
 	// .  .  .  .  Kind: measure
-	// .  .  .  .  Target: []ast.IdentExpr (len = 1) {
+	// .  .  .  .  QArgs: []ast.IdentExpr (len = 1) {
 	// .  .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  .  Kind: STRING
 	// .  .  .  .  .  .  Value: q
@@ -159,7 +159,7 @@ func ExamplePrint_gate() {
 		Statements: []ast.Stmt{
 			&ast.ApplyStmt{
 				Kind: lexer.H,
-				Target: []ast.IdentExpr{
+				QArgs: []ast.IdentExpr{
 					{
 						Kind:  lexer.IDENT,
 						Value: "q0",
@@ -168,7 +168,7 @@ func ExamplePrint_gate() {
 			},
 			&ast.ApplyStmt{
 				Kind: lexer.CX,
-				Target: []ast.IdentExpr{
+				QArgs: []ast.IdentExpr{
 					{
 						Kind:  lexer.IDENT,
 						Value: "q0",
@@ -201,7 +201,7 @@ func ExamplePrint_gate() {
 	// .  Statements: []ast.Stmt (len = 2) {
 	// .  .  0: *ast.ApplyStmt {
 	// .  .  .  Kind: h
-	// .  .  .  Target: []ast.IdentExpr (len = 1) {
+	// .  .  .  QArgs: []ast.IdentExpr (len = 1) {
 	// .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  Kind: IDENT
 	// .  .  .  .  .  Value: q0
@@ -210,7 +210,7 @@ func ExamplePrint_gate() {
 	// .  .  }
 	// .  .  1: *ast.ApplyStmt {
 	// .  .  .  Kind: cx
-	// .  .  .  Target: []ast.IdentExpr (len = 2) {
+	// .  .  .  QArgs: []ast.IdentExpr (len = 2) {
 	// .  .  .  .  0: ast.IdentExpr {
 	// .  .  .  .  .  Kind: IDENT
 	// .  .  .  .  .  Value: q0
