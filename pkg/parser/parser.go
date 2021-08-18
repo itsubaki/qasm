@@ -206,22 +206,20 @@ func (p *Parser) parseConst() ast.Stmt {
 func (p *Parser) parseDecl() ast.Stmt {
 	kind := p.cur.Token // lexer.QUBIT, lexer.BIT
 
-	ident := p.next()
-	p.expect(lexer.IDENT)
-
-	// qubit q
-	p.next()
-	if p.cur.Token != lexer.LBRACKET {
+	n := p.next()
+	if p.cur.Token == lexer.IDENT {
+		// qubit q
+		p.expect(lexer.IDENT)
 		return &ast.DeclStmt{
 			Kind: kind,
 			Name: &ast.IdentExpr{
-				Kind:  ident.Token,
-				Value: ident.Literal,
+				Kind:  n.Token,
+				Value: n.Literal,
 			},
 		}
 	}
 
-	// qubit q[2]
+	// qubit[2] q
 	p.expect(lexer.LBRACKET)
 
 	index := p.next()
@@ -230,6 +228,8 @@ func (p *Parser) parseDecl() ast.Stmt {
 	p.next()
 	p.expect(lexer.RBRACKET)
 
+	ident := p.next()
+	p.expect(lexer.IDENT)
 	return &ast.DeclStmt{
 		Kind: kind,
 		Name: &ast.IdentExpr{

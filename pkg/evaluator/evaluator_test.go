@@ -132,8 +132,8 @@ func ExampleEvaluator() {
 	// Output:
 	// OPENQASM 3.0;
 	// include "stdgates.qasm";
-	// qubit q[2];
-	// bit c[2];
+	// qubit[2] q;
+	// bit[2] c;
 	// reset q;
 	// x q;
 	// cx q[0], q[1];

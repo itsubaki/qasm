@@ -53,17 +53,17 @@ func TestLexer(t *testing.T) {
 				{lexer.SEMICOLON, ";"},
 
 				{lexer.QUBIT, "qubit"},
-				{lexer.IDENT, "q"},
 				{lexer.LBRACKET, "["},
 				{lexer.INT, "2"},
 				{lexer.RBRACKET, "]"},
+				{lexer.IDENT, "q"},
 				{lexer.SEMICOLON, ";"},
 
 				{lexer.BIT, "bit"},
-				{lexer.IDENT, "c"},
 				{lexer.LBRACKET, "["},
 				{lexer.INT, "2"},
 				{lexer.RBRACKET, "]"},
+				{lexer.IDENT, "c"},
 				{lexer.SEMICOLON, ";"},
 
 				{lexer.RESET, "reset"},

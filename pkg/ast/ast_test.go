@@ -379,7 +379,7 @@ func TestDeclStmtString(t *testing.T) {
 					},
 				},
 			},
-			"qubit q[2]",
+			"qubit[2] q",
 		},
 	}
 

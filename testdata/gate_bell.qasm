@@ -6,7 +6,7 @@ gate bell q0, q1 {
     cx q0, q1;
 }
 
-qubit q[2];
+qubit[2] q;
 reset q;
 
 bell q[0], q[1];

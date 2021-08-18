@@ -1,7 +1,7 @@
 OPENQASM 3.0;
 include "itsubaki/q.qasm";
 
-qubit q[2];
+qubit[2] q;
 reset q;
 
 h  q[0];

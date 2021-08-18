@@ -30,8 +30,8 @@ func ExampleParser() {
 	// Output:
 	// OPENQASM 3.0;
 	// include "itsubaki/q.qasm";
-	// qubit q[2];
-	// bit c[2];
+	// qubit[2] q;
+	// bit[2] c;
 	// reset q;
 	// h q[0];
 	// cx q[0], q[1];
@@ -91,8 +91,8 @@ func TestParseStmt(t *testing.T) {
 			"qubit q",
 		},
 		{
-			"qubit q[2]",
-			"qubit q[2]",
+			"qubit[2] q",
+			"qubit[2] q",
 		},
 		{
 			"reset q",

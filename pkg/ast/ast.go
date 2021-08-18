@@ -253,8 +253,13 @@ func (s *DeclStmt) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(s.Literal())
+	if s.Name.Index != nil {
+		buf.WriteString(lexer.Tokens[lexer.LBRACKET])
+		buf.WriteString(s.Name.Index.Value)
+		buf.WriteString(lexer.Tokens[lexer.RBRACKET])
+	}
 	buf.WriteString(" ")
-	buf.WriteString(s.Name.String())
+	buf.WriteString(s.Name.Value)
 
 	return buf.String()
 }
