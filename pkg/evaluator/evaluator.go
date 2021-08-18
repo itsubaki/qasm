@@ -305,28 +305,30 @@ func (e *Evaluator) evalPrintStmt(s *ast.PrintStmt) error {
 		return e.Println()
 	}
 
-	name := make([]string, 0)
-	for _, t := range s.QArgs {
-		name = append(name, t.Value)
-	}
-
-	return e.Println(name...)
+	return e.Println(s.QArgs...)
 }
 
-func (e *Evaluator) Println(name ...string) error {
+func (e *Evaluator) Println(qargs ...ast.IdentExpr) error {
 	if len(e.R.Qubit.Name) == 0 {
 		return nil
 	}
 
-	if len(name) == 0 {
-		name = e.R.Qubit.Name
+	if len(qargs) == 0 {
+		qargs = make([]ast.IdentExpr, 0)
+		for _, n := range e.R.Qubit.Name {
+			qargs = append(qargs, ast.IdentExpr{
+				Kind:  lexer.IDENT,
+				Value: n,
+				Index: nil,
+			})
+		}
 	}
 
 	index := make([][]int, 0)
-	for _, n := range name {
-		qb, err := e.R.Qubit.Get(n)
+	for _, a := range qargs {
+		qb, err := e.R.Qubit.Get(a.Value, a.Index)
 		if err != nil {
-			return fmt.Errorf("get qubit=%v: %v", n, err)
+			return fmt.Errorf("get qubit=%v: %v", a, err)
 		}
 
 		index = append(index, q.Index(qb...))
