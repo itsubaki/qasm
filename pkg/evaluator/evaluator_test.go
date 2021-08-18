@@ -174,6 +174,36 @@ func ExampleEvaluator_print() {
 			&ast.PrintStmt{
 				Kind: lexer.PRINT,
 			},
+			&ast.PrintStmt{
+				Kind: lexer.PRINT,
+				QArgs: []ast.IdentExpr{
+					{
+						Kind:  lexer.IDENT,
+						Value: "q",
+					},
+				},
+			},
+			&ast.PrintStmt{
+				Kind: lexer.PRINT,
+				QArgs: []ast.IdentExpr{
+					{
+						Kind:  lexer.IDENT,
+						Value: "q",
+						Index: &ast.IndexExpr{
+							Kind:  lexer.INT,
+							Value: "0",
+						},
+					},
+					{
+						Kind:  lexer.IDENT,
+						Value: "q",
+						Index: &ast.IndexExpr{
+							Kind:  lexer.INT,
+							Value: "1",
+						},
+					},
+				},
+			},
 		},
 	}
 
@@ -187,4 +217,12 @@ func ExampleEvaluator_print() {
 	// [01][  1]( 0.5000 0.0000i): 0.2500
 	// [10][  2]( 0.5000 0.0000i): 0.2500
 	// [11][  3]( 0.5000 0.0000i): 0.2500
+	// [00][  0]( 0.5000 0.0000i): 0.2500
+	// [01][  1]( 0.5000 0.0000i): 0.2500
+	// [10][  2]( 0.5000 0.0000i): 0.2500
+	// [11][  3]( 0.5000 0.0000i): 0.2500
+	// [0 0][  0   0]( 0.5000 0.0000i): 0.2500
+	// [0 1][  0   1]( 0.5000 0.0000i): 0.2500
+	// [1 0][  1   0]( 0.5000 0.0000i): 0.2500
+	// [1 1][  1   1]( 0.5000 0.0000i): 0.2500
 }
