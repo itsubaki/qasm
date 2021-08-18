@@ -169,6 +169,19 @@ func (e *Evaluator) evalCallStmt(c *ast.CallStmt) error {
 	for _, stmt := range g.Statements {
 		switch s := stmt.(type) {
 		case *ast.ApplyStmt:
+			prms := make(map[string]ast.IdentExpr)
+			for i, p := range g.Params {
+				prms[p.Value] = c.Params[i]
+			}
+
+			params := make([]int, 0)
+			for _, t := range s.Params {
+				p := prms[t.Value]
+				if a, ok := e.R.Const[p.Value]; ok {
+					params = append(params, a)
+				}
+			}
+
 			args := make(map[string]ast.IdentExpr)
 			for i, a := range g.QArgs {
 				args[a.Value] = c.QArgs[i]
@@ -189,19 +202,6 @@ func (e *Evaluator) evalCallStmt(c *ast.CallStmt) error {
 				}
 
 				qargs = append(qargs, qb)
-			}
-
-			prms := make(map[string]ast.IdentExpr)
-			for i, p := range g.Params {
-				prms[p.Value] = c.Params[i]
-			}
-
-			params := make([]int, 0)
-			for _, t := range s.Params {
-				p := prms[t.Value]
-				if a, ok := e.R.Const[p.Value]; ok {
-					params = append(params, a)
-				}
 			}
 
 			if err := e.apply(s.Kind, params, qargs); err != nil {
