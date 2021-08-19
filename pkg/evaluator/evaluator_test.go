@@ -11,99 +11,95 @@ import (
 func ExampleEvaluator() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Includes: []string{
+		Incls: []string{
 			"\"stdgates.qasm\"",
 		},
-		Statements: []ast.Stmt{
+		Stmts: []ast.Stmt{
 			&ast.DeclStmt{
-				Kind: lexer.QUBIT,
-				Name: &ast.IdentExpr{
-					Kind:  lexer.IDENT,
-					Value: "q",
-					Index: &ast.IndexExpr{
-						Kind:  lexer.INT,
+				Decl: &ast.GenDecl{
+					Kind: lexer.QUBIT,
+					Type: &ast.IndexExpr{
+						Name: &ast.IdentExpr{
+							Value: "qubit",
+						},
 						Value: "2",
 					},
+					Name: &ast.IdentExpr{
+						Value: "q",
+					},
 				},
 			},
 			&ast.DeclStmt{
-				Kind: lexer.BIT,
-				Name: &ast.IdentExpr{
-					Kind:  lexer.IDENT,
-					Value: "c",
-					Index: &ast.IndexExpr{
-						Kind:  lexer.INT,
+				Decl: &ast.GenDecl{
+					Kind: lexer.BIT,
+					Type: &ast.IndexExpr{
+						Name: &ast.IdentExpr{
+							Value: "bit",
+						},
 						Value: "2",
 					},
-				},
-			},
-			&ast.ResetStmt{
-				Kind: lexer.RESET,
-				QArgs: []ast.IdentExpr{
-					{
-						Kind:  lexer.IDENT,
-						Value: "q",
+					Name: &ast.IdentExpr{
+						Value: "c",
 					},
 				},
 			},
-			&ast.ApplyStmt{
-				Kind: lexer.X,
-				QArgs: []ast.IdentExpr{
-					{
-						Kind:  lexer.IDENT,
-						Value: "q",
-					},
-				},
-			},
-			&ast.ApplyStmt{
-				Kind: lexer.CX,
-				QArgs: []ast.IdentExpr{
-					{
-						Kind:  lexer.IDENT,
-						Value: "q",
-						Index: &ast.IndexExpr{
-							Kind:  lexer.INT,
-							Value: "0",
-						},
-					},
-					{
-						Kind:  lexer.IDENT,
-						Value: "q",
-						Index: &ast.IndexExpr{
-							Kind:  lexer.INT,
-							Value: "1",
+			&ast.ExprStmt{
+				X: &ast.ResetExpr{
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{
+								Value: "q",
+							},
 						},
 					},
 				},
 			},
-			&ast.ArrowStmt{
-				Kind: lexer.ARROW,
-				Left: &ast.MeasureStmt{
-					Kind: lexer.MEASURE,
-					QArgs: []ast.IdentExpr{
-						{
-							Kind:  lexer.IDENT,
-							Value: "q",
+			&ast.ExprStmt{
+				X: &ast.ApplyExpr{
+					Kind: lexer.X,
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IndexExpr{
+								Name: &ast.IdentExpr{
+									Value: "q",
+								},
+								Value: "0",
+							},
 						},
 					},
 				},
-				Right: &ast.IdentExpr{
-					Kind:  lexer.IDENT,
-					Value: "c",
+			},
+			&ast.ExprStmt{
+				X: &ast.ApplyExpr{
+					Kind: lexer.CX,
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IndexExpr{
+								Name: &ast.IdentExpr{
+									Value: "q",
+								},
+								Value: "0",
+							},
+							&ast.IndexExpr{
+								Name: &ast.IdentExpr{
+									Value: "q",
+								},
+								Value: "1",
+							},
+						},
+					},
 				},
 			},
 			&ast.AssignStmt{
-				Kind: lexer.EQUALS,
 				Left: &ast.IdentExpr{
-					Kind:  lexer.IDENT,
 					Value: "c",
 				},
-				Right: &ast.MeasureStmt{
-					Kind: lexer.MEASURE,
-					QArgs: []ast.IdentExpr{
-						{
-							Kind:  lexer.IDENT,
-							Value: "q",
+				Right: &ast.MeasureExpr{
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{
+								Value: "q",
+							},
 						},
 					},
 				},
@@ -135,74 +131,49 @@ func ExampleEvaluator() {
 	// qubit[2] q;
 	// bit[2] c;
 	// reset q;
-	// x q;
+	// x q[0];
 	// cx q[0], q[1];
-	// measure q -> c;
 	// c = measure q;
 	//
-	// c: 10
-	// [10][  2]( 1.0000 0.0000i): 1.0000
+	// c: 11
+	// [11][  3]( 1.0000 0.0000i): 1.0000
 }
 
 func ExampleEvaluator_print() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Includes: []string{
+		Incls: []string{
 			"\"stdgates.qasm\"",
 		},
-		Statements: []ast.Stmt{
+		Stmts: []ast.Stmt{
 			&ast.DeclStmt{
-				Kind: lexer.QUBIT,
-				Name: &ast.IdentExpr{
-					Kind:  lexer.IDENT,
-					Value: "q",
-					Index: &ast.IndexExpr{
-						Kind:  lexer.INT,
+				Decl: &ast.GenDecl{
+					Kind: lexer.QUBIT,
+					Type: &ast.IndexExpr{
+						Name: &ast.IdentExpr{
+							Value: "qubit",
+						},
 						Value: "2",
 					},
-				},
-			},
-			&ast.ApplyStmt{
-				Kind: lexer.H,
-				QArgs: []ast.IdentExpr{
-					{
-						Kind:  lexer.IDENT,
+					Name: &ast.IdentExpr{
 						Value: "q",
 					},
 				},
 			},
-			&ast.PrintStmt{
-				Kind: lexer.PRINT,
-			},
-			&ast.PrintStmt{
-				Kind: lexer.PRINT,
-				QArgs: []ast.IdentExpr{
-					{
-						Kind:  lexer.IDENT,
-						Value: "q",
-					},
-				},
-			},
-			&ast.PrintStmt{
-				Kind: lexer.PRINT,
-				QArgs: []ast.IdentExpr{
-					{
-						Kind:  lexer.IDENT,
-						Value: "q",
-						Index: &ast.IndexExpr{
-							Kind:  lexer.INT,
-							Value: "0",
-						},
-					},
-					{
-						Kind:  lexer.IDENT,
-						Value: "q",
-						Index: &ast.IndexExpr{
-							Kind:  lexer.INT,
-							Value: "1",
+			&ast.ExprStmt{
+				X: &ast.ApplyExpr{
+					Kind: lexer.H,
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{
+								Value: "q",
+							},
 						},
 					},
 				},
+			},
+			&ast.ExprStmt{
+				X: &ast.PrintExpr{},
 			},
 		},
 	}
@@ -217,12 +188,4 @@ func ExampleEvaluator_print() {
 	// [01][  1]( 0.5000 0.0000i): 0.2500
 	// [10][  2]( 0.5000 0.0000i): 0.2500
 	// [11][  3]( 0.5000 0.0000i): 0.2500
-	// [00][  0]( 0.5000 0.0000i): 0.2500
-	// [01][  1]( 0.5000 0.0000i): 0.2500
-	// [10][  2]( 0.5000 0.0000i): 0.2500
-	// [11][  3]( 0.5000 0.0000i): 0.2500
-	// [0 0][  0   0]( 0.5000 0.0000i): 0.2500
-	// [0 1][  0   1]( 0.5000 0.0000i): 0.2500
-	// [1 0][  1   0]( 0.5000 0.0000i): 0.2500
-	// [1 1][  1   1]( 0.5000 0.0000i): 0.2500
 }

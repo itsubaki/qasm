@@ -25,8 +25,16 @@ func TestLexer(t *testing.T) {
 				{lexer.IDENT, "shor"},
 
 				{lexer.LPAREN, "("},
+				{lexer.IDENT, "int"},
+				{lexer.LBRACKET, "["},
+				{lexer.INT, "32"},
+				{lexer.RBRACKET, "]"},
 				{lexer.IDENT, "a"},
 				{lexer.COMMA, ","},
+				{lexer.IDENT, "int"},
+				{lexer.LBRACKET, "["},
+				{lexer.INT, "32"},
+				{lexer.RBRACKET, "]"},
 				{lexer.IDENT, "N"},
 				{lexer.RPAREN, ")"},
 

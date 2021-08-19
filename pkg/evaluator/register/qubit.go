@@ -17,27 +17,23 @@ func (qb *Qubit) Add(name string, value []q.Qubit) {
 	qb.Value[name] = value
 }
 
-func (qb *Qubit) Exists(name string) bool {
-	_, ok := qb.Value[name]
-	return ok
-}
+func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
+	switch x := a.(type) {
+	case *ast.IdentExpr:
+		out, ok := qb.Value[x.Value]
+		return out, ok
+	case *ast.IndexExpr:
+		out, ok := qb.Value[x.Name.Value]
 
-func (qb *Qubit) Get(name string, expr ...*ast.IndexExpr) ([]q.Qubit, error) {
-	out, ok := qb.Value[name]
-	if !ok {
-		return nil, fmt.Errorf("IDENT=%v not found", name)
-	}
-	if len(expr) == 0 {
-		return out, nil
-	}
-	if expr[0] == nil {
-		return out, nil
-	}
+		index := Index(x.Int(), len(out))
+		if index > len(out)-1 || index < 0 {
+			msg := fmt.Sprintf("index out of range[%v] with length %v", index, len(out))
+			panic(msg)
+		}
 
-	index := Index(expr[0].Int(), len(out))
-	if index > len(out)-1 || index < 0 {
-		return out, fmt.Errorf("index out of range[%v] with length %v", index, len(out))
+		return append(make([]q.Qubit, 0), out[index]), ok
+	default:
+		msg := fmt.Sprintf("invalid expr=%v", a)
+		panic(msg)
 	}
-
-	return append(make([]q.Qubit, 0), out[index]), nil
 }

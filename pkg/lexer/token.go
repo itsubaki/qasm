@@ -42,7 +42,6 @@ const (
 	OPENQASM // OPENQASM
 	INCLUDE  // include
 	CONST    // const
-	TINT     // int
 	QUBIT    // qubit
 	BIT      // bit
 	RESET    // reset
@@ -102,7 +101,6 @@ var Tokens = [...]string{
 	OPENQASM: "OPENQASM",
 	INCLUDE:  "include",
 	CONST:    "const",
-	TINT:     "int",
 	QUBIT:    "qubit",
 	BIT:      "bit",
 	RESET:    "reset",

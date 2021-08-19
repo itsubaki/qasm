@@ -16,38 +16,36 @@ func (b *Bit) Add(name string, value []int) {
 	b.Value[name] = value
 }
 
-func (b *Bit) Exists(name string) bool {
-	_, ok := b.Value[name]
-	return ok
-}
+func (b *Bit) Get(a ast.Expr) ([]int, bool) {
+	switch x := a.(type) {
+	case *ast.IdentExpr:
+		out, ok := b.Value[x.Value]
+		return out, ok
 
-func (b *Bit) Get(name string, expr ...*ast.IndexExpr) ([]int, error) {
-	out, ok := b.Value[name]
-	if !ok {
-		return nil, fmt.Errorf("IDENT=%v not found", name)
-	}
-	if len(expr) == 0 {
-		return out, nil
-	}
-	if expr[0] == nil {
-		return out, nil
-	}
+	case *ast.IndexExpr:
+		out, ok := b.Value[x.Name.Value]
 
-	index := Index(expr[0].Int(), len(out))
-	if index > len(out)-1 || index < 0 {
-		return out, fmt.Errorf("index out of range[%v] with length %v", index, len(out))
-	}
+		index := Index(x.Int(), len(out))
+		if index > len(out)-1 || index < 0 {
+			msg := fmt.Sprintf("index out of range[%v] with length %v", index, len(out))
+			panic(msg)
+		}
 
-	return append(make([]int, 0), out[index]), nil
+		return append(make([]int, 0), out[index]), ok
+
+	default:
+		msg := fmt.Sprintf("invalid expr=%v", a)
+		panic(msg)
+	}
 }
 
 func (b *Bit) Println() error {
 	for _, n := range b.Name {
 		fmt.Printf("%v: ", n)
 
-		c, err := b.Get(n)
-		if err != nil {
-			return fmt.Errorf("get bit=%v: %v", n, err)
+		c, ok := b.Get(&ast.IdentExpr{Value: n})
+		if !ok {
+			return fmt.Errorf("name=%v not found", n)
 		}
 
 		for _, v := range c {

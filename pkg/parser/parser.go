@@ -23,10 +23,9 @@ func New(l *lexer.Lexer) *Parser {
 	return &Parser{
 		l: l,
 		qasm: &ast.OpenQASM{
-			Version:    "3.0",
-			Includes:   make([]string, 0),
-			Gates:      make([]ast.Stmt, 0),
-			Statements: make([]ast.Stmt, 0),
+			Version: "3.0",
+			Incls:   make([]string, 0),
+			Stmts:   make([]ast.Stmt, 0),
 		},
 		errors: make([]string, 0),
 	}
@@ -43,9 +42,7 @@ func (p *Parser) Parse() *ast.OpenQASM {
 		case lexer.OPENQASM:
 			p.qasm.Version = p.parseVersion()
 		case lexer.INCLUDE:
-			p.appendIncl(p.parseInclude())
-		case lexer.GATE:
-			p.appendGate(p.parseGate())
+			p.appendIncl(p.parseIncl())
 		case lexer.QUBIT, lexer.BIT:
 			p.appendStmt(p.parseDecl())
 		case lexer.CONST:
@@ -68,8 +65,6 @@ func (p *Parser) Parse() *ast.OpenQASM {
 			p.appendStmt(p.parseApply())
 		case lexer.CMODEXP2:
 			p.appendStmt(p.parseApply())
-		case lexer.IDENT:
-			p.appendStmt(p.parse())
 		case lexer.EOF:
 			return p.qasm
 		}
@@ -95,15 +90,11 @@ func (p *Parser) expect(t lexer.Token) {
 }
 
 func (p *Parser) appendIncl(s string) {
-	p.qasm.Includes = append(p.qasm.Includes, s)
-}
-
-func (p *Parser) appendGate(s ast.Stmt) {
-	p.qasm.Gates = append(p.qasm.Gates, s)
+	p.qasm.Incls = append(p.qasm.Incls, s)
 }
 
 func (p *Parser) appendStmt(s ast.Stmt) {
-	p.qasm.Statements = append(p.qasm.Statements, s)
+	p.qasm.Stmts = append(p.qasm.Stmts, s)
 }
 
 func (p *Parser) appendErr(e error) {
@@ -117,72 +108,50 @@ func (p *Parser) parseVersion() string {
 	return c.Literal
 }
 
-func (p *Parser) parseInclude() string {
+func (p *Parser) parseIncl() string {
 	c := p.next()
 	p.expect(lexer.STRING)
 
 	return c.Literal
 }
 
-func (p *Parser) parseIdentList() []ast.IdentExpr {
-	out := make([]ast.IdentExpr, 0)
-	out = append(out, p.parseIdent())
+func (p *Parser) parseExprList() ast.ExprList {
+	out := ast.ExprList{}
+	out.Append(p.parseExpr())
 
 	for {
 		if p.cur.Token != lexer.COMMA {
 			break
 		}
 
-		out = append(out, p.parseIdent())
+		out.Append(p.parseExpr())
 	}
 
 	return out
 }
 
-func (p *Parser) parseIdent() ast.IdentExpr {
+func (p *Parser) parseExpr() ast.Expr {
 	c := p.cur
 	if p.cur.Token != lexer.IDENT {
 		c = p.next()
 	}
 	p.expect(lexer.IDENT)
 
-	ident := ast.IdentExpr{
-		Kind:  c.Token,
+	p.next()
+	x := &ast.IdentExpr{
 		Value: c.Literal,
 	}
 
-	p.next()
 	if p.cur.Token != lexer.LBRACKET {
-		return ident
+		return x
 	}
 
-	ident.Index = p.parseIndex()
-	p.next()
-
-	return ident
-}
-
-func (p *Parser) parseIndex() *ast.IndexExpr {
-	p.expect(lexer.LBRACKET)
-
-	s := p.next()
-	v := s.Literal
-	if s.Token == lexer.MINUS {
-		v = fmt.Sprintf("%s%s", v, p.next().Literal)
-	}
-	p.expect(lexer.INT)
-
-	p.next()
-	p.expect(lexer.RBRACKET)
-
-	return &ast.IndexExpr{
-		Kind:  lexer.INT,
-		Value: v,
-	}
+	// TODO FIX
+	return x
 }
 
 func (p *Parser) parseConst() ast.Stmt {
-	kind := p.cur.Token // lexer.CONST
+	p.expect(lexer.CONST)
 
 	n := p.next()
 	p.expect(lexer.IDENT)
@@ -193,13 +162,13 @@ func (p *Parser) parseConst() ast.Stmt {
 	v := p.next()
 	p.expect(lexer.INT)
 
-	return &ast.ConstStmt{
-		Kind: kind,
-		Name: &ast.IdentExpr{
-			Kind:  n.Token,
-			Value: n.Literal,
+	return &ast.DeclStmt{
+		Decl: &ast.GenConst{
+			Name: &ast.IdentExpr{
+				Value: n.Literal,
+			},
+			Value: v.Literal,
 		},
-		Value: v.Literal,
 	}
 }
 
@@ -211,10 +180,14 @@ func (p *Parser) parseDecl() ast.Stmt {
 		// qubit q
 		p.expect(lexer.IDENT)
 		return &ast.DeclStmt{
-			Kind: kind,
-			Name: &ast.IdentExpr{
-				Kind:  n.Token,
-				Value: n.Literal,
+			Decl: &ast.GenDecl{
+				Kind: kind,
+				Type: &ast.IdentExpr{
+					Value: lexer.Tokens[kind],
+				},
+				Name: &ast.IdentExpr{
+					Value: n.Literal,
+				},
 			},
 		}
 	}
@@ -230,14 +203,18 @@ func (p *Parser) parseDecl() ast.Stmt {
 
 	ident := p.next()
 	p.expect(lexer.IDENT)
+
 	return &ast.DeclStmt{
-		Kind: kind,
-		Name: &ast.IdentExpr{
-			Kind:  ident.Token,
-			Value: ident.Literal,
-			Index: &ast.IndexExpr{
-				Kind:  lexer.INT,
+		Decl: &ast.GenDecl{
+			Kind: kind,
+			Type: &ast.IndexExpr{
+				Name: &ast.IdentExpr{
+					Value: "qubit",
+				},
 				Value: index.Literal,
+			},
+			Name: &ast.IdentExpr{
+				Value: ident.Literal,
 			},
 		},
 	}
@@ -246,47 +223,32 @@ func (p *Parser) parseDecl() ast.Stmt {
 func (p *Parser) parseReset() ast.Stmt {
 	p.expect(lexer.RESET)
 
-	return &ast.ResetStmt{
-		Kind:  lexer.RESET,
-		QArgs: p.parseIdentList(),
-	}
-}
-
-func (p *Parser) parseApply() ast.Stmt {
-	kind := p.cur.Token // lexer.X, lexer.Y, ..., lexer.CX, ...
-	params := make([]ast.IdentExpr, 0)
-
-	p.next()
-	if p.cur.Token == lexer.LPAREN {
-		params = p.parseIdentList()
-		p.expect(lexer.RPAREN)
-	}
-
-	return &ast.ApplyStmt{
-		Kind:   kind,
-		Params: params,
-		QArgs:  p.parseIdentList(),
+	return &ast.ExprStmt{
+		X: &ast.ResetExpr{
+			QArgs: p.parseExprList(),
+		},
 	}
 }
 
 func (p *Parser) parseMeasure() ast.Stmt {
 	p.expect(lexer.MEASURE)
 
-	// measure q -> c
-	left := ast.MeasureStmt{
-		Kind:  lexer.MEASURE,
-		QArgs: p.parseIdentList(),
+	left := ast.MeasureExpr{
+		QArgs: p.parseExprList(),
 	}
 
 	if p.cur.Token != lexer.ARROW {
-		return &left
+		// measure q
+		return &ast.ExprStmt{
+			X: &left,
+		}
 	}
 
-	right := p.parseIdent()
+	// measure q -> c
+	right := p.parseExpr()
 	return &ast.ArrowStmt{
-		Kind:  lexer.ARROW,
 		Left:  &left,
-		Right: &right,
+		Right: right,
 	}
 }
 
@@ -295,95 +257,36 @@ func (p *Parser) parsePrint() ast.Stmt {
 
 	c := p.next()
 	if c.Token != lexer.IDENT {
-		return &ast.PrintStmt{
-			Kind: lexer.PRINT,
+		// print
+		return &ast.ExprStmt{
+			X: &ast.PrintExpr{},
 		}
 	}
 	p.expect(lexer.IDENT)
 
-	return &ast.PrintStmt{
-		Kind:  lexer.PRINT,
-		QArgs: p.parseIdentList(),
+	// print q, p;
+	return &ast.ExprStmt{
+		X: &ast.PrintExpr{
+			QArgs: p.parseExprList(),
+		},
 	}
 }
 
-func (p *Parser) parseGate() ast.Stmt {
-	name := p.next()
-	p.expect(lexer.IDENT)
+func (p *Parser) parseApply() ast.Stmt {
+	g := p.cur.Token
+
+	params := ast.ExprList{}
 	p.next()
-
-	params := make([]ast.IdentExpr, 0)
 	if p.cur.Token == lexer.LPAREN {
-		params = p.parseIdentList()
+		params = p.parseExprList()
 		p.expect(lexer.RPAREN)
-		p.next()
-	}
-	p.expect(lexer.IDENT)
-
-	args := p.parseIdentList()
-	p.expect(lexer.LBRACE)
-
-	stmts := make([]ast.Stmt, 0)
-	for {
-		p.next()
-		if p.cur.Token == lexer.RBRACE {
-			break
-		}
-
-		stmts = append(stmts, p.parseApply())
-	}
-	p.expect(lexer.RBRACE)
-
-	return &ast.GateStmt{
-		Kind:       lexer.GATE,
-		Name:       name.Literal,
-		Params:     params,
-		QArgs:      args,
-		Statements: stmts,
-	}
-}
-
-func (p *Parser) parse() ast.Stmt {
-	p.expect(lexer.IDENT)
-
-	left := p.parseIdent()
-	if p.cur.Token == lexer.IDENT {
-		// bell q, p
-		return &ast.CallStmt{
-			Kind:   lexer.IDENT,
-			Name:   left.String(),
-			Params: make([]ast.IdentExpr, 0),
-			QArgs:  p.parseIdentList(),
-		}
 	}
 
-	if p.cur.Token == lexer.LPAREN {
-		// shor(a, N) r0, r1
-		return &ast.CallStmt{
-			Kind:   lexer.IDENT,
-			Name:   left.String(),
-			Params: p.parseIdentList(),
-			QArgs:  p.parseIdentList(),
-		}
+	return &ast.ExprStmt{
+		X: &ast.ApplyExpr{
+			Kind:   g,
+			Params: params,
+			QArgs:  p.parseExprList(),
+		},
 	}
-
-	if p.cur.Token == lexer.EQUALS {
-		// c = measure q
-		p.next()
-		p.expect(lexer.MEASURE)
-
-		return &ast.AssignStmt{
-			Kind: lexer.EQUALS,
-			Left: &left,
-			Right: &ast.MeasureStmt{
-				Kind: lexer.MEASURE,
-				QArgs: []ast.IdentExpr{
-					p.parseIdent(),
-				},
-			},
-		}
-	}
-
-	p.appendErr(fmt.Errorf("invalid token=%v, literal=%v", p.cur.Token, p.cur.Literal))
-	return nil
 }

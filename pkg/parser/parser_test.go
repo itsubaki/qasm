@@ -36,9 +36,9 @@ func ExampleParser() {
 	// h q[0];
 	// cx q[0], q[1];
 	// measure q -> c;
-	// c = measure q;
-	// c[0] = measure q[0];
-	// c[1] = measure q[1];
+	// measure q;
+	// measure q[0];
+	// measure q[1];
 }
 
 func TestParseVersion(t *testing.T) {
@@ -61,7 +61,7 @@ func TestParseVersion(t *testing.T) {
 	}
 }
 
-func TestParseIncludes(t *testing.T) {
+func TestParseIncl(t *testing.T) {
 	var cases = []struct {
 		in   string
 		want string
@@ -74,7 +74,7 @@ func TestParseIncludes(t *testing.T) {
 
 	for _, c := range cases {
 		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		got := p.Parse().Includes[0]
+		got := p.Parse().Incls[0]
 		if got != c.want {
 			t.Errorf("got=%v, want=%v", got, c.want)
 		}
@@ -83,92 +83,31 @@ func TestParseIncludes(t *testing.T) {
 
 func TestParseStmt(t *testing.T) {
 	var cases = []struct {
-		in   string
-		want string
+		in string
 	}{
-		{
-			"qubit q",
-			"qubit q",
-		},
-		{
-			"qubit[2] q",
-			"qubit[2] q",
-		},
-		{
-			"reset q",
-			"reset q",
-		},
-		{
-			"x q",
-			"x q",
-		},
-		{
-			"x p, q",
-			"x p, q",
-		},
-		{
-			"x p[0], q[1]",
-			"x p[0], q[1]",
-		},
-		{
-			"measure q",
-			"measure q",
-		},
-		{
-			"measure q -> c",
-			"measure q -> c",
-		},
-		{
-			"c = measure q",
-			"c = measure q",
-		},
-		{
-			"print",
-			"print",
-		},
-		{
-			"print q",
-			"print q",
-		},
-		{
-			"print q, p",
-			"print q, p",
-		},
-		{
-			"print q, p[0]",
-			"print q, p[0]",
-		},
+		{"bit c;"},
+		{"qubit q;"},
+		{"qubit[2] q;"},
+		{"reset q;"},
+		{"reset q, p;"},
+		// {"reset q[0], p[0];"},
+		{"measure q;"},
+		{"measure q, p;"},
+		// {"measure q[0], q[1];"},
+		{"print;"},
+		{"print q;"},
+		{"print q, p;"},
+		// {"print q, p[0];"},
+		{"h q;"},
+		{"h q, p;"},
+		// {"h q[0], p[0];"},
 	}
 
 	for _, c := range cases {
 		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		got := p.Parse().Statements[0].String()
-		if got != c.want {
-			t.Errorf("got=%v, want=%v", got, c.want)
-		}
-	}
-}
-
-func TestParseGate(t *testing.T) {
-	var cases = []struct {
-		in   string
-		want string
-	}{
-		{
-			"gate bell q0, q1 { h q0; cx q0, q1; }",
-			"gate bell q0, q1 { h q0; cx q0, q1; }",
-		},
-		{
-			"gate shor(a, N) r0, r1 { x r1[-1]; h r0; cmodexp2(a, N) r0, r1; iqft r0; }",
-			"gate shor(a, N) r0, r1 { x r1[-1]; h r0; cmodexp2(a, N) r0, r1; iqft r0; }",
-		},
-	}
-
-	for _, c := range cases {
-		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		got := p.Parse().Gates[0].String()
-		if got != c.want {
-			t.Errorf("got=%v, want=%v", got, c.want)
+		got := p.Parse().Stmts[0].String()
+		if got != c.in {
+			t.Errorf("got=%v, want=%v", got, c.in)
 		}
 	}
 }
