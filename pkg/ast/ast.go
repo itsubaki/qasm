@@ -55,7 +55,7 @@ type Expr interface {
 }
 
 type IdentExpr struct {
-	Kind  lexer.Token // lexer.STRING, lexer.INT, lexer.FLOAT
+	Kind  lexer.Token // lexer.IDENT
 	Value string
 	Index *IndexExpr
 }

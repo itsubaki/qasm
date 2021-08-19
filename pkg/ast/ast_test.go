@@ -62,13 +62,13 @@ func ExampleOpenQASM_String() {
 					Kind: lexer.MEASURE,
 					QArgs: []ast.IdentExpr{
 						{
-							Kind:  lexer.STRING,
+							Kind:  lexer.IDENT,
 							Value: "q",
 						},
 					},
 				},
 				Right: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "c",
 				},
 			},
@@ -452,7 +452,7 @@ func TestConstStmtString(t *testing.T) {
 			&ast.ConstStmt{
 				Kind: lexer.CONST,
 				Name: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "N",
 				},
 				Value: "15",

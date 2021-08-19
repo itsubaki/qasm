@@ -18,7 +18,7 @@ func ExampleEvaluator() {
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Name: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "q",
 					Index: &ast.IndexExpr{
 						Kind:  lexer.INT,
@@ -29,7 +29,7 @@ func ExampleEvaluator() {
 			&ast.DeclStmt{
 				Kind: lexer.BIT,
 				Name: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "c",
 					Index: &ast.IndexExpr{
 						Kind:  lexer.INT,
@@ -41,7 +41,7 @@ func ExampleEvaluator() {
 				Kind: lexer.RESET,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 					},
 				},
@@ -50,7 +50,7 @@ func ExampleEvaluator() {
 				Kind: lexer.X,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 					},
 				},
@@ -59,7 +59,7 @@ func ExampleEvaluator() {
 				Kind: lexer.CX,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -67,7 +67,7 @@ func ExampleEvaluator() {
 						},
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -82,27 +82,27 @@ func ExampleEvaluator() {
 					Kind: lexer.MEASURE,
 					QArgs: []ast.IdentExpr{
 						{
-							Kind:  lexer.STRING,
+							Kind:  lexer.IDENT,
 							Value: "q",
 						},
 					},
 				},
 				Right: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "c",
 				},
 			},
 			&ast.AssignStmt{
 				Kind: lexer.EQUALS,
 				Left: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "c",
 				},
 				Right: &ast.MeasureStmt{
 					Kind: lexer.MEASURE,
 					QArgs: []ast.IdentExpr{
 						{
-							Kind:  lexer.STRING,
+							Kind:  lexer.IDENT,
 							Value: "q",
 						},
 					},
@@ -154,7 +154,7 @@ func ExampleEvaluator_print() {
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Name: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "q",
 					Index: &ast.IndexExpr{
 						Kind:  lexer.INT,
@@ -166,7 +166,7 @@ func ExampleEvaluator_print() {
 				Kind: lexer.H,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 					},
 				},
