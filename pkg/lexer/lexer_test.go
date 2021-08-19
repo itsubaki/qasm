@@ -23,15 +23,12 @@ func TestLexer(t *testing.T) {
 			want: []Token{
 				{lexer.DEF, "def"},
 				{lexer.IDENT, "shor"},
-				{lexer.LPAREN, "("},
 
-				{lexer.TINT, "int"},
+				{lexer.LPAREN, "("},
 				{lexer.IDENT, "a"},
 				{lexer.COMMA, ","},
-
-				{lexer.TINT, "int"},
 				{lexer.IDENT, "N"},
-				{lexer.COMMA, ","},
+				{lexer.RPAREN, ")"},
 
 				{lexer.QUBIT, "qubit"},
 				{lexer.LBRACKET, "["},
@@ -46,7 +43,6 @@ func TestLexer(t *testing.T) {
 				{lexer.RBRACKET, "]"},
 				{lexer.IDENT, "r1"},
 
-				{lexer.RPAREN, ")"},
 				{lexer.ARROW, "->"},
 
 				{lexer.BIT, "bit"},
@@ -73,7 +69,6 @@ func TestLexer(t *testing.T) {
 				{lexer.COMMA, ","},
 				{lexer.IDENT, "N"},
 				{lexer.RPAREN, ")"},
-				{lexer.COMMA, ","},
 				{lexer.IDENT, "r0"},
 				{lexer.COMMA, ","},
 				{lexer.IDENT, "r1"},

@@ -120,13 +120,138 @@ func TestIdentExprString(t *testing.T) {
 	}
 }
 
-func TestGateExprString(t *testing.T) {
+func TestDefStmtString(t *testing.T) {
 	var cases = []struct {
-		in   ast.GateExpr
+		in   ast.DefStmt
 		want string
 	}{
 		{
-			ast.GateExpr{
+			ast.DefStmt{
+				Kind: lexer.DEF,
+				Name: "shor",
+				Params: []ast.IdentExpr{
+					{
+						Kind:  lexer.IDENT,
+						Value: "a",
+					},
+					{
+						Kind:  lexer.IDENT,
+						Value: "N",
+					},
+				},
+				QArgs: []ast.IdentExpr{
+					{
+						Kind:  lexer.STRING,
+						Value: "r0",
+						Index: &ast.IndexExpr{
+							Kind:  lexer.IDENT,
+							Value: "n",
+						},
+					},
+					{
+						Kind:  lexer.STRING,
+						Value: "r1",
+						Index: &ast.IndexExpr{
+							Kind:  lexer.IDENT,
+							Value: "m",
+						},
+					},
+				},
+				Output: &ast.IdentExpr{
+					Kind: lexer.BIT,
+					Index: &ast.IndexExpr{
+						Kind:  lexer.IDENT,
+						Value: "n",
+					},
+				},
+				Statements: []ast.Stmt{
+					&ast.ApplyStmt{
+						Kind: lexer.X,
+						QArgs: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "r1",
+								Index: &ast.IndexExpr{
+									Kind:  lexer.INT,
+									Value: "-1",
+								},
+							},
+						},
+					},
+					&ast.ApplyStmt{
+						Kind: lexer.H,
+						QArgs: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "r0",
+							},
+						},
+					},
+					&ast.ApplyStmt{
+						Kind: lexer.CMODEXP2,
+						Params: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "a",
+							},
+							{
+								Kind:  lexer.IDENT,
+								Value: "N",
+							},
+						},
+						QArgs: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "r0",
+							},
+							{
+								Kind:  lexer.IDENT,
+								Value: "r1",
+							},
+						},
+					},
+					&ast.ApplyStmt{
+						Kind: lexer.IQFT,
+						QArgs: []ast.IdentExpr{
+							{
+								Kind:  lexer.IDENT,
+								Value: "r0",
+							},
+						},
+					},
+					&ast.ReturnStmt{
+						Kind: lexer.RETURN,
+						Value: &ast.MeasureStmt{
+							Kind: lexer.MEASURE,
+							QArgs: []ast.IdentExpr{
+								{
+									Kind:  lexer.IDENT,
+									Value: "r0",
+								},
+							},
+						},
+					},
+				},
+			},
+			"def shor(a, N) qubit[n] r0, qubit[m] r1 -> bit[n] { x r1[-1]; h r0; cmodexp2(a, N) r0, r1; iqft r0; return measure r0; }",
+		},
+	}
+
+	for _, c := range cases {
+		got := c.in.String()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
+
+func TestGateStmtString(t *testing.T) {
+	var cases = []struct {
+		in   ast.GateStmt
+		want string
+	}{
+		{
+			ast.GateStmt{
 				Kind: lexer.GATE,
 				Name: "bell",
 				QArgs: []ast.IdentExpr{
@@ -167,7 +292,7 @@ func TestGateExprString(t *testing.T) {
 			"gate bell q0, q1 { h q0; cx q0, q1; }",
 		},
 		{
-			ast.GateExpr{
+			ast.GateStmt{
 				Kind: lexer.GATE,
 				Name: "shor",
 				Params: []ast.IdentExpr{

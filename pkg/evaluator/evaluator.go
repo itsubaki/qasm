@@ -28,7 +28,7 @@ func Default() *Evaluator {
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	for _, expr := range p.Gates {
 		switch g := expr.(type) {
-		case *ast.GateExpr:
+		case *ast.GateStmt:
 			e.R.Gate[g.Name] = *g
 		default:
 			return fmt.Errorf("invalid expr=%v", g)

@@ -11,7 +11,7 @@ import (
 type OpenQASM struct {
 	Version    string
 	Includes   []string
-	Gates      []Expr
+	Gates      []Stmt
 	Statements []Stmt
 }
 
@@ -104,7 +104,7 @@ func (i *IndexExpr) Int() int {
 	return v
 }
 
-type GateExpr struct {
+type GateStmt struct {
 	Kind       lexer.Token // lexer.GATE
 	Name       string
 	Params     []IdentExpr
@@ -112,13 +112,13 @@ type GateExpr struct {
 	Statements []Stmt
 }
 
-func (s *GateExpr) exprNode() {}
+func (s *GateStmt) stmtNode() {}
 
-func (s *GateExpr) Literal() string {
+func (s *GateStmt) Literal() string {
 	return lexer.Tokens[s.Kind]
 }
 
-func (s *GateExpr) String() string {
+func (s *GateStmt) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(s.Literal())
@@ -146,6 +146,73 @@ func (s *GateExpr) String() string {
 		}
 	}
 
+	buf.WriteString(" ")
+	buf.WriteString(lexer.Tokens[lexer.LBRACE])
+	buf.WriteString(" ")
+	for _, stmt := range s.Statements {
+		msg := fmt.Sprintf("%s; ", stmt.String())
+		buf.WriteString(msg)
+	}
+	buf.WriteString(lexer.Tokens[lexer.RBRACE])
+
+	return buf.String()
+}
+
+type DefStmt struct {
+	Kind       lexer.Token // lexer.DEF
+	Name       string
+	Params     []IdentExpr
+	QArgs      []IdentExpr
+	Output     *IdentExpr
+	Statements []Stmt
+}
+
+func (s *DefStmt) stmtNode() {}
+
+func (s *DefStmt) Literal() string {
+	return lexer.Tokens[s.Kind]
+}
+
+func (s *DefStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Literal())
+	buf.WriteString(" ")
+	buf.WriteString(s.Name)
+
+	if len(s.Params) > 0 {
+		buf.WriteString(lexer.Tokens[lexer.LPAREN])
+		for i, p := range s.Params {
+			buf.WriteString(p.String())
+
+			if len(s.Params)-1 != i {
+				buf.WriteString(", ")
+			}
+		}
+		buf.WriteString(lexer.Tokens[lexer.RPAREN])
+	}
+
+	buf.WriteString(" ")
+	for i, a := range s.QArgs {
+		buf.WriteString(lexer.Tokens[lexer.QUBIT])
+		buf.WriteString(lexer.Tokens[lexer.LBRACKET])
+		buf.WriteString(a.Index.Value)
+		buf.WriteString(lexer.Tokens[lexer.RBRACKET])
+		buf.WriteString(" ")
+		buf.WriteString(a.Value)
+
+		if len(s.QArgs)-1 != i {
+			buf.WriteString(", ")
+		}
+	}
+
+	buf.WriteString(" ")
+	buf.WriteString(lexer.Tokens[lexer.ARROW])
+	buf.WriteString(" ")
+	buf.WriteString(s.Output.Literal())
+	buf.WriteString(lexer.Tokens[lexer.LBRACKET])
+	buf.WriteString(s.Output.Index.Value)
+	buf.WriteString(lexer.Tokens[lexer.RBRACKET])
 	buf.WriteString(" ")
 	buf.WriteString(lexer.Tokens[lexer.LBRACE])
 	buf.WriteString(" ")
@@ -195,6 +262,27 @@ func (s *CallStmt) String() string {
 			buf.WriteString(", ")
 		}
 	}
+
+	return buf.String()
+}
+
+type ReturnStmt struct {
+	Kind  lexer.Token // lexer.RETURN
+	Value Stmt
+}
+
+func (s *ReturnStmt) stmtNode() {}
+
+func (s *ReturnStmt) Literal() string {
+	return lexer.Tokens[s.Kind]
+}
+
+func (s *ReturnStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Literal())
+	buf.WriteString(" ")
+	buf.WriteString(s.Value.String())
 
 	return buf.String()
 }
