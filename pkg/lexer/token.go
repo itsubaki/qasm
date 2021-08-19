@@ -42,6 +42,7 @@ const (
 	OPENQASM // OPENQASM
 	INCLUDE  // include
 	CONST    // const
+	TINT     // int
 	QUBIT    // qubit
 	BIT      // bit
 	RESET    // reset
@@ -61,6 +62,8 @@ const (
 	MEASURE  // measure
 	GATE     // gate
 	PRINT    // print
+	DEF      // def
+	RETURN   // return
 	keyword_end
 )
 
@@ -99,6 +102,7 @@ var Tokens = [...]string{
 	OPENQASM: "OPENQASM",
 	INCLUDE:  "include",
 	CONST:    "const",
+	TINT:     "int",
 	QUBIT:    "qubit",
 	BIT:      "bit",
 	RESET:    "reset",
@@ -118,4 +122,6 @@ var Tokens = [...]string{
 	MEASURE:  "measure",
 	GATE:     "gate",
 	PRINT:    "print",
+	DEF:      "def",
+	RETURN:   "return",
 }

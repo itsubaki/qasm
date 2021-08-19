@@ -1,7 +1,8 @@
-def shor(int[16] a, int[16] N, qubit[n] r0, qubit[m] r1) -> bit[n] {
+def shor(int a, int N, qubit[n] r0, qubit[m] r1) -> bit[n] {
     x r1[-1];
     h r0;
     cmodexp2(a, N), r0, r1;
     iqft r0;
+
     return measure r0;
 }

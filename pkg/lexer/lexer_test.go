@@ -19,7 +19,78 @@ func TestLexer(t *testing.T) {
 		want []Token
 	}{
 		{
-			in: "../../testdata/test_lexer_gate.qasm",
+			in: "../../testdata/test_lexer_shor_def.qasm",
+			want: []Token{
+				{lexer.DEF, "def"},
+				{lexer.IDENT, "shor"},
+				{lexer.LPAREN, "("},
+
+				{lexer.TINT, "int"},
+				{lexer.IDENT, "a"},
+				{lexer.COMMA, ","},
+
+				{lexer.TINT, "int"},
+				{lexer.IDENT, "N"},
+				{lexer.COMMA, ","},
+
+				{lexer.QUBIT, "qubit"},
+				{lexer.LBRACKET, "["},
+				{lexer.IDENT, "n"},
+				{lexer.RBRACKET, "]"},
+				{lexer.IDENT, "r0"},
+				{lexer.COMMA, ","},
+
+				{lexer.QUBIT, "qubit"},
+				{lexer.LBRACKET, "["},
+				{lexer.IDENT, "m"},
+				{lexer.RBRACKET, "]"},
+				{lexer.IDENT, "r1"},
+
+				{lexer.RPAREN, ")"},
+				{lexer.ARROW, "->"},
+
+				{lexer.BIT, "bit"},
+				{lexer.LBRACKET, "["},
+				{lexer.IDENT, "n"},
+				{lexer.RBRACKET, "]"},
+				{lexer.LBRACE, "{"},
+
+				{lexer.X, "x"},
+				{lexer.IDENT, "r1"},
+				{lexer.LBRACKET, "["},
+				{lexer.MINUS, "-"},
+				{lexer.INT, "1"},
+				{lexer.RBRACKET, "]"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.H, "h"},
+				{lexer.IDENT, "r0"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.CMODEXP2, "cmodexp2"},
+				{lexer.LPAREN, "("},
+				{lexer.IDENT, "a"},
+				{lexer.COMMA, ","},
+				{lexer.IDENT, "N"},
+				{lexer.RPAREN, ")"},
+				{lexer.COMMA, ","},
+				{lexer.IDENT, "r0"},
+				{lexer.COMMA, ","},
+				{lexer.IDENT, "r1"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.IQFT, "iqft"},
+				{lexer.IDENT, "r0"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.RETURN, "return"},
+				{lexer.MEASURE, "measure"},
+				{lexer.IDENT, "r0"},
+				{lexer.SEMICOLON, ";"},
+			},
+		},
+		{
+			in: "../../testdata/test_lexer_bell_gate.qasm",
 			want: []Token{
 				{lexer.GATE, "gate"},
 				{lexer.IDENT, "bell"},
