@@ -18,7 +18,7 @@ func ExampleOpenQASM_String() {
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Name: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "q",
 				},
 			},
@@ -26,7 +26,7 @@ func ExampleOpenQASM_String() {
 				Kind: lexer.RESET,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 					},
 				},
@@ -35,7 +35,7 @@ func ExampleOpenQASM_String() {
 				Kind: lexer.X,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 					},
 				},
@@ -43,14 +43,14 @@ func ExampleOpenQASM_String() {
 			&ast.AssignStmt{
 				Kind: lexer.EQUALS,
 				Left: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "c",
 				},
 				Right: &ast.MeasureStmt{
 					Kind: lexer.MEASURE,
 					QArgs: []ast.IdentExpr{
 						{
-							Kind:  lexer.STRING,
+							Kind:  lexer.IDENT,
 							Value: "q",
 						},
 					},
@@ -94,14 +94,14 @@ func TestIdentExprString(t *testing.T) {
 	}{
 		{
 			ast.IdentExpr{
-				Kind:  lexer.STRING,
+				Kind:  lexer.IDENT,
 				Value: "q",
 			},
 			"q",
 		},
 		{
 			ast.IdentExpr{
-				Kind:  lexer.STRING,
+				Kind:  lexer.IDENT,
 				Value: "q",
 				Index: &ast.IndexExpr{
 					Kind:  lexer.INT,
@@ -141,18 +141,18 @@ func TestDefStmtString(t *testing.T) {
 				},
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "r0",
 						Index: &ast.IndexExpr{
-							Kind:  lexer.IDENT,
+							Kind:  lexer.INT,
 							Value: "n",
 						},
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "r1",
 						Index: &ast.IndexExpr{
-							Kind:  lexer.IDENT,
+							Kind:  lexer.INT,
 							Value: "m",
 						},
 					},
@@ -160,7 +160,7 @@ func TestDefStmtString(t *testing.T) {
 				Output: &ast.IdentExpr{
 					Kind: lexer.BIT,
 					Index: &ast.IndexExpr{
-						Kind:  lexer.IDENT,
+						Kind:  lexer.INT,
 						Value: "n",
 					},
 				},
@@ -256,11 +256,11 @@ func TestGateStmtString(t *testing.T) {
 				Name: "bell",
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q0",
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q1",
 					},
 				},
@@ -297,21 +297,21 @@ func TestGateStmtString(t *testing.T) {
 				Name: "shor",
 				Params: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "a",
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "N",
 					},
 				},
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "r0",
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "r1",
 					},
 				},
@@ -393,11 +393,11 @@ func TestCallStmtString(t *testing.T) {
 				Name: "bell",
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q0",
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q1",
 					},
 				},
@@ -410,21 +410,21 @@ func TestCallStmtString(t *testing.T) {
 				Name: "shor",
 				Params: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "a",
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "N",
 					},
 				},
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "r0",
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "r1",
 					},
 				},
@@ -476,7 +476,7 @@ func TestDeclStmtString(t *testing.T) {
 			&ast.DeclStmt{
 				Kind: lexer.BIT,
 				Name: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "c",
 				},
 			},
@@ -486,7 +486,7 @@ func TestDeclStmtString(t *testing.T) {
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Name: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "q",
 				},
 			},
@@ -496,10 +496,10 @@ func TestDeclStmtString(t *testing.T) {
 			&ast.DeclStmt{
 				Kind: lexer.QUBIT,
 				Name: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "q",
 					Index: &ast.IndexExpr{
-						Kind:  lexer.INT,
+						Kind:  lexer.IDENT,
 						Value: "2",
 					},
 				},
@@ -526,7 +526,7 @@ func TestResetStmtString(t *testing.T) {
 				Kind: lexer.RESET,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 					},
 				},
@@ -538,7 +538,7 @@ func TestResetStmtString(t *testing.T) {
 				Kind: lexer.RESET,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -546,7 +546,7 @@ func TestResetStmtString(t *testing.T) {
 						},
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -577,7 +577,7 @@ func TestApplyStmtString(t *testing.T) {
 				Kind: lexer.X,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 					},
 				},
@@ -589,7 +589,7 @@ func TestApplyStmtString(t *testing.T) {
 				Kind: lexer.X,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -597,7 +597,7 @@ func TestApplyStmtString(t *testing.T) {
 						},
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -613,7 +613,7 @@ func TestApplyStmtString(t *testing.T) {
 				Kind: lexer.CX,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -621,7 +621,7 @@ func TestApplyStmtString(t *testing.T) {
 						},
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -637,7 +637,7 @@ func TestApplyStmtString(t *testing.T) {
 				Kind: lexer.CCX,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -645,7 +645,7 @@ func TestApplyStmtString(t *testing.T) {
 						},
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -653,7 +653,7 @@ func TestApplyStmtString(t *testing.T) {
 						},
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -710,7 +710,7 @@ func TestMeasureStmtString(t *testing.T) {
 				Kind: lexer.MEASURE,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 					},
 				},
@@ -722,7 +722,7 @@ func TestMeasureStmtString(t *testing.T) {
 				Kind: lexer.MEASURE,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -730,7 +730,7 @@ func TestMeasureStmtString(t *testing.T) {
 						},
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 						Index: &ast.IndexExpr{
 							Kind:  lexer.INT,
@@ -760,14 +760,14 @@ func TestAssignStmtString(t *testing.T) {
 			ast.AssignStmt{
 				Kind: lexer.EQUALS,
 				Left: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "c",
 				},
 				Right: &ast.MeasureStmt{
 					Kind: lexer.MEASURE,
 					QArgs: []ast.IdentExpr{
 						{
-							Kind:  lexer.STRING,
+							Kind:  lexer.IDENT,
 							Value: "q",
 						},
 					},
@@ -779,7 +779,7 @@ func TestAssignStmtString(t *testing.T) {
 			ast.AssignStmt{
 				Kind: lexer.EQUALS,
 				Left: &ast.IdentExpr{
-					Kind:  lexer.STRING,
+					Kind:  lexer.IDENT,
 					Value: "c",
 					Index: &ast.IndexExpr{
 						Kind:  lexer.INT,
@@ -790,7 +790,7 @@ func TestAssignStmtString(t *testing.T) {
 					Kind: lexer.MEASURE,
 					QArgs: []ast.IdentExpr{
 						{
-							Kind:  lexer.STRING,
+							Kind:  lexer.IDENT,
 							Value: "q",
 							Index: &ast.IndexExpr{
 								Kind:  lexer.INT,
@@ -828,7 +828,7 @@ func TestPrintStmtString(t *testing.T) {
 				Kind: lexer.PRINT,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 					},
 				},
@@ -840,11 +840,11 @@ func TestPrintStmtString(t *testing.T) {
 				Kind: lexer.PRINT,
 				QArgs: []ast.IdentExpr{
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "q",
 					},
 					{
-						Kind:  lexer.STRING,
+						Kind:  lexer.IDENT,
 						Value: "p",
 					},
 				},
