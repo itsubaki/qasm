@@ -340,7 +340,7 @@ func TestGateStmtString(t *testing.T) {
 					},
 					&ast.ApplyStmt{
 						Kind: lexer.CMODEXP2,
-						QArgs: []ast.IdentExpr{
+						Params: []ast.IdentExpr{
 							{
 								Kind:  lexer.IDENT,
 								Value: "a",
@@ -349,6 +349,8 @@ func TestGateStmtString(t *testing.T) {
 								Kind:  lexer.IDENT,
 								Value: "N",
 							},
+						},
+						QArgs: []ast.IdentExpr{
 							{
 								Kind:  lexer.IDENT,
 								Value: "r0",
@@ -370,7 +372,7 @@ func TestGateStmtString(t *testing.T) {
 					},
 				},
 			},
-			"gate shor(a, N) r0, r1 { x r1[-1]; h r0; cmodexp2 a, N, r0, r1; iqft r0; }",
+			"gate shor(a, N) r0, r1 { x r1[-1]; h r0; cmodexp2(a, N) r0, r1; iqft r0; }",
 		},
 	}
 
