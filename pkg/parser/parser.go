@@ -137,17 +137,25 @@ func (p *Parser) parseExpr() ast.Expr {
 	}
 	p.expect(lexer.IDENT)
 
-	p.next()
 	x := &ast.IdentExpr{
 		Value: c.Literal,
 	}
 
+	p.next()
 	if p.cur.Token != lexer.LBRACKET {
 		return x
 	}
 
-	// TODO FIX
-	return x
+	v := p.next()
+
+	p.next()
+	p.expect(lexer.RBRACKET)
+	p.next()
+
+	return &ast.IndexExpr{
+		Name:  x,
+		Value: v.Literal,
+	}
 }
 
 func (p *Parser) parseConst() ast.Stmt {
@@ -209,7 +217,7 @@ func (p *Parser) parseDecl() ast.Stmt {
 			Kind: kind,
 			Type: &ast.IndexExpr{
 				Name: &ast.IdentExpr{
-					Value: "qubit",
+					Value: lexer.Tokens[kind],
 				},
 				Value: index.Literal,
 			},

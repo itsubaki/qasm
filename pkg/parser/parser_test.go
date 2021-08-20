@@ -90,17 +90,17 @@ func TestParseStmt(t *testing.T) {
 		{"qubit[2] q;"},
 		{"reset q;"},
 		{"reset q, p;"},
-		// {"reset q[0], p[0];"},
+		{"reset q[0], p[0];"},
 		{"measure q;"},
 		{"measure q, p;"},
-		// {"measure q[0], q[1];"},
+		{"measure q[0], q[1];"},
 		{"print;"},
 		{"print q;"},
 		{"print q, p;"},
-		// {"print q, p[0];"},
+		{"print q, p[0];"},
 		{"h q;"},
 		{"h q, p;"},
-		// {"h q[0], p[0];"},
+		{"h q[0], p[0];"},
 	}
 
 	for _, c := range cases {
