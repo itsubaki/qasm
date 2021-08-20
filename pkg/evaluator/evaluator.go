@@ -26,31 +26,35 @@ func Default() *Evaluator {
 }
 
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
-	return e.eval(p.Stmts)
+	for _, s := range p.Stmts {
+		if err := e.eval(s); err != nil {
+			return fmt.Errorf("eval: %v", err)
+		}
+	}
+
+	return nil
 }
 
-func (e *Evaluator) eval(stmts []ast.Stmt) error {
-	for _, stmt := range stmts {
-		switch s := stmt.(type) {
-		case *ast.DeclStmt:
-			if err := e.evalDeclStmt(s); err != nil {
-				return fmt.Errorf("decl: %v", err)
-			}
-		case *ast.ExprStmt:
-			if err := e.evalExprStmt(s); err != nil {
-				return fmt.Errorf("expr: %v", err)
-			}
-		case *ast.AssignStmt:
-			if err := e.evalAssignStmt(s); err != nil {
-				return fmt.Errorf("assign: %v", err)
-			}
-		case *ast.ArrowStmt:
-			if err := e.evalArrowStmt(s); err != nil {
-				return fmt.Errorf("arrow: %v", err)
-			}
-		default:
-			return fmt.Errorf("invalid stmt=%v", stmt)
+func (e *Evaluator) eval(stmt ast.Stmt) error {
+	switch s := stmt.(type) {
+	case *ast.DeclStmt:
+		if err := e.evalDeclStmt(s); err != nil {
+			return fmt.Errorf("decl: %v", err)
 		}
+	case *ast.ExprStmt:
+		if err := e.evalExprStmt(s); err != nil {
+			return fmt.Errorf("expr: %v", err)
+		}
+	case *ast.AssignStmt:
+		if err := e.evalAssignStmt(s); err != nil {
+			return fmt.Errorf("assign: %v", err)
+		}
+	case *ast.ArrowStmt:
+		if err := e.evalArrowStmt(s); err != nil {
+			return fmt.Errorf("arrow: %v", err)
+		}
+	default:
+		return fmt.Errorf("invalid stmt=%v", stmt)
 	}
 
 	return nil
@@ -101,7 +105,7 @@ func (e *Evaluator) evalExpr(x ast.Expr) error {
 		for _, a := range x.QArgs.List {
 			qb, ok := e.R.Qubit.Get(a)
 			if !ok {
-				return fmt.Errorf("%#v not found", a)
+				return fmt.Errorf("qubit=%#v not found", a)
 			}
 
 			e.Q.Reset(qb...)
@@ -126,7 +130,7 @@ func (e *Evaluator) evalExpr(x ast.Expr) error {
 		for _, a := range x.QArgs.List {
 			qb, ok := e.R.Qubit.Get(a)
 			if !ok {
-				return fmt.Errorf("%#v not found", a)
+				return fmt.Errorf("qubit=%#v not found", a)
 			}
 
 			qargs = append(qargs, qb)
@@ -147,7 +151,7 @@ func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 	case *ast.MeasureExpr:
 		c, ok := e.R.Bit.Get(s.Left)
 		if !ok {
-			return fmt.Errorf("%#v not found", s.Left)
+			return fmt.Errorf("bit=%#v not found", s.Left)
 		}
 
 		qb, err := e.measure(x.QArgs.List...)
@@ -172,8 +176,54 @@ func (e *Evaluator) evalArrowStmt(s *ast.ArrowStmt) error {
 }
 
 func (e *Evaluator) call(x *ast.CallExpr) error {
-	apply := &ast.ApplyExpr{}
-	return e.evalExprStmt(&ast.ExprStmt{X: apply})
+	g, ok := e.R.Func[x.Name]
+	if !ok {
+		return fmt.Errorf("gate=%v not found", x.Name)
+	}
+
+	prms := make(map[string]ast.Expr)
+	for i, p := range g.Params.List {
+		prms[p.String()] = x.Params.List[i]
+	}
+
+	args := make(map[string]ast.Expr)
+	for i, a := range g.QArgs.List {
+		args[a.String()] = x.QArgs.List[i]
+	}
+
+	for _, b := range g.Body.List {
+		switch s := b.(type) {
+		case *ast.ExprStmt:
+			switch X := s.X.(type) {
+			case *ast.ApplyExpr:
+				apply := &ast.ApplyExpr{
+					Kind: X.Kind,
+				}
+
+				for _, p := range X.Params.List {
+					apply.Params.Append(prms[p.String()])
+				}
+
+				for _, a := range X.QArgs.List {
+					apply.QArgs.Append(args[a.String()])
+				}
+
+				if err := e.evalExpr(apply); err != nil {
+					return fmt.Errorf("eval expr: %v", err)
+				}
+			case *ast.MeasureExpr:
+				// TODO
+			default:
+				return fmt.Errorf("invalid expr=%v", s)
+			}
+		case *ast.ReturnStmt:
+			// TODO
+		default:
+			return fmt.Errorf("invalid stmt=%v", s)
+		}
+	}
+
+	return nil
 }
 
 func (e *Evaluator) measure(qargs ...ast.Expr) ([]q.Qubit, error) {
@@ -260,7 +310,7 @@ func (e *Evaluator) Println(qargs ...ast.Expr) error {
 	for _, a := range qargs {
 		qb, ok := e.R.Qubit.Get(a)
 		if !ok {
-			return fmt.Errorf("%#v not found", a)
+			return fmt.Errorf("qubit=%#v not found", a)
 		}
 
 		index = append(index, q.Index(qb...))

@@ -18,7 +18,7 @@ func ExampleOpenQASM_String() {
 				Decl: &ast.GenDecl{
 					Kind: lexer.QUBIT,
 					Type: &ast.IdentExpr{
-						Value: "qubit",
+						Value: lexer.Tokens[lexer.QUBIT],
 					},
 					Name: &ast.IdentExpr{
 						Value: "q",

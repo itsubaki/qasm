@@ -65,6 +65,10 @@ func (p *Parser) Parse() *ast.OpenQASM {
 			p.appendStmt(p.parseApply())
 		case lexer.CMODEXP2:
 			p.appendStmt(p.parseApply())
+		case lexer.GATE, lexer.DEF:
+			p.appendStmt(p.parseFunc())
+		case lexer.IDENT:
+			p.appendStmt(p.parse())
 		case lexer.EOF:
 			return p.qasm
 		}
@@ -115,22 +119,18 @@ func (p *Parser) parseIncl() string {
 	return c.Literal
 }
 
-func (p *Parser) parseExprList() ast.ExprList {
+func (p *Parser) parseIdentList() ast.ExprList {
 	out := ast.ExprList{}
-	out.Append(p.parseExpr())
+	out.Append(p.parseIdent())
 
-	for {
-		if p.cur.Token != lexer.COMMA {
-			break
-		}
-
-		out.Append(p.parseExpr())
+	for p.cur.Token == lexer.COMMA {
+		out.Append(p.parseIdent())
 	}
 
 	return out
 }
 
-func (p *Parser) parseExpr() ast.Expr {
+func (p *Parser) parseIdent() ast.Expr {
 	c := p.cur
 	if p.cur.Token != lexer.IDENT {
 		c = p.next()
@@ -143,18 +143,26 @@ func (p *Parser) parseExpr() ast.Expr {
 
 	p.next()
 	if p.cur.Token != lexer.LBRACKET {
+		// q
 		return x
 	}
 
 	v := p.next()
-
+	lit := v.Literal
+	if v.Token == lexer.MINUS {
+		// q[-1]
+		lit = fmt.Sprintf("%s%s", lit, p.next().Literal)
+	}
+	p.expect(lexer.INT)
 	p.next()
+
 	p.expect(lexer.RBRACKET)
 	p.next()
 
+	// q[0], q[-1]
 	return &ast.IndexExpr{
 		Name:  x,
-		Value: v.Literal,
+		Value: lit,
 	}
 }
 
@@ -170,6 +178,7 @@ func (p *Parser) parseConst() ast.Stmt {
 	v := p.next()
 	p.expect(lexer.INT)
 
+	// const N = 15
 	return &ast.DeclStmt{
 		Decl: &ast.GenConst{
 			Name: &ast.IdentExpr{
@@ -233,7 +242,7 @@ func (p *Parser) parseReset() ast.Stmt {
 
 	return &ast.ExprStmt{
 		X: &ast.ResetExpr{
-			QArgs: p.parseExprList(),
+			QArgs: p.parseIdentList(),
 		},
 	}
 }
@@ -242,7 +251,7 @@ func (p *Parser) parseMeasure() ast.Stmt {
 	p.expect(lexer.MEASURE)
 
 	left := ast.MeasureExpr{
-		QArgs: p.parseExprList(),
+		QArgs: p.parseIdentList(),
 	}
 
 	if p.cur.Token != lexer.ARROW {
@@ -253,7 +262,7 @@ func (p *Parser) parseMeasure() ast.Stmt {
 	}
 
 	// measure q -> c
-	right := p.parseExpr()
+	right := p.parseIdent()
 	return &ast.ArrowStmt{
 		Left:  &left,
 		Right: right,
@@ -275,7 +284,7 @@ func (p *Parser) parsePrint() ast.Stmt {
 	// print q, p;
 	return &ast.ExprStmt{
 		X: &ast.PrintExpr{
-			QArgs: p.parseExprList(),
+			QArgs: p.parseIdentList(),
 		},
 	}
 }
@@ -283,18 +292,83 @@ func (p *Parser) parsePrint() ast.Stmt {
 func (p *Parser) parseApply() ast.Stmt {
 	g := p.cur.Token
 
-	params := ast.ExprList{}
+	x := ast.ApplyExpr{
+		Kind: g,
+	}
+
 	p.next()
 	if p.cur.Token == lexer.LPAREN {
-		params = p.parseExprList()
+		x.Params = p.parseIdentList()
+		p.expect(lexer.RPAREN)
+	}
+	x.QArgs = p.parseIdentList()
+
+	return &ast.ExprStmt{
+		X: &x,
+	}
+}
+
+func (p *Parser) parseFunc() ast.Stmt {
+	kind := p.cur.Token
+
+	ident := p.next()
+	p.expect(lexer.IDENT)
+
+	d := ast.FuncDecl{
+		Kind: kind,
+		Name: ident.Literal,
+		Body: &ast.BlockStmt{},
+	}
+
+	p.next()
+	if p.cur.Token == lexer.LPAREN {
+		d.Params = p.parseIdentList()
 		p.expect(lexer.RPAREN)
 	}
 
+	d.QArgs = p.parseIdentList()
+	p.expect(lexer.LBRACE)
+	p.next()
+
+	for p.cur.Token != lexer.RBRACE {
+		d.Body.List = append(d.Body.List, p.parseApply())
+		p.next()
+	}
+	p.expect(lexer.RBRACE)
+
+	return &ast.DeclStmt{
+		Decl: &d,
+	}
+}
+
+func (p *Parser) parse() ast.Stmt {
+	ident := p.parseIdent()
+
+	if p.cur.Token == lexer.EQUALS {
+		// c = measure q
+		p.next()
+		p.expect(lexer.MEASURE)
+
+		return &ast.AssignStmt{
+			Left: ident,
+			Right: &ast.MeasureExpr{
+				QArgs: p.parseIdentList(),
+			},
+		}
+	}
+
+	// shor(a, N) r0, r1
+	x := ast.CallExpr{
+		Name: ident.String(),
+	}
+
+	if p.cur.Token == lexer.LPAREN {
+		x.Params = p.parseIdentList()
+		p.expect(lexer.RPAREN)
+	}
+	x.QArgs = p.parseIdentList()
+
 	return &ast.ExprStmt{
-		X: &ast.ApplyExpr{
-			Kind:   g,
-			Params: params,
-			QArgs:  p.parseExprList(),
-		},
+		X: &x,
 	}
 }

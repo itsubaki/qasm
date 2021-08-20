@@ -14,6 +14,20 @@ func TestExprStmt(t *testing.T) {
 	}{
 		{
 			&ast.ExprStmt{
+				X: &ast.ArrayExpr{
+					Type: &ast.IndexExpr{
+						Name: &ast.IdentExpr{
+							Value: "int",
+						},
+						Value: "32",
+					},
+					Name: "a",
+				},
+			},
+			"int[32] a;",
+		},
+		{
+			&ast.ExprStmt{
 				X: &ast.ResetExpr{
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
@@ -147,6 +161,34 @@ func TestExprStmt(t *testing.T) {
 				},
 			},
 			"bell q0, q1;",
+		},
+		{
+			&ast.ExprStmt{
+				X: &ast.CallExpr{
+					Name: "shor",
+					Params: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{
+								Value: "a",
+							},
+							&ast.IdentExpr{
+								Value: "N",
+							},
+						},
+					},
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{
+								Value: "r0",
+							},
+							&ast.IdentExpr{
+								Value: "r1",
+							},
+						},
+					},
+				},
+			},
+			"shor(a, N) r0, r1;",
 		},
 	}
 

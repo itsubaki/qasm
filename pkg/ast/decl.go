@@ -78,6 +78,7 @@ type FuncDecl struct {
 	Params ExprList
 	QArgs  ExprList
 	Body   *BlockStmt
+	Output *IndexExpr
 }
 
 func (d *FuncDecl) declNode() {}
@@ -101,6 +102,12 @@ func (d *FuncDecl) String() string {
 	buf.WriteString(" ")
 	buf.WriteString(d.QArgs.String())
 	buf.WriteString(" ")
+	if d.Output != nil {
+		buf.WriteString("->")
+		buf.WriteString(" ")
+		buf.WriteString(d.Output.String())
+		buf.WriteString(" ")
+	}
 	buf.WriteString(d.Body.String())
 
 	return buf.String()

@@ -20,7 +20,7 @@ func ExampleEvaluator() {
 					Kind: lexer.QUBIT,
 					Type: &ast.IndexExpr{
 						Name: &ast.IdentExpr{
-							Value: "qubit",
+							Value: lexer.Tokens[lexer.QUBIT],
 						},
 						Value: "2",
 					},
@@ -34,7 +34,7 @@ func ExampleEvaluator() {
 					Kind: lexer.BIT,
 					Type: &ast.IndexExpr{
 						Name: &ast.IdentExpr{
-							Value: "bit",
+							Value: lexer.Tokens[lexer.BIT],
 						},
 						Value: "2",
 					},
@@ -139,7 +139,7 @@ func ExampleEvaluator() {
 	// [11][  3]( 1.0000 0.0000i): 1.0000
 }
 
-func ExampleEvaluator_print() {
+func ExampleEvaluator_println() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
 		Incls: []string{
@@ -151,7 +151,7 @@ func ExampleEvaluator_print() {
 					Kind: lexer.QUBIT,
 					Type: &ast.IndexExpr{
 						Name: &ast.IdentExpr{
-							Value: "qubit",
+							Value: lexer.Tokens[lexer.QUBIT],
 						},
 						Value: "2",
 					},
@@ -188,4 +188,109 @@ func ExampleEvaluator_print() {
 	// [01][  1]( 0.5000 0.0000i): 0.2500
 	// [10][  2]( 0.5000 0.0000i): 0.2500
 	// [11][  3]( 0.5000 0.0000i): 0.2500
+}
+
+func ExampleEvaluator_call() {
+	p := &ast.OpenQASM{
+		Version: "3.0",
+		Incls: []string{
+			"\"stdgates.qasm\"",
+		},
+		Stmts: []ast.Stmt{
+			&ast.DeclStmt{
+				Decl: &ast.FuncDecl{
+					Kind: lexer.GATE,
+					Name: "bell",
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{
+								Value: "q0",
+							},
+							&ast.IdentExpr{
+								Value: "q1",
+							},
+						},
+					},
+					Body: &ast.BlockStmt{
+						List: []ast.Stmt{
+							&ast.ExprStmt{
+								X: &ast.ApplyExpr{
+									Kind: lexer.H,
+									QArgs: ast.ExprList{
+										List: []ast.Expr{
+											&ast.IdentExpr{
+												Value: "q0",
+											},
+										},
+									},
+								},
+							},
+							&ast.ExprStmt{
+								X: &ast.ApplyExpr{
+									Kind: lexer.CX,
+									QArgs: ast.ExprList{
+										List: []ast.Expr{
+											&ast.IdentExpr{
+												Value: "q0",
+											},
+											&ast.IdentExpr{
+												Value: "q1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			&ast.DeclStmt{
+				Decl: &ast.GenDecl{
+					Kind: lexer.QUBIT,
+					Type: &ast.IndexExpr{
+						Name: &ast.IdentExpr{
+							Value: lexer.Tokens[lexer.QUBIT],
+						},
+						Value: "2",
+					},
+					Name: &ast.IdentExpr{
+						Value: "q",
+					},
+				},
+			},
+			&ast.ExprStmt{
+				X: &ast.CallExpr{
+					Name: "bell",
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IndexExpr{
+								Name: &ast.IdentExpr{
+									Value: "q",
+								},
+								Value: "0",
+							},
+							&ast.IndexExpr{
+								Name: &ast.IdentExpr{
+									Value: "q",
+								},
+								Value: "1",
+							},
+						},
+					},
+				},
+			},
+			&ast.ExprStmt{
+				X: &ast.PrintExpr{},
+			},
+		},
+	}
+
+	if err := evaluator.Default().Eval(p); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// Output:
+	// [00][  0]( 0.7071 0.0000i): 0.5000
+	// [11][  3]( 0.7071 0.0000i): 0.5000
 }

@@ -32,6 +32,11 @@ func (s *DeclStmt) Literal() string {
 }
 
 func (s *DeclStmt) String() string {
+	switch d := s.Decl.(type) {
+	case *FuncDecl:
+		return d.String()
+	}
+
 	return fmt.Sprintf("%s;", s.Decl)
 }
 
@@ -127,3 +132,9 @@ func (s *BlockStmt) String() string {
 
 	return buf.String()
 }
+
+type IfStmt struct{}
+
+type BranchStmt struct{}
+
+type ForStmt struct{}

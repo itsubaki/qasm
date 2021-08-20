@@ -36,9 +36,9 @@ func ExampleParser() {
 	// h q[0];
 	// cx q[0], q[1];
 	// measure q -> c;
-	// measure q;
-	// measure q[0];
-	// measure q[1];
+	// c = measure q;
+	// c[0] = measure q[0];
+	// c[1] = measure q[1];
 }
 
 func TestParseVersion(t *testing.T) {
@@ -101,6 +101,8 @@ func TestParseStmt(t *testing.T) {
 		{"h q;"},
 		{"h q, p;"},
 		{"h q[0], p[0];"},
+		{"h q[-1];"},
+		{"gate bell q0, q1 { h q0; cx q0, q1; }"},
 	}
 
 	for _, c := range cases {

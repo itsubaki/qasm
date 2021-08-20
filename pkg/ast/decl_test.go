@@ -28,7 +28,7 @@ func TestDeclStmt(t *testing.T) {
 				Decl: &ast.GenDecl{
 					Kind: lexer.BIT,
 					Type: &ast.IdentExpr{
-						Value: "bit",
+						Value: lexer.Tokens[lexer.BIT],
 					},
 					Name: &ast.IdentExpr{
 						Value: "c",
@@ -42,7 +42,7 @@ func TestDeclStmt(t *testing.T) {
 				Decl: &ast.GenDecl{
 					Kind: lexer.QUBIT,
 					Type: &ast.IdentExpr{
-						Value: "qubit",
+						Value: lexer.Tokens[lexer.QUBIT],
 					},
 					Name: &ast.IdentExpr{
 						Value: "q",
@@ -57,7 +57,7 @@ func TestDeclStmt(t *testing.T) {
 					Kind: lexer.QUBIT,
 					Type: &ast.IndexExpr{
 						Name: &ast.IdentExpr{
-							Value: "qubit",
+							Value: lexer.Tokens[lexer.QUBIT],
 						},
 						Value: "2",
 					},
@@ -133,7 +133,81 @@ func TestDeclStmt(t *testing.T) {
 					},
 				},
 			},
-			"gate bell q0, q1 { h q0; cx q0, q1; };",
+			"gate bell q0, q1 { h q0; cx q0, q1; }",
+		},
+		{
+			&ast.DeclStmt{
+				Decl: &ast.FuncDecl{
+					Kind: lexer.DEF,
+					Name: "shor",
+					Params: ast.ExprList{
+						List: []ast.Expr{
+							&ast.ArrayExpr{
+								Type: &ast.IndexExpr{
+									Name: &ast.IdentExpr{
+										Value: "int",
+									},
+									Value: "32",
+								},
+								Name: "a",
+							},
+							&ast.ArrayExpr{
+								Type: &ast.IndexExpr{
+									Name: &ast.IdentExpr{
+										Value: "int",
+									},
+									Value: "32",
+								},
+								Name: "N",
+							},
+						},
+					},
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.ArrayExpr{
+								Type: &ast.IndexExpr{
+									Name: &ast.IdentExpr{
+										Value: "qubit",
+									},
+									Value: "n",
+								},
+								Name: "r0",
+							},
+							&ast.ArrayExpr{
+								Type: &ast.IndexExpr{
+									Name: &ast.IdentExpr{
+										Value: "qubit",
+									},
+									Value: "m",
+								},
+								Name: "r1",
+							},
+						},
+					},
+					Body: &ast.BlockStmt{
+						List: []ast.Stmt{
+							&ast.ReturnStmt{
+								Result: &ast.MeasureExpr{
+									QArgs: ast.ExprList{
+										List: []ast.Expr{
+											&ast.IdentExpr{
+												Value: "r0",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Output: &ast.IndexExpr{
+						Name: &ast.IdentExpr{
+							Value: "bit",
+						},
+						Value: "n",
+					},
+				},
+			},
+			"def shor(int[32] a, int[32] N) qubit[n] r0, qubit[m] r1 -> bit[n] { return measure r0; }",
 		},
 	}
 
