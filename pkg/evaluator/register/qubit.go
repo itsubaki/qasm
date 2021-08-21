@@ -22,6 +22,9 @@ func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 	case *ast.IdentExpr:
 		out, ok := qb.Value[x.Value]
 		return out, ok
+	case *ast.ArrayExpr:
+		out, ok := qb.Value[x.Name]
+		return out, ok
 	case *ast.IndexExpr:
 		out, ok := qb.Value[x.Name.Value]
 
@@ -33,7 +36,6 @@ func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 
 		return append(make([]q.Qubit, 0), out[index]), ok
 	default:
-		msg := fmt.Sprintf("invalid expr=%v", a)
-		panic(msg)
+		panic(fmt.Sprintf("invalid expr=%#v", a))
 	}
 }

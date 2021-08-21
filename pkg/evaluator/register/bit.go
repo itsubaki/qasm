@@ -21,7 +21,9 @@ func (b *Bit) Get(a ast.Expr) ([]int, bool) {
 	case *ast.IdentExpr:
 		out, ok := b.Value[x.Value]
 		return out, ok
-
+	case *ast.ArrayExpr:
+		out, ok := b.Value[x.Name]
+		return out, ok
 	case *ast.IndexExpr:
 		out, ok := b.Value[x.Name.Value]
 
@@ -32,10 +34,8 @@ func (b *Bit) Get(a ast.Expr) ([]int, bool) {
 		}
 
 		return append(make([]int, 0), out[index]), ok
-
 	default:
-		msg := fmt.Sprintf("invalid expr=%v", a)
-		panic(msg)
+		panic(fmt.Sprintf("invalid expr=%#v", a))
 	}
 }
 

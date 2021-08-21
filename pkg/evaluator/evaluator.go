@@ -54,7 +54,7 @@ func (e *Evaluator) eval(stmt ast.Stmt) error {
 			return fmt.Errorf("arrow: %v", err)
 		}
 	default:
-		return fmt.Errorf("invalid stmt=%v", stmt)
+		return fmt.Errorf("invalid stmt=%#v", stmt)
 	}
 
 	return nil
@@ -140,7 +140,7 @@ func (e *Evaluator) evalExpr(x ast.Expr) error {
 	case *ast.CallExpr:
 		return e.call(x)
 	default:
-		return fmt.Errorf("invalid expr=%v", x)
+		return fmt.Errorf("invalid expr=%#v", x)
 	}
 
 	return nil
@@ -164,7 +164,7 @@ func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 		}
 		return nil
 	default:
-		return fmt.Errorf("invalid stmt=%v", s)
+		return fmt.Errorf("invalid stmt=%#v", s)
 	}
 }
 
@@ -183,12 +183,12 @@ func (e *Evaluator) call(x *ast.CallExpr) error {
 
 	prms := make(map[string]ast.Expr)
 	for i, p := range g.Params.List {
-		prms[p.String()] = x.Params.List[i]
+		prms[ast.Ident(p)] = x.Params.List[i]
 	}
 
 	args := make(map[string]ast.Expr)
 	for i, a := range g.QArgs.List {
-		args[a.String()] = x.QArgs.List[i]
+		args[ast.Ident(a)] = x.QArgs.List[i]
 	}
 
 	for _, b := range g.Body.List {
@@ -196,30 +196,30 @@ func (e *Evaluator) call(x *ast.CallExpr) error {
 		case *ast.ExprStmt:
 			switch X := s.X.(type) {
 			case *ast.ApplyExpr:
-				apply := &ast.ApplyExpr{
+				ex := &ast.ApplyExpr{
 					Kind: X.Kind,
 				}
 
 				for _, p := range X.Params.List {
-					apply.Params.Append(prms[p.String()])
+					ex.Params.Append(prms[ast.Ident(p)])
 				}
 
 				for _, a := range X.QArgs.List {
-					apply.QArgs.Append(args[a.String()])
+					ex.QArgs.Append(args[ast.Ident(a)])
 				}
 
-				if err := e.evalExpr(apply); err != nil {
-					return fmt.Errorf("eval expr: %v", err)
+				if err := e.evalExpr(ex); err != nil {
+					return fmt.Errorf("eval expr: %#v", err)
 				}
 			case *ast.MeasureExpr:
 				// TODO
 			default:
-				return fmt.Errorf("invalid expr=%v", s)
+				return fmt.Errorf("invalid expr=%#v", s)
 			}
 		case *ast.ReturnStmt:
 			// TODO
 		default:
-			return fmt.Errorf("invalid stmt=%v", s)
+			return fmt.Errorf("invalid stmt=%#v", s)
 		}
 	}
 
