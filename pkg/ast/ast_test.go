@@ -10,8 +10,12 @@ import (
 func ExampleOpenQASM_String() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Incls: []string{
-			"\"stdgates.qasm\"",
+		Incls: []ast.Stmt{
+			&ast.InclStmt{
+				Path: &ast.IdentExpr{
+					Value: "\"stdgates.qasm\"",
+				},
+			},
 		},
 		Stmts: []ast.Stmt{
 			&ast.DeclStmt{

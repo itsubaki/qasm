@@ -63,20 +63,16 @@ func TestParseVersion(t *testing.T) {
 
 func TestParseIncl(t *testing.T) {
 	var cases = []struct {
-		in   string
-		want string
+		in string
 	}{
-		{
-			"include \"gate01.qasm\";",
-			"\"gate01.qasm\"",
-		},
+		{"include \"gate01.qasm\";"},
 	}
 
 	for _, c := range cases {
 		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		got := p.Parse().Incls[0]
-		if got != c.want {
-			t.Errorf("got=%v, want=%v", got, c.want)
+		got := p.Parse().Incls[0].String()
+		if got != c.in {
+			t.Errorf("got=%v, want=%v", got, c.in)
 		}
 	}
 }

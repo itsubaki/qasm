@@ -11,8 +11,12 @@ import (
 func ExampleEvaluator() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Incls: []string{
-			"\"stdgates.qasm\"",
+		Incls: []ast.Stmt{
+			&ast.InclStmt{
+				Path: &ast.IdentExpr{
+					Value: "\"stdgates.qasm\"",
+				},
+			},
 		},
 		Stmts: []ast.Stmt{
 			&ast.DeclStmt{
@@ -142,8 +146,12 @@ func ExampleEvaluator() {
 func ExampleEvaluator_println() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Incls: []string{
-			"\"stdgates.qasm\"",
+		Incls: []ast.Stmt{
+			&ast.InclStmt{
+				Path: &ast.IdentExpr{
+					Value: "\"stdgates.qasm\"",
+				},
+			},
 		},
 		Stmts: []ast.Stmt{
 			&ast.DeclStmt{
@@ -193,8 +201,12 @@ func ExampleEvaluator_println() {
 func ExampleEvaluator_call() {
 	p := &ast.OpenQASM{
 		Version: "3.0",
-		Incls: []string{
-			"\"stdgates.qasm\"",
+		Incls: []ast.Stmt{
+			&ast.InclStmt{
+				Path: &ast.IdentExpr{
+					Value: "\"stdgates.qasm\"",
+				},
+			},
 		},
 		Stmts: []ast.Stmt{
 			&ast.DeclStmt{

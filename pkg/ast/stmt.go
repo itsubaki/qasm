@@ -40,6 +40,27 @@ func (s *DeclStmt) String() string {
 	return fmt.Sprintf("%s;", s.Decl)
 }
 
+type InclStmt struct {
+	Path *IdentExpr
+}
+
+func (s *InclStmt) stmtNode() {}
+
+func (s *InclStmt) Literal() string {
+	return lexer.Tokens[lexer.INCLUDE]
+}
+
+func (s *InclStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Literal())
+	buf.WriteString(" ")
+	buf.WriteString(s.Path.String())
+	buf.WriteString(";")
+
+	return buf.String()
+}
+
 type ReturnStmt struct {
 	Result Expr
 }
