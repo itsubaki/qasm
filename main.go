@@ -40,7 +40,7 @@ func New() *cli.App {
 	parser := cli.Command{
 		Name:   "parse",
 		Action: parse.Action,
-		Usage:  "convert to an ast (abstract syntax tree)",
+		Usage:  "convert to an AST (abstract syntax tree)",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "file",
