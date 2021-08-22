@@ -68,7 +68,7 @@ func (p *Parser) expect(t lexer.Token) {
 		return
 	}
 
-	p.error(fmt.Errorf("got=%#v, want=%#v", p.cur, lexer.Tokens[t]))
+	p.error(fmt.Errorf("got=%#v, want={Tokekn:%v, Literal: %#v}", p.cur, t, lexer.Tokens[t]))
 }
 
 func (p *Parser) expectSemi() {
