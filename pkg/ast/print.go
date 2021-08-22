@@ -10,6 +10,11 @@ import (
 
 var indent = []byte(".  ")
 
+func Println(x interface{}) {
+	Print(x)
+	fmt.Println()
+}
+
 func Print(x interface{}) {
 	p := printer{
 		indent: 0,

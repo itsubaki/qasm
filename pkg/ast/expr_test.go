@@ -7,166 +7,148 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-func TestExprStmt(t *testing.T) {
+func TestExpr(t *testing.T) {
 	var cases = []struct {
-		in   ast.Stmt
+		in   ast.Expr
 		want string
 	}{
 		{
-			&ast.ExprStmt{
-				X: &ast.ArrayExpr{
-					Type: &ast.IndexExpr{
-						Name: &ast.IdentExpr{
-							Value: "int",
-						},
-						Value: "32",
+			&ast.ArrayExpr{
+				Type: &ast.IndexExpr{
+					Name: &ast.IdentExpr{
+						Value: "int",
 					},
-					Name: "a",
+					Value: "32",
 				},
+				Name: "a",
 			},
-			"int[32] a;",
+			"int[32] a",
 		},
 		{
-			&ast.ExprStmt{
-				X: &ast.ResetExpr{
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
+			&ast.ResetExpr{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q",
+						},
+					},
+				},
+			},
+			"reset q",
+		},
+		{
+			&ast.ResetExpr{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IndexExpr{
+							Name: &ast.IdentExpr{
 								Value: "q",
 							},
+							Value: "0",
 						},
-					},
-				},
-			},
-			"reset q;",
-		},
-		{
-			&ast.ExprStmt{
-				X: &ast.ResetExpr{
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "0",
-							},
-							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "1",
-							},
-						},
-					},
-				},
-			},
-			"reset q[0], q[1];",
-		},
-		{
-			&ast.ExprStmt{
-				X: &ast.PrintExpr{},
-			},
-			"print;",
-		},
-		{
-			&ast.ExprStmt{
-				X: &ast.PrintExpr{
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "0",
-							},
-							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "1",
-							},
-						},
-					},
-				},
-			},
-			"print q[0], q[1];",
-		},
-		{
-			&ast.ExprStmt{
-				X: &ast.MeasureExpr{
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
+						&ast.IndexExpr{
+							Name: &ast.IdentExpr{
 								Value: "q",
 							},
+							Value: "1",
 						},
 					},
 				},
 			},
-			"measure q;",
+			"reset q[0], q[1]",
 		},
 		{
-			&ast.ExprStmt{
-				X: &ast.MeasureExpr{
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "0",
-							},
-							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "1",
-							},
-						},
-					},
-				},
-			},
-			"measure q[0], q[1];",
+			&ast.PrintExpr{},
+			"print",
 		},
 		{
-			&ast.ExprStmt{
-				X: &ast.ApplyExpr{
-					Kind: lexer.X,
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
+			&ast.PrintExpr{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IndexExpr{
+							Name: &ast.IdentExpr{
 								Value: "q",
 							},
+							Value: "0",
+						},
+						&ast.IndexExpr{
+							Name: &ast.IdentExpr{
+								Value: "q",
+							},
+							Value: "1",
 						},
 					},
 				},
 			},
-			"x q;",
+			"print q[0], q[1]",
 		},
 		{
-			&ast.ExprStmt{
-				X: &ast.CallExpr{
-					Name: "bell",
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
-								Value: "q0",
-							},
-							&ast.IdentExpr{
-								Value: "q1",
-							},
+			&ast.MeasureExpr{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q",
 						},
 					},
 				},
 			},
-			"bell q0, q1;",
+			"measure q",
 		},
 		{
-			&ast.ExprStmt{
-				X: &ast.CallExpr{
-					Name: "shor",
-					Params: ast.ExprList{
+			&ast.MeasureExpr{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IndexExpr{
+							Name: &ast.IdentExpr{
+								Value: "q",
+							},
+							Value: "0",
+						},
+						&ast.IndexExpr{
+							Name: &ast.IdentExpr{
+								Value: "q",
+							},
+							Value: "1",
+						},
+					},
+				},
+			},
+			"measure q[0], q[1]",
+		},
+		{
+			&ast.ApplyExpr{
+				Kind: lexer.X,
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q",
+						},
+					},
+				},
+			},
+			"x q",
+		},
+		{
+			&ast.CallExpr{
+				Name: "bell",
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q0",
+						},
+						&ast.IdentExpr{
+							Value: "q1",
+						},
+					},
+				},
+			},
+			"bell q0, q1",
+		},
+		{
+			&ast.CallExpr{
+				Name: "shor",
+				Params: ast.ParenExpr{
+					List: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
 								Value: "a",
@@ -176,19 +158,61 @@ func TestExprStmt(t *testing.T) {
 							},
 						},
 					},
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
-								Value: "r0",
-							},
-							&ast.IdentExpr{
-								Value: "r1",
-							},
+				},
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "r0",
+						},
+						&ast.IdentExpr{
+							Value: "r1",
 						},
 					},
 				},
 			},
-			"shor(a, N) r0, r1;",
+			"shor(a, N) r0, r1",
+		},
+		{
+			&ast.ParenExpr{
+				List: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "a",
+						},
+						&ast.IdentExpr{
+							Value: "N",
+						},
+					},
+				},
+			},
+			"(a, N)",
+		},
+		{
+			&ast.ParenExpr{
+				List: ast.ExprList{
+					List: []ast.Expr{
+						&ast.ArrayExpr{
+							Type: &ast.IndexExpr{
+								Name: &ast.IdentExpr{
+									Value: "int",
+								},
+								Value: "32",
+							},
+							Name: "a",
+						},
+						&ast.ArrayExpr{
+							Type: &ast.IndexExpr{
+								Name: &ast.IdentExpr{
+									Value: "int",
+								},
+								Value: "32",
+							},
+							Name: "N",
+						},
+					},
+				},
+			},
+			"(int[32] a, int[32] N)",
 		},
 	}
 

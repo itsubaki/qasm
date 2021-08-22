@@ -210,8 +210,7 @@ func ExampleEvaluator_call() {
 		},
 		Stmts: []ast.Stmt{
 			&ast.DeclStmt{
-				Decl: &ast.FuncDecl{
-					Kind: lexer.GATE,
+				Decl: &ast.GateDecl{
 					Name: "bell",
 					QArgs: ast.ExprList{
 						List: []ast.Expr{

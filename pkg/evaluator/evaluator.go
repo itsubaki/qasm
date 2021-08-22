@@ -86,6 +86,8 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 		default:
 			return fmt.Errorf("invalid kind=%v", d.Kind)
 		}
+	case *ast.GateDecl:
+		e.R.Gate[d.Name] = *d
 	case *ast.FuncDecl:
 		e.R.Func[d.Name] = *d
 	default:
@@ -120,7 +122,7 @@ func (e *Evaluator) evalExpr(x ast.Expr) error {
 		}
 	case *ast.ApplyExpr:
 		params := make([]int, 0)
-		for _, p := range x.Params.List {
+		for _, p := range x.Params.List.List {
 			if a, ok := e.R.Const[p.String()]; ok {
 				params = append(params, a)
 			}
@@ -176,14 +178,26 @@ func (e *Evaluator) evalArrowStmt(s *ast.ArrowStmt) error {
 }
 
 func (e *Evaluator) call(x *ast.CallExpr) error {
-	g, ok := e.R.Func[x.Name]
+	if _, ok := e.R.Gate[x.Name]; ok {
+		return e.callGate(x)
+	}
+
+	if _, ok := e.R.Func[x.Name]; ok {
+		return e.callFunc(x)
+	}
+
+	return fmt.Errorf("%v not found", x.Name)
+}
+
+func (e *Evaluator) callGate(x *ast.CallExpr) error {
+	g, ok := e.R.Gate[x.Name]
 	if !ok {
 		return fmt.Errorf("gate=%v not found", x.Name)
 	}
 
 	prms := make(map[string]ast.Expr)
-	for i, p := range g.Params.List {
-		prms[ast.Ident(p)] = x.Params.List[i]
+	for i, p := range g.Params.List.List {
+		prms[ast.Ident(p)] = x.Params.List.List[i]
 	}
 
 	args := make(map[string]ast.Expr)
@@ -200,8 +214,8 @@ func (e *Evaluator) call(x *ast.CallExpr) error {
 					Kind: X.Kind,
 				}
 
-				for _, p := range X.Params.List {
-					ex.Params.Append(prms[ast.Ident(p)])
+				for _, p := range X.Params.List.List {
+					ex.Params.List.Append(prms[ast.Ident(p)])
 				}
 
 				for _, a := range X.QArgs.List {
@@ -211,19 +225,25 @@ func (e *Evaluator) call(x *ast.CallExpr) error {
 				if err := e.evalExpr(ex); err != nil {
 					return fmt.Errorf("eval expr: %#v", err)
 				}
-			case *ast.MeasureExpr:
-				// TODO
 			default:
-				return fmt.Errorf("invalid expr=%#v", s)
+				return fmt.Errorf("invalid expr=%#v", X)
 			}
-		case *ast.ReturnStmt:
-			// TODO
 		default:
 			return fmt.Errorf("invalid stmt=%#v", s)
 		}
 	}
 
 	return nil
+}
+
+func (e *Evaluator) callFunc(x *ast.CallExpr) error {
+	f, ok := e.R.Func[x.Name]
+	if !ok {
+		return fmt.Errorf("func=%v not found", x.Name)
+	}
+
+	// TODO
+	return fmt.Errorf("%v is not implemented", f)
 }
 
 func (e *Evaluator) measure(qargs ...ast.Expr) ([]q.Qubit, error) {

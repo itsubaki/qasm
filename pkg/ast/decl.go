@@ -3,6 +3,7 @@ package ast
 import (
 	"bytes"
 	"strconv"
+	"strings"
 
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
@@ -72,19 +73,87 @@ func (s *GenConst) Int() int {
 	return v
 }
 
-type FuncDecl struct {
-	Kind   lexer.Token // lexer.GATE
+type GateDecl struct {
 	Name   string
-	Params ExprList
+	Params ParenExpr
 	QArgs  ExprList
 	Body   *BlockStmt
-	Output *IndexExpr
+}
+
+func (d *GateDecl) declNode() {}
+
+func (d *GateDecl) Literal() string {
+	return lexer.Tokens[lexer.GATE]
+}
+
+func (d *GateDecl) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(d.Literal())
+	buf.WriteString(" ")
+
+	buf.WriteString(d.Name)
+	if len(d.Params.List.List) > 0 {
+		buf.WriteString(d.Params.String())
+	}
+
+	buf.WriteString(" ")
+	buf.WriteString(d.QArgs.String())
+	buf.WriteString(" ")
+	buf.WriteString(d.Body.String())
+
+	return buf.String()
+}
+
+type DeclList struct {
+	List []Decl
+}
+
+func (l *DeclList) Append(d Decl) {
+	l.List = append(l.List, d)
+}
+
+func (l *DeclList) String() string {
+	list := make([]string, 0)
+	for _, d := range l.List {
+		list = append(list, d.String())
+	}
+
+	return strings.Join(list, ", ")
+}
+
+type ParenDecl struct {
+	List DeclList
+}
+
+func (d *ParenDecl) declNode() {}
+
+func (d *ParenDecl) Literal() string {
+	return lexer.Tokens[lexer.LPAREN]
+}
+
+func (d *ParenDecl) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(lexer.Tokens[lexer.LPAREN])
+	buf.WriteString(d.List.String())
+	buf.WriteString(lexer.Tokens[lexer.RPAREN])
+
+	return buf.String()
+}
+
+type FuncDecl struct {
+	Name   string
+	Params ParenDecl
+	QArgs  DeclList
+	Body   *BlockStmt
+	Result Expr // Type
 }
 
 func (d *FuncDecl) declNode() {}
 
 func (d *FuncDecl) Literal() string {
-	return lexer.Tokens[d.Kind]
+	return lexer.Tokens[lexer.DEF]
 }
 
 func (d *FuncDecl) String() string {
@@ -92,22 +161,22 @@ func (d *FuncDecl) String() string {
 
 	buf.WriteString(d.Literal())
 	buf.WriteString(" ")
+
 	buf.WriteString(d.Name)
-	if len(d.Params.List) > 0 {
-		buf.WriteString(lexer.Tokens[lexer.LPAREN])
+	if len(d.Params.List.List) > 0 {
 		buf.WriteString(d.Params.String())
-		buf.WriteString(lexer.Tokens[lexer.RPAREN])
 	}
 
 	buf.WriteString(" ")
 	buf.WriteString(d.QArgs.String())
+
 	buf.WriteString(" ")
-	if d.Output != nil {
-		buf.WriteString("->")
-		buf.WriteString(" ")
-		buf.WriteString(d.Output.String())
-		buf.WriteString(" ")
-	}
+	buf.WriteString(lexer.Tokens[lexer.ARROW])
+
+	buf.WriteString(" ")
+	buf.WriteString(d.Result.String())
+
+	buf.WriteString(" ")
 	buf.WriteString(d.Body.String())
 
 	return buf.String()
