@@ -381,9 +381,7 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 	if c.Token != lexer.IDENT {
 		// print;
 
-		p.next()
 		p.expectSemi()
-
 		return &ast.ExprStmt{
 			X: &ast.PrintExpr{},
 		}
