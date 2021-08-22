@@ -14,6 +14,7 @@ func New() *cli.App {
 	app := cli.NewApp()
 
 	app.Name = "qasm"
+	app.HelpName = "qasm"
 	app.Usage = "Run Quantum Computation Simulator with OpenQASM 3.0"
 	app.Version = "0.1.0"
 	app.Action = cmd.Action
@@ -39,7 +40,7 @@ func New() *cli.App {
 	parser := cli.Command{
 		Name:   "parse",
 		Action: parse.Action,
-		Usage:  "",
+		Usage:  "convert to an ast (abstract syntax tree)",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "file",
@@ -51,7 +52,7 @@ func New() *cli.App {
 	repl := cli.Command{
 		Name:   "repl",
 		Action: repl.Action,
-		Usage:  "",
+		Usage:  "read-eval-print loop",
 	}
 
 	app.Commands = []*cli.Command{
