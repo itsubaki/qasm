@@ -83,6 +83,21 @@ func (e *IndexExpr) Int() int {
 	return v
 }
 
+type BasicExpr struct {
+	Kind  lexer.Token
+	Value string
+}
+
+func (e *BasicExpr) exprNode() {}
+
+func (e *BasicExpr) Literal() string {
+	return lexer.Tokens[e.Kind]
+}
+
+func (e *BasicExpr) String() string {
+	return e.Value
+}
+
 type ArrayExpr struct {
 	Type *IndexExpr
 	Name string

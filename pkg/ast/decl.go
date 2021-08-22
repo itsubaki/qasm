@@ -41,7 +41,7 @@ func (d *GenDecl) Size() int {
 
 type GenConst struct {
 	Name  *IdentExpr
-	Value string
+	Value *BasicExpr
 }
 
 func (d *GenConst) declNode() {}
@@ -59,13 +59,13 @@ func (d *GenConst) String() string {
 	buf.WriteString(" ")
 	buf.WriteString(lexer.Tokens[lexer.EQUALS])
 	buf.WriteString(" ")
-	buf.WriteString(d.Value)
+	buf.WriteString(d.Value.String())
 
 	return buf.String()
 }
 
 func (s *GenConst) Int() int {
-	v, err := strconv.Atoi(s.Value)
+	v, err := strconv.Atoi(s.Value.Value)
 	if err != nil {
 		panic(err)
 	}

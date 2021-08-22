@@ -230,14 +230,16 @@ func (p *Parser) parseGenConst() ast.Decl {
 	p.expect(lexer.EQUALS)
 
 	v := p.next()
-	p.expect(lexer.INT)
 
 	// const N = 15
 	return &ast.GenConst{
 		Name: &ast.IdentExpr{
 			Value: n.Literal,
 		},
-		Value: v.Literal,
+		Value: &ast.BasicExpr{
+			Kind:  v.Token,
+			Value: v.Literal,
+		},
 	}
 }
 

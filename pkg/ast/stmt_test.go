@@ -246,7 +246,10 @@ func TestStmt(t *testing.T) {
 					Name: &ast.IdentExpr{
 						Value: "N",
 					},
-					Value: "15",
+					Value: &ast.BasicExpr{
+						Kind:  lexer.INT,
+						Value: "15",
+					},
 				},
 			},
 			"const N = 15;",
