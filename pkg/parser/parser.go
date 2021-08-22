@@ -201,11 +201,10 @@ func (p *Parser) parseIdent() ast.Expr {
 		return x
 	}
 
-	v := p.next()
-	lit := v.Literal
-	if v.Token == lexer.MINUS {
+	v := p.next().Literal
+	if p.cur.Token == lexer.MINUS {
 		// q[-1]
-		lit = fmt.Sprintf("%s%s", lit, p.next().Literal)
+		v = fmt.Sprintf("%s%s", lexer.Tokens[lexer.MINUS], p.next().Literal)
 	}
 	p.expect(lexer.INT)
 
@@ -216,7 +215,7 @@ func (p *Parser) parseIdent() ast.Expr {
 	p.next()
 	return &ast.IndexExpr{
 		Name:  x,
-		Value: lit,
+		Value: v,
 	}
 }
 
@@ -335,6 +334,14 @@ func (p *Parser) parseFunc() ast.Decl {
 	return &d
 }
 
+func (p *Parser) parseMeasure() ast.Expr {
+	p.expect(lexer.MEASURE)
+
+	return &ast.MeasureExpr{
+		QArgs: p.parseIdentList(),
+	}
+}
+
 func (p *Parser) parseResetStmt() ast.Stmt {
 	p.expect(lexer.RESET)
 
@@ -352,16 +359,13 @@ func (p *Parser) parseResetStmt() ast.Stmt {
 func (p *Parser) parseMeasureStmt() ast.Stmt {
 	p.expect(lexer.MEASURE)
 
-	left := ast.MeasureExpr{
-		QArgs: p.parseIdentList(),
-	}
-
+	x := p.parseMeasure()
 	if p.cur.Token != lexer.ARROW {
 		p.expectSemi()
 
 		// measure q;
 		return &ast.ExprStmt{
-			X: &left,
+			X: x,
 		}
 	}
 	p.expect(lexer.ARROW)
@@ -371,7 +375,7 @@ func (p *Parser) parseMeasureStmt() ast.Stmt {
 	p.expectSemi()
 
 	return &ast.ArrowStmt{
-		Left:  &left,
+		Left:  x,
 		Right: right,
 	}
 }
@@ -434,14 +438,12 @@ func (p *Parser) parseAssignOrCall() ast.Stmt {
 		p.next()
 		p.expect(lexer.MEASURE)
 
-		qargs := p.parseIdentList()
+		r := p.parseMeasure()
 		p.expectSemi()
 
 		return &ast.AssignStmt{
-			Left: ident,
-			Right: &ast.MeasureExpr{
-				QArgs: qargs,
-			},
+			Left:  ident,
+			Right: r,
 		}
 	}
 
