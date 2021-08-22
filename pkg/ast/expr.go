@@ -31,8 +31,8 @@ func (l *ExprList) Append(x Expr) {
 
 func (l *ExprList) String() string {
 	list := make([]string, 0)
-	for _, t := range l.List {
-		list = append(list, t.String())
+	for _, x := range l.List {
+		list = append(list, x.String())
 	}
 
 	return strings.Join(list, ", ")
@@ -170,7 +170,7 @@ func (s *MeasureExpr) String() string {
 
 type ApplyExpr struct {
 	Kind   lexer.Token // lexer.X, lexer.CX, ...
-	Params ExprList
+	Params ParenExpr
 	QArgs  ExprList
 }
 
@@ -184,10 +184,8 @@ func (s *ApplyExpr) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(s.Literal())
-	if len(s.Params.List) > 0 {
-		buf.WriteString(lexer.Tokens[lexer.LPAREN])
+	if len(s.Params.List.List) > 0 {
 		buf.WriteString(s.Params.String())
-		buf.WriteString(lexer.Tokens[lexer.RPAREN])
 	}
 
 	buf.WriteString(" ")
@@ -198,7 +196,7 @@ func (s *ApplyExpr) String() string {
 
 type CallExpr struct {
 	Name   string
-	Params ExprList
+	Params ParenExpr
 	QArgs  ExprList
 }
 
@@ -212,14 +210,32 @@ func (e *CallExpr) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(e.Name)
-	if len(e.Params.List) > 0 {
-		buf.WriteString(lexer.Tokens[lexer.LPAREN])
+	if len(e.Params.List.List) > 0 {
 		buf.WriteString(e.Params.String())
-		buf.WriteString(lexer.Tokens[lexer.RPAREN])
 	}
 
 	buf.WriteString(" ")
 	buf.WriteString(e.QArgs.String())
+
+	return buf.String()
+}
+
+type ParenExpr struct {
+	List ExprList
+}
+
+func (e *ParenExpr) exprNode() {}
+
+func (e *ParenExpr) Literal() string {
+	return lexer.Tokens[lexer.LPAREN]
+}
+
+func (e *ParenExpr) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(lexer.Tokens[lexer.LPAREN])
+	buf.WriteString(e.List.String())
+	buf.WriteString(lexer.Tokens[lexer.RPAREN])
 
 	return buf.String()
 }

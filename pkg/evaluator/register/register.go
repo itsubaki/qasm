@@ -9,11 +9,13 @@ type Register struct {
 	Const Const
 	Bit   *Bit
 	Qubit *Qubit
+	Gate  Gate
 	Func  Func
 }
 
 func New() *Register {
 	return &Register{
+		Gate:  make(map[string]ast.GateDecl),
 		Func:  make(map[string]ast.FuncDecl),
 		Const: make(map[string]int),
 		Bit: &Bit{

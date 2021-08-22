@@ -35,7 +35,6 @@ func Action(c *cli.Context) error {
 		return fmt.Errorf("parse: %v", errs)
 	}
 
-	ast.Print(a)
-	fmt.Println()
+	ast.Println(a)
 	return nil
 }

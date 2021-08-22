@@ -84,6 +84,8 @@ func TestParseStmt(t *testing.T) {
 		{"bit c;"},
 		{"qubit q;"},
 		{"qubit[2] q;"},
+		{"int[32] a;"},
+		{"float[32] f;"},
 		{"reset q;"},
 		{"reset q, p;"},
 		{"reset q[0], p[0];"},
@@ -98,7 +100,9 @@ func TestParseStmt(t *testing.T) {
 		{"h q, p;"},
 		{"h q[0], p[0];"},
 		{"h q[-1];"},
+		{"gate ident q0 { }"},
 		{"gate bell q0, q1 { h q0; cx q0, q1; }"},
+		{"gate shor(a, N) r0, r1 { h r0; cmodexp2(a, N) r0, r1; iqft r0; }"},
 	}
 
 	for _, c := range cases {
