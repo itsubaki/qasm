@@ -87,9 +87,9 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 			return fmt.Errorf("invalid kind=%v", d.Kind)
 		}
 	case *ast.GateDecl:
-		e.R.Gate[d.Name] = *d
+		e.R.Func[d.Name] = d
 	case *ast.FuncDecl:
-		e.R.Func[d.Name] = *d
+		e.R.Func[d.Name] = d
 	default:
 		return fmt.Errorf("invalid decl=%v", s.Decl)
 	}
@@ -178,23 +178,22 @@ func (e *Evaluator) evalArrowStmt(s *ast.ArrowStmt) error {
 }
 
 func (e *Evaluator) call(x *ast.CallExpr) error {
-	if _, ok := e.R.Gate[x.Name]; ok {
-		return e.callGate(x)
+	decl, ok := e.R.Func[x.Name]
+	if !ok {
+		return fmt.Errorf("%v not found", x.Name)
 	}
 
-	if _, ok := e.R.Func[x.Name]; ok {
-		return e.callFunc(x)
+	switch f := decl.(type) {
+	case *ast.GateDecl:
+		return e.callGate(x, f)
+	case *ast.FuncDecl:
+		return e.callFunc(x, f)
 	}
 
-	return fmt.Errorf("%v not found", x.Name)
+	return fmt.Errorf("invalid func=%#v", decl)
 }
 
-func (e *Evaluator) callGate(x *ast.CallExpr) error {
-	g, ok := e.R.Gate[x.Name]
-	if !ok {
-		return fmt.Errorf("gate=%v not found", x.Name)
-	}
-
+func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl) error {
 	prms := make(map[string]ast.Expr)
 	for i, p := range g.Params.List.List {
 		prms[ast.Ident(p)] = x.Params.List.List[i]
@@ -236,12 +235,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr) error {
 	return nil
 }
 
-func (e *Evaluator) callFunc(x *ast.CallExpr) error {
-	f, ok := e.R.Func[x.Name]
-	if !ok {
-		return fmt.Errorf("func=%v not found", x.Name)
-	}
-
+func (e *Evaluator) callFunc(x *ast.CallExpr, f *ast.FuncDecl) error {
 	// TODO
 	return fmt.Errorf("%v is not implemented", f)
 }
