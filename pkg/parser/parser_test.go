@@ -103,11 +103,17 @@ func TestParseStmt(t *testing.T) {
 		{"gate ident q0 { }"},
 		{"gate bell q0, q1 { h q0; cx q0, q1; }"},
 		{"gate shor(a, N) r0, r1 { h r0; cmodexp2(a, N) r0, r1; iqft r0; }"},
+		{"def shor(int[32] a, int[32] N) qubit[n] r0, qubit[m] r1 { h r0; cmodexp2(a, N) r0, r1; iqft r0; }"},
 	}
 
 	for _, c := range cases {
 		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		got := p.Parse().Stmts[0].String()
+		a := p.Parse()
+		for _, e := range p.Errors() {
+			t.Log(e)
+		}
+
+		got := a.Stmts[0].String()
 		if got != c.in {
 			t.Errorf("got=%v, want=%v", got, c.in)
 		}

@@ -142,6 +142,10 @@ func (d *ParenDecl) String() string {
 	return buf.String()
 }
 
+func (l *ParenDecl) Append(d Decl) {
+	l.List.Append(d)
+}
+
 type FuncDecl struct {
 	Name   string
 	Params ParenDecl

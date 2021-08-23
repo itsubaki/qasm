@@ -329,8 +329,66 @@ func (p *Parser) parseFunc() ast.Decl {
 		Body: &ast.BlockStmt{},
 	}
 
-	// TODO
+	p.next()
+	p.expect(lexer.LPAREN)
 
+	p.next()
+	decl.Params.Append(p.parseDecl())
+
+	p.next()
+	p.expect(lexer.COMMA)
+
+	p.next()
+	decl.Params.Append(p.parseDecl())
+
+	p.next()
+	p.expect(lexer.RPAREN)
+
+	p.next()
+	decl.QArgs.Append(p.parseDecl())
+
+	p.next()
+	p.expect(lexer.COMMA)
+
+	p.next()
+	decl.QArgs.Append(p.parseDecl())
+
+	// p.next()
+	// p.expect(lexer.ARROW)
+
+	// typ := p.next().Literal
+
+	// p.next()
+	// p.expect(lexer.LBRACKET)
+
+	// val := p.next().Literal
+
+	// p.next()
+	// p.expect(lexer.RBRACKET)
+
+	// decl.Result = &ast.IndexExpr{
+	// 	Name: &ast.IdentExpr{
+	// 		Value: typ,
+	// 	},
+	// 	Value: val,
+	// }
+
+	p.next()
+	p.expect(lexer.LBRACE)
+
+	p.next()
+	decl.Body.Append(p.parseStmt())
+
+	p.next()
+	decl.Body.Append(p.parseStmt())
+
+	p.next()
+	decl.Body.Append(p.parseStmt())
+
+	p.next()
+	p.expect(lexer.RBRACE)
+
+	// TODO
 	return &decl
 }
 
@@ -339,20 +397,6 @@ func (p *Parser) parseMeasure() ast.Expr {
 
 	return &ast.MeasureExpr{
 		QArgs: p.parseIdentList(),
-	}
-}
-
-func (p *Parser) parseResetStmt() ast.Stmt {
-	p.expect(lexer.RESET)
-
-	qargs := p.parseIdentList()
-	p.expectSemi()
-
-	// reset q, p;
-	return &ast.ExprStmt{
-		X: &ast.ResetExpr{
-			QArgs: qargs,
-		},
 	}
 }
 
@@ -377,6 +421,38 @@ func (p *Parser) parseMeasureStmt() ast.Stmt {
 	return &ast.ArrowStmt{
 		Left:  x,
 		Right: right,
+	}
+}
+
+func (p *Parser) parseReturnStmt() ast.Stmt {
+	p.expect(lexer.RETURN)
+
+	p.next()
+	if p.cur.Token == lexer.MEASURE {
+		x := p.parseMeasure()
+		p.expectSemi()
+
+		return &ast.ReturnStmt{
+			Result: x,
+		}
+	}
+
+	return &ast.ReturnStmt{
+		Result: nil,
+	}
+}
+
+func (p *Parser) parseResetStmt() ast.Stmt {
+	p.expect(lexer.RESET)
+
+	qargs := p.parseIdentList()
+	p.expectSemi()
+
+	// reset q, p;
+	return &ast.ExprStmt{
+		X: &ast.ResetExpr{
+			QArgs: qargs,
+		},
 	}
 }
 
