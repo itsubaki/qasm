@@ -33,7 +33,7 @@ func (s *DeclStmt) Literal() string {
 
 func (s *DeclStmt) String() string {
 	switch d := s.Decl.(type) {
-	case *GateDecl:
+	case *GateDecl, *FuncDecl:
 		return d.String()
 	}
 
