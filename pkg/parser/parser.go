@@ -332,23 +332,29 @@ func (p *Parser) parseFunc() ast.Decl {
 	}
 
 	p.next()
-	p.expect(lexer.LPAREN)
+	if p.cur.Token == lexer.LPAREN {
+		p.expect(lexer.LPAREN)
 
-	for p.next().Token != lexer.RPAREN {
-		if p.cur.Token == lexer.COMMA {
-			continue
+		for p.next().Token != lexer.RPAREN {
+			if p.cur.Token == lexer.COMMA {
+				continue
+			}
+
+			decl.Params.Append(p.parseDecl())
 		}
 
-		decl.Params.Append(p.parseDecl())
+		p.expect(lexer.RPAREN)
+		p.next()
 	}
-	p.expect(lexer.RPAREN)
 
-	for p.next().Token != lexer.ARROW {
+	for p.cur.Token != lexer.ARROW {
 		if p.cur.Token == lexer.COMMA {
+			p.next()
 			continue
 		}
 
 		decl.QArgs.Append(p.parseDecl())
+		p.next()
 	}
 	p.expect(lexer.ARROW)
 

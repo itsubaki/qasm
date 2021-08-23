@@ -103,6 +103,7 @@ func TestParseStmt(t *testing.T) {
 		{"gate ident q0 { }"},
 		{"gate bell q0, q1 { h q0; cx q0, q1; }"},
 		{"gate shor(a, N) r0, r1 { h r0; cmodexp2(a, N) r0, r1; iqft r0; }"},
+		{"def bell qubit[n] q0, qubit[m] q1 -> bit[n] { h q0; cx q0, q1; return measure q0, q1; }"},
 		{"def shor(int[32] a, int[32] N) qubit[n] r0, qubit[m] r1 -> bit[n] { h r0; cmodexp2(a, N) r0, r1; iqft r0; return measure r0; }"},
 	}
 
