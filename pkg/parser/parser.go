@@ -265,7 +265,7 @@ func (p *Parser) parseGenDecl() ast.Decl {
 	p.expect(lexer.LBRACKET)
 
 	index := p.next()
-	p.expect(lexer.INT)
+	// p.expect(lexer.INT), or lexer.IDENT
 
 	p.next()
 	p.expect(lexer.RBRACKET)
@@ -334,28 +334,22 @@ func (p *Parser) parseFunc() ast.Decl {
 	p.next()
 	p.expect(lexer.LPAREN)
 
-	p.next()
-	decl.Params.Append(p.parseDecl())
+	for p.next().Token != lexer.RPAREN {
+		if p.cur.Token == lexer.COMMA {
+			continue
+		}
 
-	p.next()
-	p.expect(lexer.COMMA)
-
-	p.next()
-	decl.Params.Append(p.parseDecl())
-
-	p.next()
+		decl.Params.Append(p.parseDecl())
+	}
 	p.expect(lexer.RPAREN)
 
-	p.next()
-	decl.QArgs.Append(p.parseDecl())
+	for p.next().Token != lexer.ARROW {
+		if p.cur.Token == lexer.COMMA {
+			continue
+		}
 
-	p.next()
-	p.expect(lexer.COMMA)
-
-	p.next()
-	decl.QArgs.Append(p.parseDecl())
-
-	p.next()
+		decl.QArgs.Append(p.parseDecl())
+	}
 	p.expect(lexer.ARROW)
 
 	bit := p.next()
@@ -379,19 +373,9 @@ func (p *Parser) parseFunc() ast.Decl {
 	p.next()
 	p.expect(lexer.LBRACE)
 
-	p.next()
-	decl.Body.Append(p.parseStmt())
-
-	p.next()
-	decl.Body.Append(p.parseStmt())
-
-	p.next()
-	decl.Body.Append(p.parseStmt())
-
-	p.next()
-	decl.Body.Append(p.parseStmt())
-
-	p.next()
+	for p.next().Token != lexer.RBRACE {
+		decl.Body.Append(p.parseStmt())
+	}
 	p.expect(lexer.RBRACE)
 
 	return &decl
