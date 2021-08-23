@@ -337,12 +337,15 @@ func (p *Parser) parseFunc() ast.Decl {
 		p.expect(lexer.LPAREN)
 
 		// (int[32] a, int[32] N)
-		for p.next().Token != lexer.RPAREN {
+		p.next()
+		for p.cur.Token != lexer.RPAREN {
 			if p.cur.Token == lexer.COMMA {
+				p.next()
 				continue
 			}
 
 			decl.Params.Append(p.parseDecl())
+			p.next()
 		}
 
 		p.expect(lexer.RPAREN)
