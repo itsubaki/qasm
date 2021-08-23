@@ -326,6 +326,7 @@ func (p *Parser) parseFunc() ast.Decl {
 	ident := p.next()
 	p.expect(lexer.IDENT)
 
+	// def shor
 	decl := ast.FuncDecl{
 		Name: ident.Literal,
 		Body: &ast.BlockStmt{},
@@ -335,6 +336,7 @@ func (p *Parser) parseFunc() ast.Decl {
 	if p.cur.Token == lexer.LPAREN {
 		p.expect(lexer.LPAREN)
 
+		// (int[32] a, int[32] N)
 		for p.next().Token != lexer.RPAREN {
 			if p.cur.Token == lexer.COMMA {
 				continue
@@ -347,6 +349,7 @@ func (p *Parser) parseFunc() ast.Decl {
 		p.next()
 	}
 
+	// qubit[n] q0, qubit[m] q1
 	for p.cur.Token != lexer.ARROW {
 		if p.cur.Token == lexer.COMMA {
 			p.next()
@@ -356,8 +359,10 @@ func (p *Parser) parseFunc() ast.Decl {
 		decl.QArgs.Append(p.parseDecl())
 		p.next()
 	}
+	// ->
 	p.expect(lexer.ARROW)
 
+	// bit[n]
 	bit := p.next()
 	p.expect(lexer.BIT)
 
@@ -376,6 +381,7 @@ func (p *Parser) parseFunc() ast.Decl {
 		Value: val.Literal,
 	}
 
+	// { h q0; cx q0, q1; return measure q0, q1; }
 	p.next()
 	p.expect(lexer.LBRACE)
 
