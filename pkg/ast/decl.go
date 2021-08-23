@@ -170,11 +170,13 @@ func (d *FuncDecl) String() string {
 	buf.WriteString(" ")
 	buf.WriteString(d.QArgs.String())
 
-	buf.WriteString(" ")
-	buf.WriteString(lexer.Tokens[lexer.ARROW])
+	if d.Result != nil {
+		buf.WriteString(" ")
+		buf.WriteString(lexer.Tokens[lexer.ARROW])
 
-	buf.WriteString(" ")
-	buf.WriteString(d.Result.String())
+		buf.WriteString(" ")
+		buf.WriteString(d.Result.String())
+	}
 
 	buf.WriteString(" ")
 	buf.WriteString(d.Body.String())
