@@ -154,6 +154,10 @@ func (s *BlockStmt) String() string {
 	return buf.String()
 }
 
+func (s *BlockStmt) Append(stmt Stmt) {
+	s.List = append(s.List, stmt)
+}
+
 type IfStmt struct{}
 
 type BranchStmt struct{}

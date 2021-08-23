@@ -156,11 +156,10 @@ func (p *Parser) parseDecl() ast.Decl {
 		switch p.cur.Literal {
 		case "int":
 			p.cur.Token = lexer.INT
-			return p.parseGenDecl()
 		case "float":
 			p.cur.Token = lexer.FLOAT
-			return p.parseGenDecl()
 		}
+		return p.parseGenDecl()
 	case lexer.CONST:
 		return p.parseGenConst()
 	case lexer.GATE:
@@ -174,14 +173,14 @@ func (p *Parser) parseDecl() ast.Decl {
 }
 
 func (p *Parser) parseIdentList() ast.ExprList {
-	out := ast.ExprList{}
-	out.Append(p.parseIdent())
+	list := ast.ExprList{}
+	list.Append(p.parseIdent())
 
 	for p.cur.Token == lexer.COMMA {
-		out.Append(p.parseIdent())
+		list.Append(p.parseIdent())
 	}
 
-	return out
+	return list
 }
 
 func (p *Parser) parseIdent() ast.Expr {
@@ -200,6 +199,7 @@ func (p *Parser) parseIdent() ast.Expr {
 		// q
 		return x
 	}
+	p.expect(lexer.LBRACKET)
 
 	v := p.next().Literal
 	if p.cur.Token == lexer.MINUS {
@@ -291,31 +291,31 @@ func (p *Parser) parseGate() ast.Decl {
 	ident := p.next()
 	p.expect(lexer.IDENT)
 
-	d := ast.GateDecl{
+	decl := ast.GateDecl{
 		Name: ident.Literal,
 		Body: &ast.BlockStmt{},
 	}
 
 	p.next()
 	if p.cur.Token == lexer.LPAREN {
-		d.Params = ast.ParenExpr{
+		decl.Params = ast.ParenExpr{
 			List: p.parseIdentList(),
 		}
 		p.expect(lexer.RPAREN)
 	}
 
-	d.QArgs = p.parseIdentList()
+	decl.QArgs = p.parseIdentList()
 	p.expect(lexer.LBRACE)
 
 	p.next()
 	for p.cur.Token != lexer.RBRACE {
-		d.Body.List = append(d.Body.List, p.parseApplyStmt())
+		decl.Body.Append(p.parseApplyStmt())
 		p.next()
 	}
 	p.expect(lexer.RBRACE)
 
 	// gate bell q0, q1 { h q0; cx q0, q1; }
-	return &d
+	return &decl
 }
 
 func (p *Parser) parseFunc() ast.Decl {
@@ -324,14 +324,14 @@ func (p *Parser) parseFunc() ast.Decl {
 	ident := p.next()
 	p.expect(lexer.IDENT)
 
-	d := ast.FuncDecl{
+	decl := ast.FuncDecl{
 		Name: ident.Literal,
 		Body: &ast.BlockStmt{},
 	}
 
 	// TODO
 
-	return &d
+	return &decl
 }
 
 func (p *Parser) parseMeasure() ast.Expr {
@@ -385,9 +385,9 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 
 	c := p.next()
 	if c.Token != lexer.IDENT {
-		// print;
-
 		p.expectSemi()
+
+		// print;
 		return &ast.ExprStmt{
 			X: &ast.PrintExpr{},
 		}
@@ -433,14 +433,13 @@ func (p *Parser) parseAssignOrCall() ast.Stmt {
 	ident := p.parseIdent()
 
 	if p.cur.Token == lexer.EQUALS {
-		// c = measure q;
-
 		p.next()
 		p.expect(lexer.MEASURE)
 
 		r := p.parseMeasure()
 		p.expectSemi()
 
+		// c = measure q;
 		return &ast.AssignStmt{
 			Left:  ident,
 			Right: r,
