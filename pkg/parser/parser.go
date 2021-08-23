@@ -353,25 +353,26 @@ func (p *Parser) parseFunc() ast.Decl {
 	p.next()
 	decl.QArgs.Append(p.parseDecl())
 
-	// p.next()
-	// p.expect(lexer.ARROW)
+	p.next()
+	p.expect(lexer.ARROW)
 
-	// typ := p.next().Literal
+	bit := p.next()
+	p.expect(lexer.BIT)
 
-	// p.next()
-	// p.expect(lexer.LBRACKET)
+	p.next()
+	p.expect(lexer.LBRACKET)
 
-	// val := p.next().Literal
+	val := p.next()
 
-	// p.next()
-	// p.expect(lexer.RBRACKET)
+	p.next()
+	p.expect(lexer.RBRACKET)
 
-	// decl.Result = &ast.IndexExpr{
-	// 	Name: &ast.IdentExpr{
-	// 		Value: typ,
-	// 	},
-	// 	Value: val,
-	// }
+	decl.Result = &ast.IndexExpr{
+		Name: &ast.IdentExpr{
+			Value: bit.Literal,
+		},
+		Value: val.Literal,
+	}
 
 	p.next()
 	p.expect(lexer.LBRACE)
@@ -388,7 +389,6 @@ func (p *Parser) parseFunc() ast.Decl {
 	p.next()
 	p.expect(lexer.RBRACE)
 
-	// TODO
 	return &decl
 }
 
