@@ -118,12 +118,14 @@ func (p *Parser) parseStmt() ast.Stmt {
 		default:
 			return p.parseAssignOrCall()
 		}
-	case lexer.RESET:
-		return p.parseResetStmt()
 	case lexer.MEASURE:
 		return p.parseMeasureStmt()
+	case lexer.RESET:
+		return p.parseResetStmt()
 	case lexer.PRINT:
 		return p.parsePrintStmt()
+	case lexer.RETURN:
+		return p.parseReturnStmt()
 	case lexer.X, lexer.Y, lexer.Z,
 		lexer.H, lexer.S, lexer.T,
 		lexer.CX, lexer.CZ, lexer.CCX,
@@ -376,6 +378,9 @@ func (p *Parser) parseFunc() ast.Decl {
 
 	p.next()
 	p.expect(lexer.LBRACE)
+
+	p.next()
+	decl.Body.Append(p.parseStmt())
 
 	p.next()
 	decl.Body.Append(p.parseStmt())

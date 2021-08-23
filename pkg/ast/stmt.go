@@ -75,8 +75,10 @@ func (s *ReturnStmt) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(s.Literal())
-	buf.WriteString(" ")
-	buf.WriteString(s.Result.String())
+	if s.Result != nil {
+		buf.WriteString(" ")
+		buf.WriteString(s.Result.String())
+	}
 	buf.WriteString(";")
 
 	return buf.String()
