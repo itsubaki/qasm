@@ -516,27 +516,16 @@ func (p *Parser) parseAssign() ast.Stmt {
 	c := p.parseIdent()
 
 	if p.cur.Token == lexer.IDENT {
-		x := ast.CallExpr{
-			Name: c.Literal(),
-		}
-
-		if p.cur.Token == lexer.LPAREN {
-			x.Params = ast.ParenExpr{
-				List: p.parseIdentList(),
-			}
-			p.expect(lexer.RPAREN)
-		}
-
-		x.QArgs = p.parseIdentList()
+		x := p.parseCall(c.Literal())
 		p.expectSemi()
 
 		return &ast.ExprStmt{
-			X: &x,
+			X: x,
 		}
 	}
 
 	p.expect(lexer.EQUALS)
-	p.next()
+	n := p.next()
 
 	switch p.cur.Token {
 	case lexer.MEASURE:
@@ -552,29 +541,34 @@ func (p *Parser) parseAssign() ast.Stmt {
 		}
 	case lexer.IDENT:
 		p.expect(lexer.IDENT)
+		p.next()
 
 		// c = shor(a, N) r0, r1;
-		x := ast.CallExpr{
-			Name: p.cur.Literal,
-		}
-
-		p.next()
-		if p.cur.Token == lexer.LPAREN {
-			x.Params = ast.ParenExpr{
-				List: p.parseIdentList(),
-			}
-			p.expect(lexer.RPAREN)
-		}
-
-		x.QArgs = p.parseIdentList()
+		x := p.parseCall(n.Literal)
 		p.expectSemi()
 
 		return &ast.AssignStmt{
 			Left:  c,
-			Right: &x,
+			Right: x,
 		}
 	}
 
 	p.error(fmt.Errorf("invalid assign token=%#v", p.cur))
 	return nil
+}
+
+func (p *Parser) parseCall(name string) ast.Expr {
+	x := ast.CallExpr{
+		Name: name,
+	}
+
+	if p.cur.Token == lexer.LPAREN {
+		x.Params = ast.ParenExpr{
+			List: p.parseIdentList(),
+		}
+		p.expect(lexer.RPAREN)
+	}
+
+	x.QArgs = p.parseIdentList()
+	return &x
 }
