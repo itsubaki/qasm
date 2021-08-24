@@ -514,9 +514,30 @@ func (p *Parser) parseApplyStmt() ast.Stmt {
 
 func (p *Parser) parseAssign() ast.Stmt {
 	c := p.parseIdent()
-	p.expect(lexer.EQUALS)
 
+	if p.cur.Token == lexer.IDENT {
+		x := ast.CallExpr{
+			Name: c.Literal(),
+		}
+
+		if p.cur.Token == lexer.LPAREN {
+			x.Params = ast.ParenExpr{
+				List: p.parseIdentList(),
+			}
+			p.expect(lexer.RPAREN)
+		}
+
+		x.QArgs = p.parseIdentList()
+		p.expectSemi()
+
+		return &ast.ExprStmt{
+			X: &x,
+		}
+	}
+
+	p.expect(lexer.EQUALS)
 	p.next()
+
 	switch p.cur.Token {
 	case lexer.MEASURE:
 		p.expect(lexer.MEASURE)
