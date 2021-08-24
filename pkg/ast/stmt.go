@@ -41,7 +41,7 @@ func (s *DeclStmt) String() string {
 }
 
 type InclStmt struct {
-	Path *IdentExpr
+	Path IdentExpr
 }
 
 func (s *InclStmt) stmtNode() {}

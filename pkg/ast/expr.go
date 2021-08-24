@@ -53,7 +53,7 @@ func (e *IdentExpr) String() string {
 }
 
 type IndexExpr struct {
-	Name  *IdentExpr
+	Name  IdentExpr
 	Value string
 }
 
@@ -99,7 +99,7 @@ func (e *BasicExpr) String() string {
 }
 
 type ArrayExpr struct {
-	Type *IndexExpr
+	Type IndexExpr
 	Name string
 }
 

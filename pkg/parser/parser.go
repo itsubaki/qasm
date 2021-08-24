@@ -101,7 +101,7 @@ func (p *Parser) parseIncl() ast.Stmt {
 	p.expectSemi()
 
 	return &ast.InclStmt{
-		Path: &ast.IdentExpr{
+		Path: ast.IdentExpr{
 			Value: c.Literal,
 		},
 	}
@@ -210,14 +210,14 @@ func (p *Parser) parseIdent() ast.Expr {
 	}
 	p.expect(lexer.IDENT)
 
-	x := &ast.IdentExpr{
+	x := ast.IdentExpr{
 		Value: c.Literal,
 	}
 
 	p.next()
 	if p.cur.Token != lexer.LBRACKET {
 		// q
-		return x
+		return &x
 	}
 	p.expect(lexer.LBRACKET)
 
@@ -252,10 +252,10 @@ func (p *Parser) parseGenConst() ast.Decl {
 
 	// const N = 15
 	return &ast.GenConst{
-		Name: &ast.IdentExpr{
+		Name: ast.IdentExpr{
 			Value: n.Literal,
 		},
-		Value: &ast.BasicExpr{
+		Value: ast.BasicExpr{
 			Kind:  v.Token,
 			Value: v.Literal,
 		},
@@ -273,7 +273,7 @@ func (p *Parser) parseGenDecl() ast.Decl {
 			Type: &ast.IdentExpr{
 				Value: strings.ToLower(lexer.Tokens[kind]),
 			},
-			Name: &ast.IdentExpr{
+			Name: ast.IdentExpr{
 				Value: n.Literal,
 			},
 		}
@@ -294,12 +294,12 @@ func (p *Parser) parseGenDecl() ast.Decl {
 	return &ast.GenDecl{
 		Kind: kind,
 		Type: &ast.IndexExpr{
-			Name: &ast.IdentExpr{
+			Name: ast.IdentExpr{
 				Value: strings.ToLower(lexer.Tokens[kind]),
 			},
 			Value: index.Literal,
 		},
-		Name: &ast.IdentExpr{
+		Name: ast.IdentExpr{
 			Value: ident.Literal,
 		},
 	}
@@ -347,7 +347,7 @@ func (p *Parser) parseFunc() ast.Decl {
 	// def shor
 	decl := ast.FuncDecl{
 		Name: ident.Literal,
-		Body: &ast.BlockStmt{},
+		Body: ast.BlockStmt{},
 	}
 
 	p.next()
@@ -381,7 +381,7 @@ func (p *Parser) parseFunc() ast.Decl {
 	p.expect(lexer.RBRACKET)
 
 	decl.Result = &ast.IndexExpr{
-		Name: &ast.IdentExpr{
+		Name: ast.IdentExpr{
 			Value: bit.Literal,
 		},
 		Value: val.Literal,

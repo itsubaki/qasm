@@ -11,7 +11,7 @@ import (
 type GenDecl struct {
 	Kind lexer.Token // lexer.QUBIT, lexer.BIT
 	Type Expr
-	Name *IdentExpr
+	Name IdentExpr
 }
 
 func (d *GenDecl) declNode() {}
@@ -40,8 +40,8 @@ func (d *GenDecl) Size() int {
 }
 
 type GenConst struct {
-	Name  *IdentExpr
-	Value *BasicExpr
+	Name  IdentExpr
+	Value BasicExpr
 }
 
 func (d *GenConst) declNode() {}
@@ -150,7 +150,7 @@ type FuncDecl struct {
 	Name   string
 	Params ParenDecl
 	QArgs  DeclList
-	Body   *BlockStmt
+	Body   BlockStmt
 	Result Expr // Type
 }
 

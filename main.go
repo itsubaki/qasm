@@ -26,9 +26,10 @@ func New() *cli.App {
 	}
 
 	lexer := cli.Command{
-		Name:   "lex",
-		Action: lex.Action,
-		Usage:  "convert to a sequence of tokens",
+		Name:    "lex",
+		Aliases: []string{"l"},
+		Action:  lex.Action,
+		Usage:   "convert to a sequence of tokens",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "file",
@@ -38,9 +39,10 @@ func New() *cli.App {
 	}
 
 	parser := cli.Command{
-		Name:   "parse",
-		Action: parse.Action,
-		Usage:  "convert to an AST (abstract syntax tree)",
+		Name:    "parse",
+		Aliases: []string{"p"},
+		Action:  parse.Action,
+		Usage:   "convert to an AST (abstract syntax tree)",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "file",
@@ -50,9 +52,10 @@ func New() *cli.App {
 	}
 
 	repl := cli.Command{
-		Name:   "repl",
-		Action: repl.Action,
-		Usage:  "read-eval-print loop",
+		Name:    "repl",
+		Aliases: []string{"r"},
+		Action:  repl.Action,
+		Usage:   "read-eval-print loop",
 	}
 
 	app.Commands = []*cli.Command{

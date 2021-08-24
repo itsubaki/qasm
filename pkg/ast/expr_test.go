@@ -14,8 +14,8 @@ func TestExpr(t *testing.T) {
 	}{
 		{
 			&ast.ArrayExpr{
-				Type: &ast.IndexExpr{
-					Name: &ast.IdentExpr{
+				Type: ast.IndexExpr{
+					Name: ast.IdentExpr{
 						Value: "int",
 					},
 					Value: "32",
@@ -41,13 +41,13 @@ func TestExpr(t *testing.T) {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IndexExpr{
-							Name: &ast.IdentExpr{
+							Name: ast.IdentExpr{
 								Value: "q",
 							},
 							Value: "0",
 						},
 						&ast.IndexExpr{
-							Name: &ast.IdentExpr{
+							Name: ast.IdentExpr{
 								Value: "q",
 							},
 							Value: "1",
@@ -66,13 +66,13 @@ func TestExpr(t *testing.T) {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IndexExpr{
-							Name: &ast.IdentExpr{
+							Name: ast.IdentExpr{
 								Value: "q",
 							},
 							Value: "0",
 						},
 						&ast.IndexExpr{
-							Name: &ast.IdentExpr{
+							Name: ast.IdentExpr{
 								Value: "q",
 							},
 							Value: "1",
@@ -99,13 +99,13 @@ func TestExpr(t *testing.T) {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IndexExpr{
-							Name: &ast.IdentExpr{
+							Name: ast.IdentExpr{
 								Value: "q",
 							},
 							Value: "0",
 						},
 						&ast.IndexExpr{
-							Name: &ast.IdentExpr{
+							Name: ast.IdentExpr{
 								Value: "q",
 							},
 							Value: "1",
@@ -192,8 +192,8 @@ func TestExpr(t *testing.T) {
 				List: ast.ExprList{
 					List: []ast.Expr{
 						&ast.ArrayExpr{
-							Type: &ast.IndexExpr{
-								Name: &ast.IdentExpr{
+							Type: ast.IndexExpr{
+								Name: ast.IdentExpr{
 									Value: "int",
 								},
 								Value: "32",
@@ -201,8 +201,8 @@ func TestExpr(t *testing.T) {
 							Name: "a",
 						},
 						&ast.ArrayExpr{
-							Type: &ast.IndexExpr{
-								Name: &ast.IdentExpr{
+							Type: ast.IndexExpr{
+								Name: ast.IdentExpr{
 									Value: "int",
 								},
 								Value: "32",

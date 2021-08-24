@@ -12,7 +12,7 @@ func ExampleOpenQASM_String() {
 		Version: "3.0",
 		Incls: []ast.Stmt{
 			&ast.InclStmt{
-				Path: &ast.IdentExpr{
+				Path: ast.IdentExpr{
 					Value: "\"stdgates.qasm\"",
 				},
 			},
@@ -24,7 +24,7 @@ func ExampleOpenQASM_String() {
 					Type: &ast.IdentExpr{
 						Value: lexer.Tokens[lexer.QUBIT],
 					},
-					Name: &ast.IdentExpr{
+					Name: ast.IdentExpr{
 						Value: "q",
 					},
 				},

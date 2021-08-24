@@ -63,8 +63,8 @@ func TestStmt(t *testing.T) {
 		{
 			&ast.ExprStmt{
 				X: &ast.ArrayExpr{
-					Type: &ast.IndexExpr{
-						Name: &ast.IdentExpr{
+					Type: ast.IndexExpr{
+						Name: ast.IdentExpr{
 							Value: "int",
 						},
 						Value: "32",
@@ -94,13 +94,13 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
+								Name: ast.IdentExpr{
 									Value: "q",
 								},
 								Value: "0",
 							},
 							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
+								Name: ast.IdentExpr{
 									Value: "q",
 								},
 								Value: "1",
@@ -123,13 +123,13 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
+								Name: ast.IdentExpr{
 									Value: "q",
 								},
 								Value: "0",
 							},
 							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
+								Name: ast.IdentExpr{
 									Value: "q",
 								},
 								Value: "1",
@@ -160,13 +160,13 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
+								Name: ast.IdentExpr{
 									Value: "q",
 								},
 								Value: "0",
 							},
 							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
+								Name: ast.IdentExpr{
 									Value: "q",
 								},
 								Value: "1",
@@ -243,10 +243,10 @@ func TestStmt(t *testing.T) {
 		{
 			&ast.DeclStmt{
 				Decl: &ast.GenConst{
-					Name: &ast.IdentExpr{
+					Name: ast.IdentExpr{
 						Value: "N",
 					},
-					Value: &ast.BasicExpr{
+					Value: ast.BasicExpr{
 						Kind:  lexer.INT,
 						Value: "15",
 					},
@@ -261,7 +261,7 @@ func TestStmt(t *testing.T) {
 					Type: &ast.IdentExpr{
 						Value: lexer.Tokens[lexer.BIT],
 					},
-					Name: &ast.IdentExpr{
+					Name: ast.IdentExpr{
 						Value: "c",
 					},
 				},
@@ -275,7 +275,7 @@ func TestStmt(t *testing.T) {
 					Type: &ast.IdentExpr{
 						Value: lexer.Tokens[lexer.QUBIT],
 					},
-					Name: &ast.IdentExpr{
+					Name: ast.IdentExpr{
 						Value: "q",
 					},
 				},
@@ -287,12 +287,12 @@ func TestStmt(t *testing.T) {
 				Decl: &ast.GenDecl{
 					Kind: lexer.QUBIT,
 					Type: &ast.IndexExpr{
-						Name: &ast.IdentExpr{
+						Name: ast.IdentExpr{
 							Value: lexer.Tokens[lexer.QUBIT],
 						},
 						Value: "2",
 					},
-					Name: &ast.IdentExpr{
+					Name: ast.IdentExpr{
 						Value: "q",
 					},
 				},
@@ -304,12 +304,12 @@ func TestStmt(t *testing.T) {
 				Decl: &ast.GenDecl{
 					Kind: lexer.INT,
 					Type: &ast.IndexExpr{
-						Name: &ast.IdentExpr{
+						Name: ast.IdentExpr{
 							Value: "int",
 						},
 						Value: "32",
 					},
-					Name: &ast.IdentExpr{
+					Name: ast.IdentExpr{
 						Value: "a",
 					},
 				},

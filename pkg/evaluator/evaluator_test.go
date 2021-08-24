@@ -13,7 +13,7 @@ func ExampleEvaluator() {
 		Version: "3.0",
 		Incls: []ast.Stmt{
 			&ast.InclStmt{
-				Path: &ast.IdentExpr{
+				Path: ast.IdentExpr{
 					Value: "\"stdgates.qasm\"",
 				},
 			},
@@ -23,12 +23,12 @@ func ExampleEvaluator() {
 				Decl: &ast.GenDecl{
 					Kind: lexer.QUBIT,
 					Type: &ast.IndexExpr{
-						Name: &ast.IdentExpr{
+						Name: ast.IdentExpr{
 							Value: lexer.Tokens[lexer.QUBIT],
 						},
 						Value: "2",
 					},
-					Name: &ast.IdentExpr{
+					Name: ast.IdentExpr{
 						Value: "q",
 					},
 				},
@@ -37,12 +37,12 @@ func ExampleEvaluator() {
 				Decl: &ast.GenDecl{
 					Kind: lexer.BIT,
 					Type: &ast.IndexExpr{
-						Name: &ast.IdentExpr{
+						Name: ast.IdentExpr{
 							Value: lexer.Tokens[lexer.BIT],
 						},
 						Value: "2",
 					},
-					Name: &ast.IdentExpr{
+					Name: ast.IdentExpr{
 						Value: "c",
 					},
 				},
@@ -64,7 +64,7 @@ func ExampleEvaluator() {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
+								Name: ast.IdentExpr{
 									Value: "q",
 								},
 								Value: "0",
@@ -79,13 +79,13 @@ func ExampleEvaluator() {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
+								Name: ast.IdentExpr{
 									Value: "q",
 								},
 								Value: "0",
 							},
 							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
+								Name: ast.IdentExpr{
 									Value: "q",
 								},
 								Value: "1",
@@ -148,7 +148,7 @@ func ExampleEvaluator_println() {
 		Version: "3.0",
 		Incls: []ast.Stmt{
 			&ast.InclStmt{
-				Path: &ast.IdentExpr{
+				Path: ast.IdentExpr{
 					Value: "\"stdgates.qasm\"",
 				},
 			},
@@ -158,12 +158,12 @@ func ExampleEvaluator_println() {
 				Decl: &ast.GenDecl{
 					Kind: lexer.QUBIT,
 					Type: &ast.IndexExpr{
-						Name: &ast.IdentExpr{
+						Name: ast.IdentExpr{
 							Value: lexer.Tokens[lexer.QUBIT],
 						},
 						Value: "2",
 					},
-					Name: &ast.IdentExpr{
+					Name: ast.IdentExpr{
 						Value: "q",
 					},
 				},
@@ -203,7 +203,7 @@ func ExampleEvaluator_call() {
 		Version: "3.0",
 		Incls: []ast.Stmt{
 			&ast.InclStmt{
-				Path: &ast.IdentExpr{
+				Path: ast.IdentExpr{
 					Value: "\"stdgates.qasm\"",
 				},
 			},
@@ -259,12 +259,12 @@ func ExampleEvaluator_call() {
 				Decl: &ast.GenDecl{
 					Kind: lexer.QUBIT,
 					Type: &ast.IndexExpr{
-						Name: &ast.IdentExpr{
+						Name: ast.IdentExpr{
 							Value: lexer.Tokens[lexer.QUBIT],
 						},
 						Value: "2",
 					},
-					Name: &ast.IdentExpr{
+					Name: ast.IdentExpr{
 						Value: "q",
 					},
 				},
@@ -275,13 +275,13 @@ func ExampleEvaluator_call() {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
+								Name: ast.IdentExpr{
 									Value: "q",
 								},
 								Value: "0",
 							},
 							&ast.IndexExpr{
-								Name: &ast.IdentExpr{
+								Name: ast.IdentExpr{
 									Value: "q",
 								},
 								Value: "1",
