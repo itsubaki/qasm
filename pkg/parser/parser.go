@@ -532,7 +532,7 @@ func (p *Parser) parseAssign() ast.Stmt {
 	c := p.parseIdent()
 
 	if p.cur.Token == lexer.IDENT {
-		x := p.parseCall(c.Literal())
+		x := p.parseCall(c.String())
 		p.expectSemi()
 
 		return &ast.ExprStmt{
@@ -541,7 +541,7 @@ func (p *Parser) parseAssign() ast.Stmt {
 	}
 
 	p.expect(lexer.EQUALS)
-	n := p.next()
+	p.next()
 
 	switch p.cur.Token {
 	case lexer.MEASURE:
@@ -557,10 +557,11 @@ func (p *Parser) parseAssign() ast.Stmt {
 		}
 	case lexer.IDENT:
 		p.expect(lexer.IDENT)
+		n := p.cur.Literal
 		p.next()
 
 		// c = shor(a, N) r0, r1;
-		x := p.parseCall(n.Literal)
+		x := p.parseCall(n)
 		p.expectSemi()
 
 		return &ast.AssignStmt{
