@@ -531,7 +531,8 @@ func (p *Parser) parseApplyStmt() ast.Stmt {
 func (p *Parser) parseAssign() ast.Stmt {
 	c := p.parseIdent()
 
-	if p.cur.Token == lexer.IDENT {
+	if p.cur.Token != lexer.EQUALS {
+		// bell r0, r1;
 		x := p.parseCall(c.String())
 		p.expectSemi()
 
@@ -539,7 +540,6 @@ func (p *Parser) parseAssign() ast.Stmt {
 			X: x,
 		}
 	}
-
 	p.expect(lexer.EQUALS)
 	p.next()
 
