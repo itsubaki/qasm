@@ -58,6 +58,12 @@ func TestParseVersion(t *testing.T) {
 		if got != c.want {
 			t.Errorf("got=%v, want=%v", got, c.want)
 		}
+
+		if errs := p.Errors(); len(errs) > 0 {
+			for _, e := range errs {
+				t.Errorf(e)
+			}
+		}
 	}
 }
 
@@ -73,6 +79,12 @@ func TestParseIncl(t *testing.T) {
 		got := p.Parse().Incls[0].String()
 		if got != c.in {
 			t.Errorf("got=%v, want=%v", got, c.in)
+		}
+
+		if errs := p.Errors(); len(errs) > 0 {
+			for _, e := range errs {
+				t.Errorf(e)
+			}
 		}
 	}
 }
@@ -109,14 +121,15 @@ func TestParseStmt(t *testing.T) {
 
 	for _, c := range cases {
 		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		a := p.Parse()
-		for _, e := range p.Errors() {
-			t.Log(e)
-		}
-
-		got := a.Stmts[0].String()
+		got := p.Parse().Stmts[0].String()
 		if got != c.in {
 			t.Errorf("got=%v, want=%v", got, c.in)
+		}
+
+		if errs := p.Errors(); len(errs) > 0 {
+			for _, e := range errs {
+				t.Errorf(e)
+			}
 		}
 	}
 }

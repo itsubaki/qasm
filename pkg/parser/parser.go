@@ -150,19 +150,18 @@ func (p *Parser) parseDeclStmt() ast.Stmt {
 	}
 }
 
-func (p *Parser) parseDeclList(brek lexer.Token) ast.DeclList {
+func (p *Parser) parseDeclList() ast.DeclList {
 	list := ast.DeclList{}
 
-	for p.cur.Token != brek {
-		if p.cur.Token == lexer.COMMA {
-			p.next()
-			continue
-		}
+	list.Append(p.parseDecl())
+	p.next()
+
+	for p.cur.Token == lexer.COMMA {
+		p.next() // skip COMMA token
 
 		list.Append(p.parseDecl())
 		p.next()
 	}
-	p.expect(brek)
 
 	return list
 }
@@ -196,6 +195,8 @@ func (p *Parser) parseIdentList() ast.ExprList {
 	list.Append(p.parseIdent())
 
 	for p.cur.Token == lexer.COMMA {
+		p.next() // skip COMMNA token
+
 		list.Append(p.parseIdent())
 	}
 
@@ -356,7 +357,7 @@ func (p *Parser) parseFunc() ast.Decl {
 
 		// (int[32] a, int[32] N)
 		decl.Params = ast.ParenDecl{
-			List: p.parseDeclList(lexer.RPAREN),
+			List: p.parseDeclList(),
 		}
 
 		p.expect(lexer.RPAREN)
@@ -364,7 +365,7 @@ func (p *Parser) parseFunc() ast.Decl {
 	}
 
 	// qubit[n] q0, qubit[m] q1
-	decl.QArgs = p.parseDeclList(lexer.ARROW)
+	decl.QArgs = p.parseDeclList()
 	p.expect(lexer.ARROW) // ->
 
 	// bit[n]
