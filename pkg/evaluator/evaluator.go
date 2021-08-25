@@ -151,19 +151,26 @@ func (e *Evaluator) evalExpr(x ast.Expr) error {
 func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
 	switch x := s.Right.(type) {
 	case *ast.MeasureExpr:
+		// left
 		c, ok := e.R.Bit.Get(s.Left)
 		if !ok {
 			return fmt.Errorf("bit=%#v not found", s.Left)
 		}
 
-		qb, err := e.measure(x.QArgs.List...)
+		// right
+		m, err := e.measure(x.QArgs.List...)
 		if err != nil {
 			return fmt.Errorf("measure: %v", err)
 		}
 
-		for _, q := range qb {
-			c[q] = e.Q.State(q)[0].Int[0]
+		// assign
+		for i := range m {
+			c[i] = m[i]
 		}
+
+		return nil
+	case *ast.CallExpr:
+
 		return nil
 	default:
 		return fmt.Errorf("invalid stmt=%#v", s)
@@ -209,19 +216,19 @@ func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl) error {
 		case *ast.ExprStmt:
 			switch X := s.X.(type) {
 			case *ast.ApplyExpr:
-				ex := &ast.ApplyExpr{
+				x := &ast.ApplyExpr{
 					Kind: X.Kind,
 				}
 
 				for _, p := range X.Params.List.List {
-					ex.Params.List.Append(prms[ast.Ident(p)])
+					x.Params.List.Append(prms[ast.Ident(p)])
 				}
 
 				for _, a := range X.QArgs.List {
-					ex.QArgs.Append(args[ast.Ident(a)])
+					x.QArgs.Append(args[ast.Ident(a)])
 				}
 
-				if err := e.evalExpr(ex); err != nil {
+				if err := e.evalExpr(x); err != nil {
 					return fmt.Errorf("eval expr: %#v", err)
 				}
 			default:
@@ -240,12 +247,12 @@ func (e *Evaluator) callFunc(x *ast.CallExpr, f *ast.FuncDecl) error {
 	return fmt.Errorf("%v is not implemented", f)
 }
 
-func (e *Evaluator) measure(qargs ...ast.Expr) ([]q.Qubit, error) {
+func (e *Evaluator) measure(qargs ...ast.Expr) ([]int, error) {
 	if len(qargs) == 0 {
 		return nil, fmt.Errorf("qargs is empty")
 	}
 
-	out := make([]q.Qubit, 0)
+	m := make([]q.Qubit, 0)
 	for _, a := range qargs {
 		qb, ok := e.R.Qubit.Get(a)
 		if !ok {
@@ -253,10 +260,15 @@ func (e *Evaluator) measure(qargs ...ast.Expr) ([]q.Qubit, error) {
 		}
 
 		e.Q.Measure(qb...)
-		out = append(out, qb...)
+		m = append(m, qb...)
 	}
 
-	return out, nil
+	bit := make([]int, 0)
+	for _, q := range m {
+		bit = append(bit, e.Q.State(q)[0].Int[0])
+	}
+
+	return bit, nil
 }
 
 func (e *Evaluator) apply(gate lexer.Token, params []int, qargs [][]q.Qubit) error {

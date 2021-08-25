@@ -544,17 +544,6 @@ func (p *Parser) parseAssign() ast.Stmt {
 	p.next()
 
 	switch p.cur.Token {
-	case lexer.MEASURE:
-		p.expect(lexer.MEASURE)
-
-		// c = measure q;
-		r := p.parseMeasure()
-		p.expectSemi()
-
-		return &ast.AssignStmt{
-			Left:  c,
-			Right: r,
-		}
 	case lexer.IDENT:
 		p.expect(lexer.IDENT)
 		n := p.cur.Literal
@@ -567,6 +556,17 @@ func (p *Parser) parseAssign() ast.Stmt {
 		return &ast.AssignStmt{
 			Left:  c,
 			Right: x,
+		}
+	case lexer.MEASURE:
+		p.expect(lexer.MEASURE)
+
+		// c = measure q;
+		m := p.parseMeasure()
+		p.expectSemi()
+
+		return &ast.AssignStmt{
+			Left:  c,
+			Right: m,
 		}
 	}
 
