@@ -8,19 +8,6 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-func Ident(x Expr) string {
-	switch x := x.(type) {
-	case *IdentExpr:
-		return x.Value
-	case *IndexExpr:
-		return x.Name.Value
-	case *ArrayExpr:
-		return x.Name
-	}
-
-	return x.String()
-}
-
 type ExprList struct {
 	List []Expr
 }

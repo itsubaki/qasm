@@ -36,6 +36,8 @@ func Action(c *cli.Context) error {
 		return fmt.Errorf("eval: %v\n", err)
 	}
 
+	fmt.Printf("%#v\n", e.R.Bit)
+
 	if err := e.Println(); err != nil {
 		return fmt.Errorf("print: %v", err)
 	}

@@ -49,3 +49,24 @@ type Decl interface {
 	Node
 	declNode()
 }
+
+func Ident(x interface{}) string {
+	switch x := x.(type) {
+	case *IdentExpr:
+		return x.Value
+	case *IndexExpr:
+		return x.Name.Value
+	case *ArrayExpr:
+		return x.Name
+	case *GenDecl:
+		return x.Name.Value
+	case *GenConst:
+		return x.Name.Value
+	case *GateDecl:
+		return x.Name
+	case *FuncDecl:
+		return x.Name
+	}
+
+	panic(fmt.Errorf("invalid type=%#v", x))
+}
