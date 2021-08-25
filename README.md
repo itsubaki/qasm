@@ -173,7 +173,7 @@ $ qasm parse -f testdata/bell_gate.qasm
 
 ## built-in
 
- * `x`, `y`, `z`, `h`, `s`, `t`
+ * `U`, `x`, `y`, `z`, `h`, `s`, `t`
  * `cx`, `cz`
  * `ccx`
  * `swap`, `qft`, `iqft`
