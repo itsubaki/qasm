@@ -11,12 +11,14 @@ lex:
 	go run main.go lex -f testdata/bell_gate.qasm
 	go run main.go lex -f testdata/teleportation.qasm
 	go run main.go lex -f testdata/shor.qasm
+	go run main.go lex -f testdata/shor_def.qasm
 
 parse:
 	go run main.go parse -f testdata/bell.qasm
 	go run main.go parse -f testdata/bell_gate.qasm
 	go run main.go parse -f testdata/teleportation.qasm
 	go run main.go parse -f testdata/shor.qasm
+	go run main.go parse -f testdata/shor_def.qasm
 
 .PHONY: testdata
 testdata:
@@ -24,6 +26,7 @@ testdata:
 	go run main.go -f testdata/bell_gate.qasm
 	go run main.go -f testdata/teleportation.qasm
 	go run main.go -f testdata/shor.qasm
+	go run main.go -f testdata/shor_def.qasm
 
 install:
 	-rm ${GOPATH}/bin/qasm
