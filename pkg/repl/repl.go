@@ -62,6 +62,10 @@ func Run(in io.Reader, out io.Writer) error {
 			msg := fmt.Sprintf("[ERROR] print: %v\n", err)
 			io.WriteString(out, msg)
 		}
+
+		for _, n := range e.R.Bit.Name {
+			fmt.Printf("%v: %v\n", n, e.R.Bit.Value[n])
+		}
 	}
 
 	return nil
