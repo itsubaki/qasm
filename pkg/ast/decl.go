@@ -64,8 +64,8 @@ func (d *GenConst) String() string {
 	return buf.String()
 }
 
-func (s *GenConst) Int() int {
-	v, err := strconv.Atoi(s.Value.Value)
+func (s *GenConst) Float64() float64 {
+	v, err := strconv.ParseFloat(s.Value.Value, 64)
 	if err != nil {
 		panic(err)
 	}

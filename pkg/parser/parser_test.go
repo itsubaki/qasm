@@ -112,6 +112,7 @@ func TestParseStmt(t *testing.T) {
 		{"h q, p;"},
 		{"h q[0], p[0];"},
 		{"h q[-1];"},
+		{"U(a, b, c) q;"},
 		{"gate ident q0 { }"},
 		{"gate bell q0, q1 { h q0; cx q0, q1; }"},
 		{"gate shor(a, N) r0, r1 { h r0; cmodexp2(a, N) r0, r1; iqft r0; }"},

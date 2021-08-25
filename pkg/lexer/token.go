@@ -51,6 +51,7 @@ const (
 	H        // h
 	S        // S
 	T        // T
+	U        // U
 	CX       // cx
 	CZ       // cz
 	CCX      // ccx
@@ -110,6 +111,7 @@ var Tokens = [...]string{
 	H:        "h",
 	S:        "s",
 	T:        "t",
+	U:        "U",
 	CX:       "cx",
 	CZ:       "cz",
 	CCX:      "ccx",

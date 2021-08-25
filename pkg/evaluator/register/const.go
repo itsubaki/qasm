@@ -1,3 +1,3 @@
 package register
 
-type Const map[string]int
+type Const map[string]float64

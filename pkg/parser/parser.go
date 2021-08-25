@@ -126,7 +126,7 @@ func (p *Parser) parseStmt() ast.Stmt {
 		return p.parsePrintStmt()
 	case lexer.RETURN:
 		return p.parseReturnStmt()
-	case lexer.X, lexer.Y, lexer.Z,
+	case lexer.X, lexer.Y, lexer.Z, lexer.U,
 		lexer.H, lexer.S, lexer.T,
 		lexer.CX, lexer.CZ, lexer.CCX,
 		lexer.SWAP, lexer.QFT, lexer.IQFT,

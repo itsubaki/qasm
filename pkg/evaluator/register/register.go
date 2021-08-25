@@ -15,7 +15,7 @@ type Register struct {
 func New() *Register {
 	return &Register{
 		Func:  make(map[string]ast.Decl),
-		Const: make(map[string]int),
+		Const: make(map[string]float64),
 		Bit: &Bit{
 			Name:  make([]string, 0),
 			Value: make(map[string][]int),
