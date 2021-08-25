@@ -8,10 +8,11 @@ def shor(int[32] a, int[32] N) qubit[n] r0, qubit[m] r1 -> bit[n] {
 
 const N = 15;
 const a = 7;
-bit[3]   c;
 
 qubit[3] r0;
 qubit[4] r1;
+bit[3]   c;
+
 reset r0, r1;
 
 x r1[-1];
