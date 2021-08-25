@@ -59,14 +59,6 @@ func TestLexer(t *testing.T) {
 				{lexer.RBRACKET, "]"},
 				{lexer.LBRACE, "{"},
 
-				{lexer.X, "x"},
-				{lexer.IDENT, "r1"},
-				{lexer.LBRACKET, "["},
-				{lexer.MINUS, "-"},
-				{lexer.INT, "1"},
-				{lexer.RBRACKET, "]"},
-				{lexer.SEMICOLON, ";"},
-
 				{lexer.H, "h"},
 				{lexer.IDENT, "r0"},
 				{lexer.SEMICOLON, ";"},
