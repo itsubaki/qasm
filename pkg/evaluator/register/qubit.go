@@ -12,6 +12,13 @@ type Qubit struct {
 	Value map[string][]q.Qubit
 }
 
+func NewQubit() *Qubit {
+	return &Qubit{
+		Name:  make([]string, 0),
+		Value: make(map[string][]q.Qubit),
+	}
+}
+
 func (qb *Qubit) Add(name string, value []q.Qubit) {
 	qb.Name = append(qb.Name, name)
 	qb.Value[name] = value

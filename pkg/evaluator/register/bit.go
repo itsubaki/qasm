@@ -11,6 +11,13 @@ type Bit struct {
 	Value map[string][]int
 }
 
+func NewBit() *Bit {
+	return &Bit{
+		Name:  make([]string, 0),
+		Value: make(map[string][]int),
+	}
+}
+
 func (b *Bit) Add(name string, value []int) {
 	b.Name = append(b.Name, name)
 	b.Value[name] = value

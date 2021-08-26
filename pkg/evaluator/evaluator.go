@@ -129,9 +129,9 @@ func (e *Evaluator) evalExpr(x ast.Expr) error {
 				continue
 			}
 
-			switch x := p.(type) {
+			switch p := p.(type) {
 			case *ast.BasicExpr:
-				params = append(params, x.Float64())
+				params = append(params, p.Float64())
 			default:
 				return fmt.Errorf("unsupported expr=%#v", x)
 			}
