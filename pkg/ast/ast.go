@@ -66,6 +66,8 @@ func Ident(x interface{}) string {
 		return x.Name
 	case *FuncDecl:
 		return x.Name
+	case *BasicExpr:
+		return x.Value
 	}
 
 	panic(fmt.Errorf("invalid type=%#v", x))

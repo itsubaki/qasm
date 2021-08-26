@@ -9,6 +9,7 @@ import (
 var (
 	operator map[string]Token = make(map[string]Token)
 	keyword  map[string]Token = make(map[string]Token)
+	cnst     map[string]Token = make(map[string]Token)
 )
 
 func init() {
@@ -18,6 +19,10 @@ func init() {
 
 	for i := keyword_begin + 1; i < keyword_end; i++ {
 		keyword[Tokens[i]] = i
+	}
+
+	for i := const_begin + 1; i < const_end; i++ {
+		cnst[Tokens[i]] = i
 	}
 }
 
@@ -75,6 +80,10 @@ func (l *Lexer) Scan() (Token, string) {
 		str := l.scan()
 
 		if v, ok := keyword[str]; ok {
+			return v, str
+		}
+
+		if v, ok := cnst[str]; ok {
 			return v, str
 		}
 

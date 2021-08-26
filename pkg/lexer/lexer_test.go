@@ -19,7 +19,27 @@ func TestLexer(t *testing.T) {
 		want []Token
 	}{
 		{
-			in: "../../testdata/test_lexer_shor_def.qasm",
+			in: "../../testdata/test_lexer_gate.qasm",
+			want: []Token{
+				{lexer.GATE, "gate"},
+				{lexer.IDENT, "X"},
+				{lexer.IDENT, "q"},
+				{lexer.LBRACE, "{"},
+				{lexer.U, "U"},
+				{lexer.LPAREN, "("},
+				{lexer.PI, "pi"},
+				{lexer.COMMA, ","},
+				{lexer.FLOAT, "0.0"},
+				{lexer.COMMA, ","},
+				{lexer.PI, "pi"},
+				{lexer.RPAREN, ")"},
+				{lexer.IDENT, "q"},
+				{lexer.SEMICOLON, ";"},
+				{lexer.RBRACE, "}"},
+			},
+		},
+		{
+			in: "../../testdata/test_lexer_def.qasm",
 			want: []Token{
 				{lexer.DEF, "def"},
 				{lexer.IDENT, "shor"},
@@ -85,7 +105,7 @@ func TestLexer(t *testing.T) {
 			},
 		},
 		{
-			in: "../../testdata/test_lexer_bell_gate.qasm",
+			in: "../../testdata/test_lexer_gate_bell.qasm",
 			want: []Token{
 				{lexer.GATE, "gate"},
 				{lexer.IDENT, "bell"},

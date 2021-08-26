@@ -10,11 +10,18 @@ const (
 
 	// Literals
 	literal_begin
-	IDENT
-	STRING
-	INT
-	FLOAT
+	IDENT  // q
+	STRING // "stdgates.qasm"
+	INT    // 42
+	FLOAT  // 1.23
 	literal_end
+
+	// Const
+	const_begin
+	PI    // pi
+	TAU   // tau
+	EULER // euler
+	const_end
 
 	// Operators
 	operator_begin
@@ -78,6 +85,11 @@ var Tokens = [...]string{
 	STRING: "STRING",
 	INT:    "INT",
 	FLOAT:  "FLOAT",
+
+	// const
+	PI:    "pi",
+	TAU:   "tau",
+	EULER: "euler",
 
 	// Operators
 	LBRACKET:  "[",

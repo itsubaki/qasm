@@ -126,6 +126,14 @@ func (e *Evaluator) evalExpr(x ast.Expr) error {
 		for _, p := range x.Params.List.List {
 			if a, ok := e.R.Const[p.String()]; ok {
 				params = append(params, a)
+				continue
+			}
+
+			switch x := p.(type) {
+			case *ast.BasicExpr:
+				params = append(params, x.Float64())
+			default:
+				return fmt.Errorf("unsupported expr=%#v", x)
 			}
 		}
 
@@ -235,7 +243,12 @@ func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl) error {
 				}
 
 				for _, p := range X.Params.List.List {
-					x.Params.List.Append(prms[ast.Ident(p)])
+					switch p := p.(type) {
+					case *ast.BasicExpr:
+						x.Params.List.Append(p)
+					default:
+						x.Params.List.Append(prms[ast.Ident(p)])
+					}
 				}
 
 				for _, a := range X.QArgs.List {

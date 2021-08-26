@@ -116,7 +116,7 @@ func (p *Parser) parseStmt() ast.Stmt {
 		case "int", "float":
 			return p.parseDeclStmt()
 		default:
-			return p.parseAssign()
+			return p.parseAssignOrCall()
 		}
 	case lexer.MEASURE:
 		return p.parseMeasureStmt()
@@ -203,10 +203,29 @@ func (p *Parser) parseIdentList() ast.ExprList {
 	return list
 }
 
+func (p *Parser) isBasic(t lexer.Token) bool {
+	if t == lexer.PI || t == lexer.TAU || t == lexer.EULER ||
+		t == lexer.INT || t == lexer.FLOAT || t == lexer.STRING {
+		return true
+	}
+
+	return false
+}
+
 func (p *Parser) parseIdent() ast.Expr {
 	c := p.cur
-	if p.cur.Token != lexer.IDENT {
+	if c.Token != lexer.IDENT && !p.isBasic(c.Token) {
 		c = p.next()
+	}
+
+	if p.isBasic(c.Token) {
+		p.next()
+
+		// pi, 1.23
+		return &ast.BasicExpr{
+			Kind:  c.Token,
+			Value: c.Literal,
+		}
 	}
 	p.expect(lexer.IDENT)
 
@@ -528,7 +547,7 @@ func (p *Parser) parseApplyStmt() ast.Stmt {
 	}
 }
 
-func (p *Parser) parseAssign() ast.Stmt {
+func (p *Parser) parseAssignOrCall() ast.Stmt {
 	c := p.parseIdent()
 
 	if p.cur.Token != lexer.EQUALS {

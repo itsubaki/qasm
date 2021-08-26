@@ -85,6 +85,15 @@ func (e *BasicExpr) String() string {
 	return e.Value
 }
 
+func (e *BasicExpr) Float64() float64 {
+	v, err := strconv.ParseFloat(e.Value, 64)
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
 type ArrayExpr struct {
 	Type IndexExpr
 	Name string
