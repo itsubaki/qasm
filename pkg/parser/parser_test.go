@@ -54,7 +54,7 @@ func TestParseVersion(t *testing.T) {
 
 	for _, c := range cases {
 		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		got := p.Parse().Version
+		got := p.Parse().Version.String()
 		if got != c.want {
 			t.Errorf("got=%v, want=%v", got, c.want)
 		}

@@ -31,7 +31,7 @@ func (p *Parser) Errors() []string {
 }
 
 func (p *Parser) Parse() *ast.OpenQASM {
-	var version string
+	var version ast.Expr
 	var incls []ast.Stmt
 	var stmts []ast.Stmt
 
@@ -79,7 +79,7 @@ func (p *Parser) error(e error) {
 	p.errors = append(p.errors, e.Error())
 }
 
-func (p *Parser) parseVersion() string {
+func (p *Parser) parseVersion() ast.Expr {
 	p.expect(lexer.OPENQASM)
 
 	v := p.next()
@@ -88,7 +88,10 @@ func (p *Parser) parseVersion() string {
 	p.next()
 	p.expectSemi()
 
-	return v.Literal
+	return &ast.BasicExpr{
+		Kind:  lexer.FLOAT,
+		Value: v.Literal,
+	}
 }
 
 func (p *Parser) parseIncl() ast.Stmt {
@@ -101,7 +104,8 @@ func (p *Parser) parseIncl() ast.Stmt {
 	p.expectSemi()
 
 	return &ast.InclStmt{
-		Path: ast.IdentExpr{
+		Path: ast.BasicExpr{
+			Kind:  lexer.STRING,
 			Value: c.Literal,
 		},
 	}

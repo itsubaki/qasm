@@ -9,10 +9,14 @@ import (
 
 func ExampleOpenQASM_String() {
 	p := &ast.OpenQASM{
-		Version: "3.0",
+		Version: &ast.BasicExpr{
+			Kind:  lexer.FLOAT,
+			Value: "3.0",
+		},
 		Incls: []ast.Stmt{
 			&ast.InclStmt{
-				Path: ast.IdentExpr{
+				Path: ast.BasicExpr{
+					Kind:  lexer.STRING,
 					Value: "\"stdgates.qasm\"",
 				},
 			},

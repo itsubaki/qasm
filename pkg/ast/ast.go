@@ -6,7 +6,7 @@ import (
 )
 
 type OpenQASM struct {
-	Version string
+	Version Expr
 	Incls   []Stmt
 	Stmts   []Stmt
 }
@@ -14,8 +14,8 @@ type OpenQASM struct {
 func (p *OpenQASM) String() string {
 	var buf bytes.Buffer
 
-	version := fmt.Sprintf("OPENQASM %v;\n", p.Version)
-	buf.WriteString(version)
+	v := fmt.Sprintf("OPENQASM %v;\n", p.Version.String())
+	buf.WriteString(v)
 
 	for _, s := range p.Incls {
 		str := fmt.Sprintf("%s\n", s.String())
