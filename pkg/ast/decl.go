@@ -8,6 +8,18 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
+type BadDecl struct{}
+
+func (d *BadDecl) declNode() {}
+
+func (d *BadDecl) Literal() string {
+	return ""
+}
+
+func (d *BadDecl) String() string {
+	return ""
+}
+
 type GenDecl struct {
 	Kind lexer.Token // lexer.QUBIT, lexer.BIT
 	Type Expr

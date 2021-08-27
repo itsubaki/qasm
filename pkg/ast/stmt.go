@@ -7,6 +7,18 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
+type BadStmt struct{}
+
+func (s *BadStmt) stmtNode() {}
+
+func (s *BadStmt) Literal() string {
+	return ""
+}
+
+func (s *BadStmt) String() string {
+	return ""
+}
+
 type ExprStmt struct {
 	X Expr
 }

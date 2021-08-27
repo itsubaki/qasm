@@ -8,6 +8,18 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
+type BadExpr struct{}
+
+func (e *BadExpr) exprNode() {}
+
+func (e *BadExpr) Literal() string {
+	return ""
+}
+
+func (e *BadExpr) String() string {
+	return ""
+}
+
 type ExprList struct {
 	List []Expr
 }

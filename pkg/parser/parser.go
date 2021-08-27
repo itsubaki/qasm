@@ -113,15 +113,15 @@ func (p *Parser) parseIncl() ast.Stmt {
 
 func (p *Parser) parseStmt() ast.Stmt {
 	switch p.cur.Token {
-	case lexer.QUBIT, lexer.BIT, lexer.CONST, lexer.GATE, lexer.DEF:
+	case lexer.QUBIT, lexer.BIT, lexer.CONST,
+		lexer.GATE, lexer.DEF:
 		return p.parseDeclStmt()
 	case lexer.IDENT:
 		switch p.cur.Literal {
 		case "int", "float":
 			return p.parseDeclStmt()
-		default:
-			return p.parseAssignOrCall()
 		}
+		return p.parseAssignOrCall()
 	case lexer.MEASURE:
 		return p.parseMeasureStmt()
 	case lexer.RESET:
@@ -139,7 +139,7 @@ func (p *Parser) parseStmt() ast.Stmt {
 	}
 
 	p.error(fmt.Errorf("invalid stmt token=%#v", p.cur))
-	return nil
+	return &ast.BadStmt{}
 }
 
 func (p *Parser) parseDeclStmt() ast.Stmt {
@@ -191,7 +191,7 @@ func (p *Parser) parseDecl() ast.Decl {
 	}
 
 	p.error(fmt.Errorf("invalid decl token=%#v", p.cur))
-	return nil
+	return &ast.BadDecl{}
 }
 
 func (p *Parser) parseIdentList() ast.ExprList {
@@ -594,5 +594,5 @@ func (p *Parser) parseAssignOrCall() ast.Stmt {
 	}
 
 	p.error(fmt.Errorf("invalid assign token=%#v", p.cur))
-	return nil
+	return &ast.BadStmt{}
 }
