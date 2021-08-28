@@ -53,7 +53,7 @@ func (s *DeclStmt) String() string {
 }
 
 type InclStmt struct {
-	Path BasicExpr
+	Path BasicLit
 }
 
 func (s *InclStmt) stmtNode() {}

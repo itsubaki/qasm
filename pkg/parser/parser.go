@@ -88,7 +88,7 @@ func (p *Parser) parseVersion() ast.Expr {
 	p.next()
 	p.expectSemi()
 
-	return &ast.BasicExpr{
+	return &ast.BasicLit{
 		Kind:  lexer.FLOAT,
 		Value: v.Literal,
 	}
@@ -104,7 +104,7 @@ func (p *Parser) parseIncl() ast.Stmt {
 	p.expectSemi()
 
 	return &ast.InclStmt{
-		Path: ast.BasicExpr{
+		Path: ast.BasicLit{
 			Kind:  lexer.STRING,
 			Value: c.Literal,
 		},
@@ -226,7 +226,7 @@ func (p *Parser) parseIdent() ast.Expr {
 		p.next()
 
 		// pi, 1.23
-		return &ast.BasicExpr{
+		return &ast.BasicLit{
 			Kind:  c.Token,
 			Value: c.Literal,
 		}
@@ -278,7 +278,7 @@ func (p *Parser) parseGenConst() ast.Decl {
 		Name: ast.IdentExpr{
 			Value: n.Literal,
 		},
-		Value: &ast.BasicExpr{
+		Value: &ast.BasicLit{
 			Kind:  v.Token,
 			Value: v.Literal,
 		},

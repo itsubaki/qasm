@@ -66,7 +66,7 @@ func Ident(x interface{}) string {
 		return x.Name
 	case *FuncDecl:
 		return x.Name
-	case *BasicExpr:
+	case *BasicLit:
 		return x.Value
 	}
 

@@ -17,7 +17,7 @@ func TestDecl(t *testing.T) {
 				Name: ast.IdentExpr{
 					Value: "N",
 				},
-				Value: &ast.BasicExpr{
+				Value: &ast.BasicLit{
 					Kind:  lexer.INT,
 					Value: "15",
 				},

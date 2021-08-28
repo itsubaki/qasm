@@ -81,7 +81,7 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 		}
 
 		switch x := decl.Value.(type) {
-		case *ast.BasicExpr:
+		case *ast.BasicLit:
 			v, err := strconv.ParseFloat(x.Value, 64)
 			if err != nil {
 				return fmt.Errorf("parse float=%v: %v", x.Value, err)
@@ -161,7 +161,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 		}
 
 		switch p := p.(type) {
-		case *ast.BasicExpr:
+		case *ast.BasicLit:
 			params = append(params, p.Float64())
 		default:
 			return fmt.Errorf("unsupported expr=%#v", p)
@@ -248,7 +248,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl) error {
 			params := ast.ExprList{}
 			for _, p := range s.Params.List.List {
 				switch p := p.(type) {
-				case *ast.BasicExpr:
+				case *ast.BasicLit:
 					params.Append(p)
 				default:
 					params.Append(prms[ast.Ident(p)])

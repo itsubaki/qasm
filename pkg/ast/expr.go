@@ -82,22 +82,22 @@ func (e *IndexExpr) Int() int {
 	return v
 }
 
-type BasicExpr struct {
+type BasicLit struct {
 	Kind  lexer.Token
 	Value string
 }
 
-func (e *BasicExpr) exprNode() {}
+func (e *BasicLit) exprNode() {}
 
-func (e *BasicExpr) Literal() string {
+func (e *BasicLit) Literal() string {
 	return lexer.Tokens[e.Kind]
 }
 
-func (e *BasicExpr) String() string {
+func (e *BasicLit) String() string {
 	return e.Value
 }
 
-func (e *BasicExpr) Float64() float64 {
+func (e *BasicLit) Float64() float64 {
 	v, err := strconv.ParseFloat(e.Value, 64)
 	if err != nil {
 		panic(err)
