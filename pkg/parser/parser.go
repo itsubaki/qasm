@@ -278,7 +278,7 @@ func (p *Parser) parseGenConst() ast.Decl {
 		Name: ast.IdentExpr{
 			Value: n.Literal,
 		},
-		Value: ast.BasicExpr{
+		Value: &ast.BasicExpr{
 			Kind:  v.Token,
 			Value: v.Literal,
 		},

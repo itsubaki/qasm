@@ -2,7 +2,6 @@ package ast
 
 import (
 	"bytes"
-	"strconv"
 	"strings"
 
 	"github.com/itsubaki/qasm/pkg/lexer"
@@ -53,7 +52,7 @@ func (d *GenDecl) Size() int {
 
 type GenConst struct {
 	Name  IdentExpr
-	Value BasicExpr
+	Value Expr
 }
 
 func (d *GenConst) declNode() {}
@@ -74,15 +73,6 @@ func (d *GenConst) String() string {
 	buf.WriteString(d.Value.String())
 
 	return buf.String()
-}
-
-func (s *GenConst) Float64() float64 {
-	v, err := strconv.ParseFloat(s.Value.Value, 64)
-	if err != nil {
-		panic(err)
-	}
-
-	return v
 }
 
 type GateDecl struct {

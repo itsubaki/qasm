@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/pkg/ast"
@@ -37,62 +38,34 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 
 func (e *Evaluator) eval(s ast.Stmt) error {
 	switch s := s.(type) {
-	case *ast.ExprStmt:
-		if err := e.evalExprStmt(s); err != nil {
-			return fmt.Errorf("expr: %v", err)
-		}
 	case *ast.DeclStmt:
 		if err := e.evalDeclStmt(s); err != nil {
-			return fmt.Errorf("decl: %v", err)
+			return fmt.Errorf("eval decl stmt: %v", err)
+		}
+	case *ast.ExprStmt:
+		if err := e.evalExprStmt(s); err != nil {
+			return fmt.Errorf("eval expr stmt: %v", err)
 		}
 	case *ast.AssignStmt:
 		if err := e.evalAssignStmt(s); err != nil {
-			return fmt.Errorf("assign: %v", err)
+			return fmt.Errorf("eval assign stmt: %v", err)
 		}
 	case *ast.ArrowStmt:
 		if err := e.evalArrowStmt(s); err != nil {
-			return fmt.Errorf("arrow: %v", err)
+			return fmt.Errorf("eval arrow stmt: %v", err)
+		}
+	case *ast.ResetStmt:
+		if err := e.evalResetStmt(s); err != nil {
+			return fmt.Errorf("eval reset stmt: %v", err)
+		}
+	case *ast.ApplyStmt:
+		if err := e.evalApplyStmt(s); err != nil {
+			return fmt.Errorf("eval apply stmt: %v", err)
 		}
 	case *ast.PrintStmt:
 		if err := e.Println(s.QArgs.List...); err != nil {
-			return fmt.Errorf("println: %v", err)
+			return fmt.Errorf("eval print stmt: %v", err)
 		}
-	case *ast.ResetStmt:
-		for _, a := range s.QArgs.List {
-			qb, ok := e.R.Qubit.Get(a)
-			if !ok {
-				return fmt.Errorf("qubit=%#v not found", a)
-			}
-
-			e.Q.Reset(qb...)
-		}
-	case *ast.ApplyStmt:
-		params := make([]float64, 0)
-		for _, p := range s.Params.List.List {
-			if a, ok := e.R.Const[ast.Ident(p)]; ok {
-				params = append(params, a)
-				continue
-			}
-
-			switch p := p.(type) {
-			case *ast.BasicExpr:
-				params = append(params, p.Float64())
-			default:
-				return fmt.Errorf("unsupported expr=%#v", p)
-			}
-		}
-
-		qargs := make([][]q.Qubit, 0)
-		for _, a := range s.QArgs.List {
-			qb, ok := e.R.Qubit.Get(a)
-			if !ok {
-				return fmt.Errorf("qubit=%#v not found", a)
-			}
-
-			qargs = append(qargs, qb)
-		}
-
-		return e.apply(s.Kind, params, qargs)
 	default:
 		return fmt.Errorf("unsupported stmt=%#v", s)
 	}
@@ -103,23 +76,34 @@ func (e *Evaluator) eval(s ast.Stmt) error {
 func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 	switch decl := s.Decl.(type) {
 	case *ast.GenConst:
-		if _, ok := e.R.Const[decl.Name.Value]; ok {
+		if _, ok := e.R.Const[ast.Ident(decl)]; ok {
 			return fmt.Errorf("already exists=%v", decl.Name.Value)
 		}
-		e.R.Const[decl.Name.Value] = decl.Float64()
+
+		switch x := decl.Value.(type) {
+		case *ast.BasicExpr:
+			v, err := strconv.ParseFloat(x.Value, 64)
+			if err != nil {
+				return fmt.Errorf("parse float=%v: %v", x.Value, err)
+			}
+
+			e.R.Const[ast.Ident(decl)] = v
+		default:
+			return fmt.Errorf("unsupported expr=%#v", x)
+		}
 	case *ast.GenDecl:
 		switch decl.Kind {
 		case lexer.BIT:
 			if _, ok := e.R.Bit.Get(&ast.IdentExpr{Value: decl.Name.Value}); ok {
 				return fmt.Errorf("already exists=%v", decl.Name)
 			}
-			e.R.Bit.Add(decl.Name.Value, make([]int, decl.Size()))
+			e.R.Bit.Add(ast.Ident(decl), make([]int, decl.Size()))
 		case lexer.QUBIT:
 			if _, ok := e.R.Qubit.Get(&ast.IdentExpr{Value: decl.Name.Value}); ok {
 				return fmt.Errorf("already exists=%v", decl.Name)
 			}
 			qb := e.Q.ZeroWith(decl.Size())
-			e.R.Qubit.Add(decl.Name.Value, qb)
+			e.R.Qubit.Add(ast.Ident(decl), qb)
 		default:
 			return fmt.Errorf("unsupported kind=%v", decl.Kind)
 		}
@@ -138,27 +122,6 @@ func (e *Evaluator) evalExprStmt(s *ast.ExprStmt) error {
 	}
 
 	return nil
-}
-
-func (e *Evaluator) evalExpr(x ast.Expr) ([]int, error) {
-	switch x := x.(type) {
-	case *ast.MeasureExpr:
-		out, err := e.measure(x.QArgs.List...)
-		if err != nil {
-			return nil, fmt.Errorf("measure: %v", err)
-		}
-
-		return out, err
-	case *ast.CallExpr:
-		out, err := e.call(x)
-		if err != nil {
-			return nil, fmt.Errorf("call :%v", err)
-		}
-
-		return out, err
-	default:
-		return nil, fmt.Errorf("unsupported expr=%#v", x)
-	}
 }
 
 func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
@@ -187,6 +150,69 @@ func (e *Evaluator) evalArrowStmt(s *ast.ArrowStmt) error {
 		Left:  s.Right,
 		Right: s.Left,
 	})
+}
+
+func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
+	params := make([]float64, 0)
+	for _, p := range s.Params.List.List {
+		if a, ok := e.R.Const[ast.Ident(p)]; ok {
+			params = append(params, a)
+			continue
+		}
+
+		switch p := p.(type) {
+		case *ast.BasicExpr:
+			params = append(params, p.Float64())
+		default:
+			return fmt.Errorf("unsupported expr=%#v", p)
+		}
+	}
+
+	qargs := make([][]q.Qubit, 0)
+	for _, a := range s.QArgs.List {
+		qb, ok := e.R.Qubit.Get(a)
+		if !ok {
+			return fmt.Errorf("qubit=%#v not found", a)
+		}
+
+		qargs = append(qargs, qb)
+	}
+
+	return e.apply(s.Kind, params, qargs)
+}
+
+func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
+	for _, a := range s.QArgs.List {
+		qb, ok := e.R.Qubit.Get(a)
+		if !ok {
+			return fmt.Errorf("qubit=%#v not found", a)
+		}
+
+		e.Q.Reset(qb...)
+	}
+
+	return nil
+}
+
+func (e *Evaluator) evalExpr(x ast.Expr) ([]int, error) {
+	switch x := x.(type) {
+	case *ast.MeasureExpr:
+		out, err := e.measure(x.QArgs.List...)
+		if err != nil {
+			return nil, fmt.Errorf("measure: %v", err)
+		}
+
+		return out, err
+	case *ast.CallExpr:
+		out, err := e.call(x)
+		if err != nil {
+			return nil, fmt.Errorf("call :%v", err)
+		}
+
+		return out, err
+	default:
+		return nil, fmt.Errorf("unsupported expr=%#v", x)
+	}
 }
 
 func (e *Evaluator) call(x *ast.CallExpr) ([]int, error) {
