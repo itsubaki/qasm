@@ -232,40 +232,25 @@ func (e *Evaluator) call(x *ast.CallExpr) ([]int, error) {
 }
 
 func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl) error {
-	prms := make(map[string]ast.Expr)
+	params := make(map[string]ast.Expr)
 	for i, p := range g.Params.List.List {
-		prms[ast.Ident(p)] = x.Params.List.List[i]
+		params[ast.Ident(p)] = x.Params.List.List[i]
 	}
 
-	args := make(map[string]ast.Expr)
+	qargs := make(map[string]ast.Expr)
 	for i, a := range g.QArgs.List {
-		args[ast.Ident(a)] = x.QArgs.List[i]
+		qargs[ast.Ident(a)] = x.QArgs.List[i]
 	}
 
 	for _, b := range g.Body.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			params := ast.ExprList{}
-			for _, p := range s.Params.List.List {
-				switch p := p.(type) {
-				case *ast.BasicLit:
-					params.Append(p)
-				default:
-					params.Append(prms[ast.Ident(p)])
-				}
-			}
-
-			qargs := ast.ExprList{}
-			for _, a := range s.QArgs.List {
-				qargs.Append(args[ast.Ident(a)])
-			}
-
 			a := &ast.ApplyStmt{
 				Kind: s.Kind,
 				Params: ast.ParenExpr{
-					List: params,
+					List: assign(s.Params.List, params),
 				},
-				QArgs: qargs,
+				QArgs: assign(s.QArgs, qargs),
 			}
 
 			if err := e.eval(a); err != nil {
@@ -280,46 +265,25 @@ func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl) error {
 }
 
 func (e *Evaluator) callFunc(x *ast.CallExpr, f *ast.FuncDecl) ([]int, error) {
-	prms := make(map[string]ast.Expr)
+	params := make(map[string]ast.Expr)
 	for i, p := range f.Params.List.List {
-		prms[ast.Ident(p)] = x.Params.List.List[i]
+		params[ast.Ident(p)] = x.Params.List.List[i]
 	}
 
-	args := make(map[string]ast.Expr)
+	qargs := make(map[string]ast.Expr)
 	for i, a := range f.QArgs.List {
-		args[ast.Ident(a)] = x.QArgs.List[i]
+		qargs[ast.Ident(a)] = x.QArgs.List[i]
 	}
 
 	for _, b := range f.Body.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			params := ast.ExprList{}
-			for _, p := range s.Params.List.List {
-				params.Append(prms[ast.Ident(p)])
-			}
-
-			qargs := ast.ExprList{}
-			for _, a := range s.QArgs.List {
-				arg := args[ast.Ident(a)]
-				switch x := a.(type) {
-				case *ast.IndexExpr:
-					qargs.Append(&ast.IndexExpr{
-						Name: ast.IdentExpr{
-							Value: arg.String(),
-						},
-						Value: x.Value,
-					})
-				default:
-					qargs.Append(arg)
-				}
-			}
-
 			a := &ast.ApplyStmt{
 				Kind: s.Kind,
 				Params: ast.ParenExpr{
-					List: params,
+					List: assign(s.Params.List, params),
 				},
-				QArgs: qargs,
+				QArgs: assign(s.QArgs, qargs),
 			}
 
 			if err := e.eval(a); err != nil {
@@ -328,24 +292,8 @@ func (e *Evaluator) callFunc(x *ast.CallExpr, f *ast.FuncDecl) ([]int, error) {
 		case *ast.ReturnStmt:
 			switch X := s.Result.(type) {
 			case *ast.MeasureExpr:
-				qargs := ast.ExprList{}
-				for _, a := range X.QArgs.List {
-					arg := args[ast.Ident(a)]
-					switch x := a.(type) {
-					case *ast.IndexExpr:
-						qargs.Append(&ast.IndexExpr{
-							Name: ast.IdentExpr{
-								Value: arg.String(),
-							},
-							Value: x.Value,
-						})
-					default:
-						qargs.Append(arg)
-					}
-				}
-
 				x := &ast.MeasureExpr{
-					QArgs: qargs,
+					QArgs: assign(X.QArgs, qargs),
 				}
 
 				out, err := e.evalExpr(x)
@@ -390,6 +338,28 @@ func (e *Evaluator) measure(qargs ...ast.Expr) ([]int, error) {
 	}
 
 	return bit, nil
+}
+
+func assign(c ast.ExprList, args map[string]ast.Expr) ast.ExprList {
+	out := ast.ExprList{}
+	for _, a := range c.List {
+		arg := args[ast.Ident(a)]
+		switch x := a.(type) {
+		case *ast.BasicLit:
+			out.Append(x)
+		case *ast.IndexExpr:
+			out.Append(&ast.IndexExpr{
+				Name: ast.IdentExpr{
+					Value: ast.Ident(arg),
+				},
+				Value: x.Value,
+			})
+		default:
+			out.Append(arg)
+		}
+	}
+
+	return out
 }
 
 func (e *Evaluator) apply(g lexer.Token, p []float64, qargs [][]q.Qubit) error {
