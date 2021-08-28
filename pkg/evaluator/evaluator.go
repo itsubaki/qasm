@@ -306,6 +306,9 @@ func (e *Evaluator) callFunc(x *ast.CallExpr, f *ast.FuncDecl) ([]int, error) {
 				}
 
 				return out, nil
+			case nil:
+				// no return value
+				return []int{}, nil
 			default:
 				return nil, fmt.Errorf("unsupported expr=%#v", X)
 			}
