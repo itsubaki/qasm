@@ -300,7 +300,18 @@ func (e *Evaluator) callFunc(x *ast.CallExpr, f *ast.FuncDecl) ([]int, error) {
 
 			qargs := ast.ExprList{}
 			for _, a := range s.QArgs.List {
-				qargs.Append(args[ast.Ident(a)])
+				arg := args[ast.Ident(a)]
+				switch x := a.(type) {
+				case *ast.IndexExpr:
+					qargs.Append(&ast.IndexExpr{
+						Name: ast.IdentExpr{
+							Value: arg.String(),
+						},
+						Value: x.Value,
+					})
+				default:
+					qargs.Append(arg)
+				}
 			}
 
 			a := &ast.ApplyStmt{
@@ -319,7 +330,18 @@ func (e *Evaluator) callFunc(x *ast.CallExpr, f *ast.FuncDecl) ([]int, error) {
 			case *ast.MeasureExpr:
 				qargs := ast.ExprList{}
 				for _, a := range X.QArgs.List {
-					qargs.Append(args[ast.Ident(a)])
+					arg := args[ast.Ident(a)]
+					switch x := a.(type) {
+					case *ast.IndexExpr:
+						qargs.Append(&ast.IndexExpr{
+							Name: ast.IdentExpr{
+								Value: arg.String(),
+							},
+							Value: x.Value,
+						})
+					default:
+						qargs.Append(arg)
+					}
 				}
 
 				x := &ast.MeasureExpr{
