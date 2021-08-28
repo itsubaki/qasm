@@ -231,29 +231,27 @@ func (e *Evaluator) call(x *ast.CallExpr) ([]int, error) {
 	return nil, fmt.Errorf("unsupported decl=%#v", decl)
 }
 
-func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl) error {
+func (e *Evaluator) callGate(call *ast.CallExpr, decl *ast.GateDecl) error {
 	params := make(map[string]ast.Expr)
-	for i, p := range g.Params.List.List {
-		params[ast.Ident(p)] = x.Params.List.List[i]
+	for i, p := range decl.Params.List.List {
+		params[ast.Ident(p)] = call.Params.List.List[i]
 	}
 
 	qargs := make(map[string]ast.Expr)
-	for i, a := range g.QArgs.List {
-		qargs[ast.Ident(a)] = x.QArgs.List[i]
+	for i, a := range decl.QArgs.List {
+		qargs[ast.Ident(a)] = call.QArgs.List[i]
 	}
 
-	for _, b := range g.Body.List {
+	for _, b := range decl.Body.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			a := &ast.ApplyStmt{
+			if err := e.eval(&ast.ApplyStmt{
 				Kind: s.Kind,
 				Params: ast.ParenExpr{
 					List: assign(s.Params.List, params),
 				},
 				QArgs: assign(s.QArgs, qargs),
-			}
-
-			if err := e.eval(a); err != nil {
+			}); err != nil {
 				return fmt.Errorf("eval: %#v", err)
 			}
 		default:
@@ -264,39 +262,35 @@ func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl) error {
 	return nil
 }
 
-func (e *Evaluator) callFunc(x *ast.CallExpr, f *ast.FuncDecl) ([]int, error) {
+func (e *Evaluator) callFunc(call *ast.CallExpr, decl *ast.FuncDecl) ([]int, error) {
 	params := make(map[string]ast.Expr)
-	for i, p := range f.Params.List.List {
-		params[ast.Ident(p)] = x.Params.List.List[i]
+	for i, p := range decl.Params.List.List {
+		params[ast.Ident(p)] = call.Params.List.List[i]
 	}
 
 	qargs := make(map[string]ast.Expr)
-	for i, a := range f.QArgs.List {
-		qargs[ast.Ident(a)] = x.QArgs.List[i]
+	for i, a := range decl.QArgs.List {
+		qargs[ast.Ident(a)] = call.QArgs.List[i]
 	}
 
-	for _, b := range f.Body.List {
+	for _, b := range decl.Body.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			a := &ast.ApplyStmt{
+			if err := e.eval(&ast.ApplyStmt{
 				Kind: s.Kind,
 				Params: ast.ParenExpr{
 					List: assign(s.Params.List, params),
 				},
 				QArgs: assign(s.QArgs, qargs),
-			}
-
-			if err := e.eval(a); err != nil {
+			}); err != nil {
 				return nil, fmt.Errorf("eval: %#v", err)
 			}
 		case *ast.ReturnStmt:
-			switch X := s.Result.(type) {
+			switch x := s.Result.(type) {
 			case *ast.MeasureExpr:
-				x := &ast.MeasureExpr{
-					QArgs: assign(X.QArgs, qargs),
-				}
-
-				out, err := e.evalExpr(x)
+				out, err := e.evalExpr(&ast.MeasureExpr{
+					QArgs: assign(x.QArgs, qargs),
+				})
 				if err != nil {
 					return nil, fmt.Errorf("eval expr: %#v", err)
 				}
@@ -306,7 +300,7 @@ func (e *Evaluator) callFunc(x *ast.CallExpr, f *ast.FuncDecl) ([]int, error) {
 				// no return value
 				return []int{}, nil
 			default:
-				return nil, fmt.Errorf("unsupported expr=%#v", X)
+				return nil, fmt.Errorf("unsupported expr=%#v", x)
 			}
 		default:
 			return nil, fmt.Errorf("unsupported stmt=%#v", s)
