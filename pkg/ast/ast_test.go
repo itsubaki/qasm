@@ -33,13 +33,11 @@ func ExampleOpenQASM_String() {
 					},
 				},
 			},
-			&ast.ExprStmt{
-				X: &ast.ResetExpr{
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
-								Value: "q",
-							},
+			&ast.ResetStmt{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q",
 						},
 					},
 				},

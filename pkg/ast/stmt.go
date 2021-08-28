@@ -144,6 +144,80 @@ func (s *AssignStmt) String() string {
 	return buf.String()
 }
 
+type ResetStmt struct {
+	QArgs ExprList
+}
+
+func (s *ResetStmt) stmtNode() {}
+
+func (s *ResetStmt) Literal() string {
+	return lexer.Tokens[lexer.RESET]
+}
+
+func (s *ResetStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Literal())
+	buf.WriteString(" ")
+	buf.WriteString(s.QArgs.String())
+	buf.WriteString(";")
+
+	return buf.String()
+}
+
+type PrintStmt struct {
+	QArgs ExprList
+}
+
+func (s *PrintStmt) stmtNode() {}
+
+func (s *PrintStmt) Literal() string {
+	return lexer.Tokens[lexer.PRINT]
+}
+
+func (s *PrintStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Literal())
+	if len(s.QArgs.List) == 0 {
+		buf.WriteString(";")
+		return buf.String()
+	}
+
+	buf.WriteString(" ")
+	buf.WriteString(s.QArgs.String())
+	buf.WriteString(";")
+
+	return buf.String()
+}
+
+type ApplyStmt struct {
+	Kind   lexer.Token // lexer.X, lexer.CX, ...
+	Params ParenExpr
+	QArgs  ExprList
+}
+
+func (s *ApplyStmt) stmtNode() {}
+
+func (s *ApplyStmt) Literal() string {
+	return lexer.Tokens[s.Kind]
+}
+
+func (s *ApplyStmt) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(s.Literal())
+	if len(s.Params.List.List) > 0 {
+		buf.WriteString(s.Params.String())
+	}
+
+	buf.WriteString(" ")
+	buf.WriteString(s.QArgs.String())
+	buf.WriteString(";")
+
+	return buf.String()
+}
+
 type BlockStmt struct {
 	List []Stmt
 }

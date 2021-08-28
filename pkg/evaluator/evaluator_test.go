@@ -51,49 +51,43 @@ func ExampleEvaluator() {
 					},
 				},
 			},
-			&ast.ExprStmt{
-				X: &ast.ResetExpr{
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
+			&ast.ResetStmt{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q",
+						},
+					},
+				},
+			},
+			&ast.ApplyStmt{
+				Kind: lexer.X,
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IndexExpr{
+							Name: ast.IdentExpr{
 								Value: "q",
 							},
+							Value: "0",
 						},
 					},
 				},
 			},
-			&ast.ExprStmt{
-				X: &ast.ApplyExpr{
-					Kind: lexer.X,
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "0",
+			&ast.ApplyStmt{
+				Kind: lexer.CX,
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IndexExpr{
+							Name: ast.IdentExpr{
+								Value: "q",
 							},
+							Value: "0",
 						},
-					},
-				},
-			},
-			&ast.ExprStmt{
-				X: &ast.ApplyExpr{
-					Kind: lexer.CX,
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "0",
+						&ast.IndexExpr{
+							Name: ast.IdentExpr{
+								Value: "q",
 							},
-							&ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "1",
-							},
+							Value: "1",
 						},
 					},
 				},
@@ -176,21 +170,17 @@ func ExampleEvaluator_println() {
 					},
 				},
 			},
-			&ast.ExprStmt{
-				X: &ast.ApplyExpr{
-					Kind: lexer.H,
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
-								Value: "q",
-							},
+			&ast.ApplyStmt{
+				Kind: lexer.H,
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q",
 						},
 					},
 				},
 			},
-			&ast.ExprStmt{
-				X: &ast.PrintExpr{},
-			},
+			&ast.PrintStmt{},
 		},
 	}
 
@@ -236,29 +226,25 @@ func ExampleEvaluator_call() {
 					},
 					Body: &ast.BlockStmt{
 						List: []ast.Stmt{
-							&ast.ExprStmt{
-								X: &ast.ApplyExpr{
-									Kind: lexer.H,
-									QArgs: ast.ExprList{
-										List: []ast.Expr{
-											&ast.IdentExpr{
-												Value: "q0",
-											},
+							&ast.ApplyStmt{
+								Kind: lexer.H,
+								QArgs: ast.ExprList{
+									List: []ast.Expr{
+										&ast.IdentExpr{
+											Value: "q0",
 										},
 									},
 								},
 							},
-							&ast.ExprStmt{
-								X: &ast.ApplyExpr{
-									Kind: lexer.CX,
-									QArgs: ast.ExprList{
-										List: []ast.Expr{
-											&ast.IdentExpr{
-												Value: "q0",
-											},
-											&ast.IdentExpr{
-												Value: "q1",
-											},
+							&ast.ApplyStmt{
+								Kind: lexer.CX,
+								QArgs: ast.ExprList{
+									List: []ast.Expr{
+										&ast.IdentExpr{
+											Value: "q0",
+										},
+										&ast.IdentExpr{
+											Value: "q1",
 										},
 									},
 								},
@@ -302,9 +288,7 @@ func ExampleEvaluator_call() {
 					},
 				},
 			},
-			&ast.ExprStmt{
-				X: &ast.PrintExpr{},
-			},
+			&ast.PrintStmt{},
 		},
 	}
 

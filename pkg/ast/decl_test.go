@@ -93,29 +93,25 @@ func TestDecl(t *testing.T) {
 				},
 				Body: &ast.BlockStmt{
 					List: []ast.Stmt{
-						&ast.ExprStmt{
-							X: &ast.ApplyExpr{
-								Kind: lexer.H,
-								QArgs: ast.ExprList{
-									List: []ast.Expr{
-										&ast.IdentExpr{
-											Value: "q0",
-										},
+						&ast.ApplyStmt{
+							Kind: lexer.H,
+							QArgs: ast.ExprList{
+								List: []ast.Expr{
+									&ast.IdentExpr{
+										Value: "q0",
 									},
 								},
 							},
 						},
-						&ast.ExprStmt{
-							X: &ast.ApplyExpr{
-								Kind: lexer.CX,
-								QArgs: ast.ExprList{
-									List: []ast.Expr{
-										&ast.IdentExpr{
-											Value: "q0",
-										},
-										&ast.IdentExpr{
-											Value: "q1",
-										},
+						&ast.ApplyStmt{
+							Kind: lexer.CX,
+							QArgs: ast.ExprList{
+								List: []ast.Expr{
+									&ast.IdentExpr{
+										Value: "q0",
+									},
+									&ast.IdentExpr{
+										Value: "q1",
 									},
 								},
 							},

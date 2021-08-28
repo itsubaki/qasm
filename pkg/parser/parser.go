@@ -495,10 +495,8 @@ func (p *Parser) parseResetStmt() ast.Stmt {
 	p.expectSemi()
 
 	// reset q, p;
-	return &ast.ExprStmt{
-		X: &ast.ResetExpr{
-			QArgs: qargs,
-		},
+	return &ast.ResetStmt{
+		QArgs: qargs,
 	}
 }
 
@@ -510,9 +508,7 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 		p.expectSemi()
 
 		// print;
-		return &ast.ExprStmt{
-			X: &ast.PrintExpr{},
-		}
+		return &ast.PrintStmt{}
 	}
 	p.expect(lexer.IDENT)
 
@@ -520,17 +516,15 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 	qargs := p.parseIdentList()
 	p.expectSemi()
 
-	return &ast.ExprStmt{
-		X: &ast.PrintExpr{
-			QArgs: qargs,
-		},
+	return &ast.PrintStmt{
+		QArgs: qargs,
 	}
 }
 
 func (p *Parser) parseApplyStmt() ast.Stmt {
 	kind := p.cur.Token
 
-	x := ast.ApplyExpr{
+	x := ast.ApplyStmt{
 		Kind: kind,
 	}
 
@@ -546,9 +540,7 @@ func (p *Parser) parseApplyStmt() ast.Stmt {
 	p.expectSemi()
 
 	// cx q[0], q[1];
-	return &ast.ExprStmt{
-		X: &x,
-	}
+	return &x
 }
 
 func (p *Parser) parseAssignOrCall() ast.Stmt {

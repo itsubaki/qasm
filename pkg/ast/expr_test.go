@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/itsubaki/qasm/pkg/ast"
-	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
 func TestExpr(t *testing.T) {
@@ -23,64 +22,6 @@ func TestExpr(t *testing.T) {
 				Name: "a",
 			},
 			"int[32] a",
-		},
-		{
-			&ast.ResetExpr{
-				QArgs: ast.ExprList{
-					List: []ast.Expr{
-						&ast.IdentExpr{
-							Value: "q",
-						},
-					},
-				},
-			},
-			"reset q",
-		},
-		{
-			&ast.ResetExpr{
-				QArgs: ast.ExprList{
-					List: []ast.Expr{
-						&ast.IndexExpr{
-							Name: ast.IdentExpr{
-								Value: "q",
-							},
-							Value: "0",
-						},
-						&ast.IndexExpr{
-							Name: ast.IdentExpr{
-								Value: "q",
-							},
-							Value: "1",
-						},
-					},
-				},
-			},
-			"reset q[0], q[1]",
-		},
-		{
-			&ast.PrintExpr{},
-			"print",
-		},
-		{
-			&ast.PrintExpr{
-				QArgs: ast.ExprList{
-					List: []ast.Expr{
-						&ast.IndexExpr{
-							Name: ast.IdentExpr{
-								Value: "q",
-							},
-							Value: "0",
-						},
-						&ast.IndexExpr{
-							Name: ast.IdentExpr{
-								Value: "q",
-							},
-							Value: "1",
-						},
-					},
-				},
-			},
-			"print q[0], q[1]",
 		},
 		{
 			&ast.MeasureExpr{
@@ -114,19 +55,6 @@ func TestExpr(t *testing.T) {
 				},
 			},
 			"measure q[0], q[1]",
-		},
-		{
-			&ast.ApplyExpr{
-				Kind: lexer.X,
-				QArgs: ast.ExprList{
-					List: []ast.Expr{
-						&ast.IdentExpr{
-							Value: "q",
-						},
-					},
-				},
-			},
-			"x q",
 		},
 		{
 			&ast.CallExpr{

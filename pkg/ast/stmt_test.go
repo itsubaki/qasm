@@ -75,13 +75,11 @@ func TestStmt(t *testing.T) {
 			"int[32] a;",
 		},
 		{
-			&ast.ExprStmt{
-				X: &ast.ResetExpr{
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
-								Value: "q",
-							},
+			&ast.ResetStmt{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q",
 						},
 					},
 				},
@@ -89,22 +87,20 @@ func TestStmt(t *testing.T) {
 			"reset q;",
 		},
 		{
-			&ast.ExprStmt{
-				X: &ast.ResetExpr{
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "0",
+			&ast.ResetStmt{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IndexExpr{
+							Name: ast.IdentExpr{
+								Value: "q",
 							},
-							&ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "1",
+							Value: "0",
+						},
+						&ast.IndexExpr{
+							Name: ast.IdentExpr{
+								Value: "q",
 							},
+							Value: "1",
 						},
 					},
 				},
@@ -112,28 +108,24 @@ func TestStmt(t *testing.T) {
 			"reset q[0], q[1];",
 		},
 		{
-			&ast.ExprStmt{
-				X: &ast.PrintExpr{},
-			},
+			&ast.PrintStmt{},
 			"print;",
 		},
 		{
-			&ast.ExprStmt{
-				X: &ast.PrintExpr{
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "0",
+			&ast.PrintStmt{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IndexExpr{
+							Name: ast.IdentExpr{
+								Value: "q",
 							},
-							&ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "1",
+							Value: "0",
+						},
+						&ast.IndexExpr{
+							Name: ast.IdentExpr{
+								Value: "q",
 							},
+							Value: "1",
 						},
 					},
 				},
@@ -178,14 +170,12 @@ func TestStmt(t *testing.T) {
 			"measure q[0], q[1];",
 		},
 		{
-			&ast.ExprStmt{
-				X: &ast.ApplyExpr{
-					Kind: lexer.X,
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
-								Value: "q",
-							},
+			&ast.ApplyStmt{
+				Kind: lexer.X,
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q",
 						},
 					},
 				},
@@ -332,29 +322,25 @@ func TestStmt(t *testing.T) {
 					},
 					Body: &ast.BlockStmt{
 						List: []ast.Stmt{
-							&ast.ExprStmt{
-								X: &ast.ApplyExpr{
-									Kind: lexer.H,
-									QArgs: ast.ExprList{
-										List: []ast.Expr{
-											&ast.IdentExpr{
-												Value: "q0",
-											},
+							&ast.ApplyStmt{
+								Kind: lexer.H,
+								QArgs: ast.ExprList{
+									List: []ast.Expr{
+										&ast.IdentExpr{
+											Value: "q0",
 										},
 									},
 								},
 							},
-							&ast.ExprStmt{
-								X: &ast.ApplyExpr{
-									Kind: lexer.CX,
-									QArgs: ast.ExprList{
-										List: []ast.Expr{
-											&ast.IdentExpr{
-												Value: "q0",
-											},
-											&ast.IdentExpr{
-												Value: "q1",
-											},
+							&ast.ApplyStmt{
+								Kind: lexer.CX,
+								QArgs: ast.ExprList{
+									List: []ast.Expr{
+										&ast.IdentExpr{
+											Value: "q0",
+										},
+										&ast.IdentExpr{
+											Value: "q1",
 										},
 									},
 								},

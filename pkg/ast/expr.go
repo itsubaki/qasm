@@ -127,50 +127,6 @@ func (e *ArrayExpr) String() string {
 	return buf.String()
 }
 
-type ResetExpr struct {
-	QArgs ExprList
-}
-
-func (s *ResetExpr) exprNode() {}
-
-func (s *ResetExpr) Literal() string {
-	return lexer.Tokens[lexer.RESET]
-}
-
-func (s *ResetExpr) String() string {
-	var buf bytes.Buffer
-
-	buf.WriteString(s.Literal())
-	buf.WriteString(" ")
-	buf.WriteString(s.QArgs.String())
-
-	return buf.String()
-}
-
-type PrintExpr struct {
-	QArgs ExprList
-}
-
-func (s *PrintExpr) exprNode() {}
-
-func (s *PrintExpr) Literal() string {
-	return lexer.Tokens[lexer.PRINT]
-}
-
-func (s *PrintExpr) String() string {
-	var buf bytes.Buffer
-
-	buf.WriteString(s.Literal())
-	if len(s.QArgs.List) == 0 {
-		return buf.String()
-	}
-
-	buf.WriteString(" ")
-	buf.WriteString(s.QArgs.String())
-
-	return buf.String()
-}
-
 type MeasureExpr struct {
 	QArgs ExprList
 }
@@ -185,32 +141,6 @@ func (s *MeasureExpr) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(s.Literal())
-	buf.WriteString(" ")
-	buf.WriteString(s.QArgs.String())
-
-	return buf.String()
-}
-
-type ApplyExpr struct {
-	Kind   lexer.Token // lexer.X, lexer.CX, ...
-	Params ParenExpr
-	QArgs  ExprList
-}
-
-func (s *ApplyExpr) exprNode() {}
-
-func (s *ApplyExpr) Literal() string {
-	return lexer.Tokens[s.Kind]
-}
-
-func (s *ApplyExpr) String() string {
-	var buf bytes.Buffer
-
-	buf.WriteString(s.Literal())
-	if len(s.Params.List.List) > 0 {
-		buf.WriteString(s.Params.String())
-	}
-
 	buf.WriteString(" ")
 	buf.WriteString(s.QArgs.String())
 
