@@ -262,15 +262,18 @@ func (e *Evaluator) call(x *ast.CallExpr) ([]int, error) {
 	return nil, fmt.Errorf("unsupported decl=%#v", decl)
 }
 
-func (e *Evaluator) callGate(call *ast.CallExpr, decl *ast.GateDecl) error {
+func (e *Evaluator) callGate(x *ast.CallExpr, decl *ast.GateDecl) error {
 	params := make(map[string]ast.Expr)
 	for i, p := range decl.Params.List.List {
-		params[ast.Ident(p)] = call.Params.List.List[i]
+		params[ast.Ident(p)] = x.Params.List.List[i]
 	}
 
+	// gate bell q, p { h q; cx q, p; }
+	// bell q0, q1;
+	// q -> q0, p -> q1
 	qargs := make(map[string]ast.Expr)
 	for i, a := range decl.QArgs.List {
-		qargs[ast.Ident(a)] = call.QArgs.List[i]
+		qargs[ast.Ident(a)] = x.QArgs.List[i]
 	}
 
 	for _, b := range decl.Body.List {
@@ -281,6 +284,7 @@ func (e *Evaluator) callGate(call *ast.CallExpr, decl *ast.GateDecl) error {
 				Params: ast.ParenExpr{
 					List: assign(s.Params.List, params),
 				},
+				// q -> q0, p -> q1
 				QArgs: assign(s.QArgs, qargs),
 			}); err != nil {
 				return fmt.Errorf("eval: %#v", err)
@@ -293,15 +297,15 @@ func (e *Evaluator) callGate(call *ast.CallExpr, decl *ast.GateDecl) error {
 	return nil
 }
 
-func (e *Evaluator) callFunc(call *ast.CallExpr, decl *ast.FuncDecl) ([]int, error) {
+func (e *Evaluator) callFunc(x *ast.CallExpr, decl *ast.FuncDecl) ([]int, error) {
 	params := make(map[string]ast.Expr)
 	for i, p := range decl.Params.List.List {
-		params[ast.Ident(p)] = call.Params.List.List[i]
+		params[ast.Ident(p)] = x.Params.List.List[i]
 	}
 
 	qargs := make(map[string]ast.Expr)
 	for i, a := range decl.QArgs.List {
-		qargs[ast.Ident(a)] = call.QArgs.List[i]
+		qargs[ast.Ident(a)] = x.QArgs.List[i]
 	}
 
 	for _, b := range decl.Body.List {
@@ -317,10 +321,10 @@ func (e *Evaluator) callFunc(call *ast.CallExpr, decl *ast.FuncDecl) ([]int, err
 				return nil, fmt.Errorf("eval: %#v", err)
 			}
 		case *ast.ReturnStmt:
-			switch x := s.Result.(type) {
+			switch r := s.Result.(type) {
 			case *ast.MeasureExpr:
 				out, err := e.evalExpr(&ast.MeasureExpr{
-					QArgs: assign(x.QArgs, qargs),
+					QArgs: assign(r.QArgs, qargs),
 				})
 				if err != nil {
 					return nil, fmt.Errorf("eval expr: %#v", err)
