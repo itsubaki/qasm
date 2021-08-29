@@ -351,6 +351,42 @@ func TestStmt(t *testing.T) {
 			},
 			"gate bell q0, q1 { h q0; cx q0, q1; }",
 		},
+		{
+			&ast.DeclStmt{
+				Decl: &ast.GateDecl{
+					Name: "CX",
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{
+								Value: "q0",
+							},
+							&ast.IdentExpr{
+								Value: "q1",
+							},
+						},
+					},
+					Body: &ast.BlockStmt{
+						List: []ast.Stmt{
+							&ast.ApplyStmt{
+								Kind: lexer.X,
+								Ctrl: true,
+								QArgs: ast.ExprList{
+									List: []ast.Expr{
+										&ast.IdentExpr{
+											Value: "q0",
+										},
+										&ast.IdentExpr{
+											Value: "q1",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"gate CX q0, q1 { ctrl @ x q0, q1; }",
+		},
 	}
 
 	for _, c := range cases {

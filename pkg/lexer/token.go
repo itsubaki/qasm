@@ -42,6 +42,7 @@ const (
 	DIV       // '/'
 	MOD       // '%'
 	ARROW     // "->"
+	AT        // '@'
 	operator_end
 
 	// Keywords
@@ -71,6 +72,7 @@ const (
 	PRINT    // print
 	DEF      // def
 	RETURN   // return
+	CTRL     // ctrl
 	keyword_end
 )
 
@@ -109,6 +111,7 @@ var Tokens = [...]string{
 	DIV:       "/",
 	MOD:       "%",
 	ARROW:     "->",
+	AT:        "@",
 
 	// Keywords
 	OPENQASM: "OPENQASM",
@@ -136,4 +139,5 @@ var Tokens = [...]string{
 	PRINT:    "print",
 	DEF:      "def",
 	RETURN:   "return",
+	CTRL:     "ctrl",
 }

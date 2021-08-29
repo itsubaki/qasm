@@ -522,10 +522,19 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 }
 
 func (p *Parser) parseApplyStmt() ast.Stmt {
-	kind := p.cur.Token
+	ctrl := false
+	if p.cur.Token == lexer.CTRL {
+		ctrl = true
+		p.next()
 
+		p.expect(lexer.AT)
+		p.next()
+	}
+
+	kind := p.cur.Token
 	x := ast.ApplyStmt{
 		Kind: kind,
+		Ctrl: ctrl,
 	}
 
 	p.next()
