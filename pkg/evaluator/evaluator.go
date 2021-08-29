@@ -421,19 +421,18 @@ func (e *Evaluator) apply(g lexer.Token, p []float64, qargs [][]q.Qubit) error {
 func assign(c ast.ExprList, args map[string]ast.Expr) ast.ExprList {
 	out := ast.ExprList{}
 	for _, a := range c.List {
-		arg := args[ast.Ident(a)]
 		switch x := a.(type) {
 		case *ast.BasicLit:
 			out.Append(x)
 		case *ast.IndexExpr:
 			out.Append(&ast.IndexExpr{
 				Name: ast.IdentExpr{
-					Value: ast.Ident(arg),
+					Value: ast.Ident(args[ast.Ident(a)]),
 				},
 				Value: x.Value,
 			})
 		default:
-			out.Append(arg)
+			out.Append(args[ast.Ident(a)])
 		}
 	}
 
