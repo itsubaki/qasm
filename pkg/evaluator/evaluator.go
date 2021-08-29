@@ -171,6 +171,10 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 		qargs = append(qargs, qb)
 	}
 
+	// TODO
+	// kind: IDENT -> callExpr
+	// ctrl: true  -> e.Q.C()
+
 	return e.apply(s.Kind, params, qargs)
 }
 
@@ -281,6 +285,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, decl *ast.GateDecl) error {
 		case *ast.ApplyStmt:
 			if err := e.eval(&ast.ApplyStmt{
 				Kind: s.Kind,
+				Ctrl: s.Ctrl,
 				Params: ast.ParenExpr{
 					List: assign(s.Params.List, params),
 				},
@@ -313,6 +318,7 @@ func (e *Evaluator) callFunc(x *ast.CallExpr, decl *ast.FuncDecl) ([]int, error)
 		case *ast.ApplyStmt:
 			if err := e.eval(&ast.ApplyStmt{
 				Kind: s.Kind,
+				Ctrl: s.Ctrl,
 				Params: ast.ParenExpr{
 					List: assign(s.Params.List, params),
 				},

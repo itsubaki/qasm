@@ -38,6 +38,15 @@ func TestLexer(t *testing.T) {
 				{lexer.RBRACE, "}"},
 
 				{lexer.GATE, "gate"},
+				{lexer.IDENT, "X2"},
+				{lexer.IDENT, "q"},
+				{lexer.LBRACE, "{"},
+				{lexer.IDENT, "X"},
+				{lexer.IDENT, "q"},
+				{lexer.SEMICOLON, ";"},
+				{lexer.RBRACE, "}"},
+
+				{lexer.GATE, "gate"},
 				{lexer.IDENT, "CX"},
 				{lexer.IDENT, "q"},
 				{lexer.COMMA, ","},
