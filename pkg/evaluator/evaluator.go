@@ -199,8 +199,8 @@ func (e *Evaluator) evalPrint(s *ast.PrintStmt) error {
 		return nil
 	}
 
-	qargs := make([]ast.Expr, 0)
-	if len(s.QArgs.List) == 0 {
+	qargs := s.QArgs.List
+	if len(qargs) == 0 {
 		for _, n := range e.R.Qubit.Name {
 			qargs = append(qargs, &ast.IdentExpr{
 				Value: n,
@@ -438,11 +438,11 @@ func assign(c ast.ExprList, args map[string]ast.Expr) ast.ExprList {
 
 func (e *Evaluator) Println() error {
 	if err := e.eval(&ast.PrintStmt{}); err != nil {
-		return fmt.Errorf("eval print: %v", err)
+		return fmt.Errorf("print qubit: %v", err)
 	}
 
 	if err := e.R.Bit.Println(); err != nil {
-		return fmt.Errorf("bit print: %v", err)
+		return fmt.Errorf("print bit: %v", err)
 	}
 
 	return nil
