@@ -117,11 +117,6 @@ func ExampleEvaluator() {
 		return
 	}
 
-	if err := e.R.Bit.Println(); err != nil {
-		fmt.Println(err)
-		return
-	}
-
 	if err := e.Println(); err != nil {
 		fmt.Println(err)
 		return
@@ -137,8 +132,8 @@ func ExampleEvaluator() {
 	// cx q[0], q[1];
 	// c = measure q;
 	//
-	// c: 11
 	// [11][  3]( 1.0000 0.0000i): 1.0000
+	// c: 11
 }
 
 func ExampleEvaluator_println() {

@@ -63,7 +63,7 @@ func (e *Evaluator) eval(s ast.Stmt) error {
 			return fmt.Errorf("eval apply stmt: %v", err)
 		}
 	case *ast.PrintStmt:
-		if err := e.Println(s.QArgs.List...); err != nil {
+		if err := e.evalPrint(s); err != nil {
 			return fmt.Errorf("eval print stmt: %v", err)
 		}
 	default:
@@ -189,6 +189,37 @@ func (e *Evaluator) evalResetStmt(s *ast.ResetStmt) error {
 		}
 
 		e.Q.Reset(qb...)
+	}
+
+	return nil
+}
+
+func (e *Evaluator) evalPrint(s *ast.PrintStmt) error {
+	if len(e.R.Qubit.Name) == 0 {
+		return nil
+	}
+
+	qargs := make([]ast.Expr, 0)
+	if len(s.QArgs.List) == 0 {
+		for _, n := range e.R.Qubit.Name {
+			qargs = append(qargs, &ast.IdentExpr{
+				Value: n,
+			})
+		}
+	}
+
+	index := make([][]int, 0)
+	for _, a := range qargs {
+		qb, ok := e.R.Qubit.Get(a)
+		if !ok {
+			return fmt.Errorf("qubit=%#v not found", a)
+		}
+
+		index = append(index, q.Index(qb...))
+	}
+
+	for _, s := range e.Q.Raw().State(index...) {
+		fmt.Println(s)
 	}
 
 	return nil
@@ -334,28 +365,6 @@ func (e *Evaluator) measure(qargs ...ast.Expr) ([]int, error) {
 	return bit, nil
 }
 
-func assign(c ast.ExprList, args map[string]ast.Expr) ast.ExprList {
-	out := ast.ExprList{}
-	for _, a := range c.List {
-		arg := args[ast.Ident(a)]
-		switch x := a.(type) {
-		case *ast.BasicLit:
-			out.Append(x)
-		case *ast.IndexExpr:
-			out.Append(&ast.IndexExpr{
-				Name: ast.IdentExpr{
-					Value: ast.Ident(arg),
-				},
-				Value: x.Value,
-			})
-		default:
-			out.Append(arg)
-		}
-	}
-
-	return out
-}
-
 func (e *Evaluator) apply(g lexer.Token, p []float64, qargs [][]q.Qubit) error {
 	in := make([]q.Qubit, 0)
 	for _, q := range qargs {
@@ -405,32 +414,35 @@ func (e *Evaluator) apply(g lexer.Token, p []float64, qargs [][]q.Qubit) error {
 	return nil
 }
 
-func (e *Evaluator) Println(qargs ...ast.Expr) error {
-	if len(e.R.Qubit.Name) == 0 {
-		return nil
-	}
-
-	if len(qargs) == 0 {
-		qargs = make([]ast.Expr, 0)
-		for _, n := range e.R.Qubit.Name {
-			qargs = append(qargs, &ast.IdentExpr{
-				Value: n,
+func assign(c ast.ExprList, args map[string]ast.Expr) ast.ExprList {
+	out := ast.ExprList{}
+	for _, a := range c.List {
+		arg := args[ast.Ident(a)]
+		switch x := a.(type) {
+		case *ast.BasicLit:
+			out.Append(x)
+		case *ast.IndexExpr:
+			out.Append(&ast.IndexExpr{
+				Name: ast.IdentExpr{
+					Value: ast.Ident(arg),
+				},
+				Value: x.Value,
 			})
+		default:
+			out.Append(arg)
 		}
 	}
 
-	index := make([][]int, 0)
-	for _, a := range qargs {
-		qb, ok := e.R.Qubit.Get(a)
-		if !ok {
-			return fmt.Errorf("qubit=%#v not found", a)
-		}
+	return out
+}
 
-		index = append(index, q.Index(qb...))
+func (e *Evaluator) Println() error {
+	if err := e.eval(&ast.PrintStmt{}); err != nil {
+		return fmt.Errorf("eval print: %v", err)
 	}
 
-	for _, s := range e.Q.Raw().State(index...) {
-		fmt.Println(s)
+	if err := e.R.Bit.Println(); err != nil {
+		return fmt.Errorf("bit print: %v", err)
 	}
 
 	return nil

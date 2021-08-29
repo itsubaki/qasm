@@ -40,9 +40,5 @@ func Action(c *cli.Context) error {
 		return fmt.Errorf("print: %v", err)
 	}
 
-	for _, n := range e.R.Bit.Name {
-		fmt.Printf("%v: %v\n", n, e.R.Bit.Value[n])
-	}
-
 	return nil
 }
