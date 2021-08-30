@@ -133,8 +133,8 @@ func (p *Parser) parseStmt() ast.Stmt {
 	case lexer.X, lexer.Y, lexer.Z, lexer.U,
 		lexer.H, lexer.S, lexer.T,
 		lexer.CX, lexer.CZ, lexer.CCX,
-		lexer.SWAP, lexer.QFT, lexer.IQFT,
-		lexer.CMODEXP2:
+		lexer.SWAP, lexer.QFT, lexer.IQFT, lexer.CMODEXP2,
+		lexer.CTRL, lexer.NEGCTRL, lexer.INV, lexer.POW:
 		return p.parseApplyStmt()
 	}
 
