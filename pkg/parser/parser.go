@@ -521,9 +521,9 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 }
 
 func (p *Parser) parseApplyStmt() ast.Stmt {
-	var mod lexer.Token
-	if p.cur.Token == lexer.CTRL || p.cur.Token == lexer.NEGCTRL || p.cur.Token == lexer.INV || p.cur.Token == lexer.POW {
-		mod = p.cur.Token
+	mod := make([]lexer.Token, 0)
+	for p.cur.Token == lexer.CTRL || p.cur.Token == lexer.NEGCTRL || p.cur.Token == lexer.INV || p.cur.Token == lexer.POW {
+		mod = append(mod, p.cur.Token)
 		p.next()
 
 		p.expect(lexer.AT)

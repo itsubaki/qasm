@@ -373,7 +373,7 @@ func TestStmt(t *testing.T) {
 							&ast.ApplyStmt{
 								Kind:     lexer.X,
 								Name:     lexer.Tokens[lexer.X],
-								Modifier: lexer.CTRL,
+								Modifier: []lexer.Token{lexer.CTRL},
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{
@@ -390,6 +390,43 @@ func TestStmt(t *testing.T) {
 				},
 			},
 			"gate CX q0, q1 { ctrl @ x q0, q1; }",
+		},
+		{
+			&ast.DeclStmt{
+				Decl: &ast.GateDecl{
+					Name: "CIQFT",
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{
+								Value: "q0",
+							},
+							&ast.IdentExpr{
+								Value: "q1",
+							},
+						},
+					},
+					Body: &ast.BlockStmt{
+						List: []ast.Stmt{
+							&ast.ApplyStmt{
+								Kind:     lexer.QFT,
+								Name:     lexer.Tokens[lexer.QFT],
+								Modifier: []lexer.Token{lexer.CTRL, lexer.INV},
+								QArgs: ast.ExprList{
+									List: []ast.Expr{
+										&ast.IdentExpr{
+											Value: "q0",
+										},
+										&ast.IdentExpr{
+											Value: "q1",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"gate CIQFT q0, q1 { ctrl @ inv @ qft q0, q1; }",
 		},
 	}
 

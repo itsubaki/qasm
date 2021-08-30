@@ -77,41 +77,59 @@ func (e *Evaluator) eval(s ast.Stmt) error {
 func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 	switch decl := s.Decl.(type) {
 	case *ast.GenConst:
-		if _, ok := e.R.Const[ast.Ident(decl)]; ok {
-			return fmt.Errorf("already exists=%v", decl.Name.Value)
-		}
-
-		switch x := decl.Value.(type) {
-		case *ast.BasicLit:
-			v, err := strconv.ParseFloat(x.Value, 64)
-			if err != nil {
-				return fmt.Errorf("parse float=%v: %v", x.Value, err)
-			}
-
-			e.R.Const[ast.Ident(decl)] = v
-		default:
-			return fmt.Errorf("unsupported expr=%#v", x)
+		if err := e.evalGenConst(decl); err != nil {
+			return fmt.Errorf("eval gen const: %v", err)
 		}
 	case *ast.GenDecl:
-		switch decl.Kind {
-		case lexer.BIT:
-			if _, ok := e.R.Bit.Get(&ast.IdentExpr{Value: decl.Name.Value}); ok {
-				return fmt.Errorf("already exists=%v", decl.Name)
-			}
-			e.R.Bit.Add(ast.Ident(decl), make([]int, decl.Size()))
-		case lexer.QUBIT:
-			if _, ok := e.R.Qubit.Get(&ast.IdentExpr{Value: decl.Name.Value}); ok {
-				return fmt.Errorf("already exists=%v", decl.Name)
-			}
-			qb := e.Q.ZeroWith(decl.Size())
-			e.R.Qubit.Add(ast.Ident(decl), qb)
-		default:
-			return fmt.Errorf("unsupported kind=%v", decl.Kind)
+		if err := e.evalGenDecl(decl); err != nil {
+			return fmt.Errorf("eval gen decl: %v", err)
 		}
 	case *ast.GateDecl, *ast.FuncDecl:
 		e.R.Func[ast.Ident(decl)] = decl
 	default:
 		return fmt.Errorf("unsupported decl=%v", decl)
+	}
+
+	return nil
+}
+
+func (e *Evaluator) evalGenConst(decl *ast.GenConst) error {
+	if _, ok := e.R.Const[ast.Ident(decl)]; ok {
+		return fmt.Errorf("already exists=%v", decl.Name.Value)
+	}
+
+	switch x := decl.Value.(type) {
+	case *ast.BasicLit:
+		v, err := strconv.ParseFloat(x.Value, 64)
+		if err != nil {
+			return fmt.Errorf("parse float=%v: %v", x.Value, err)
+		}
+
+		e.R.Const[ast.Ident(decl)] = v
+	default:
+		return fmt.Errorf("unsupported expr=%#v", x)
+	}
+
+	return nil
+}
+
+func (e *Evaluator) evalGenDecl(decl *ast.GenDecl) error {
+	switch decl.Kind {
+	case lexer.BIT:
+		if _, ok := e.R.Bit.Get(&ast.IdentExpr{Value: decl.Name.Value}); ok {
+			return fmt.Errorf("already exists=%v", decl.Name)
+		}
+
+		e.R.Bit.Add(ast.Ident(decl), make([]int, decl.Size()))
+	case lexer.QUBIT:
+		if _, ok := e.R.Qubit.Get(&ast.IdentExpr{Value: decl.Name.Value}); ok {
+			return fmt.Errorf("already exists=%v", decl.Name)
+		}
+
+		qb := e.Q.ZeroWith(decl.Size())
+		e.R.Qubit.Add(ast.Ident(decl), qb)
+	default:
+		return fmt.Errorf("unsupported kind=%v", decl.Kind)
 	}
 
 	return nil
@@ -148,6 +166,13 @@ func (e *Evaluator) evalExpr(x ast.Expr) ([]int, error) {
 
 func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 	if s.Kind == lexer.IDENT {
+		// TODO: gate expansion
+		// for _, s := range e.expansion(s) {
+		// 	if err := e.evalApplyStmt(&s); err != nil {
+		// 		return fmt.Errorf("eval expanstion=%#v: %v", s, err)
+		// 	}
+		// }
+
 		x := &ast.CallExpr{
 			Name:     s.Name,
 			Modifier: s.Modifier,
@@ -186,8 +211,6 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 		qargs = append(qargs, qb)
 	}
 
-	// TODO
-	// modifier
 	return e.apply(s.Modifier, s.Kind, params, qargs)
 }
 
@@ -271,7 +294,7 @@ func (e *Evaluator) call(x *ast.CallExpr) ([]int, error) {
 
 	switch decl := decl.(type) {
 	case *ast.GateDecl:
-		return []int{}, e.callGate(x, decl)
+		return e.callGate(x, decl)
 	case *ast.FuncDecl:
 		return e.callFunc(x, decl)
 	}
@@ -279,7 +302,7 @@ func (e *Evaluator) call(x *ast.CallExpr) ([]int, error) {
 	return nil, fmt.Errorf("unsupported decl=%#v", decl)
 }
 
-func (e *Evaluator) callGate(x *ast.CallExpr, decl *ast.GateDecl) error {
+func (e *Evaluator) callGate(x *ast.CallExpr, decl *ast.GateDecl) ([]int, error) {
 	params := make(map[string]ast.Expr)
 	for i, p := range decl.Params.List.List {
 		params[ast.Ident(p)] = x.Params.List.List[i]
@@ -306,14 +329,14 @@ func (e *Evaluator) callGate(x *ast.CallExpr, decl *ast.GateDecl) error {
 				// q -> q0, p -> q1
 				QArgs: assign(s.QArgs, qargs),
 			}); err != nil {
-				return fmt.Errorf("eval: %#v", err)
+				return []int{}, fmt.Errorf("eval: %#v", err)
 			}
 		default:
-			return fmt.Errorf("unsupported stmt=%#v", s)
+			return []int{}, fmt.Errorf("unsupported stmt=%#v", s)
 		}
 	}
 
-	return nil
+	return []int{}, nil
 }
 
 func (e *Evaluator) callFunc(x *ast.CallExpr, decl *ast.FuncDecl) ([]int, error) {
@@ -390,28 +413,14 @@ func (e *Evaluator) measure(qargs ...ast.Expr) ([]int, error) {
 	return bit, nil
 }
 
-func (e *Evaluator) apply(m, g lexer.Token, p []float64, qargs [][]q.Qubit) error {
+func (e *Evaluator) apply(mod []lexer.Token, g lexer.Token, p []float64, qargs [][]q.Qubit) error {
 	in := make([]q.Qubit, 0)
 	for _, q := range qargs {
 		in = append(in, q...)
 	}
 
-	u := gate.I()
+	// itsubaki/q
 	switch g {
-	case lexer.U:
-		u = gate.U(p[0], p[1], p[2])
-	case lexer.X:
-		u = gate.X()
-	case lexer.Y:
-		u = gate.Y()
-	case lexer.Z:
-		u = gate.Z()
-	case lexer.H:
-		u = gate.H()
-	case lexer.T:
-		u = gate.T()
-	case lexer.S:
-		u = gate.S()
 	case lexer.CX:
 		for i := range qargs[0] {
 			e.Q.CNOT(qargs[0][i], qargs[1][i])
@@ -439,23 +448,72 @@ func (e *Evaluator) apply(m, g lexer.Token, p []float64, qargs [][]q.Qubit) erro
 	case lexer.CMODEXP2:
 		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
 		return nil
-	default:
-		return fmt.Errorf("gate=%v(%v) not found", g, lexer.Tokens[g])
 	}
 
-	if m == lexer.INV {
+	// single qubit
+	u := gate.I()
+	switch g {
+	case lexer.U:
+		u = gate.U(p[0], p[1], p[2])
+	case lexer.X:
+		u = gate.X()
+	case lexer.Y:
+		u = gate.Y()
+	case lexer.Z:
+		u = gate.Z()
+	case lexer.H:
+		u = gate.H()
+	case lexer.T:
+		u = gate.T()
+	case lexer.S:
+		u = gate.S()
+	default:
+		return fmt.Errorf("gate=%v(%v) not found", lexer.Tokens[g], g)
+	}
+
+	// Inverse U
+	var c int
+	for _, m := range mod {
+		if m == lexer.INV {
+			c++
+		}
+	}
+	if c%2 == 1 {
 		u = u.Dagger()
 	}
 
-	if m == lexer.CTRL {
-		for i := range qargs[0] {
-			e.Q.C(u, qargs[0][i], qargs[1][i])
+	// Controlled-U
+	for _, m := range mod {
+		switch m {
+		case lexer.CTRL:
+			for i := range qargs[0] {
+				e.Q.C(u, qargs[0][i], qargs[1][i])
+			}
+			return nil
+		case lexer.NEGCTRL:
+			for i := range qargs[0] {
+				e.Q.X(qargs[0][i])
+			}
+			for i := range qargs[0] {
+				e.Q.C(u, qargs[0][i], qargs[1][i])
+			}
+			for i := range qargs[0] {
+				e.Q.X(qargs[0][i])
+			}
+			return nil
 		}
-		return nil
 	}
 
+	// U
 	e.Q.Apply(u, in...)
 	return nil
+}
+
+func (e *Evaluator) expansion(s *ast.ApplyStmt) []ast.ApplyStmt {
+	// TODO
+	return []ast.ApplyStmt{
+		*s,
+	}
 }
 
 func assign(c ast.ExprList, args map[string]ast.Expr) ast.ExprList {
