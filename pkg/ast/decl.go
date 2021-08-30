@@ -153,7 +153,7 @@ type FuncDecl struct {
 	Params ParenDecl
 	QArgs  DeclList
 	Body   BlockStmt
-	Result Expr // Type
+	Result Expr
 }
 
 func (d *FuncDecl) declNode() {}

@@ -368,8 +368,8 @@ func TestStmt(t *testing.T) {
 					Body: &ast.BlockStmt{
 						List: []ast.Stmt{
 							&ast.ApplyStmt{
-								Kind: lexer.X,
-								Ctrl: true,
+								Kind:     lexer.X,
+								Modifier: lexer.CTRL,
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{

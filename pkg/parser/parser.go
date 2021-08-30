@@ -208,8 +208,7 @@ func (p *Parser) parseIdentList() ast.ExprList {
 }
 
 func (p *Parser) isBasic(t lexer.Token) bool {
-	if t == lexer.PI || t == lexer.TAU || t == lexer.EULER ||
-		t == lexer.INT || t == lexer.FLOAT || t == lexer.STRING {
+	if t == lexer.PI || t == lexer.TAU || t == lexer.EULER || t == lexer.INT || t == lexer.FLOAT || t == lexer.STRING {
 		return true
 	}
 
@@ -522,19 +521,18 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 }
 
 func (p *Parser) parseApplyStmt() ast.Stmt {
-	ctrl := false
-	if p.cur.Token == lexer.CTRL {
-		ctrl = true
+	var mod lexer.Token
+	if p.cur.Token == lexer.CTRL || p.cur.Token == lexer.NEGCTRL || p.cur.Token == lexer.INV || p.cur.Token == lexer.POW {
+		mod = p.cur.Token
 		p.next()
 
 		p.expect(lexer.AT)
 		p.next()
 	}
 
-	kind := p.cur.Token
 	x := ast.ApplyStmt{
-		Kind: kind,
-		Ctrl: ctrl,
+		Kind:     p.cur.Token,
+		Modifier: mod,
 	}
 
 	p.next()

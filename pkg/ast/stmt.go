@@ -192,10 +192,10 @@ func (s *PrintStmt) String() string {
 }
 
 type ApplyStmt struct {
-	Kind   lexer.Token // lexer.X, lexer.CX, ...
-	Ctrl   bool
-	Params ParenExpr
-	QArgs  ExprList
+	Kind     lexer.Token // lexer.X, lexer.CX, ...
+	Modifier lexer.Token // lexer.CTRL, lexer.INV
+	Params   ParenExpr
+	QArgs    ExprList
 }
 
 func (s *ApplyStmt) stmtNode() {}
@@ -207,8 +207,8 @@ func (s *ApplyStmt) Literal() string {
 func (s *ApplyStmt) String() string {
 	var buf bytes.Buffer
 
-	if s.Ctrl {
-		buf.WriteString(lexer.Tokens[lexer.CTRL])
+	if s.Modifier > 0 {
+		buf.WriteString(lexer.Tokens[s.Modifier])
 		buf.WriteString(" ")
 		buf.WriteString(lexer.Tokens[lexer.AT])
 		buf.WriteString(" ")

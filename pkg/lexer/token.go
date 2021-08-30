@@ -73,6 +73,9 @@ const (
 	DEF      // def
 	RETURN   // return
 	CTRL     // ctrl
+	NEGCTRL  // negctrl
+	INV      // inv
+	POW      // pow
 	keyword_end
 )
 
@@ -140,4 +143,7 @@ var Tokens = [...]string{
 	DEF:      "def",
 	RETURN:   "return",
 	CTRL:     "ctrl",
+	NEGCTRL:  "negctrl",
+	INV:      "inv",
+	POW:      "pow",
 }

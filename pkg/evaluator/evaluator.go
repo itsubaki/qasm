@@ -173,7 +173,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 
 	// TODO
 	// kind: IDENT -> callExpr
-	// ctrl: true  -> e.Q.C()
+	// modifier
 
 	return e.apply(s.Kind, params, qargs)
 }
@@ -284,8 +284,8 @@ func (e *Evaluator) callGate(x *ast.CallExpr, decl *ast.GateDecl) error {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
 			if err := e.eval(&ast.ApplyStmt{
-				Kind: s.Kind,
-				Ctrl: s.Ctrl,
+				Kind:     s.Kind,
+				Modifier: s.Modifier,
 				Params: ast.ParenExpr{
 					List: assign(s.Params.List, params),
 				},
@@ -317,8 +317,8 @@ func (e *Evaluator) callFunc(x *ast.CallExpr, decl *ast.FuncDecl) ([]int, error)
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
 			if err := e.eval(&ast.ApplyStmt{
-				Kind: s.Kind,
-				Ctrl: s.Ctrl,
+				Kind:     s.Kind,
+				Modifier: s.Modifier,
 				Params: ast.ParenExpr{
 					List: assign(s.Params.List, params),
 				},
