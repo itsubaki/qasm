@@ -172,6 +172,7 @@ func TestStmt(t *testing.T) {
 		{
 			&ast.ApplyStmt{
 				Kind: lexer.X,
+				Name: lexer.Tokens[lexer.X],
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
@@ -324,6 +325,7 @@ func TestStmt(t *testing.T) {
 						List: []ast.Stmt{
 							&ast.ApplyStmt{
 								Kind: lexer.H,
+								Name: lexer.Tokens[lexer.H],
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{
@@ -334,6 +336,7 @@ func TestStmt(t *testing.T) {
 							},
 							&ast.ApplyStmt{
 								Kind: lexer.CX,
+								Name: lexer.Tokens[lexer.CX],
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{
@@ -369,6 +372,7 @@ func TestStmt(t *testing.T) {
 						List: []ast.Stmt{
 							&ast.ApplyStmt{
 								Kind:     lexer.X,
+								Name:     lexer.Tokens[lexer.X],
 								Modifier: lexer.CTRL,
 								QArgs: ast.ExprList{
 									List: []ast.Expr{

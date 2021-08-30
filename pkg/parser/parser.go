@@ -532,6 +532,7 @@ func (p *Parser) parseApplyStmt() ast.Stmt {
 
 	x := ast.ApplyStmt{
 		Kind:     p.cur.Token,
+		Name:     p.cur.Literal,
 		Modifier: mod,
 	}
 

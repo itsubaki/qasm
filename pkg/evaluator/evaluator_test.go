@@ -62,6 +62,7 @@ func ExampleEvaluator() {
 			},
 			&ast.ApplyStmt{
 				Kind: lexer.X,
+				Name: lexer.Tokens[lexer.X],
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IndexExpr{
@@ -75,6 +76,7 @@ func ExampleEvaluator() {
 			},
 			&ast.ApplyStmt{
 				Kind: lexer.CX,
+				Name: lexer.Tokens[lexer.CX],
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IndexExpr{

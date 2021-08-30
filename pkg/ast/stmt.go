@@ -194,6 +194,7 @@ func (s *PrintStmt) String() string {
 type ApplyStmt struct {
 	Kind     lexer.Token // lexer.X, lexer.CX, ...
 	Modifier lexer.Token // lexer.CTRL, lexer.INV
+	Name     string
 	Params   ParenExpr
 	QArgs    ExprList
 }
@@ -214,7 +215,7 @@ func (s *ApplyStmt) String() string {
 		buf.WriteString(" ")
 	}
 
-	buf.WriteString(s.Literal())
+	buf.WriteString(s.Name)
 	if len(s.Params.List.List) > 0 {
 		buf.WriteString(s.Params.String())
 	}

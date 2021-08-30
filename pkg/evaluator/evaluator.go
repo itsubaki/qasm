@@ -118,7 +118,7 @@ func (e *Evaluator) evalDeclStmt(s *ast.DeclStmt) error {
 
 func (e *Evaluator) evalExprStmt(s *ast.ExprStmt) error {
 	if _, err := e.evalExpr(s.X); err != nil {
-		return fmt.Errorf("eval expr=%#v", s.X)
+		return fmt.Errorf("eval expr=%v", s.X)
 	}
 
 	return nil
@@ -146,6 +146,19 @@ func (e *Evaluator) evalExpr(x ast.Expr) ([]int, error) {
 }
 
 func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
+	if s.Kind == lexer.IDENT {
+		x := &ast.CallExpr{
+			Name:   s.Name,
+			Params: s.Params,
+			QArgs:  s.QArgs,
+		}
+		if _, err := e.call(x); err != nil {
+			return fmt.Errorf("call=%s: %v", x, err)
+		}
+
+		return nil
+	}
+
 	params := make([]float64, 0)
 	for _, p := range s.Params.List.List {
 		if a, ok := e.R.Const[ast.Ident(p)]; ok {
@@ -172,9 +185,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 	}
 
 	// TODO
-	// kind: IDENT -> callExpr
 	// modifier
-
 	return e.apply(s.Kind, params, qargs)
 }
 
@@ -285,6 +296,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, decl *ast.GateDecl) error {
 		case *ast.ApplyStmt:
 			if err := e.eval(&ast.ApplyStmt{
 				Kind:     s.Kind,
+				Name:     s.Name,
 				Modifier: s.Modifier,
 				Params: ast.ParenExpr{
 					List: assign(s.Params.List, params),
@@ -318,6 +330,7 @@ func (e *Evaluator) callFunc(x *ast.CallExpr, decl *ast.FuncDecl) ([]int, error)
 		case *ast.ApplyStmt:
 			if err := e.eval(&ast.ApplyStmt{
 				Kind:     s.Kind,
+				Name:     s.Name,
 				Modifier: s.Modifier,
 				Params: ast.ParenExpr{
 					List: assign(s.Params.List, params),

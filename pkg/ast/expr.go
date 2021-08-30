@@ -82,6 +82,27 @@ func (e *IndexExpr) Int() int {
 	return v
 }
 
+type ArrayExpr struct {
+	Type IndexExpr
+	Name string
+}
+
+func (e *ArrayExpr) exprNode() {}
+
+func (e *ArrayExpr) Literal() string {
+	return e.Type.Literal()
+}
+
+func (e *ArrayExpr) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(e.Type.String())
+	buf.WriteString(" ")
+	buf.WriteString(e.Name)
+
+	return buf.String()
+}
+
 type BasicLit struct {
 	Kind  lexer.Token
 	Value string
@@ -104,27 +125,6 @@ func (e *BasicLit) Float64() float64 {
 	}
 
 	return v
-}
-
-type ArrayExpr struct {
-	Type IndexExpr
-	Name string
-}
-
-func (e *ArrayExpr) exprNode() {}
-
-func (e *ArrayExpr) Literal() string {
-	return e.Type.Literal()
-}
-
-func (e *ArrayExpr) String() string {
-	var buf bytes.Buffer
-
-	buf.WriteString(e.Type.String())
-	buf.WriteString(" ")
-	buf.WriteString(e.Name)
-
-	return buf.String()
 }
 
 type MeasureExpr struct {
