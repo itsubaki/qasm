@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/itsubaki/q"
+	"github.com/itsubaki/q/pkg/quantum/gate"
 	"github.com/itsubaki/qasm/pkg/ast"
 	"github.com/itsubaki/qasm/pkg/evaluator/register"
 	"github.com/itsubaki/qasm/pkg/lexer"
@@ -148,9 +149,10 @@ func (e *Evaluator) evalExpr(x ast.Expr) ([]int, error) {
 func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 	if s.Kind == lexer.IDENT {
 		x := &ast.CallExpr{
-			Name:   s.Name,
-			Params: s.Params,
-			QArgs:  s.QArgs,
+			Name:     s.Name,
+			Modifier: s.Modifier,
+			Params:   s.Params,
+			QArgs:    s.QArgs,
 		}
 		if _, err := e.call(x); err != nil {
 			return fmt.Errorf("call=%s: %v", x, err)
@@ -186,7 +188,7 @@ func (e *Evaluator) evalApplyStmt(s *ast.ApplyStmt) error {
 
 	// TODO
 	// modifier
-	return e.apply(s.Kind, params, qargs)
+	return e.apply(s.Modifier, s.Kind, params, qargs)
 }
 
 func (e *Evaluator) evalAssignStmt(s *ast.AssignStmt) error {
@@ -388,52 +390,71 @@ func (e *Evaluator) measure(qargs ...ast.Expr) ([]int, error) {
 	return bit, nil
 }
 
-func (e *Evaluator) apply(g lexer.Token, p []float64, qargs [][]q.Qubit) error {
+func (e *Evaluator) apply(m, g lexer.Token, p []float64, qargs [][]q.Qubit) error {
 	in := make([]q.Qubit, 0)
 	for _, q := range qargs {
 		in = append(in, q...)
 	}
 
+	u := gate.I()
 	switch g {
 	case lexer.U:
-		e.Q.U(p[0], p[1], p[2], in...)
+		u = gate.U(p[0], p[1], p[2])
 	case lexer.X:
-		e.Q.X(in...)
+		u = gate.X()
 	case lexer.Y:
-		e.Q.Y(in...)
+		u = gate.Y()
 	case lexer.Z:
-		e.Q.Z(in...)
+		u = gate.Z()
 	case lexer.H:
-		e.Q.H(in...)
+		u = gate.H()
 	case lexer.T:
-		e.Q.T(in...)
+		u = gate.T()
 	case lexer.S:
-		e.Q.S(in...)
+		u = gate.S()
 	case lexer.CX:
 		for i := range qargs[0] {
 			e.Q.CNOT(qargs[0][i], qargs[1][i])
 		}
+		return nil
 	case lexer.CZ:
 		for i := range qargs[0] {
 			e.Q.CZ(qargs[0][i], qargs[1][i])
 		}
+		return nil
 	case lexer.CCX:
 		for i := range qargs[0] {
 			e.Q.CCNOT(qargs[0][i], qargs[1][i], qargs[2][i])
 		}
-	// itsubaki/q
+		return nil
 	case lexer.SWAP:
 		e.Q.Swap(in...)
+		return nil
 	case lexer.QFT:
 		e.Q.QFT(in...)
+		return nil
 	case lexer.IQFT:
 		e.Q.InvQFT(in...)
+		return nil
 	case lexer.CMODEXP2:
 		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
+		return nil
 	default:
 		return fmt.Errorf("gate=%v(%v) not found", g, lexer.Tokens[g])
 	}
 
+	if m == lexer.INV {
+		u = u.Dagger()
+	}
+
+	if m == lexer.CTRL {
+		for i := range qargs[0] {
+			e.Q.C(u, qargs[0][i], qargs[1][i])
+		}
+		return nil
+	}
+
+	e.Q.Apply(u, in...)
 	return nil
 }
 

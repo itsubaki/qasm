@@ -168,9 +168,10 @@ func (x *MeasureExpr) String() string {
 }
 
 type CallExpr struct {
-	Name   string
-	Params ParenExpr
-	QArgs  ExprList
+	Name     string
+	Modifier lexer.Token // lexer.CTRL, lexer.INV
+	Params   ParenExpr
+	QArgs    ExprList
 }
 
 func (x *CallExpr) exprNode() {}
@@ -181,6 +182,13 @@ func (x *CallExpr) Literal() string {
 
 func (x *CallExpr) String() string {
 	var buf bytes.Buffer
+
+	if x.Modifier > 0 {
+		buf.WriteString(lexer.Tokens[x.Modifier])
+		buf.WriteString(" ")
+		buf.WriteString(lexer.Tokens[lexer.AT])
+		buf.WriteString(" ")
+	}
 
 	buf.WriteString(x.Name)
 	if len(x.Params.List.List) > 0 {
