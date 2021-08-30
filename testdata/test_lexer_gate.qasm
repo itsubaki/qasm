@@ -5,3 +5,4 @@ gate CX q, p { ctrl @ X q, p; }
 qubit[2] q;
 
 X2 q[0];
+CX q[0], q[1];

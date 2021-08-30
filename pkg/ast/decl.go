@@ -7,6 +7,47 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
+type DeclList struct {
+	List []Decl
+}
+
+func (l *DeclList) Append(d Decl) {
+	l.List = append(l.List, d)
+}
+
+func (l *DeclList) String() string {
+	list := make([]string, 0)
+	for _, d := range l.List {
+		list = append(list, d.String())
+	}
+
+	return strings.Join(list, ", ")
+}
+
+type ParenDecl struct {
+	List DeclList
+}
+
+func (d *ParenDecl) declNode() {}
+
+func (d *ParenDecl) Literal() string {
+	return lexer.Tokens[lexer.LPAREN]
+}
+
+func (d *ParenDecl) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(lexer.Tokens[lexer.LPAREN])
+	buf.WriteString(d.List.String())
+	buf.WriteString(lexer.Tokens[lexer.RPAREN])
+
+	return buf.String()
+}
+
+func (d *ParenDecl) Append(decl Decl) {
+	d.List.Append(decl)
+}
+
 type BadDecl struct{}
 
 func (d *BadDecl) declNode() {}
@@ -105,47 +146,6 @@ func (d *GateDecl) String() string {
 	buf.WriteString(d.Body.String())
 
 	return buf.String()
-}
-
-type DeclList struct {
-	List []Decl
-}
-
-func (l *DeclList) Append(d Decl) {
-	l.List = append(l.List, d)
-}
-
-func (l *DeclList) String() string {
-	list := make([]string, 0)
-	for _, d := range l.List {
-		list = append(list, d.String())
-	}
-
-	return strings.Join(list, ", ")
-}
-
-type ParenDecl struct {
-	List DeclList
-}
-
-func (d *ParenDecl) declNode() {}
-
-func (d *ParenDecl) Literal() string {
-	return lexer.Tokens[lexer.LPAREN]
-}
-
-func (d *ParenDecl) String() string {
-	var buf bytes.Buffer
-
-	buf.WriteString(lexer.Tokens[lexer.LPAREN])
-	buf.WriteString(d.List.String())
-	buf.WriteString(lexer.Tokens[lexer.RPAREN])
-
-	return buf.String()
-}
-
-func (l *ParenDecl) Append(d Decl) {
-	l.List.Append(d)
 }
 
 type FuncDecl struct {

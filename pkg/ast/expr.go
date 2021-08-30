@@ -8,18 +8,6 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-type BadExpr struct{}
-
-func (e *BadExpr) exprNode() {}
-
-func (e *BadExpr) Literal() string {
-	return ""
-}
-
-func (e *BadExpr) String() string {
-	return ""
-}
-
 type ExprList struct {
 	List []Expr
 }
@@ -37,18 +25,50 @@ func (l *ExprList) String() string {
 	return strings.Join(list, ", ")
 }
 
+type ParenExpr struct {
+	List ExprList
+}
+
+func (x *ParenExpr) exprNode() {}
+
+func (x *ParenExpr) Literal() string {
+	return lexer.Tokens[lexer.LPAREN]
+}
+
+func (x *ParenExpr) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(lexer.Tokens[lexer.LPAREN])
+	buf.WriteString(x.List.String())
+	buf.WriteString(lexer.Tokens[lexer.RPAREN])
+
+	return buf.String()
+}
+
+type BadExpr struct{}
+
+func (x *BadExpr) exprNode() {}
+
+func (x *BadExpr) Literal() string {
+	return ""
+}
+
+func (x *BadExpr) String() string {
+	return ""
+}
+
 type IdentExpr struct {
 	Value string
 }
 
-func (e *IdentExpr) exprNode() {}
+func (x *IdentExpr) exprNode() {}
 
-func (e *IdentExpr) Literal() string {
+func (x *IdentExpr) Literal() string {
 	return lexer.Tokens[lexer.IDENT]
 }
 
-func (e *IdentExpr) String() string {
-	return e.Value
+func (x *IdentExpr) String() string {
+	return x.Value
 }
 
 type IndexExpr struct {
@@ -56,25 +76,25 @@ type IndexExpr struct {
 	Value string
 }
 
-func (e *IndexExpr) exprNode() {}
+func (x *IndexExpr) exprNode() {}
 
-func (e *IndexExpr) Literal() string {
+func (x *IndexExpr) Literal() string {
 	return lexer.Tokens[lexer.IDENT]
 }
 
-func (e *IndexExpr) String() string {
+func (x *IndexExpr) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(e.Name.Value)
+	buf.WriteString(x.Name.Value)
 	buf.WriteString(lexer.Tokens[lexer.LBRACKET])
-	buf.WriteString(e.Value)
+	buf.WriteString(x.Value)
 	buf.WriteString(lexer.Tokens[lexer.RBRACKET])
 
 	return buf.String()
 }
 
-func (e *IndexExpr) Int() int {
-	v, err := strconv.Atoi(e.Value)
+func (x *IndexExpr) Int() int {
+	v, err := strconv.Atoi(x.Value)
 	if err != nil {
 		panic(err)
 	}
@@ -87,18 +107,18 @@ type ArrayExpr struct {
 	Name string
 }
 
-func (e *ArrayExpr) exprNode() {}
+func (x *ArrayExpr) exprNode() {}
 
-func (e *ArrayExpr) Literal() string {
-	return e.Type.Literal()
+func (x *ArrayExpr) Literal() string {
+	return x.Type.Literal()
 }
 
-func (e *ArrayExpr) String() string {
+func (x *ArrayExpr) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(e.Type.String())
+	buf.WriteString(x.Type.String())
 	buf.WriteString(" ")
-	buf.WriteString(e.Name)
+	buf.WriteString(x.Name)
 
 	return buf.String()
 }
@@ -108,18 +128,18 @@ type BasicLit struct {
 	Value string
 }
 
-func (e *BasicLit) exprNode() {}
+func (x *BasicLit) exprNode() {}
 
-func (e *BasicLit) Literal() string {
-	return lexer.Tokens[e.Kind]
+func (x *BasicLit) Literal() string {
+	return lexer.Tokens[x.Kind]
 }
 
-func (e *BasicLit) String() string {
-	return e.Value
+func (x *BasicLit) String() string {
+	return x.Value
 }
 
-func (e *BasicLit) Float64() float64 {
-	v, err := strconv.ParseFloat(e.Value, 64)
+func (x *BasicLit) Float64() float64 {
+	v, err := strconv.ParseFloat(x.Value, 64)
 	if err != nil {
 		panic(err)
 	}
@@ -131,18 +151,18 @@ type MeasureExpr struct {
 	QArgs ExprList
 }
 
-func (s *MeasureExpr) exprNode() {}
+func (x *MeasureExpr) exprNode() {}
 
-func (s *MeasureExpr) Literal() string {
+func (x *MeasureExpr) Literal() string {
 	return lexer.Tokens[lexer.MEASURE]
 }
 
-func (s *MeasureExpr) String() string {
+func (x *MeasureExpr) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(s.Literal())
+	buf.WriteString(x.Literal())
 	buf.WriteString(" ")
-	buf.WriteString(s.QArgs.String())
+	buf.WriteString(x.QArgs.String())
 
 	return buf.String()
 }
@@ -153,42 +173,22 @@ type CallExpr struct {
 	QArgs  ExprList
 }
 
-func (e *CallExpr) exprNode() {}
+func (x *CallExpr) exprNode() {}
 
-func (e *CallExpr) Literal() string {
+func (x *CallExpr) Literal() string {
 	return lexer.Tokens[lexer.GATE]
 }
 
-func (e *CallExpr) String() string {
+func (x *CallExpr) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(e.Name)
-	if len(e.Params.List.List) > 0 {
-		buf.WriteString(e.Params.String())
+	buf.WriteString(x.Name)
+	if len(x.Params.List.List) > 0 {
+		buf.WriteString(x.Params.String())
 	}
 
 	buf.WriteString(" ")
-	buf.WriteString(e.QArgs.String())
-
-	return buf.String()
-}
-
-type ParenExpr struct {
-	List ExprList
-}
-
-func (e *ParenExpr) exprNode() {}
-
-func (e *ParenExpr) Literal() string {
-	return lexer.Tokens[lexer.LPAREN]
-}
-
-func (e *ParenExpr) String() string {
-	var buf bytes.Buffer
-
-	buf.WriteString(lexer.Tokens[lexer.LPAREN])
-	buf.WriteString(e.List.String())
-	buf.WriteString(lexer.Tokens[lexer.RPAREN])
+	buf.WriteString(x.QArgs.String())
 
 	return buf.String()
 }
