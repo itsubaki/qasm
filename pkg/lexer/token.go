@@ -16,13 +16,6 @@ const (
 	FLOAT  // 1.23
 	literal_end
 
-	// Const
-	const_begin
-	PI    // pi
-	TAU   // tau
-	EULER // euler
-	const_end
-
 	// Operators
 	operator_begin
 	LBRACKET  // '['
@@ -76,6 +69,9 @@ const (
 	NEGCTRL  // negctrl
 	INV      // inv
 	POW      // pow
+	PI       // pi
+	TAU      // tau
+	EULER    // euler
 	keyword_end
 )
 
@@ -90,11 +86,6 @@ var Tokens = [...]string{
 	STRING: "STRING",
 	INT:    "INT",
 	FLOAT:  "FLOAT",
-
-	// const
-	PI:    "pi",
-	TAU:   "tau",
-	EULER: "euler",
 
 	// Operators
 	LBRACKET:  "[",
@@ -146,4 +137,7 @@ var Tokens = [...]string{
 	NEGCTRL:  "negctrl",
 	INV:      "inv",
 	POW:      "pow",
+	PI:       "pi",
+	TAU:      "tau",
+	EULER:    "euler",
 }
