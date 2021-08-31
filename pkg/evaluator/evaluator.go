@@ -322,6 +322,14 @@ func (e *Evaluator) callGate(x *ast.CallExpr, decl *ast.GateDecl) ([]int, error)
 				},
 				QArgs: assign(s.QArgs, qargs), // q -> q0, p -> q1
 			}
+
+			for a.Kind == lexer.IDENT {
+				decl := e.R.Func[a.Name].(*ast.GateDecl)
+				a.Kind = decl.Body.List[0].(*ast.ApplyStmt).Kind
+				a.Name = decl.Body.List[0].(*ast.ApplyStmt).Name
+				a.Params = decl.Body.List[0].(*ast.ApplyStmt).Params
+			}
+
 			if err := e.eval(a); err != nil {
 				return []int{}, fmt.Errorf("apply(%v): %v", a, err)
 			}

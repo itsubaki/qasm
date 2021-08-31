@@ -9,24 +9,24 @@ repl:
 lex:
 	go run main.go lex -f testdata/bell.qasm
 	go run main.go lex -f testdata/bell_gate.qasm
-	go run main.go lex -f testdata/teleportation.qasm
 	go run main.go lex -f testdata/shor.qasm
 	go run main.go lex -f testdata/shor_def.qasm
+	go run main.go lex -f testdata/gate.qasm
 
 parse:
 	go run main.go parse -f testdata/bell.qasm
 	go run main.go parse -f testdata/bell_gate.qasm
-	go run main.go parse -f testdata/teleportation.qasm
 	go run main.go parse -f testdata/shor.qasm
 	go run main.go parse -f testdata/shor_def.qasm
+	go run main.go parse -f testdata/gate.qasm
 
 .PHONY: testdata
 testdata:
 	go run main.go -f testdata/bell.qasm
 	go run main.go -f testdata/bell_gate.qasm
-	go run main.go -f testdata/teleportation.qasm
 	go run main.go -f testdata/shor.qasm
 	go run main.go -f testdata/shor_def.qasm
+	go run main.go -f testdata/gate.qasm
 
 install:
 	-rm ${GOPATH}/bin/qasm

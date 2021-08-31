@@ -54,7 +54,7 @@ func TestLexer(t *testing.T) {
 				{lexer.LBRACE, "{"},
 				{lexer.CTRL, "ctrl"},
 				{lexer.AT, "@"},
-				{lexer.IDENT, "X"},
+				{lexer.IDENT, "X2"},
 				{lexer.IDENT, "q"},
 				{lexer.COMMA, ","},
 				{lexer.IDENT, "p"},
