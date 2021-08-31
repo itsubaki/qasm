@@ -167,9 +167,31 @@ func (x *MeasureExpr) String() string {
 	return buf.String()
 }
 
+type Modifiler struct {
+	Kind  lexer.Token // lexer.CTRL, lexer.NEGCTRL, lexer.INV
+	Index ParenExpr
+}
+
+func (x *Modifiler) exprNode() {}
+
+func (x *Modifiler) Literal() string {
+	return lexer.Tokens[x.Kind]
+}
+
+func (x *Modifiler) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(x.Literal())
+	if len(x.Index.List.List) > 0 {
+		buf.WriteString(x.Index.String())
+	}
+
+	return buf.String()
+}
+
 type CallExpr struct {
 	Name     string
-	Modifier []lexer.Token // lexer.CTRL, lexer.NEGCTRL, lexer.INV
+	Modifier []Modifiler // lexer.CTRL, lexer.NEGCTRL, lexer.INV
 	Params   ParenExpr
 	QArgs    ExprList
 }
@@ -184,7 +206,7 @@ func (x *CallExpr) String() string {
 	var buf bytes.Buffer
 
 	for _, m := range x.Modifier {
-		buf.WriteString(lexer.Tokens[m])
+		buf.WriteString(m.String())
 		buf.WriteString(" ")
 		buf.WriteString(lexer.Tokens[lexer.AT])
 		buf.WriteString(" ")

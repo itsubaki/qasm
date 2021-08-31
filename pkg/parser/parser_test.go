@@ -117,6 +117,7 @@ func TestParseStmt(t *testing.T) {
 		{"gate bell q0, q1 { h q0; cx q0, q1; }"},
 		{"gate shor(a, N) r0, r1 { h r0; cmodexp2(a, N) r0, r1; iqft r0; }"},
 		{"gate CX q, p { ctrl @ x q, p; }"},
+		{"gate CX q, p { ctrl(0) @ x q, p; }"},
 		{"gate CtrlInvX q, p { ctrl @ inv @ x q, p; }"},
 		{"ctrl @ x q0, q1;"},
 		{"ctrl @ inv @ x q0, q1;"},

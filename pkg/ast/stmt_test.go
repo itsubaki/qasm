@@ -371,9 +371,13 @@ func TestStmt(t *testing.T) {
 					Body: &ast.BlockStmt{
 						List: []ast.Stmt{
 							&ast.ApplyStmt{
-								Kind:     lexer.X,
-								Name:     lexer.Tokens[lexer.X],
-								Modifier: []lexer.Token{lexer.CTRL},
+								Kind: lexer.X,
+								Name: lexer.Tokens[lexer.X],
+								Modifier: []ast.Modifiler{
+									{
+										Kind: lexer.CTRL,
+									},
+								},
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{
@@ -394,6 +398,57 @@ func TestStmt(t *testing.T) {
 		{
 			&ast.DeclStmt{
 				Decl: &ast.GateDecl{
+					Name: "CX",
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{
+								Value: "q0",
+							},
+							&ast.IdentExpr{
+								Value: "q1",
+							},
+						},
+					},
+					Body: &ast.BlockStmt{
+						List: []ast.Stmt{
+							&ast.ApplyStmt{
+								Kind: lexer.X,
+								Name: lexer.Tokens[lexer.X],
+								Modifier: []ast.Modifiler{
+									{
+										Kind: lexer.CTRL,
+										Index: ast.ParenExpr{
+											List: ast.ExprList{
+												List: []ast.Expr{
+													&ast.BasicLit{
+														Kind:  lexer.INT,
+														Value: "0",
+													},
+												},
+											},
+										},
+									},
+								},
+								QArgs: ast.ExprList{
+									List: []ast.Expr{
+										&ast.IdentExpr{
+											Value: "q0",
+										},
+										&ast.IdentExpr{
+											Value: "q1",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"gate CX q0, q1 { ctrl(0) @ x q0, q1; }",
+		},
+		{
+			&ast.DeclStmt{
+				Decl: &ast.GateDecl{
 					Name: "CIQFT",
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
@@ -408,9 +463,16 @@ func TestStmt(t *testing.T) {
 					Body: &ast.BlockStmt{
 						List: []ast.Stmt{
 							&ast.ApplyStmt{
-								Kind:     lexer.QFT,
-								Name:     lexer.Tokens[lexer.QFT],
-								Modifier: []lexer.Token{lexer.CTRL, lexer.INV},
+								Kind: lexer.QFT,
+								Name: lexer.Tokens[lexer.QFT],
+								Modifier: []ast.Modifiler{
+									{
+										Kind: lexer.CTRL,
+									},
+									{
+										Kind: lexer.INV,
+									},
+								},
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{

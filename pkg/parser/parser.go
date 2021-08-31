@@ -68,7 +68,7 @@ func (p *Parser) expect(t lexer.Token) {
 		return
 	}
 
-	p.error(fmt.Errorf("got=%#v, want={Tokekn:%v, Literal: %#v}", p.cur, t, lexer.Tokens[t]))
+	p.error(fmt.Errorf("got={Token:%v, Literal: %v}, want={Token:%v, Literal: %v}", p.cur.Token, p.cur.Literal, t, lexer.Tokens[t]))
 }
 
 func (p *Parser) expectSemi() {
@@ -521,10 +521,33 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 }
 
 func (p *Parser) parseApplyStmt() ast.Stmt {
-	mod := make([]lexer.Token, 0)
+	mod := make([]ast.Modifiler, 0)
 	for p.cur.Token == lexer.CTRL || p.cur.Token == lexer.NEGCTRL || p.cur.Token == lexer.INV || p.cur.Token == lexer.POW {
-		mod = append(mod, p.cur.Token)
+		m := ast.Modifiler{
+			Kind: p.cur.Token,
+		}
+
 		p.next()
+		if p.cur.Token == lexer.LPAREN {
+			v := p.next()
+			p.expect(lexer.INT)
+
+			m.Index = ast.ParenExpr{
+				List: ast.ExprList{
+					List: []ast.Expr{
+						&ast.BasicLit{
+							Kind:  v.Token,
+							Value: v.Literal,
+						},
+					},
+				},
+			}
+
+			p.next()
+			p.expect(lexer.RPAREN)
+			p.next()
+		}
+		mod = append(mod, m)
 
 		p.expect(lexer.AT)
 		p.next()

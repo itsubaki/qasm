@@ -192,8 +192,8 @@ func (s *PrintStmt) String() string {
 }
 
 type ApplyStmt struct {
-	Kind     lexer.Token   // lexer.X, lexer.CX, ...
-	Modifier []lexer.Token // lexer.CTRL, lexer.NEGCTRL, lexer.INV
+	Kind     lexer.Token // lexer.X, lexer.CX, ...
+	Modifier []Modifiler
 	Name     string
 	Params   ParenExpr
 	QArgs    ExprList
@@ -209,7 +209,7 @@ func (s *ApplyStmt) String() string {
 	var buf bytes.Buffer
 
 	for _, m := range s.Modifier {
-		buf.WriteString(lexer.Tokens[m])
+		buf.WriteString(m.String())
 		buf.WriteString(" ")
 		buf.WriteString(lexer.Tokens[lexer.AT])
 		buf.WriteString(" ")
