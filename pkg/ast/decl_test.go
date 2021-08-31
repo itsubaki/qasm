@@ -91,7 +91,7 @@ func TestDecl(t *testing.T) {
 						},
 					},
 				},
-				Body: &ast.BlockStmt{
+				Body: ast.BlockStmt{
 					List: []ast.Stmt{
 						&ast.ApplyStmt{
 							Kind: lexer.H,

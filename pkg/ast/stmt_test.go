@@ -321,7 +321,7 @@ func TestStmt(t *testing.T) {
 							},
 						},
 					},
-					Body: &ast.BlockStmt{
+					Body: ast.BlockStmt{
 						List: []ast.Stmt{
 							&ast.ApplyStmt{
 								Kind: lexer.H,
@@ -368,7 +368,7 @@ func TestStmt(t *testing.T) {
 							},
 						},
 					},
-					Body: &ast.BlockStmt{
+					Body: ast.BlockStmt{
 						List: []ast.Stmt{
 							&ast.ApplyStmt{
 								Kind: lexer.X,
@@ -409,7 +409,7 @@ func TestStmt(t *testing.T) {
 							},
 						},
 					},
-					Body: &ast.BlockStmt{
+					Body: ast.BlockStmt{
 						List: []ast.Stmt{
 							&ast.ApplyStmt{
 								Kind: lexer.X,
@@ -460,7 +460,7 @@ func TestStmt(t *testing.T) {
 							},
 						},
 					},
-					Body: &ast.BlockStmt{
+					Body: ast.BlockStmt{
 						List: []ast.Stmt{
 							&ast.ApplyStmt{
 								Kind: lexer.QFT,

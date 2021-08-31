@@ -335,7 +335,7 @@ func (p *Parser) parseGate() ast.Decl {
 
 	decl := ast.GateDecl{
 		Name: ident.Literal,
-		Body: &ast.BlockStmt{},
+		Body: ast.BlockStmt{},
 	}
 
 	p.next()

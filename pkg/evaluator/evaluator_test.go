@@ -221,7 +221,7 @@ func ExampleEvaluator_call() {
 							},
 						},
 					},
-					Body: &ast.BlockStmt{
+					Body: ast.BlockStmt{
 						List: []ast.Stmt{
 							&ast.ApplyStmt{
 								Kind: lexer.H,

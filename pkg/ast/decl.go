@@ -120,7 +120,7 @@ type GateDecl struct {
 	Name   string
 	Params ParenExpr
 	QArgs  ExprList
-	Body   *BlockStmt
+	Body   BlockStmt
 }
 
 func (d *GateDecl) declNode() {}
