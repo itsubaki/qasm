@@ -36,7 +36,7 @@ $ qasm repl
 >> OPENQASM 3.0;
 >> include "itsubaki/q.qasm";
 >> 
->> gate X q { U(pi, 0.0, pi) q; }
+>> gate X q { U(pi, 0, pi) q; }
 >> gate CX q, p { ctrl @ X q, p; }                             
 >> 
 >> qubit[2] q;
