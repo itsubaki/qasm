@@ -187,6 +187,21 @@ func (e *Evaluator) evalReset(s *ast.ResetStmt, env *object.Environment) error {
 }
 
 func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
+	if s.Kind == lexer.IDENT {
+		x := &ast.CallExpr{
+			Name:     s.Name,
+			Modifier: s.Modifier,
+			Params:   s.Params,
+			QArgs:    s.QArgs,
+		}
+
+		if _, err := e.eval(x, env); err != nil {
+			return fmt.Errorf("eval(%v): %v", x, err)
+		}
+
+		return nil
+	}
+
 	obj := make([]object.Object, 0)
 	for _, p := range s.Params.List.List {
 		if a, ok := env.Const[ast.Ident(p)]; ok {
@@ -227,7 +242,7 @@ func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
 	return e.apply(s.Modifier, s.Kind, p, q)
 }
 
-func (e *Evaluator) apply(mod []ast.Modifiler, g lexer.Token, p []float64, qargs [][]q.Qubit) error {
+func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, p []float64, qargs [][]q.Qubit) error {
 	in := make([]q.Qubit, 0)
 	for _, q := range qargs {
 		in = append(in, q...)
@@ -342,13 +357,14 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 }
 
 func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) (object.Object, error) {
-	env := e.extend(
+	env := e.extendGateEnv(
 		d.Params.List.List,
 		d.QArgs.List,
 		x.Params.List.List,
 		x.QArgs.List,
 		outer,
 	)
+	//	fmt.Printf("gate=%v, body=%v\n", d.Name, d.Body)
 
 	if _, err := e.eval(&d.Body, env); err != nil {
 		return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
@@ -357,24 +373,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 	return nil, nil
 }
 
-func (e *Evaluator) callFunc(x *ast.CallExpr, d *ast.FuncDecl, outer *object.Environment) (object.Object, error) {
-	env := e.extendFuncEnv(
-		d.Params.List.List,
-		d.QArgs.List,
-		x.Params.List.List,
-		x.QArgs.List,
-		outer,
-	)
-
-	v, err := e.eval(&d.Body, env)
-	if err != nil {
-		return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
-	}
-
-	return v.(*object.ReturnValue).Value, nil
-}
-
-func (e *Evaluator) extend(p, q, pargs, qargs []ast.Expr, outer *object.Environment) *object.Environment {
+func (e *Evaluator) extendGateEnv(p, q []ast.Expr, pargs, qargs []ast.Expr, outer *object.Environment) *object.Environment {
 	env := object.NewEnclosedEnvironment(outer)
 
 	for i := range p {
@@ -395,7 +394,26 @@ func (e *Evaluator) extend(p, q, pargs, qargs []ast.Expr, outer *object.Environm
 		env.Qubit.Add(q[i], v)
 	}
 
+	env.Func = outer.Func
+
 	return env
+}
+
+func (e *Evaluator) callFunc(x *ast.CallExpr, d *ast.FuncDecl, outer *object.Environment) (object.Object, error) {
+	env := e.extendFuncEnv(
+		d.Params.List.List,
+		d.QArgs.List,
+		x.Params.List.List,
+		x.QArgs.List,
+		outer,
+	)
+
+	v, err := e.eval(&d.Body, env)
+	if err != nil {
+		return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
+	}
+
+	return v.(*object.ReturnValue).Value, nil
 }
 
 func (e *Evaluator) extendFuncEnv(p, q []ast.Decl, pargs, qargs []ast.Expr, outer *object.Environment) *object.Environment {
@@ -418,6 +436,8 @@ func (e *Evaluator) extendFuncEnv(p, q []ast.Decl, pargs, qargs []ast.Expr, oute
 
 		env.Qubit.Add(q[i], v)
 	}
+
+	env.Func = outer.Func
 
 	return env
 }

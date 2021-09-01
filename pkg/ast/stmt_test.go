@@ -373,7 +373,7 @@ func TestStmt(t *testing.T) {
 							&ast.ApplyStmt{
 								Kind: lexer.X,
 								Name: lexer.Tokens[lexer.X],
-								Modifier: []ast.Modifiler{
+								Modifier: []ast.Modifier{
 									{
 										Kind: lexer.CTRL,
 									},
@@ -414,7 +414,7 @@ func TestStmt(t *testing.T) {
 							&ast.ApplyStmt{
 								Kind: lexer.X,
 								Name: lexer.Tokens[lexer.X],
-								Modifier: []ast.Modifiler{
+								Modifier: []ast.Modifier{
 									{
 										Kind: lexer.CTRL,
 										Index: ast.ParenExpr{
@@ -465,7 +465,7 @@ func TestStmt(t *testing.T) {
 							&ast.ApplyStmt{
 								Kind: lexer.QFT,
 								Name: lexer.Tokens[lexer.QFT],
-								Modifier: []ast.Modifiler{
+								Modifier: []ast.Modifier{
 									{
 										Kind: lexer.CTRL,
 									},

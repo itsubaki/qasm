@@ -193,7 +193,7 @@ func (s *PrintStmt) String() string {
 
 type ApplyStmt struct {
 	Kind     lexer.Token // lexer.X, lexer.CX, ...
-	Modifier []Modifiler
+	Modifier []Modifier
 	Name     string
 	Params   ParenExpr
 	QArgs    ExprList

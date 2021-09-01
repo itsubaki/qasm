@@ -182,18 +182,18 @@ func (x *MeasureExpr) String() string {
 	return buf.String()
 }
 
-type Modifiler struct {
+type Modifier struct {
 	Kind  lexer.Token // lexer.CTRL, lexer.NEGCTRL, lexer.INV
 	Index ParenExpr
 }
 
-func (x *Modifiler) exprNode() {}
+func (x *Modifier) exprNode() {}
 
-func (x *Modifiler) Literal() string {
+func (x *Modifier) Literal() string {
 	return lexer.Tokens[x.Kind]
 }
 
-func (x *Modifiler) String() string {
+func (x *Modifier) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(x.Literal())
@@ -206,7 +206,7 @@ func (x *Modifiler) String() string {
 
 type CallExpr struct {
 	Name     string
-	Modifier []Modifiler // lexer.CTRL, lexer.NEGCTRL, lexer.INV
+	Modifier []Modifier // lexer.CTRL, lexer.NEGCTRL, lexer.INV
 	Params   ParenExpr
 	QArgs    ExprList
 }

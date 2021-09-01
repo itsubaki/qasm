@@ -521,9 +521,9 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 }
 
 func (p *Parser) parseApplyStmt() ast.Stmt {
-	mod := make([]ast.Modifiler, 0)
+	mod := make([]ast.Modifier, 0)
 	for p.cur.Token == lexer.CTRL || p.cur.Token == lexer.NEGCTRL || p.cur.Token == lexer.INV || p.cur.Token == lexer.POW {
-		m := ast.Modifiler{
+		m := ast.Modifier{
 			Kind: p.cur.Token,
 		}
 
