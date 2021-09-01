@@ -364,7 +364,8 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 		x.QArgs.List,
 		outer,
 	)
-	//	fmt.Printf("gate=%v, body=%v\n", d.Name, d.Body)
+
+	// fmt.Printf("gate=%v, body=%v, env=%v\n", d.Name, d.Body, env.Qubit)
 
 	if _, err := e.eval(&d.Body, env); err != nil {
 		return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
