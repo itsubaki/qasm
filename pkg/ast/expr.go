@@ -12,6 +12,12 @@ type ExprList struct {
 	List []Expr
 }
 
+func (l *ExprList) exprNode() {}
+
+func (l *ExprList) Literal() string {
+	return ""
+}
+
 func (l *ExprList) Append(x Expr) {
 	l.List = append(l.List, x)
 }
@@ -124,7 +130,7 @@ func (x *ArrayExpr) String() string {
 }
 
 type BasicLit struct {
-	Kind  lexer.Token
+	Kind  lexer.Token // lexer.INT, lexer.FLOAT, lexer.STRING
 	Value string
 }
 
@@ -136,6 +142,15 @@ func (x *BasicLit) Literal() string {
 
 func (x *BasicLit) String() string {
 	return x.Value
+}
+
+func (x *BasicLit) Int64() int64 {
+	v, err := strconv.ParseInt(x.Value, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+
+	return v
 }
 
 func (x *BasicLit) Float64() float64 {
