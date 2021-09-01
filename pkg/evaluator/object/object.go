@@ -9,12 +9,12 @@ import (
 type Type string
 
 const (
-	StringType      = "String"
-	IntType         = "Int"
-	FloatType       = "Float"
-	ArrayType       = "Array"
-	NilType         = "nil"
-	ReturnValueType = "ReturnValue"
+	STRING       = "String"
+	INT          = "Int"
+	FLOAT        = "Float"
+	ARRAY        = "Array"
+	NIL          = "nil"
+	RETURN_VALUE = "ReturnValue"
 )
 
 type Object interface {
@@ -27,7 +27,7 @@ type Int struct {
 }
 
 func (i *Int) Type() Type {
-	return IntType
+	return INT
 }
 
 func (i *Int) String() string {
@@ -39,7 +39,7 @@ type Float struct {
 }
 
 func (f *Float) Type() Type {
-	return FloatType
+	return FLOAT
 }
 
 func (f *Float) String() string {
@@ -49,7 +49,7 @@ func (f *Float) String() string {
 type Nil struct{}
 
 func (n *Nil) Type() Type {
-	return NilType
+	return NIL
 }
 
 func (n *Nil) String() string {
@@ -61,7 +61,7 @@ type Array struct {
 }
 
 func (a *Array) Type() Type {
-	return ArrayType
+	return ARRAY
 }
 
 func (a *Array) String() string {
@@ -84,7 +84,7 @@ type ReturnValue struct {
 }
 
 func (v *ReturnValue) Type() Type {
-	return ReturnValueType
+	return RETURN_VALUE
 }
 
 func (v *ReturnValue) String() string {
@@ -96,7 +96,7 @@ type String struct {
 }
 
 func (s *String) Type() Type {
-	return StringType
+	return STRING
 }
 
 func (s *String) String() string {

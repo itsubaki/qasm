@@ -19,6 +19,7 @@ type Environment struct {
 	Qubit *Qubit
 	Const Const
 	Func  Func
+	Outer *Environment
 }
 
 type Func map[string]ast.Decl
@@ -35,6 +36,7 @@ func NewEnvironment() *Environment {
 		},
 		Const: make(map[string]Object),
 		Func:  make(map[string]ast.Decl),
+		Outer: nil,
 	}
 
 	for k, v := range real {
@@ -42,6 +44,12 @@ func NewEnvironment() *Environment {
 	}
 
 	return e
+}
+
+func NewEnclosedEnvironment(outer *Environment) *Environment {
+	env := NewEnvironment()
+	env.Outer = outer
+	return env
 }
 
 type Const map[string]Object
@@ -67,13 +75,7 @@ func (b *Bit) Get(a ast.Expr) ([]int64, bool) {
 		return out, ok
 	case *ast.IndexExpr:
 		out, ok := b.Value[x.Name.Value]
-
 		index := Index(x.Int(), len(out))
-		if index > len(out)-1 || index < 0 {
-			msg := fmt.Sprintf("index out of range[%v] with length %v", index, len(out))
-			panic(msg)
-		}
-
 		return append(make([]int64, 0), out[index]), ok
 	}
 
@@ -101,13 +103,7 @@ func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 		return out, ok
 	case *ast.IndexExpr:
 		out, ok := qb.Value[x.Name.Value]
-
 		index := Index(x.Int(), len(out))
-		if index > len(out)-1 || index < 0 {
-			msg := fmt.Sprintf("index out of range[%v] with length %v", index, len(out))
-			panic(msg)
-		}
-
 		return append(make([]q.Qubit, 0), out[index]), ok
 	}
 
@@ -115,9 +111,15 @@ func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 }
 
 func Index(index, len int) int {
+	out := index
 	if index < 0 {
-		return len + index
+		out = len + index
 	}
 
-	return index
+	if out > len || out < 0 {
+		msg := fmt.Sprintf("index out of range[%v] with length %v", out, len)
+		panic(msg)
+	}
+
+	return out
 }

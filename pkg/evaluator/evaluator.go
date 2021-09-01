@@ -79,7 +79,7 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (object.Object, er
 				return nil, fmt.Errorf("eval(%v): %v", b, err)
 			}
 
-			if v.Type() == object.ReturnValueType {
+			if v.Type() == object.RETURN_VALUE {
 				return v, nil
 			}
 		}
@@ -295,10 +295,7 @@ func (e *Evaluator) apply(mod []ast.Modifiler, g lexer.Token, p []float64, qargs
 
 		var c int
 		if len(m.Index.List.List) > 0 {
-			switch x := m.Index.List.List[0].(type) {
-			case *ast.BasicLit:
-				c = int(x.Float64())
-			}
+			c = int(m.Index.List.List[0].(*ast.BasicLit).Float64())
 		}
 
 		switch m.Kind {
@@ -344,101 +341,85 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 	return nil, fmt.Errorf("unsupported(%v)", decl)
 }
 
-func (e *Evaluator) callGate(x *ast.CallExpr, decl *ast.GateDecl, env *object.Environment) (object.Object, error) {
-	params := make(map[string]ast.Expr)
-	for i, p := range decl.Params.List.List {
-		params[ast.Ident(p)] = x.Params.List.List[i]
-	}
+func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) (object.Object, error) {
+	env := e.extend(
+		d.Params.List.List,
+		d.QArgs.List,
+		x.Params.List.List,
+		x.QArgs.List,
+		outer,
+	)
 
-	// gate bell q, p { h q; cx q, p; }
-	// bell q0, q1;
-	// q -> q0, p -> q1
-	qargs := make(map[string]ast.Expr)
-	for i, a := range decl.QArgs.List {
-		qargs[ast.Ident(a)] = x.QArgs.List[i]
-	}
-
-	for _, b := range decl.Body.List {
-		switch s := b.(type) {
-		case *ast.ApplyStmt:
-			a := &ast.ApplyStmt{
-				Kind:     s.Kind,
-				Name:     s.Name,
-				Modifier: s.Modifier,
-				Params: ast.ParenExpr{
-					List: assign(s.Params.List, params),
-				},
-				QArgs: assign(s.QArgs, qargs), // q -> q0, p -> q1
-			}
-
-			for a.Kind == lexer.IDENT {
-				decl := env.Func[a.Name].(*ast.GateDecl)
-				a.Kind = decl.Body.List[0].(*ast.ApplyStmt).Kind
-				a.Name = decl.Body.List[0].(*ast.ApplyStmt).Name
-				a.Params = decl.Body.List[0].(*ast.ApplyStmt).Params
-			}
-
-			if _, err := e.eval(a, env); err != nil {
-				return nil, fmt.Errorf("apply(%v): %v", a, err)
-			}
-		default:
-			return nil, fmt.Errorf("unsupported(%v)", s)
-		}
+	if _, err := e.eval(&d.Body, env); err != nil {
+		return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
 	}
 
 	return nil, nil
 }
 
-func (e *Evaluator) callFunc(x *ast.CallExpr, decl *ast.FuncDecl, env *object.Environment) (object.Object, error) {
-	params := make(map[string]ast.Expr)
-	for i, p := range decl.Params.List.List {
-		params[ast.Ident(p)] = x.Params.List.List[i]
+func (e *Evaluator) callFunc(x *ast.CallExpr, d *ast.FuncDecl, outer *object.Environment) (object.Object, error) {
+	env := e.extendFuncEnv(
+		d.Params.List.List,
+		d.QArgs.List,
+		x.Params.List.List,
+		x.QArgs.List,
+		outer,
+	)
+
+	v, err := e.eval(&d.Body, env)
+	if err != nil {
+		return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
 	}
 
-	qargs := make(map[string]ast.Expr)
-	for i, a := range decl.QArgs.List {
-		qargs[ast.Ident(a)] = x.QArgs.List[i]
-	}
+	return v.(*object.ReturnValue).Value, nil
+}
 
-	for _, b := range decl.Body.List {
-		switch s := b.(type) {
-		case *ast.ApplyStmt:
-			a := &ast.ApplyStmt{
-				Kind:     s.Kind,
-				Name:     s.Name,
-				Modifier: s.Modifier,
-				Params: ast.ParenExpr{
-					List: assign(s.Params.List, params),
-				},
-				QArgs: assign(s.QArgs, qargs),
-			}
-			if _, err := e.eval(a, env); err != nil {
-				return nil, fmt.Errorf("apply(%v): %#v", a, err)
-			}
-		case *ast.ReturnStmt:
-			switch r := s.Result.(type) {
-			case *ast.MeasureExpr:
-				m := &ast.MeasureExpr{
-					QArgs: assign(r.QArgs, qargs),
-				}
-				out, err := e.eval(m, env)
-				if err != nil {
-					return nil, fmt.Errorf("measure(%v): %#v", m, err)
-				}
+func (e *Evaluator) extend(p, q, pargs, qargs []ast.Expr, outer *object.Environment) *object.Environment {
+	env := object.NewEnclosedEnvironment(outer)
 
-				return out, nil
-			case nil:
-				// no return value
-				return &object.Nil{}, nil
-			default:
-				return nil, fmt.Errorf("unsupported(%v)", x)
-			}
-		default:
-			return nil, fmt.Errorf("unsupported(%v)", s)
+	for i := range p {
+		v, ok := outer.Const[ast.Ident(pargs[i])]
+		if !ok {
+			panic(fmt.Sprintf("bit(%v) not found", q[i]))
 		}
+
+		env.Const[ast.Ident(p[i])] = v
 	}
 
-	return nil, nil
+	for i := range q {
+		v, ok := outer.Qubit.Get(qargs[i])
+		if !ok {
+			panic(fmt.Sprintf("qubit(%v) not found", q[i]))
+		}
+
+		env.Qubit.Add(q[i], v)
+	}
+
+	return env
+}
+
+func (e *Evaluator) extendFuncEnv(p, q []ast.Decl, pargs, qargs []ast.Expr, outer *object.Environment) *object.Environment {
+	env := object.NewEnclosedEnvironment(outer)
+
+	for i := range p {
+		v, ok := outer.Const[ast.Ident(pargs[i])]
+		if !ok {
+			panic(fmt.Sprintf("bit(%v) not found", q[i]))
+		}
+
+		env.Const[ast.Ident(p[i])] = v
+	}
+
+	for i := range q {
+		v, ok := outer.Qubit.Get(qargs[i])
+		if !ok {
+			panic(fmt.Sprintf("qubit(%v) not found", q[i]))
+		}
+
+		env.Qubit.Add(q[i], v)
+	}
+
+	return env
 }
 
 func (e *Evaluator) measure(x *ast.MeasureExpr, env *object.Environment) (object.Object, error) {
@@ -487,25 +468,4 @@ func (e *Evaluator) Println() error {
 	}
 
 	return nil
-}
-
-func assign(c ast.ExprList, args map[string]ast.Expr) ast.ExprList {
-	out := ast.ExprList{}
-	for _, a := range c.List {
-		switch x := a.(type) {
-		case *ast.BasicLit:
-			out.Append(x)
-		case *ast.IndexExpr:
-			out.Append(&ast.IndexExpr{
-				Name: ast.IdentExpr{
-					Value: ast.Ident(args[ast.Ident(a)]),
-				},
-				Value: x.Value,
-			})
-		default:
-			out.Append(args[ast.Ident(a)])
-		}
-	}
-
-	return out
 }
