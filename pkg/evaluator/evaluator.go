@@ -343,7 +343,7 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, p []float64, qargs 
 		}
 	}
 
-	if c%2 == 0 {
+	if c%2 == 1 {
 		u = u.Dagger()
 	}
 
