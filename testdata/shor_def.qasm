@@ -16,7 +16,6 @@ const a = 7;
 qubit[3] r0;
 qubit[4] r1;
 bit[3]   c;
-
 reset r0, r1;
 
 c = shor(a, N) r0, r1;

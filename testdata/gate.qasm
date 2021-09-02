@@ -5,7 +5,7 @@ gate X4 q    { inv  @ X3 q;}
 gate CX q, p { ctrl @ X4 q, p; }
 
 qubit[2] q;
-
 reset q;
+
 h   q[0];
 CX q[0], q[1];
