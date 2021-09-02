@@ -8,7 +8,7 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-var indent = []byte(".  ")
+const indent = ".  "
 
 func Println(x interface{}) {
 	Print(x)
@@ -30,7 +30,7 @@ type printer struct {
 }
 
 func (p *printer) Write(data []byte) (int, error) {
-	indent := strings.Repeat(string(indent), p.indent)
+	indent := strings.Repeat(indent, p.indent)
 
 	for _, b := range data {
 		if p.last == '\n' {

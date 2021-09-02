@@ -3,6 +3,7 @@ package evaluator
 import (
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/q/pkg/math/matrix"
@@ -12,10 +13,13 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
+const indent = ".  "
+
 type Evaluator struct {
-	Q    *q.Q
-	Env  *object.Environment
-	Opts Opts
+	Q      *q.Q
+	Env    *object.Environment
+	Opts   Opts
+	indent int
 }
 
 type Opts struct {
@@ -52,16 +56,21 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object, err error) {
 	defer func() {
 		if obj == nil || obj.Type() == object.NIL {
+			e.indent--
 			return
 		}
 
 		if e.Opts.Verbose {
-			fmt.Printf(" return type(%T), object(%v)\n", obj, obj)
+			fmt.Printf("%v", strings.Repeat(indent, e.indent+1))
+			fmt.Printf("return %T(%v)\n", obj, obj)
+			e.indent--
 		}
 	}()
 
 	if e.Opts.Verbose {
-		fmt.Printf("type(%-16T), node(%v)\n", n, n)
+		e.indent++
+		fmt.Printf("%v", strings.Repeat(indent, e.indent))
+		fmt.Printf("%T(%v)\n", n, n)
 	}
 
 	switch n := n.(type) {
@@ -399,7 +408,8 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 		switch a := b.(type) {
 		case *ast.ApplyStmt:
 			if e.Opts.Verbose {
-				fmt.Printf("type(%-16T), node(%v)\n", d, a)
+				fmt.Printf("%v", strings.Repeat(indent, e.indent))
+				fmt.Printf("%T(%v)\n", d, a)
 			}
 
 			if a.Kind != lexer.IDENT && len(x.QArgs.List) == len(d.QArgs.List) {
