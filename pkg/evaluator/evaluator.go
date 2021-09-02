@@ -394,36 +394,27 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 	for _, b := range d.Body.List {
 		switch a := b.(type) {
 		case *ast.ApplyStmt:
-			if a.Kind != lexer.IDENT && len(x.Modifier) > 0 {
+			if a.Kind != lexer.IDENT {
 				a.QArgs = x.QArgs
-				a.Modifier = append(a.Modifier, x.Modifier...)
-
+				a.Modifier = append(x.Modifier, a.Modifier...)
 				if _, err := e.eval(a, outer); err != nil {
 					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
 				}
-
 				continue
 			}
 
-			if a.Kind != lexer.IDENT {
-				if _, err := e.eval(a, env); err != nil {
-					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
-				}
-
-				continue
-			}
-
+			// call declared gate
 			decl := env.Func[a.Name].(*ast.GateDecl)
 			for j := range decl.Body.List {
 				s := &ast.ApplyStmt{
 					Kind:     decl.Body.List[j].(*ast.ApplyStmt).Kind,
 					Name:     decl.Body.List[j].(*ast.ApplyStmt).Name,
 					Params:   decl.Body.List[j].(*ast.ApplyStmt).Params,
-					QArgs:    a.QArgs,
-					Modifier: append(a.Modifier, decl.Body.List[j].(*ast.ApplyStmt).Modifier...),
+					QArgs:    x.QArgs,
+					Modifier: append(x.Modifier, append(a.Modifier, decl.Body.List[j].(*ast.ApplyStmt).Modifier...)...),
 				}
 
-				if _, err := e.eval(s, env); err != nil {
+				if _, err := e.eval(s, outer); err != nil {
 					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
 				}
 			}

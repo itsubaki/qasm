@@ -1,6 +1,8 @@
-gate X  q    { U(pi, 0, pi) q; }
-gate X2 q    { inv @ X q;}
-gate CX q, p { ctrl @ X2 q, p; }
+gate X1 q    { U(pi, 0, pi) q; }
+gate X2 q    { inv  @ X1 q;}
+gate X3 q    { inv  @ X2 q;}
+gate X4 q    { inv  @ X3 q;}
+gate CX q, p { ctrl @ X4 q, p; }
 
 qubit[2] q;
 
