@@ -407,16 +407,16 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 	for _, b := range d.Body.List {
 		switch a := b.(type) {
 		case *ast.ApplyStmt:
-			if e.Opts.Verbose {
-				fmt.Printf("%v", strings.Repeat(indent, e.indent))
-				fmt.Printf("%T(%v)\n", d, a)
-			}
-
 			if a.Kind != lexer.IDENT && len(x.QArgs.List) == len(d.QArgs.List) {
 				if _, err := e.eval(a, env); err != nil {
 					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
 				}
 				continue
+			}
+
+			if e.Opts.Verbose {
+				fmt.Printf("%v", strings.Repeat(indent, e.indent))
+				fmt.Printf("%T(%v)\n", d, a)
 			}
 
 			if a.Kind != lexer.IDENT {
