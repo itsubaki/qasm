@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/q/pkg/math/matrix"
@@ -12,14 +13,16 @@ import (
 )
 
 type Evaluator struct {
-	Q   *q.Q
-	Env *object.Environment
+	Q     *q.Q
+	Env   *object.Environment
+	Debug bool
 }
 
 func New(qsim *q.Q) *Evaluator {
 	return &Evaluator{
-		Q:   qsim,
-		Env: object.NewEnvironment(),
+		Q:     qsim,
+		Env:   object.NewEnvironment(),
+		Debug: false,
 	}
 }
 
@@ -38,6 +41,10 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 }
 
 func (e *Evaluator) eval(n ast.Node, env *object.Environment) (object.Object, error) {
+	if e.Debug {
+		fmt.Printf("type(%-16T), node(%v)\n", n, n)
+	}
+
 	switch n := n.(type) {
 	case *ast.ExprStmt:
 		return e.eval(n.X, env)
@@ -138,6 +145,16 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (object.Object, er
 			return &object.Float{Value: n.Float64()}, nil
 		case lexer.STRING:
 			return &object.String{Value: n.Value}, nil
+		case lexer.PI:
+			return &object.Float{Value: math.Pi}, nil
+		case lexer.TAU:
+			return &object.Float{Value: math.Pi * 2}, nil
+		case lexer.EULER:
+			return &object.Float{Value: math.E}, nil
+		}
+	case *ast.IdentExpr:
+		if v, ok := env.Const[ast.Ident(n)]; ok {
+			return v, nil
 		}
 	}
 
@@ -204,11 +221,6 @@ func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
 
 	obj := make([]object.Object, 0)
 	for _, p := range s.Params.List.List {
-		if a, ok := env.Const[ast.Ident(p)]; ok {
-			obj = append(obj, a)
-			continue
-		}
-
 		v, err := e.eval(p, env)
 		if err != nil {
 			return fmt.Errorf("eval(%v): %v", p, err)
@@ -296,10 +308,15 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, p []float64, qargs 
 	}
 
 	// Inverse U
+	var c int
 	for _, m := range mod {
 		if m.Kind == lexer.INV {
-			u = u.Dagger()
+			c++
 		}
+	}
+
+	if c%2 == 0 {
+		u = u.Dagger()
 	}
 
 	// Controlled-U
@@ -365,10 +382,48 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 		outer,
 	)
 
-	// fmt.Printf("gate=%v, body=%v, env=%v\n", d.Name, d.Body, env.Qubit)
+	for _, b := range d.Body.List {
+		switch a := b.(type) {
+		case *ast.ApplyStmt:
+			if a.Kind != lexer.IDENT && len(x.Modifier) > 0 {
+				a.QArgs = x.QArgs
+				a.Modifier = append(a.Modifier, x.Modifier...)
 
-	if _, err := e.eval(&d.Body, env); err != nil {
-		return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
+				if _, err := e.eval(a, outer); err != nil {
+					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
+				}
+
+				continue
+			}
+
+			if a.Kind != lexer.IDENT {
+				if _, err := e.eval(a, env); err != nil {
+					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
+				}
+
+				continue
+			}
+
+			decl := env.Func[a.Name].(*ast.GateDecl)
+			for j := range decl.Body.List {
+				s := &ast.ApplyStmt{
+					Kind:     decl.Body.List[j].(*ast.ApplyStmt).Kind,
+					Name:     decl.Body.List[j].(*ast.ApplyStmt).Name,
+					Params:   decl.Body.List[j].(*ast.ApplyStmt).Params,
+					QArgs:    a.QArgs,
+					Modifier: append(a.Modifier, decl.Body.List[j].(*ast.ApplyStmt).Modifier...),
+				}
+
+				if _, err := e.eval(s, env); err != nil {
+					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
+				}
+			}
+
+		default:
+			if _, err := e.eval(b, env); err != nil {
+				return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
+			}
+		}
 	}
 
 	return nil, nil

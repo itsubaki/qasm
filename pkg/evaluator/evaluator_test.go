@@ -225,6 +225,7 @@ func ExampleEvaluator_call() {
 						List: []ast.Stmt{
 							&ast.ApplyStmt{
 								Kind: lexer.H,
+								Name: lexer.Tokens[lexer.H],
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{
@@ -235,6 +236,7 @@ func ExampleEvaluator_call() {
 							},
 							&ast.ApplyStmt{
 								Kind: lexer.CX,
+								Name: lexer.Tokens[lexer.CX],
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{

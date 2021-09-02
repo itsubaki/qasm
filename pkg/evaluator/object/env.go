@@ -2,17 +2,10 @@ package object
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/pkg/ast"
 )
-
-var real = map[string]Object{
-	"pi":    &Float{Value: math.Pi},
-	"tau":   &Float{Value: math.Pi * 2},
-	"euler": &Float{Value: math.E},
-}
 
 type Environment struct {
 	Bit   *Bit
@@ -25,7 +18,7 @@ type Environment struct {
 type Func map[string]ast.Decl
 
 func NewEnvironment() *Environment {
-	e := &Environment{
+	return &Environment{
 		Bit: &Bit{
 			Name:  make([]string, 0),
 			Value: make(map[string][]int64),
@@ -38,12 +31,6 @@ func NewEnvironment() *Environment {
 		Func:  make(map[string]ast.Decl),
 		Outer: nil,
 	}
-
-	for k, v := range real {
-		e.Const[k] = v
-	}
-
-	return e
 }
 
 func NewEnclosedEnvironment(outer *Environment) *Environment {
