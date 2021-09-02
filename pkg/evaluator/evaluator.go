@@ -55,7 +55,9 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 			return
 		}
 
-		fmt.Printf(" return type(%T), object(%v)\n", obj, obj)
+		if e.Opts.Verbose {
+			fmt.Printf(" return type(%T), object(%v)\n", obj, obj)
+		}
 	}()
 
 	if e.Opts.Verbose {
@@ -391,13 +393,7 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 }
 
 func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) (object.Object, error) {
-	env := e.extendGateEnv(
-		d.Params.List.List,
-		d.QArgs.List,
-		x.Params.List.List,
-		x.QArgs.List,
-		outer,
-	)
+	env := e.extend(x, d, outer)
 
 	for _, b := range d.Body.List {
 		switch a := b.(type) {
@@ -448,40 +444,25 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 	return nil, nil
 }
 
-func (e *Evaluator) extendGateEnv(p, q []ast.Expr, pargs, qargs []ast.Expr, outer *object.Environment) *object.Environment {
+func (e *Evaluator) extend(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) *object.Environment {
 	env := object.NewEnclosedEnvironment(outer)
-
-	for i := range p {
-		v, ok := outer.Const[ast.Ident(pargs[i])]
-		if !ok {
-			panic(fmt.Sprintf("const(%v) not found", q[i]))
-		}
-
-		env.Const[ast.Ident(p[i])] = v
-	}
-
-	for i := range q {
-		v, ok := outer.Qubit.Get(qargs[i])
-		if !ok {
-			panic(fmt.Sprintf("qubit(%v) not found", q[i]))
-		}
-
-		env.Qubit.Add(q[i], v)
-	}
-
 	env.Func = outer.Func
+	env.Const = outer.Const
+
+	for i := range d.QArgs.List {
+		v, ok := outer.Qubit.Get(x.QArgs.List[i])
+		if !ok {
+			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
+		}
+
+		env.Qubit.Add(d.QArgs.List[i], v)
+	}
 
 	return env
 }
 
 func (e *Evaluator) callFunc(x *ast.CallExpr, d *ast.FuncDecl, outer *object.Environment) (object.Object, error) {
-	env := e.extendFuncEnv(
-		d.Params.List.List,
-		d.QArgs.List,
-		x.Params.List.List,
-		x.QArgs.List,
-		outer,
-	)
+	env := e.extendFunc(x, d, outer)
 
 	v, err := e.eval(&d.Body, env)
 	if err != nil {
@@ -491,28 +472,19 @@ func (e *Evaluator) callFunc(x *ast.CallExpr, d *ast.FuncDecl, outer *object.Env
 	return v.(*object.ReturnValue).Value, nil
 }
 
-func (e *Evaluator) extendFuncEnv(p, q []ast.Decl, pargs, qargs []ast.Expr, outer *object.Environment) *object.Environment {
+func (e *Evaluator) extendFunc(x *ast.CallExpr, d *ast.FuncDecl, outer *object.Environment) *object.Environment {
 	env := object.NewEnclosedEnvironment(outer)
-
-	for i := range p {
-		v, ok := outer.Const[ast.Ident(pargs[i])]
-		if !ok {
-			panic(fmt.Sprintf("const(%v) not found", q[i]))
-		}
-
-		env.Const[ast.Ident(p[i])] = v
-	}
-
-	for i := range q {
-		v, ok := outer.Qubit.Get(qargs[i])
-		if !ok {
-			panic(fmt.Sprintf("qubit(%v) not found", q[i]))
-		}
-
-		env.Qubit.Add(q[i], v)
-	}
-
 	env.Func = outer.Func
+	env.Const = outer.Const
+
+	for i := range d.QArgs.List {
+		v, ok := outer.Qubit.Get(x.QArgs.List[i])
+		if !ok {
+			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
+		}
+
+		env.Qubit.Add(d.QArgs.List[i], v)
+	}
 
 	return env
 }
