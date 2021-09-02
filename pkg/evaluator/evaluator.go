@@ -454,7 +454,7 @@ func (e *Evaluator) extendGateEnv(p, q []ast.Expr, pargs, qargs []ast.Expr, oute
 	for i := range p {
 		v, ok := outer.Const[ast.Ident(pargs[i])]
 		if !ok {
-			panic(fmt.Sprintf("bit(%v) not found", q[i]))
+			panic(fmt.Sprintf("const(%v) not found", q[i]))
 		}
 
 		env.Const[ast.Ident(p[i])] = v
@@ -497,7 +497,7 @@ func (e *Evaluator) extendFuncEnv(p, q []ast.Decl, pargs, qargs []ast.Expr, oute
 	for i := range p {
 		v, ok := outer.Const[ast.Ident(pargs[i])]
 		if !ok {
-			panic(fmt.Sprintf("bit(%v) not found", q[i]))
+			panic(fmt.Sprintf("const(%v) not found", q[i]))
 		}
 
 		env.Const[ast.Ident(p[i])] = v
@@ -552,7 +552,7 @@ func (e *Evaluator) Println() error {
 
 		c, ok := e.Env.Bit.Get(&ast.IdentExpr{Value: n})
 		if !ok {
-			return fmt.Errorf("name=%v not found", n)
+			return fmt.Errorf("bit(%v) not found", n)
 		}
 
 		for _, v := range c {
