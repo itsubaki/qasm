@@ -12,6 +12,7 @@ import (
 )
 
 func Action(c *cli.Context) error {
+	verbose := c.Bool("verbose")
 	path := c.String("file")
 	if len(path) == 0 {
 		cli.ShowAppHelp(c)
@@ -31,7 +32,9 @@ func Action(c *cli.Context) error {
 		return fmt.Errorf("parse: %v", errs)
 	}
 
-	e := evaluator.Default()
+	e := evaluator.Default(evaluator.Opts{
+		Verbose: verbose,
+	})
 	if err := e.Eval(a); err != nil {
 		return fmt.Errorf("eval: %v\n", err)
 	}

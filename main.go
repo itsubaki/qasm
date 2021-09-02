@@ -16,12 +16,15 @@ func New() *cli.App {
 	app.Name = "qasm"
 	app.HelpName = "qasm"
 	app.Usage = "Run Quantum Computation Simulator with OpenQASM 3.0"
-	app.Version = "0.1.0"
 	app.Action = cmd.Action
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
 			Name:    "file",
 			Aliases: []string{"f"},
+		},
+		&cli.BoolFlag{
+			Name:    "verbose",
+			Aliases: []string{"v"},
 		},
 	}
 

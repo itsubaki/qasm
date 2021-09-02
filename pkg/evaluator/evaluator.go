@@ -13,21 +13,30 @@ import (
 )
 
 type Evaluator struct {
-	Q     *q.Q
-	Env   *object.Environment
-	Debug bool
+	Q    *q.Q
+	Env  *object.Environment
+	Opts Opts
 }
 
-func New(qsim *q.Q) *Evaluator {
-	return &Evaluator{
-		Q:     qsim,
-		Env:   object.NewEnvironment(),
-		Debug: false,
+type Opts struct {
+	Verbose bool
+}
+
+func New(qsim *q.Q, opts ...Opts) *Evaluator {
+	e := &Evaluator{
+		Q:   qsim,
+		Env: object.NewEnvironment(),
 	}
+
+	if opts != nil {
+		e.Opts = opts[0]
+	}
+
+	return e
 }
 
-func Default() *Evaluator {
-	return New(q.New())
+func Default(opts ...Opts) *Evaluator {
+	return New(q.New(), opts...)
 }
 
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
@@ -41,7 +50,7 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 }
 
 func (e *Evaluator) eval(n ast.Node, env *object.Environment) (object.Object, error) {
-	if e.Debug {
+	if e.Opts.Verbose {
 		fmt.Printf("type(%-16T), node(%v)\n", n, n)
 	}
 
