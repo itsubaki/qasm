@@ -219,6 +219,22 @@ func (p *Parser) isBasic(t lexer.Token) bool {
 	return false
 }
 
+func (p *Parser) parseInfix() ast.Expr {
+	lhs := p.cur
+	ope, rhs := p.next(), p.next()
+	return &ast.InfixExpr{
+		Kind: ope.Token,
+		Left: &ast.BasicLit{
+			Kind:  lhs.Token,
+			Value: lhs.Literal,
+		},
+		Right: &ast.BasicLit{
+			Kind:  rhs.Token,
+			Value: rhs.Literal,
+		},
+	}
+}
+
 func (p *Parser) parseIdent() ast.Expr {
 	c := p.cur
 	if c.Token != lexer.IDENT && !p.isBasic(c.Token) {
@@ -226,6 +242,15 @@ func (p *Parser) parseIdent() ast.Expr {
 	}
 
 	if p.isBasic(c.Token) {
+		if p.peek.Token == lexer.PLUS || p.peek.Token == lexer.MINUS ||
+			p.peek.Token == lexer.MUL || p.peek.Token == lexer.DIV ||
+			p.peek.Token == lexer.MOD {
+
+			x := p.parseInfix()
+			p.next()
+			return x
+		}
+
 		p.next()
 
 		// pi, 1.23
@@ -275,6 +300,19 @@ func (p *Parser) parseGenConst() ast.Decl {
 	p.expect(lexer.EQUALS)
 
 	v := p.next()
+
+	if p.peek.Token == lexer.PLUS || p.peek.Token == lexer.MINUS ||
+		p.peek.Token == lexer.MUL || p.peek.Token == lexer.DIV ||
+		p.peek.Token == lexer.MOD {
+
+		x := p.parseInfix()
+		return &ast.GenConst{
+			Name: ast.IdentExpr{
+				Value: n.Literal,
+			},
+			Value: x,
+		}
+	}
 
 	// const N = 15
 	return &ast.GenConst{
