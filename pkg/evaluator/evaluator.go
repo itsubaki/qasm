@@ -55,16 +55,16 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 
 func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object, err error) {
 	defer func() {
-		if obj == nil || obj.Type() == object.NIL {
-			e.indent--
+		if !e.Opts.Verbose {
 			return
 		}
 
-		if e.Opts.Verbose {
+		if obj != nil && obj.Type() != object.NIL {
 			fmt.Printf("%v", strings.Repeat(indent, e.indent+1))
 			fmt.Printf("return %T(%v)\n", obj, obj)
-			e.indent--
 		}
+
+		e.indent--
 	}()
 
 	if e.Opts.Verbose {
@@ -355,7 +355,7 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, p []float64, qargs 
 
 		var c int
 		if len(m.Index.List.List) > 0 {
-			c = int(m.Index.List.List[0].(*ast.BasicLit).Float64())
+			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
 		}
 
 		switch m.Kind {
@@ -391,6 +391,11 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 		return nil, fmt.Errorf("decl(%v) not found", x.Name)
 	}
 
+	if e.Opts.Verbose {
+		fmt.Printf("%v", strings.Repeat(indent, e.indent))
+		fmt.Printf("%T(%v)\n", decl, decl)
+	}
+
 	switch decl := decl.(type) {
 	case *ast.GateDecl:
 		return e.callGate(x, decl, env)
@@ -407,18 +412,23 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 	for _, b := range d.Body.List {
 		switch a := b.(type) {
 		case *ast.ApplyStmt:
-			if a.Kind != lexer.IDENT && len(x.QArgs.List) == len(d.QArgs.List) {
+			ctrl := false
+			for _, m := range x.Modifier {
+				if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
+					ctrl = true
+					break
+				}
+			}
+
+			// single operation
+			if a.Kind != lexer.IDENT && !ctrl {
 				if _, err := e.eval(a, env); err != nil {
 					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
 				}
 				continue
 			}
 
-			if e.Opts.Verbose {
-				fmt.Printf("%v", strings.Repeat(indent, e.indent))
-				fmt.Printf("%T(%v)\n", d, a)
-			}
-
+			// ctrl @ operation
 			if a.Kind != lexer.IDENT {
 				a.QArgs = x.QArgs
 				a.Modifier = append(x.Modifier, a.Modifier...)
@@ -430,6 +440,12 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 
 			//	call declared gate
 			decl := env.Func[a.Name].(*ast.GateDecl)
+
+			if e.Opts.Verbose {
+				fmt.Printf("%v", strings.Repeat(indent, e.indent))
+				fmt.Printf("%T(%v)\n", decl, decl)
+			}
+
 			for j := range decl.Body.List {
 				s := &ast.ApplyStmt{
 					Kind:     decl.Body.List[j].(*ast.ApplyStmt).Kind,

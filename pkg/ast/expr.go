@@ -183,7 +183,7 @@ func (x *MeasureExpr) String() string {
 }
 
 type Modifier struct {
-	Kind  lexer.Token // lexer.CTRL, lexer.NEGCTRL, lexer.INV
+	Kind  lexer.Token // lexer.CTRL, lexer.NEGCTRL, lexer.INV, lexer.POW
 	Index ParenExpr
 }
 
@@ -206,7 +206,7 @@ func (x *Modifier) String() string {
 
 type CallExpr struct {
 	Name     string
-	Modifier []Modifier // lexer.CTRL, lexer.NEGCTRL, lexer.INV
+	Modifier []Modifier // lexer.CTRL, lexer.NEGCTRL, lexer.INV, lexer.POW
 	Params   ParenExpr
 	QArgs    ExprList
 }
