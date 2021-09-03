@@ -16,6 +16,7 @@ type Cursor struct {
 type Parser struct {
 	l      *lexer.Lexer
 	cur    *Cursor
+	peek   *Cursor
 	errors []string
 }
 
@@ -35,6 +36,7 @@ func (p *Parser) Parse() *ast.OpenQASM {
 	var incls []ast.Stmt
 	var stmts []ast.Stmt
 
+	p.next()
 	for p.next().Token != lexer.EOF {
 		switch p.cur.Token {
 		case lexer.OPENQASM:
@@ -55,7 +57,9 @@ func (p *Parser) Parse() *ast.OpenQASM {
 
 func (p *Parser) next() *Cursor {
 	token, literal := p.l.Tokenize()
-	p.cur = &Cursor{
+
+	p.cur = p.peek
+	p.peek = &Cursor{
 		Token:   token,
 		Literal: literal,
 	}
