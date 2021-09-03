@@ -2,9 +2,11 @@ package evaluator_test
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/itsubaki/qasm/pkg/ast"
 	"github.com/itsubaki/qasm/pkg/evaluator"
+	"github.com/itsubaki/qasm/pkg/evaluator/object"
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
@@ -138,61 +140,6 @@ func ExampleEvaluator() {
 	// c: 11
 }
 
-func ExampleEvaluator_println() {
-	p := &ast.OpenQASM{
-		Version: &ast.BasicLit{
-			Kind:  lexer.FLOAT,
-			Value: "3.0",
-		},
-		Incls: []ast.Stmt{
-			&ast.InclStmt{
-				Path: ast.BasicLit{
-					Kind:  lexer.STRING,
-					Value: "\"stdgates.qasm\"",
-				},
-			},
-		},
-		Stmts: []ast.Stmt{
-			&ast.DeclStmt{
-				Decl: &ast.GenDecl{
-					Kind: lexer.QUBIT,
-					Type: &ast.IndexExpr{
-						Name: ast.IdentExpr{
-							Value: lexer.Tokens[lexer.QUBIT],
-						},
-						Value: "2",
-					},
-					Name: ast.IdentExpr{
-						Value: "q",
-					},
-				},
-			},
-			&ast.ApplyStmt{
-				Kind: lexer.H,
-				QArgs: ast.ExprList{
-					List: []ast.Expr{
-						&ast.IdentExpr{
-							Value: "q",
-						},
-					},
-				},
-			},
-			&ast.PrintStmt{},
-		},
-	}
-
-	if err := evaluator.Default().Eval(p); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// Output:
-	// [00][  0]( 0.5000 0.0000i): 0.2500
-	// [01][  1]( 0.5000 0.0000i): 0.2500
-	// [10][  2]( 0.5000 0.0000i): 0.2500
-	// [11][  3]( 0.5000 0.0000i): 0.2500
-}
-
 func ExampleEvaluator_call() {
 	p := &ast.OpenQASM{
 		Version: &ast.BasicLit{
@@ -299,4 +246,45 @@ func ExampleEvaluator_call() {
 	// Output:
 	// [00][  0]( 0.7071 0.0000i): 0.5000
 	// [11][  3]( 0.7071 0.0000i): 0.5000
+}
+
+func TestEvalExpr(t *testing.T) {
+	var cases = []struct {
+		in   ast.Expr
+		want object.Object
+	}{
+		{
+			in: &ast.BasicLit{
+				Kind:  lexer.INT,
+				Value: "3",
+			},
+			want: &object.Int{
+				Value: 3,
+			},
+		},
+		{
+			in: &ast.BasicLit{
+				Kind:  lexer.PI,
+				Value: "pi",
+			},
+			want: &object.Float{
+				Value: 3.141592653589793,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		got, err := evaluator.Eval(c.in)
+		if err != nil {
+			t.Fatalf("in(%v): %v", c.in, err)
+		}
+
+		if got.Type() != c.want.Type() {
+			t.Errorf("got=%T, want=%T", got, c.want)
+		}
+
+		if got.String() != c.want.String() {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
 }

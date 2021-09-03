@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/itsubaki/qasm/pkg/ast"
+	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
 func TestExpr(t *testing.T) {
@@ -141,6 +142,73 @@ func TestExpr(t *testing.T) {
 				},
 			},
 			"(int[32] a, int[32] N)",
+		},
+		{
+			&ast.InfixExpr{
+				Ope: lexer.PLUS,
+				Left: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "3",
+				},
+				Right: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "1",
+				},
+			},
+			"3 + 1",
+		},
+		{
+
+			&ast.ParenExpr{
+				List: ast.ExprList{
+					List: []ast.Expr{
+						&ast.InfixExpr{
+							Ope: lexer.PLUS,
+							Left: &ast.BasicLit{
+								Kind:  lexer.INT,
+								Value: "3",
+							},
+							Right: &ast.ParenExpr{
+								List: ast.ExprList{
+									List: []ast.Expr{
+										&ast.InfixExpr{
+											Ope: lexer.MINUS,
+											Left: &ast.BasicLit{
+												Kind:  lexer.INT,
+												Value: "5",
+											},
+											Right: &ast.IdentExpr{
+												Value: "a",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"(3 + (5 - a))",
+		},
+		{
+			&ast.ParenExpr{
+				List: ast.ExprList{
+					List: []ast.Expr{
+						&ast.InfixExpr{
+							Ope: lexer.PLUS,
+							Left: &ast.BasicLit{
+								Kind:  lexer.INT,
+								Value: "3",
+							},
+							Right: &ast.BasicLit{
+								Kind:  lexer.INT,
+								Value: "1",
+							},
+						},
+					},
+				},
+			},
+			"(3 + 1)",
 		},
 	}
 

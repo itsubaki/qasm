@@ -237,3 +237,27 @@ func (x *CallExpr) String() string {
 
 	return buf.String()
 }
+
+type InfixExpr struct {
+	Ope   lexer.Token
+	Left  Expr
+	Right Expr
+}
+
+func (x *InfixExpr) exprNode() {}
+
+func (x *InfixExpr) Literal() string {
+	return lexer.Tokens[x.Ope]
+}
+
+func (x *InfixExpr) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(x.Left.String())
+	buf.WriteString(" ")
+	buf.WriteString(x.Literal())
+	buf.WriteString(" ")
+	buf.WriteString(x.Right.String())
+
+	return buf.String()
+}

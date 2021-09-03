@@ -26,10 +26,10 @@ type Opts struct {
 	Verbose bool
 }
 
-func New(qsim *q.Q, opts ...Opts) *Evaluator {
+func New(qsim *q.Q, env *object.Environment, opts ...Opts) *Evaluator {
 	e := &Evaluator{
 		Q:   qsim,
-		Env: object.NewEnvironment(),
+		Env: env,
 	}
 
 	if opts != nil {
@@ -40,7 +40,11 @@ func New(qsim *q.Q, opts ...Opts) *Evaluator {
 }
 
 func Default(opts ...Opts) *Evaluator {
-	return New(q.New(), opts...)
+	return New(q.New(), object.NewEnvironment(), opts...)
+}
+
+func Eval(n ast.Node) (object.Object, error) {
+	return Default().eval(n, object.NewEnvironment())
 }
 
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
