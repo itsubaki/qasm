@@ -261,3 +261,23 @@ func (x *InfixExpr) String() string {
 
 	return buf.String()
 }
+
+type UnaryExpr struct {
+	Kind  lexer.Token
+	Value Expr
+}
+
+func (x *UnaryExpr) exprNode() {}
+
+func (x *UnaryExpr) Literal() string {
+	return lexer.Tokens[x.Kind]
+}
+
+func (x *UnaryExpr) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(x.Literal())
+	buf.WriteString(x.Value.String())
+
+	return buf.String()
+}
