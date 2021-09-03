@@ -184,6 +184,19 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 		case lexer.EULER:
 			return &object.Float{Value: math.E}, nil
 		}
+	case *ast.InfixExpr:
+		lhs, err := e.eval(n.Left, env)
+		if err != nil {
+			return nil, fmt.Errorf("eval(%v): %v", n.Left, err)
+		}
+
+		rhs, err := e.eval(n.Right, env)
+		if err != nil {
+			return nil, fmt.Errorf("eval(%v): %v", n.Right, err)
+		}
+
+		return e.evalInfix(n.Kind, lhs, rhs)
+
 	case *ast.IdentExpr:
 		if v, ok := env.Const[ast.Ident(n)]; ok {
 			return v, nil
@@ -191,6 +204,49 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 	}
 
 	return &object.Nil{}, nil
+}
+
+func (e *Evaluator) evalInfix(kind lexer.Token, lhs, rhs object.Object) (object.Object, error) {
+	if kind == lexer.PLUS {
+		switch t := lhs.(type) {
+		case *object.Int:
+			return &object.Int{
+				Value: t.Value + rhs.(*object.Int).Value,
+			}, nil
+		case *object.Float:
+			return &object.Float{
+				Value: t.Value + rhs.(*object.Float).Value,
+			}, nil
+		}
+	}
+
+	if kind == lexer.MINUS {
+		switch t := lhs.(type) {
+		case *object.Int:
+			return &object.Int{
+				Value: t.Value - rhs.(*object.Int).Value,
+			}, nil
+		case *object.Float:
+			return &object.Float{
+				Value: t.Value - rhs.(*object.Float).Value,
+			}, nil
+		}
+	}
+
+	if kind == lexer.MUL {
+		switch t := lhs.(type) {
+		case *object.Int:
+			return &object.Int{
+				Value: t.Value * rhs.(*object.Int).Value,
+			}, nil
+		case *object.Float:
+			return &object.Float{
+				Value: t.Value * rhs.(*object.Float).Value,
+			}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("unsupported(%v)", kind)
 }
 
 func (e *Evaluator) evalPrint(s *ast.PrintStmt, env *object.Environment) error {

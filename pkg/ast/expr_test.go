@@ -145,7 +145,7 @@ func TestExpr(t *testing.T) {
 		},
 		{
 			&ast.InfixExpr{
-				Ope: lexer.PLUS,
+				Kind: lexer.PLUS,
 				Left: &ast.BasicLit{
 					Kind:  lexer.INT,
 					Value: "3",
@@ -163,7 +163,7 @@ func TestExpr(t *testing.T) {
 				List: ast.ExprList{
 					List: []ast.Expr{
 						&ast.InfixExpr{
-							Ope: lexer.PLUS,
+							Kind: lexer.PLUS,
 							Left: &ast.BasicLit{
 								Kind:  lexer.INT,
 								Value: "3",
@@ -172,7 +172,7 @@ func TestExpr(t *testing.T) {
 								List: ast.ExprList{
 									List: []ast.Expr{
 										&ast.InfixExpr{
-											Ope: lexer.MINUS,
+											Kind: lexer.MINUS,
 											Left: &ast.BasicLit{
 												Kind:  lexer.INT,
 												Value: "5",
@@ -195,7 +195,7 @@ func TestExpr(t *testing.T) {
 				List: ast.ExprList{
 					List: []ast.Expr{
 						&ast.InfixExpr{
-							Ope: lexer.PLUS,
+							Kind: lexer.PLUS,
 							Left: &ast.BasicLit{
 								Kind:  lexer.INT,
 								Value: "3",

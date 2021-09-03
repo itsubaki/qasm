@@ -271,6 +271,38 @@ func TestEvalExpr(t *testing.T) {
 				Value: 3.141592653589793,
 			},
 		},
+		{
+			in: &ast.InfixExpr{
+				Kind: lexer.PLUS,
+				Left: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "7",
+				},
+				Right: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "11",
+				},
+			},
+			want: &object.Int{
+				Value: 18,
+			},
+		},
+		{
+			in: &ast.InfixExpr{
+				Kind: lexer.MUL,
+				Left: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "7",
+				},
+				Right: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "11",
+				},
+			},
+			want: &object.Int{
+				Value: 77,
+			},
+		},
 	}
 
 	for _, c := range cases {

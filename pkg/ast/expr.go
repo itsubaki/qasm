@@ -239,7 +239,7 @@ func (x *CallExpr) String() string {
 }
 
 type InfixExpr struct {
-	Ope   lexer.Token
+	Kind  lexer.Token
 	Left  Expr
 	Right Expr
 }
@@ -247,7 +247,7 @@ type InfixExpr struct {
 func (x *InfixExpr) exprNode() {}
 
 func (x *InfixExpr) Literal() string {
-	return lexer.Tokens[x.Ope]
+	return lexer.Tokens[x.Kind]
 }
 
 func (x *InfixExpr) String() string {
