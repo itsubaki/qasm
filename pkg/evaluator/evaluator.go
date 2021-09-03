@@ -246,6 +246,28 @@ func (e *Evaluator) evalInfix(kind lexer.Token, lhs, rhs object.Object) (object.
 		}
 	}
 
+	if kind == lexer.DIV {
+		switch t := lhs.(type) {
+		case *object.Int:
+			return &object.Int{
+				Value: t.Value / rhs.(*object.Int).Value,
+			}, nil
+		case *object.Float:
+			return &object.Float{
+				Value: t.Value / rhs.(*object.Float).Value,
+			}, nil
+		}
+	}
+
+	if kind == lexer.MOD {
+		switch t := lhs.(type) {
+		case *object.Int:
+			return &object.Int{
+				Value: t.Value % rhs.(*object.Int).Value,
+			}, nil
+		}
+	}
+
 	return nil, fmt.Errorf("unsupported(%v)", kind)
 }
 
