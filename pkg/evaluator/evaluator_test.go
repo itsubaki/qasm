@@ -319,6 +319,30 @@ func TestEvalExpr(t *testing.T) {
 				Value: 0,
 			},
 		},
+		{
+			in: &ast.UnaryExpr{
+				Kind: lexer.MINUS,
+				Value: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "3",
+				},
+			},
+			want: &object.Int{
+				Value: -3,
+			},
+		},
+		{
+			in: &ast.UnaryExpr{
+				Kind: lexer.PLUS,
+				Value: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "3.0",
+				},
+			},
+			want: &object.Float{
+				Value: 3.0,
+			},
+		},
 	}
 
 	for _, c := range cases {

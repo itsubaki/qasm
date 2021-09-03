@@ -184,6 +184,25 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 		case lexer.EULER:
 			return &object.Float{Value: math.E}, nil
 		}
+	case *ast.UnaryExpr:
+		v, err := e.eval(n.Value, env)
+		if err != nil {
+			return nil, fmt.Errorf("eval(%v): %v", n.Value, err)
+		}
+
+		if n.Kind == lexer.PLUS {
+			return v, nil
+		}
+
+		if n.Kind == lexer.MINUS {
+			switch v := v.(type) {
+			case *object.Int:
+				return &object.Int{Value: -1 * v.Value}, nil
+			case *object.Float:
+				return &object.Float{Value: -1 * v.Value}, nil
+			}
+		}
+
 	case *ast.InfixExpr:
 		lhs, err := e.eval(n.Left, env)
 		if err != nil {
@@ -210,61 +229,43 @@ func (e *Evaluator) evalInfix(kind lexer.Token, lhs, rhs object.Object) (object.
 	if kind == lexer.PLUS {
 		switch t := lhs.(type) {
 		case *object.Int:
-			return &object.Int{
-				Value: t.Value + rhs.(*object.Int).Value,
-			}, nil
+			return &object.Int{Value: t.Value + rhs.(*object.Int).Value}, nil
 		case *object.Float:
-			return &object.Float{
-				Value: t.Value + rhs.(*object.Float).Value,
-			}, nil
+			return &object.Float{Value: t.Value + rhs.(*object.Float).Value}, nil
 		}
 	}
 
 	if kind == lexer.MINUS {
 		switch t := lhs.(type) {
 		case *object.Int:
-			return &object.Int{
-				Value: t.Value - rhs.(*object.Int).Value,
-			}, nil
+			return &object.Int{Value: t.Value - rhs.(*object.Int).Value}, nil
 		case *object.Float:
-			return &object.Float{
-				Value: t.Value - rhs.(*object.Float).Value,
-			}, nil
+			return &object.Float{Value: t.Value - rhs.(*object.Float).Value}, nil
 		}
 	}
 
 	if kind == lexer.MUL {
 		switch t := lhs.(type) {
 		case *object.Int:
-			return &object.Int{
-				Value: t.Value * rhs.(*object.Int).Value,
-			}, nil
+			return &object.Int{Value: t.Value * rhs.(*object.Int).Value}, nil
 		case *object.Float:
-			return &object.Float{
-				Value: t.Value * rhs.(*object.Float).Value,
-			}, nil
+			return &object.Float{Value: t.Value * rhs.(*object.Float).Value}, nil
 		}
 	}
 
 	if kind == lexer.DIV {
 		switch t := lhs.(type) {
 		case *object.Int:
-			return &object.Int{
-				Value: t.Value / rhs.(*object.Int).Value,
-			}, nil
+			return &object.Int{Value: t.Value / rhs.(*object.Int).Value}, nil
 		case *object.Float:
-			return &object.Float{
-				Value: t.Value / rhs.(*object.Float).Value,
-			}, nil
+			return &object.Float{Value: t.Value / rhs.(*object.Float).Value}, nil
 		}
 	}
 
 	if kind == lexer.MOD {
 		switch t := lhs.(type) {
 		case *object.Int:
-			return &object.Int{
-				Value: t.Value % rhs.(*object.Int).Value,
-			}, nil
+			return &object.Int{Value: t.Value % rhs.(*object.Int).Value}, nil
 		}
 	}
 
