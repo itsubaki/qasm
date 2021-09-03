@@ -1,7 +1,7 @@
 OPENQASM 3.0;
 include "itsubaki/q.qasm";
 
-const N = 15;
+const N = 3 * 5;
 const a = 7;
 
 qubit[3] r0;

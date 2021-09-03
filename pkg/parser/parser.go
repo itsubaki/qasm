@@ -160,15 +160,12 @@ func (p *Parser) parseDeclStmt() ast.Stmt {
 
 func (p *Parser) parseDeclList() ast.DeclList {
 	list := ast.DeclList{}
-
 	list.Append(p.parseDecl())
-	p.next()
 
-	for p.cur.Token == lexer.COMMA {
+	for p.next().Token == lexer.COMMA {
 		p.next() // skip COMMA token
 
 		list.Append(p.parseDecl())
-		p.next()
 	}
 
 	return list
@@ -202,7 +199,7 @@ func (p *Parser) parseIdentList() ast.ExprList {
 	list := ast.ExprList{}
 	list.Append(p.parseIdent())
 
-	for p.cur.Token == lexer.COMMA {
+	for p.next().Token == lexer.COMMA {
 		p.next() // skip COMMNA token
 
 		list.Append(p.parseIdent())
@@ -211,8 +208,18 @@ func (p *Parser) parseIdentList() ast.ExprList {
 	return list
 }
 
+func (p *Parser) isOpe(t lexer.Token) bool {
+	if t == lexer.PLUS || t == lexer.MINUS ||
+		t == lexer.MUL || t == lexer.DIV || t == lexer.MOD {
+		return true
+	}
+
+	return false
+}
+
 func (p *Parser) isBasic(t lexer.Token) bool {
-	if t == lexer.PI || t == lexer.TAU || t == lexer.EULER || t == lexer.INT || t == lexer.FLOAT || t == lexer.STRING {
+	if t == lexer.STRING || t == lexer.INT || t == lexer.FLOAT ||
+		t == lexer.EULER || t == lexer.TAU || t == lexer.PI {
 		return true
 	}
 
@@ -221,7 +228,9 @@ func (p *Parser) isBasic(t lexer.Token) bool {
 
 func (p *Parser) parseInfix() ast.Expr {
 	lhs := p.cur
-	ope, rhs := p.next(), p.next()
+	ope := p.next()
+	rhs := p.next()
+
 	return &ast.InfixExpr{
 		Kind: ope.Token,
 		Left: &ast.BasicLit{
@@ -242,16 +251,10 @@ func (p *Parser) parseIdent() ast.Expr {
 	}
 
 	if p.isBasic(c.Token) {
-		if p.peek.Token == lexer.PLUS || p.peek.Token == lexer.MINUS ||
-			p.peek.Token == lexer.MUL || p.peek.Token == lexer.DIV ||
-			p.peek.Token == lexer.MOD {
-
-			x := p.parseInfix()
-			p.next()
-			return x
+		if p.isOpe(p.peek.Token) {
+			// pi / 2
+			return p.parseInfix()
 		}
-
-		p.next()
 
 		// pi, 1.23
 		return &ast.BasicLit{
@@ -265,11 +268,12 @@ func (p *Parser) parseIdent() ast.Expr {
 		Value: c.Literal,
 	}
 
-	p.next()
-	if p.cur.Token != lexer.LBRACKET {
+	if p.peek.Token != lexer.LBRACKET {
 		// q
 		return &x
 	}
+
+	p.next()
 	p.expect(lexer.LBRACKET)
 
 	v := p.next().Literal
@@ -283,7 +287,6 @@ func (p *Parser) parseIdent() ast.Expr {
 	p.expect(lexer.RBRACKET)
 
 	// q[0]
-	p.next()
 	return &ast.IndexExpr{
 		Name:  x,
 		Value: v,
@@ -300,17 +303,13 @@ func (p *Parser) parseGenConst() ast.Decl {
 	p.expect(lexer.EQUALS)
 
 	v := p.next()
-
-	if p.peek.Token == lexer.PLUS || p.peek.Token == lexer.MINUS ||
-		p.peek.Token == lexer.MUL || p.peek.Token == lexer.DIV ||
-		p.peek.Token == lexer.MOD {
-
-		x := p.parseInfix()
+	if p.isOpe(p.peek.Token) {
+		// const N = pi * 2
 		return &ast.GenConst{
 			Name: ast.IdentExpr{
 				Value: n.Literal,
 			},
-			Value: x,
+			Value: p.parseInfix(),
 		}
 	}
 
@@ -352,7 +351,7 @@ func (p *Parser) parseGenDecl() ast.Decl {
 	p.next()
 	p.expect(lexer.RBRACKET)
 
-	ident := p.next()
+	v := p.next()
 	p.expect(lexer.IDENT)
 
 	return &ast.GenDecl{
@@ -364,7 +363,7 @@ func (p *Parser) parseGenDecl() ast.Decl {
 			Value: index.Literal,
 		},
 		Name: ast.IdentExpr{
-			Value: ident.Literal,
+			Value: v.Literal,
 		},
 	}
 }
@@ -503,6 +502,7 @@ func (p *Parser) parseMeasureStmt() ast.Stmt {
 
 	// measure q -> c;
 	right := p.parseIdent()
+	p.next()
 	p.expectSemi()
 
 	return &ast.ArrowStmt{
@@ -618,6 +618,7 @@ func (p *Parser) parseApplyStmt() ast.Stmt {
 
 func (p *Parser) parseAssignOrCall() ast.Stmt {
 	c := p.parseIdent()
+	p.next()
 
 	if p.cur.Token != lexer.EQUALS {
 		// bell r0, r1;
