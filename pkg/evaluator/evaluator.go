@@ -347,6 +347,23 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, p []float64, qargs 
 		u = u.Dagger()
 	}
 
+	// Pow(2) U
+	for _, m := range mod {
+		if m.Kind != lexer.POW {
+			continue
+		}
+
+		var c int
+		if len(m.Index.List.List) > 0 {
+			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
+		}
+
+		tmp := u
+		for i := 1; i < c; i++ {
+			u = u.Apply(tmp)
+		}
+	}
+
 	// Controlled-U
 	for _, m := range mod {
 		if m.Kind == lexer.INV || m.Kind == lexer.POW {
