@@ -141,3 +141,39 @@ var Tokens = [...]string{
 	TAU:      "tau",
 	EULER:    "euler",
 }
+
+func IsModifiler(token Token) bool {
+	if token == CTRL || token == NEGCTRL || token == INV || token == POW {
+		return true
+	}
+
+	return false
+}
+
+func IsBinaryOperator(token Token) bool {
+	if token == PLUS || token == MINUS || token == MUL || token == DIV || token == MOD {
+		return true
+	}
+
+	return false
+}
+
+func IsBasicLit(token Token) bool {
+	if token == IDENT || token == STRING || token == INT || token == FLOAT {
+		return true
+	}
+
+	if IsConst(token) {
+		return true
+	}
+
+	return false
+}
+
+func IsConst(token Token) bool {
+	if token == PI || token == TAU || token == EULER {
+		return true
+	}
+
+	return false
+}

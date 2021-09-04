@@ -208,24 +208,6 @@ func (p *Parser) parseIdentList() ast.ExprList {
 	return list
 }
 
-func (p *Parser) isBinaryOperator(t lexer.Token) bool {
-	if t == lexer.PLUS || t == lexer.MINUS ||
-		t == lexer.MUL || t == lexer.DIV || t == lexer.MOD {
-		return true
-	}
-
-	return false
-}
-
-func (p *Parser) isBasic(t lexer.Token) bool {
-	if t == lexer.STRING || t == lexer.INT || t == lexer.FLOAT ||
-		t == lexer.EULER || t == lexer.TAU || t == lexer.PI {
-		return true
-	}
-
-	return false
-}
-
 func (p *Parser) parseInfix() ast.Expr {
 	lhs := p.cur
 	ope := p.next()
@@ -246,12 +228,12 @@ func (p *Parser) parseInfix() ast.Expr {
 
 func (p *Parser) parseIdent() ast.Expr {
 	c := p.cur
-	if c.Token != lexer.IDENT && !p.isBasic(c.Token) {
+	if !lexer.IsBasicLit(c.Token) {
 		c = p.next()
 	}
 
-	if p.isBasic(c.Token) {
-		if p.isBinaryOperator(p.peek.Token) {
+	if c.Token != lexer.IDENT && lexer.IsBasicLit(c.Token) {
+		if lexer.IsBinaryOperator(p.peek.Token) {
 			// pi / 2
 			return p.parseInfix()
 		}
@@ -303,7 +285,7 @@ func (p *Parser) parseGenConst() ast.Decl {
 	p.expect(lexer.EQUALS)
 
 	v := p.next()
-	if p.isBinaryOperator(p.peek.Token) {
+	if lexer.IsBinaryOperator(p.peek.Token) {
 		// const N = pi * 2
 		return &ast.GenConst{
 			Name: ast.IdentExpr{
@@ -556,7 +538,7 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 
 func (p *Parser) parseApplyStmt() ast.Stmt {
 	mod := make([]ast.Modifier, 0)
-	for p.cur.Token == lexer.CTRL || p.cur.Token == lexer.NEGCTRL || p.cur.Token == lexer.INV || p.cur.Token == lexer.POW {
+	for lexer.IsModifiler(p.cur.Token) {
 		m := ast.Modifier{
 			Kind: p.cur.Token,
 		}

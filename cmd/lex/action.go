@@ -24,12 +24,17 @@ func Action(c *cli.Context) error {
 	l := lexer.New(strings.NewReader(string(f)))
 	newline := true
 	for {
-		token, _ := l.Tokenize()
+		token, lit := l.Tokenize()
 		if token == lexer.EOF {
 			break
 		}
 
-		fmt.Printf("%v ", lexer.Tokens[token])
+		fmt.Printf("%v", lexer.Tokens[token])
+		if lexer.IsBasicLit(token) && !lexer.IsConst(token) {
+			fmt.Printf("(%v) ", lit)
+		} else {
+			fmt.Printf(" ")
+		}
 
 		if token == lexer.LBRACE {
 			newline = false
