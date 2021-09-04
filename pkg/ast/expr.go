@@ -22,6 +22,10 @@ func (l *ExprList) Append(x Expr) {
 	l.List = append(l.List, x)
 }
 
+func (l *ExprList) Len() int {
+	return len(l.List)
+}
+
 func (l *ExprList) String() string {
 	list := make([]string, 0)
 	for _, x := range l.List {

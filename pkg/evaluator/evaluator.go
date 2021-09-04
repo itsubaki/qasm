@@ -559,15 +559,13 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 				}
 			}
 
-			// single operation
-			if a.Kind != lexer.IDENT && !ctrl {
+			if a.Kind != lexer.IDENT && !ctrl && a.QArgs.Len() == x.QArgs.Len() {
 				if _, err := e.eval(a, env); err != nil {
 					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
 				}
 				continue
 			}
 
-			// ctrl @ operation
 			if a.Kind != lexer.IDENT {
 				a.QArgs = x.QArgs
 				a.Modifier = append(x.Modifier, a.Modifier...)
