@@ -562,14 +562,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 				}
 			}
 
-			if a.Kind != lexer.IDENT && x.QArgs.Len() > a.QArgs.Len() && !ctrl {
-				if _, err := e.eval(a, env); err != nil {
-					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
-				}
-				continue
-			}
-
-			if a.Kind != lexer.IDENT {
+			if a.Kind != lexer.IDENT && ctrl {
 				a.QArgs = x.QArgs
 				a.Modifier = append(x.Modifier, a.Modifier...)
 				if _, err := e.eval(a, outer); err != nil {
@@ -578,9 +571,15 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 				continue
 			}
 
+			if a.Kind != lexer.IDENT {
+				if _, err := e.eval(a, env); err != nil {
+					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
+				}
+				continue
+			}
+
 			//	call declared gate
 			decl := env.Func[a.Name].(*ast.GateDecl)
-
 			if e.Opts.Verbose {
 				fmt.Printf("%v", strings.Repeat(indent, e.indent))
 				fmt.Printf("%T(%v)\n", decl, decl)
