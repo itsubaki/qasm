@@ -365,28 +365,106 @@ func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
 	return e.apply(s.Modifier, s.Kind, p, q)
 }
 
+func builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
+	switch g {
+	case lexer.U:
+		return gate.U(p[0], p[1], p[2]), true
+	case lexer.X:
+		return gate.X(), true
+	case lexer.Y:
+		return gate.Y(), true
+	case lexer.Z:
+		return gate.Z(), true
+	case lexer.H:
+		return gate.H(), true
+	case lexer.T:
+		return gate.T(), true
+	case lexer.S:
+		return gate.S(), true
+	}
+
+	return nil, false
+}
+
+func inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
+	var c int
+	for _, m := range mod {
+		if m.Kind == lexer.INV {
+			c++
+		}
+	}
+
+	if c%2 == 1 {
+		u = u.Dagger()
+	}
+
+	return u
+}
+
+func pow(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
+	for _, m := range mod {
+		if m.Kind != lexer.POW {
+			continue
+		}
+
+		var c int
+		if len(m.Index.List.List) > 0 {
+			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
+		}
+
+		tmp := u
+		for i := 1; i < c; i++ {
+			u = u.Apply(tmp)
+		}
+	}
+
+	return u
+}
+
+func (e *Evaluator) ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit) bool {
+	for _, m := range mod {
+		if m.Kind == lexer.INV || m.Kind == lexer.POW {
+			continue
+		}
+
+		var c int
+		if len(m.Index.List.List) > 0 {
+			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
+		}
+
+		switch m.Kind {
+		case lexer.CTRL:
+			for i := range qargs[c] {
+				e.Q.C(u, qargs[c][i], qargs[len(qargs)-1][i])
+			}
+
+			return true
+		case lexer.NEGCTRL:
+			for i := range qargs[c] {
+				e.Q.X(qargs[c][i])
+			}
+			for i := range qargs[c] {
+				e.Q.C(u, qargs[c][i], qargs[len(qargs)-1][i])
+			}
+			for i := range qargs[c] {
+				e.Q.X(qargs[c][i])
+			}
+
+			return true
+		}
+	}
+
+	return false
+}
+
 func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, p []float64, qargs [][]q.Qubit) error {
 	in := make([]q.Qubit, 0)
 	for _, q := range qargs {
 		in = append(in, q...)
 	}
 
-	var u matrix.Matrix
+	// itsubaki/q
 	switch g {
-	case lexer.U:
-		u = gate.U(p[0], p[1], p[2])
-	case lexer.X:
-		u = gate.X()
-	case lexer.Y:
-		u = gate.Y()
-	case lexer.Z:
-		u = gate.Z()
-	case lexer.H:
-		u = gate.H()
-	case lexer.T:
-		u = gate.T()
-	case lexer.S:
-		u = gate.S()
 	case lexer.CX:
 		for i := range qargs[0] {
 			e.Q.CNOT(qargs[0][i], qargs[1][i])
@@ -414,70 +492,22 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, p []float64, qargs 
 	case lexer.CMODEXP2:
 		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
 		return nil
-	default:
+	}
+
+	u, ok := builtin(g, p)
+	if !ok {
 		return fmt.Errorf("gate=%v(%v) not found", lexer.Tokens[g], g)
 	}
 
 	// Inverse U
-	var c int
-	for _, m := range mod {
-		if m.Kind == lexer.INV {
-			c++
-		}
-	}
-
-	if c%2 == 1 {
-		u = u.Dagger()
-	}
+	u = inv(mod, u)
 
 	// Pow(2) U
-	for _, m := range mod {
-		if m.Kind != lexer.POW {
-			continue
-		}
-
-		var c int
-		if len(m.Index.List.List) > 0 {
-			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
-		}
-
-		tmp := u
-		for i := 1; i < c; i++ {
-			u = u.Apply(tmp)
-		}
-	}
+	u = pow(mod, u)
 
 	// Controlled-U
-	for _, m := range mod {
-		if m.Kind == lexer.INV || m.Kind == lexer.POW {
-			continue
-		}
-
-		var c int
-		if len(m.Index.List.List) > 0 {
-			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
-		}
-
-		switch m.Kind {
-		case lexer.CTRL:
-			for i := range qargs[c] {
-				e.Q.C(u, qargs[c][i], qargs[len(qargs)-1][i])
-			}
-
-			return nil
-		case lexer.NEGCTRL:
-			for i := range qargs[c] {
-				e.Q.X(qargs[c][i])
-			}
-			for i := range qargs[c] {
-				e.Q.C(u, qargs[c][i], qargs[len(qargs)-1][i])
-			}
-			for i := range qargs[c] {
-				e.Q.X(qargs[c][i])
-			}
-
-			return nil
-		}
+	if ok := e.ctrl(mod, u, qargs); ok {
+		return nil
 	}
 
 	// U
