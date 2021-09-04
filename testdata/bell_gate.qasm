@@ -11,5 +11,5 @@ bit[2]   c;
 reset q;
 
 bell q[0], q[1];
-measure q -> c;
+
 

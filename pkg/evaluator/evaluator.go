@@ -456,6 +456,9 @@ func (e *Evaluator) tryBultinApply(g lexer.Token, p []float64, qargs [][]q.Qubit
 }
 
 func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit) bool {
+	ctrl := make([][]q.Qubit, 0)
+	negctrl := make([][]q.Qubit, 0)
+
 	for _, m := range mod {
 		if m.Kind == lexer.INV || m.Kind == lexer.POW {
 			continue
@@ -468,24 +471,24 @@ func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]
 
 		switch m.Kind {
 		case lexer.CTRL:
-			for i := range qargs[c] {
-				e.Q.C(u, qargs[c][i], qargs[len(qargs)-1][i])
-			}
-
-			return true
+			ctrl = append(ctrl, qargs[c])
 		case lexer.NEGCTRL:
-			for i := range qargs[c] {
-				e.Q.X(qargs[c][i])
-			}
-			for i := range qargs[c] {
-				e.Q.C(u, qargs[c][i], qargs[len(qargs)-1][i])
-			}
-			for i := range qargs[c] {
-				e.Q.X(qargs[c][i])
-			}
-
-			return true
+			negctrl = append(negctrl, qargs[c])
 		}
+	}
+
+	if len(ctrl) != 0 {
+		for i := range ctrl[0] {
+			e.Q.C(u, ctrl[0][i], qargs[len(qargs)-1][i])
+		}
+		return true
+	}
+
+	if len(negctrl) != 0 {
+		for i := range negctrl[0] {
+			e.Q.C(u, ctrl[0][i], qargs[len(qargs)-1][i])
+		}
+		return true
 	}
 
 	return false
@@ -559,7 +562,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 				}
 			}
 
-			if a.Kind != lexer.IDENT && !ctrl && a.QArgs.Len() == x.QArgs.Len() {
+			if a.Kind != lexer.IDENT && x.QArgs.Len() > a.QArgs.Len() && !ctrl {
 				if _, err := e.eval(a, env); err != nil {
 					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
 				}
