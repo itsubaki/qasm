@@ -328,8 +328,7 @@ func (p *Parser) parseGenConst() ast.Decl {
 func (p *Parser) parseGenDecl() ast.Decl {
 	kind := p.cur.Token // lexer.QUBIT, lexer.BIT, lexer.INT, lexer.FLOAT
 
-	n := p.next()
-	if p.cur.Token == lexer.IDENT {
+	if p.next().Token == lexer.IDENT {
 		// qubit q
 		return &ast.GenDecl{
 			Kind: kind,
@@ -337,7 +336,7 @@ func (p *Parser) parseGenDecl() ast.Decl {
 				Value: strings.ToLower(lexer.Tokens[kind]),
 			},
 			Name: ast.IdentExpr{
-				Value: n.Literal,
+				Value: p.cur.Literal,
 			},
 		}
 	}
@@ -379,8 +378,7 @@ func (p *Parser) parseGate() ast.Decl {
 		Body: ast.BlockStmt{},
 	}
 
-	p.next()
-	if p.cur.Token == lexer.LPAREN {
+	if p.next().Token == lexer.LPAREN {
 		decl.Params = ast.ParenExpr{
 			List: p.parseIdentList(),
 		}
@@ -390,10 +388,8 @@ func (p *Parser) parseGate() ast.Decl {
 	decl.QArgs = p.parseIdentList()
 	p.expect(lexer.LBRACE)
 
-	p.next()
-	for p.cur.Token != lexer.RBRACE {
+	for p.next().Token != lexer.RBRACE {
 		decl.Body.Append(p.parseApplyStmt())
-		p.next()
 	}
 	p.expect(lexer.RBRACE)
 
@@ -413,10 +409,8 @@ func (p *Parser) parseFunc() ast.Decl {
 		Body: ast.BlockStmt{},
 	}
 
-	p.next()
-	if p.cur.Token == lexer.LPAREN {
-		p.expect(lexer.LPAREN)
-		p.next()
+	if p.next().Token == lexer.LPAREN {
+		p.next() // skip LPAREN
 
 		// (int[32] a, int[32] N)
 		decl.Params = ast.ParenDecl{
@@ -514,8 +508,7 @@ func (p *Parser) parseMeasureStmt() ast.Stmt {
 func (p *Parser) parseReturnStmt() ast.Stmt {
 	p.expect(lexer.RETURN)
 
-	p.next()
-	if p.cur.Token == lexer.MEASURE {
+	if p.next().Token == lexer.MEASURE {
 		x := p.parseMeasure()
 		p.expectSemi()
 
@@ -544,8 +537,7 @@ func (p *Parser) parseResetStmt() ast.Stmt {
 func (p *Parser) parsePrintStmt() ast.Stmt {
 	p.expect(lexer.PRINT)
 
-	c := p.next()
-	if c.Token != lexer.IDENT {
+	if p.next().Token != lexer.IDENT {
 		p.expectSemi()
 
 		// print;
@@ -569,8 +561,7 @@ func (p *Parser) parseApplyStmt() ast.Stmt {
 			Kind: p.cur.Token,
 		}
 
-		p.next()
-		if p.cur.Token == lexer.LPAREN {
+		if p.next().Token == lexer.LPAREN {
 			v := p.next()
 			p.expect(lexer.INT)
 
@@ -601,8 +592,7 @@ func (p *Parser) parseApplyStmt() ast.Stmt {
 		Modifier: mod,
 	}
 
-	p.next()
-	if p.cur.Token == lexer.LPAREN {
+	if p.next().Token == lexer.LPAREN {
 		x.Params = ast.ParenExpr{
 			List: p.parseIdentList(),
 		}
@@ -618,9 +608,8 @@ func (p *Parser) parseApplyStmt() ast.Stmt {
 
 func (p *Parser) parseAssignOrCall() ast.Stmt {
 	c := p.parseIdent()
-	p.next()
 
-	if p.cur.Token != lexer.EQUALS {
+	if p.next().Token != lexer.EQUALS {
 		// bell r0, r1;
 		x := p.parseCall(c.String())
 		p.expectSemi()
@@ -630,9 +619,8 @@ func (p *Parser) parseAssignOrCall() ast.Stmt {
 		}
 	}
 	p.expect(lexer.EQUALS)
-	p.next()
 
-	switch p.cur.Token {
+	switch p.next().Token {
 	case lexer.IDENT:
 		p.expect(lexer.IDENT)
 		n := p.cur.Literal
