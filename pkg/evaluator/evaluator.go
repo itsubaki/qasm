@@ -330,39 +330,34 @@ func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
 		return nil
 	}
 
-	obj := make([]object.Object, 0)
+	params := make([]float64, 0)
 	for _, p := range s.Params.List.List {
 		v, err := e.eval(p, env)
 		if err != nil {
 			return fmt.Errorf("eval(%v): %v", p, err)
 		}
 
-		obj = append(obj, v)
-	}
-
-	p := make([]float64, 0)
-	for _, o := range obj {
-		switch o := o.(type) {
+		switch o := v.(type) {
 		case *object.Float:
-			p = append(p, o.Value)
+			params = append(params, o.Value)
 		case *object.Int:
-			p = append(p, float64(o.Value))
+			params = append(params, float64(o.Value))
 		default:
 			return fmt.Errorf("unsupported(%v)", o)
 		}
 	}
 
-	q := make([][]q.Qubit, 0)
+	qargs := make([][]q.Qubit, 0)
 	for _, a := range s.QArgs.List {
 		qb, ok := env.Qubit.Get(a)
 		if !ok {
 			return fmt.Errorf("qubit(%v) not found", a)
 		}
 
-		q = append(q, qb)
+		qargs = append(qargs, qb)
 	}
 
-	return e.apply(s.Modifier, s.Kind, p, q)
+	return e.apply(s.Modifier, s.Kind, params, qargs)
 }
 
 func builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
@@ -421,7 +416,46 @@ func pow(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
 	return u
 }
 
-func (e *Evaluator) ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit) bool {
+func (e *Evaluator) tryBultinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
+	in := make([]q.Qubit, 0)
+	for _, q := range qargs {
+		in = append(in, q...)
+	}
+
+	switch g {
+	case lexer.SWAP:
+		e.Q.Swap(in...)
+		return true
+	case lexer.QFT:
+		e.Q.QFT(in...)
+		return true
+	case lexer.IQFT:
+		e.Q.InvQFT(in...)
+		return true
+	case lexer.CMODEXP2:
+		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
+		return true
+	case lexer.CX:
+		for i := range qargs[0] {
+			e.Q.CNOT(qargs[0][i], qargs[1][i])
+		}
+		return true
+	case lexer.CZ:
+		for i := range qargs[0] {
+			e.Q.CZ(qargs[0][i], qargs[1][i])
+		}
+		return true
+	case lexer.CCX:
+		for i := range qargs[0] {
+			e.Q.CCNOT(qargs[0][i], qargs[1][i], qargs[2][i])
+		}
+		return true
+	}
+
+	return false
+}
+
+func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit) bool {
 	for _, m := range mod {
 		if m.Kind == lexer.INV || m.Kind == lexer.POW {
 			continue
@@ -457,46 +491,16 @@ func (e *Evaluator) ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit)
 	return false
 }
 
-func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, p []float64, qargs [][]q.Qubit) error {
-	in := make([]q.Qubit, 0)
-	for _, q := range qargs {
-		in = append(in, q...)
-	}
-
-	// itsubaki/q
-	switch g {
-	case lexer.CX:
-		for i := range qargs[0] {
-			e.Q.CNOT(qargs[0][i], qargs[1][i])
-		}
-		return nil
-	case lexer.CZ:
-		for i := range qargs[0] {
-			e.Q.CZ(qargs[0][i], qargs[1][i])
-		}
-		return nil
-	case lexer.CCX:
-		for i := range qargs[0] {
-			e.Q.CCNOT(qargs[0][i], qargs[1][i], qargs[2][i])
-		}
-		return nil
-	case lexer.SWAP:
-		e.Q.Swap(in...)
-		return nil
-	case lexer.QFT:
-		e.Q.QFT(in...)
-		return nil
-	case lexer.IQFT:
-		e.Q.InvQFT(in...)
-		return nil
-	case lexer.CMODEXP2:
-		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
+func (e *Evaluator) apply(mod []ast.Modifier, gate lexer.Token, params []float64, qargs [][]q.Qubit) error {
+	// CX, SWAP, QFT, CMODEXP2, ...
+	if e.tryBultinApply(gate, params, qargs) {
 		return nil
 	}
 
-	u, ok := builtin(g, p)
+	// U, X, Y, Z, H, ...
+	u, ok := builtin(gate, params)
 	if !ok {
-		return fmt.Errorf("gate=%v(%v) not found", lexer.Tokens[g], g)
+		return fmt.Errorf("gate=%v(%v) not found", lexer.Tokens[gate], gate)
 	}
 
 	// Inverse U
@@ -506,11 +510,16 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, p []float64, qargs 
 	u = pow(mod, u)
 
 	// Controlled-U
-	if ok := e.ctrl(mod, u, qargs); ok {
+	if e.tryCtrlApply(mod, u, qargs) {
 		return nil
 	}
 
 	// U
+	in := make([]q.Qubit, 0)
+	for _, q := range qargs {
+		in = append(in, q...)
+	}
+
 	e.Q.Apply(u, in...)
 	return nil
 }

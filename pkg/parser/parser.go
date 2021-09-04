@@ -208,7 +208,7 @@ func (p *Parser) parseIdentList() ast.ExprList {
 	return list
 }
 
-func (p *Parser) isOpe(t lexer.Token) bool {
+func (p *Parser) isBinaryOperator(t lexer.Token) bool {
 	if t == lexer.PLUS || t == lexer.MINUS ||
 		t == lexer.MUL || t == lexer.DIV || t == lexer.MOD {
 		return true
@@ -251,7 +251,7 @@ func (p *Parser) parseIdent() ast.Expr {
 	}
 
 	if p.isBasic(c.Token) {
-		if p.isOpe(p.peek.Token) {
+		if p.isBinaryOperator(p.peek.Token) {
 			// pi / 2
 			return p.parseInfix()
 		}
@@ -303,7 +303,7 @@ func (p *Parser) parseGenConst() ast.Decl {
 	p.expect(lexer.EQUALS)
 
 	v := p.next()
-	if p.isOpe(p.peek.Token) {
+	if p.isBinaryOperator(p.peek.Token) {
 		// const N = pi * 2
 		return &ast.GenConst{
 			Name: ast.IdentExpr{
