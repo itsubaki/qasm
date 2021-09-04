@@ -416,21 +416,25 @@ func pow(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
 	return u
 }
 
-func (e *Evaluator) tryBultinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
-	in := make([]q.Qubit, 0)
+func flatten(qargs [][]q.Qubit) []q.Qubit {
+	out := make([]q.Qubit, 0)
 	for _, q := range qargs {
-		in = append(in, q...)
+		out = append(out, q...)
 	}
 
+	return out
+}
+
+func (e *Evaluator) tryBultinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
 	switch g {
 	case lexer.SWAP:
-		e.Q.Swap(in...)
+		e.Q.Swap(flatten(qargs)...)
 		return true
 	case lexer.QFT:
-		e.Q.QFT(in...)
+		e.Q.QFT(flatten(qargs)...)
 		return true
 	case lexer.IQFT:
-		e.Q.InvQFT(in...)
+		e.Q.InvQFT(flatten(qargs)...)
 		return true
 	case lexer.CMODEXP2:
 		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
@@ -459,12 +463,14 @@ func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]
 	ctrl := make([][]q.Qubit, 0)
 	negctrl := make([][]q.Qubit, 0)
 
+	// ctrl @ ctrl @ X equals to ctrl(0) @ ctrl(1) @ X
+	defaultIndex := 0
 	for _, m := range mod {
 		if m.Kind == lexer.INV || m.Kind == lexer.POW {
 			continue
 		}
 
-		var c int
+		c := defaultIndex
 		if len(m.Index.List.List) > 0 {
 			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
 		}
@@ -475,23 +481,27 @@ func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]
 		case lexer.NEGCTRL:
 			negctrl = append(negctrl, qargs[c])
 		}
+
+		defaultIndex++
 	}
 
-	if len(ctrl) != 0 {
-		for i := range ctrl[0] {
-			e.Q.C(u, ctrl[0][i], qargs[len(qargs)-1][i])
-		}
-		return true
+	if len(ctrl) == 0 && len(negctrl) == 0 {
+		return false
 	}
 
-	if len(negctrl) != 0 {
-		for i := range negctrl[0] {
-			e.Q.C(u, ctrl[0][i], qargs[len(qargs)-1][i])
-		}
-		return true
+	c := append(flatten(ctrl), flatten(negctrl)...)
+
+	if len(negctrl) > 0 {
+		e.Q.X(flatten(negctrl)...)
 	}
 
-	return false
+	e.Q.Controlled(u, c, qargs[len(qargs)-1][0])
+
+	if len(negctrl) > 0 {
+		e.Q.X(flatten(negctrl)...)
+	}
+
+	return true
 }
 
 func (e *Evaluator) apply(mod []ast.Modifier, gate lexer.Token, params []float64, qargs [][]q.Qubit) error {
@@ -518,12 +528,7 @@ func (e *Evaluator) apply(mod []ast.Modifier, gate lexer.Token, params []float64
 	}
 
 	// U
-	in := make([]q.Qubit, 0)
-	for _, q := range qargs {
-		in = append(in, q...)
-	}
-
-	e.Q.Apply(u, in...)
+	e.Q.Apply(u, flatten(qargs)...)
 	return nil
 }
 
