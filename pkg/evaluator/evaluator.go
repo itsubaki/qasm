@@ -583,7 +583,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 				continue
 			}
 
-			//	call declared gate
+			// call declared gate
 			decl := env.Func[a.Name].(*ast.GateDecl)
 			if e.Opts.Verbose {
 				fmt.Printf("%v", strings.Repeat(indent, e.indent))
