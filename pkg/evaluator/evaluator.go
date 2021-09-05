@@ -48,6 +48,16 @@ func Eval(n ast.Node) (object.Object, error) {
 }
 
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
+	if e.Opts.Verbose {
+		fmt.Printf("%T\n", p)
+	}
+
+	if e.Opts.Verbose {
+		e.indent++
+		fmt.Printf("%v", strings.Repeat(indent, e.indent))
+		fmt.Printf("%T\n", p.Stmts)
+	}
+
 	for _, s := range p.Stmts {
 		if _, err := e.eval(s, e.Env); err != nil {
 			return fmt.Errorf("eval(%v): %v", s, err)
@@ -184,6 +194,7 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 		case lexer.EULER:
 			return &object.Float{Value: math.E}, nil
 		}
+
 	case *ast.UnaryExpr:
 		v, err := e.eval(n.Value, env)
 		if err != nil {
@@ -573,6 +584,8 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 				}
 			}
 
+			// ctrl @ U(pi, 0, pi) q;
+			// U(pi, 0, pi) q, p;
 			if a.Kind != lexer.IDENT && (ctrl || x.QArgs.Len() > d.QArgs.Len()) {
 				a.QArgs = x.QArgs
 				a.Modifier = append(x.Modifier, a.Modifier...)
@@ -582,6 +595,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 				continue
 			}
 
+			// U(pi, 0, pi) q;
 			if a.Kind != lexer.IDENT {
 				if _, err := e.eval(a, env); err != nil {
 					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
@@ -597,6 +611,9 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 			}
 
 			for j := range decl.Body.List {
+				// X  q[0];
+				// CX q[0], q[1];
+				// ctrl @ X q[0], q[1];
 				s := &ast.ApplyStmt{
 					Kind:     decl.Body.List[j].(*ast.ApplyStmt).Kind,
 					Name:     decl.Body.List[j].(*ast.ApplyStmt).Name,
