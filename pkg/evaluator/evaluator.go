@@ -407,6 +407,12 @@ func pow(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
 			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
 		}
 
+		// pow(-1) U equals to inv @ U
+		if c < 0 {
+			u = u.Dagger()
+			c = -1 * c
+		}
+
 		tmp := u
 		for i := 1; i < c; i++ {
 			u = u.Apply(tmp)
