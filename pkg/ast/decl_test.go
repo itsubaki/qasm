@@ -13,6 +13,15 @@ func TestDecl(t *testing.T) {
 		want string
 	}{
 		{
+			&ast.VersionDecl{
+				Value: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "3.0",
+				},
+			},
+			"OPENQASM 3.0",
+		},
+		{
 			&ast.GenConst{
 				Name: ast.IdentExpr{
 					Value: "N",

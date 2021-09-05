@@ -48,7 +48,7 @@ func TestParseVersion(t *testing.T) {
 	}{
 		{
 			"OPENQASM 3.0;",
-			"3.0",
+			"OPENQASM 3.0;",
 		},
 	}
 
@@ -57,28 +57,6 @@ func TestParseVersion(t *testing.T) {
 		got := p.Parse().Version.String()
 		if got != c.want {
 			t.Errorf("got=%v, want=%v", got, c.want)
-		}
-
-		if errs := p.Errors(); len(errs) > 0 {
-			for _, e := range errs {
-				t.Errorf(e)
-			}
-		}
-	}
-}
-
-func TestParseIncl(t *testing.T) {
-	var cases = []struct {
-		in string
-	}{
-		{"include \"gate01.qasm\";"},
-	}
-
-	for _, c := range cases {
-		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
-		got := p.Parse().Incls[0].String()
-		if got != c.in {
-			t.Errorf("got=%v, want=%v", got, c.in)
 		}
 
 		if errs := p.Errors(); len(errs) > 0 {

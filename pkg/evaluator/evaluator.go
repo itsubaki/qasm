@@ -50,10 +50,12 @@ func Eval(n ast.Node) (object.Object, error) {
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	if e.Opts.Verbose {
 		fmt.Printf("%T\n", p)
-	}
 
-	if e.Opts.Verbose {
 		e.indent++
+		if p.Version != nil {
+			fmt.Printf("%v", strings.Repeat(indent, e.indent))
+			fmt.Printf("%T(%v)\n", p.Version, p.Version)
+		}
 		fmt.Printf("%v", strings.Repeat(indent, e.indent))
 		fmt.Printf("%T\n", p.Stmts)
 	}

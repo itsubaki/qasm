@@ -189,3 +189,23 @@ func (d *FuncDecl) String() string {
 
 	return buf.String()
 }
+
+type VersionDecl struct {
+	Value Expr
+}
+
+func (d *VersionDecl) declNode() {}
+
+func (d *VersionDecl) Literal() string {
+	return lexer.Tokens[lexer.OPENQASM]
+}
+
+func (d *VersionDecl) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(d.Literal())
+	buf.WriteString(" ")
+	buf.WriteString(d.Value.String())
+
+	return buf.String()
+}

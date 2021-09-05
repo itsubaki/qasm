@@ -32,8 +32,7 @@ func (p *Parser) Errors() []string {
 }
 
 func (p *Parser) Parse() *ast.OpenQASM {
-	var version ast.Expr
-	var incls []ast.Stmt
+	var version ast.Stmt
 	var stmts []ast.Stmt
 
 	p.next()
@@ -41,8 +40,6 @@ func (p *Parser) Parse() *ast.OpenQASM {
 		switch p.cur.Token {
 		case lexer.OPENQASM:
 			version = p.parseVersion()
-		case lexer.INCLUDE:
-			incls = append(incls, p.parseIncl())
 		default:
 			stmts = append(stmts, p.parseStmt())
 		}
@@ -50,7 +47,6 @@ func (p *Parser) Parse() *ast.OpenQASM {
 
 	return &ast.OpenQASM{
 		Version: version,
-		Incls:   incls,
 		Stmts:   stmts,
 	}
 }
@@ -83,7 +79,7 @@ func (p *Parser) error(e error) {
 	p.errors = append(p.errors, e.Error())
 }
 
-func (p *Parser) parseVersion() ast.Expr {
+func (p *Parser) parseVersion() ast.Stmt {
 	p.expect(lexer.OPENQASM)
 
 	v := p.next()
@@ -92,9 +88,13 @@ func (p *Parser) parseVersion() ast.Expr {
 	p.next()
 	p.expectSemi()
 
-	return &ast.BasicLit{
-		Kind:  lexer.FLOAT,
-		Value: v.Literal,
+	return &ast.DeclStmt{
+		Decl: &ast.VersionDecl{
+			Value: &ast.BasicLit{
+				Kind:  lexer.FLOAT,
+				Value: v.Literal,
+			},
+		},
 	}
 }
 
@@ -117,6 +117,8 @@ func (p *Parser) parseIncl() ast.Stmt {
 
 func (p *Parser) parseStmt() ast.Stmt {
 	switch p.cur.Token {
+	case lexer.INCLUDE:
+		return p.parseIncl()
 	case lexer.QUBIT, lexer.BIT, lexer.CONST,
 		lexer.GATE, lexer.DEF:
 		return p.parseDeclStmt()

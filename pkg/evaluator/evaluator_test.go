@@ -12,19 +12,21 @@ import (
 
 func ExampleEvaluator() {
 	p := &ast.OpenQASM{
-		Version: &ast.BasicLit{
-			Kind:  lexer.FLOAT,
-			Value: "3.0",
+		Version: &ast.DeclStmt{
+			Decl: &ast.VersionDecl{
+				Value: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "3.0",
+				},
+			},
 		},
-		Incls: []ast.Stmt{
+		Stmts: []ast.Stmt{
 			&ast.InclStmt{
 				Path: ast.BasicLit{
 					Kind:  lexer.STRING,
 					Value: "\"stdgates.qasm\"",
 				},
 			},
-		},
-		Stmts: []ast.Stmt{
 			&ast.DeclStmt{
 				Decl: &ast.GenDecl{
 					Kind: lexer.QUBIT,
@@ -142,19 +144,21 @@ func ExampleEvaluator() {
 
 func ExampleEvaluator_call() {
 	p := &ast.OpenQASM{
-		Version: &ast.BasicLit{
-			Kind:  lexer.FLOAT,
-			Value: "3.0",
+		Version: &ast.DeclStmt{
+			Decl: &ast.VersionDecl{
+				Value: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "3.0",
+				},
+			},
 		},
-		Incls: []ast.Stmt{
+		Stmts: []ast.Stmt{
 			&ast.InclStmt{
 				Path: ast.BasicLit{
 					Kind:  lexer.STRING,
 					Value: "\"stdgates.qasm\"",
 				},
 			},
-		},
-		Stmts: []ast.Stmt{
 			&ast.DeclStmt{
 				Decl: &ast.GateDecl{
 					Name: "bell",
