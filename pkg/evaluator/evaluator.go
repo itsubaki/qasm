@@ -619,7 +619,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 				s := &ast.ApplyStmt{
 					Kind:     decl.Body.List[j].(*ast.ApplyStmt).Kind,
 					Name:     decl.Body.List[j].(*ast.ApplyStmt).Name,
-					Params:   decl.Body.List[j].(*ast.ApplyStmt).Params,
+					Params:   x.Params,
 					QArgs:    x.QArgs,
 					Modifier: append(x.Modifier, append(a.Modifier, decl.Body.List[j].(*ast.ApplyStmt).Modifier...)...),
 				}
@@ -643,6 +643,20 @@ func (e *Evaluator) extend(x *ast.CallExpr, d *ast.GateDecl, outer *object.Envir
 	env := object.NewEnclosedEnvironment(outer)
 	env.Func = outer.Func
 	env.Const = outer.Const
+
+	for i := range d.Params.List.List {
+		if v, ok := outer.Const[ast.Ident(x.Params.List.List[i])]; ok {
+			env.Const[ast.Ident(d.Params.List.List[i])] = v
+			continue
+		}
+
+		v, err := e.eval(x.Params.List.List[i], outer)
+		if err != nil {
+			panic(fmt.Sprintf("eval(%v): %v", x.Params.List.List[i], err))
+		}
+
+		env.Const[ast.Ident(d.Params.List.List[i])] = v
+	}
 
 	for i := range d.QArgs.List {
 		v, ok := outer.Qubit.Get(x.QArgs.List[i])
