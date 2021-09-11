@@ -163,10 +163,6 @@ func IsBasicLit(token Token) bool {
 		return true
 	}
 
-	if IsConst(token) {
-		return true
-	}
-
 	return false
 }
 

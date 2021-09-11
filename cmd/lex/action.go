@@ -30,7 +30,7 @@ func Action(c *cli.Context) error {
 		}
 
 		fmt.Printf("%v", lexer.Tokens[token])
-		if lexer.IsBasicLit(token) && !lexer.IsConst(token) {
+		if lexer.IsBasicLit(token) {
 			fmt.Printf("(%v) ", lit)
 		} else {
 			fmt.Printf(" ")

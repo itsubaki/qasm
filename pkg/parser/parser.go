@@ -230,11 +230,12 @@ func (p *Parser) parseInfix() ast.Expr {
 
 func (p *Parser) parseIdent() ast.Expr {
 	c := p.cur
-	if !lexer.IsBasicLit(c.Token) {
+	if !lexer.IsBasicLit(c.Token) && !lexer.IsConst(c.Token) {
 		c = p.next()
 	}
 
-	if c.Token != lexer.IDENT && lexer.IsBasicLit(c.Token) {
+	if c.Token != lexer.IDENT {
+		// STRING, INT, FLOAT, PI, TAU, EULAR
 		if lexer.IsBinaryOperator(p.peek.Token) {
 			// pi / 2
 			return p.parseInfix()
