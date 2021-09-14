@@ -17,13 +17,13 @@ go install github.com/itsubaki/qasm@latest
 ```shell
 $ qasm -f testdata/bell.qasm
 OPENQASM 3.0;
-include "itsubaki/q.qasm";
+include "testdata/gate.qasm";
 
 qubit[2] q;
 reset q;
 
-h q[0];
-cx q[0], q[1];
+H q[0];
+CX q[0], q[1];
 
 [00][  0]( 0.7071 0.0000i): 0.5000
 [11][  3]( 0.7071 0.0000i): 0.5000
@@ -34,14 +34,14 @@ cx q[0], q[1];
 ```shell
 $ qasm repl
 >> OPENQASM 3.0;
->> include "itsubaki/q.qasm";
 >> 
+>> gate H q { U(pi/2.0, 0.0, pi) q; }
 >> gate X q { U(pi, 0, pi) q; }
 >> gate CX q, p { ctrl @ X q, p; }                             
 >> 
 >> qubit[2] q;
 [00][  0]( 1.0000 0.0000i): 1.0000
->> h q[0];
+>> H q[0];
 [00][  0]( 0.7071 0.0000i): 0.5000
 [10][  2]( 0.7071 0.0000i): 0.5000
 >> CX q[0], q[1];
