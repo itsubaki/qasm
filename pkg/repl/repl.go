@@ -16,7 +16,6 @@ func Run(in io.Reader, out io.Writer) error {
 	e := evaluator.Default()
 
 	fmt.Println(">> OPENQASM 3.0;")
-	fmt.Println(">> include \"itsubaki/q.qasm\";")
 	for {
 		fmt.Printf(">> ")
 		if ok := s.Scan(); !ok {

@@ -7,4 +7,3 @@ reset q;
 
 H  q[0];
 CX q[0], q[1];
-
