@@ -2,7 +2,6 @@ package parser_test
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 
@@ -11,13 +10,21 @@ import (
 )
 
 func ExampleParser() {
-	f, err := os.ReadFile("../../testdata/test_parser.qasm")
-	if err != nil {
-		fmt.Printf("read file: %v", err)
-		return
-	}
+	qasm := `
+OPENQASM 3.0;
+include "itsubaki/q.qasm";
 
-	p := parser.New(lexer.New(strings.NewReader(string(f))))
+qubit[2] q;
+bit[2]   c;
+reset    q;
+
+h  q[0];
+cx q[0], q[1];
+
+measure q -> c;
+	`
+
+	p := parser.New(lexer.New(strings.NewReader(qasm)))
 	ast := p.Parse()
 	fmt.Println(ast)
 
@@ -36,27 +43,20 @@ func ExampleParser() {
 	// h q[0];
 	// cx q[0], q[1];
 	// measure q -> c;
-	// c = measure q;
-	// c[0] = measure q[0];
-	// c[1] = measure q[1];
 }
 
 func TestParseVersion(t *testing.T) {
 	var cases = []struct {
-		in   string
-		want string
+		in string
 	}{
-		{
-			"OPENQASM 3.0;",
-			"OPENQASM 3.0;",
-		},
+		{"OPENQASM 3.0;"},
 	}
 
 	for _, c := range cases {
 		p := parser.New(lexer.New(strings.NewReader(string(c.in))))
 		got := p.Parse().Version.String()
-		if got != c.want {
-			t.Errorf("got=%v, want=%v", got, c.want)
+		if got != c.in {
+			t.Errorf("got=%v, want=%v", got, c.in)
 		}
 
 		if errs := p.Errors(); len(errs) > 0 {
@@ -82,6 +82,8 @@ func TestParseStmt(t *testing.T) {
 		{"measure q;"},
 		{"measure q, p;"},
 		{"measure q[0], q[1];"},
+		{"c = measure q;"},
+		{"c[0] = measure q[0];"},
 		{"print;"},
 		{"print q;"},
 		{"print q, p;"},

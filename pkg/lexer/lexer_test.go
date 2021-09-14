@@ -1,7 +1,6 @@
 package lexer_test
 
 import (
-	"os"
 	"strings"
 	"testing"
 
@@ -19,8 +18,44 @@ func TestLexer(t *testing.T) {
 		want []Token
 	}{
 		{
-			in: "../../testdata/test_lexer_gate.qasm",
+			in: `
+OPENQASM 3.0;
+
+gate H  q    { U(pi/2.0, 0.0, pi) q; }
+gate X  q    { U(pi, 0.0, pi) q; }
+gate CX q, p { ctrl @ X q, p; }
+
+qubit[2] q;
+bit[2]   c;
+reset q;
+
+H  q[0];
+CX q[0], q[1];
+measure q -> c;
+`,
 			want: []Token{
+				{lexer.OPENQASM, "OPENQASM"},
+				{lexer.FLOAT, "3.0"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.GATE, "gate"},
+				{lexer.IDENT, "H"},
+				{lexer.IDENT, "q"},
+				{lexer.LBRACE, "{"},
+				{lexer.U, "U"},
+				{lexer.LPAREN, "("},
+				{lexer.PI, "pi"},
+				{lexer.DIV, "/"},
+				{lexer.FLOAT, "2.0"},
+				{lexer.COMMA, ","},
+				{lexer.FLOAT, "0.0"},
+				{lexer.COMMA, ","},
+				{lexer.PI, "pi"},
+				{lexer.RPAREN, ")"},
+				{lexer.IDENT, "q"},
+				{lexer.SEMICOLON, ";"},
+				{lexer.RBRACE, "}"},
+
 				{lexer.GATE, "gate"},
 				{lexer.IDENT, "X"},
 				{lexer.IDENT, "q"},
@@ -38,15 +73,6 @@ func TestLexer(t *testing.T) {
 				{lexer.RBRACE, "}"},
 
 				{lexer.GATE, "gate"},
-				{lexer.IDENT, "X2"},
-				{lexer.IDENT, "q"},
-				{lexer.LBRACE, "{"},
-				{lexer.IDENT, "X"},
-				{lexer.IDENT, "q"},
-				{lexer.SEMICOLON, ";"},
-				{lexer.RBRACE, "}"},
-
-				{lexer.GATE, "gate"},
 				{lexer.IDENT, "CX"},
 				{lexer.IDENT, "q"},
 				{lexer.COMMA, ","},
@@ -54,16 +80,82 @@ func TestLexer(t *testing.T) {
 				{lexer.LBRACE, "{"},
 				{lexer.CTRL, "ctrl"},
 				{lexer.AT, "@"},
-				{lexer.IDENT, "X2"},
+				{lexer.IDENT, "X"},
 				{lexer.IDENT, "q"},
 				{lexer.COMMA, ","},
 				{lexer.IDENT, "p"},
 				{lexer.SEMICOLON, ";"},
 				{lexer.RBRACE, "}"},
+
+				{lexer.QUBIT, "qubit"},
+				{lexer.LBRACKET, "["},
+				{lexer.INT, "2"},
+				{lexer.RBRACKET, "]"},
+				{lexer.IDENT, "q"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.BIT, "bit"},
+				{lexer.LBRACKET, "["},
+				{lexer.INT, "2"},
+				{lexer.RBRACKET, "]"},
+				{lexer.IDENT, "c"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.RESET, "reset"},
+				{lexer.IDENT, "q"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.IDENT, "H"},
+				{lexer.IDENT, "q"},
+				{lexer.LBRACKET, "["},
+				{lexer.INT, "0"},
+				{lexer.RBRACKET, "]"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.IDENT, "CX"},
+				{lexer.IDENT, "q"},
+				{lexer.LBRACKET, "["},
+				{lexer.INT, "0"},
+				{lexer.RBRACKET, "]"},
+				{lexer.COMMA, ","},
+				{lexer.IDENT, "q"},
+				{lexer.LBRACKET, "["},
+				{lexer.INT, "1"},
+				{lexer.RBRACKET, "]"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.MEASURE, "measure"},
+				{lexer.IDENT, "q"},
+				{lexer.ARROW, "->"},
+				{lexer.IDENT, "c"},
+				{lexer.SEMICOLON, ";"},
 			},
 		},
 		{
-			in: "../../testdata/test_lexer_def.qasm",
+			in: "gate bell q0, q1 { h q0; cx q0, q1; }",
+			want: []Token{
+				{lexer.GATE, "gate"},
+				{lexer.IDENT, "bell"},
+				{lexer.IDENT, "q0"},
+				{lexer.COMMA, ","},
+				{lexer.IDENT, "q1"},
+				{lexer.LBRACE, "{"},
+
+				{lexer.H, "h"},
+				{lexer.IDENT, "q0"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.CX, "cx"},
+				{lexer.IDENT, "q0"},
+				{lexer.COMMA, ","},
+				{lexer.IDENT, "q1"},
+				{lexer.SEMICOLON, ";"},
+
+				{lexer.RBRACE, "}"},
+			},
+		},
+		{
+			in: "def shor(int[32] a, int[32] N) qubit[n] r0, qubit[m] r1 -> bit[n] { h r0; cmodexp2(a, N) r0, r1; iqft r0; return measure r0; }",
 			want: []Token{
 				{lexer.DEF, "def"},
 				{lexer.IDENT, "shor"},
@@ -128,125 +220,10 @@ func TestLexer(t *testing.T) {
 				{lexer.SEMICOLON, ";"},
 			},
 		},
-		{
-			in: "../../testdata/test_lexer_gate_bell.qasm",
-			want: []Token{
-				{lexer.GATE, "gate"},
-				{lexer.IDENT, "bell"},
-				{lexer.IDENT, "q0"},
-				{lexer.COMMA, ","},
-				{lexer.IDENT, "q1"},
-				{lexer.LBRACE, "{"},
-
-				{lexer.H, "h"},
-				{lexer.IDENT, "q0"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.CX, "cx"},
-				{lexer.IDENT, "q0"},
-				{lexer.COMMA, ","},
-				{lexer.IDENT, "q1"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.RBRACE, "}"},
-			},
-		},
-		{
-			in: "../../testdata/test_lexer.qasm",
-			want: []Token{
-				{lexer.OPENQASM, "OPENQASM"},
-				{lexer.FLOAT, "3.0"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.INCLUDE, "include"},
-				{lexer.STRING, "\"itsubaki/q.qasm\""},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.QUBIT, "qubit"},
-				{lexer.LBRACKET, "["},
-				{lexer.INT, "2"},
-				{lexer.RBRACKET, "]"},
-				{lexer.IDENT, "q"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.BIT, "bit"},
-				{lexer.LBRACKET, "["},
-				{lexer.INT, "2"},
-				{lexer.RBRACKET, "]"},
-				{lexer.IDENT, "c"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.RESET, "reset"},
-				{lexer.IDENT, "q"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.H, "h"},
-				{lexer.IDENT, "q"},
-				{lexer.LBRACKET, "["},
-				{lexer.INT, "0"},
-				{lexer.RBRACKET, "]"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.CX, "cx"},
-				{lexer.IDENT, "q"},
-				{lexer.LBRACKET, "["},
-				{lexer.INT, "0"},
-				{lexer.RBRACKET, "]"},
-				{lexer.COMMA, ","},
-				{lexer.IDENT, "q"},
-				{lexer.LBRACKET, "["},
-				{lexer.INT, "1"},
-				{lexer.RBRACKET, "]"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.MEASURE, "measure"},
-				{lexer.IDENT, "q"},
-				{lexer.ARROW, "->"},
-				{lexer.IDENT, "c"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.IDENT, "c"},
-				{lexer.EQUALS, "="},
-				{lexer.MEASURE, "measure"},
-				{lexer.IDENT, "q"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.IDENT, "c"},
-				{lexer.LBRACKET, "["},
-				{lexer.INT, "0"},
-				{lexer.RBRACKET, "]"},
-				{lexer.EQUALS, "="},
-				{lexer.MEASURE, "measure"},
-				{lexer.IDENT, "q"},
-				{lexer.LBRACKET, "["},
-				{lexer.INT, "0"},
-				{lexer.RBRACKET, "]"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.IDENT, "c"},
-				{lexer.LBRACKET, "["},
-				{lexer.INT, "1"},
-				{lexer.RBRACKET, "]"},
-				{lexer.EQUALS, "="},
-				{lexer.MEASURE, "measure"},
-				{lexer.IDENT, "q"},
-				{lexer.LBRACKET, "["},
-				{lexer.INT, "1"},
-				{lexer.RBRACKET, "]"},
-				{lexer.SEMICOLON, ";"},
-
-				{lexer.EOF, ""},
-			},
-		},
 	}
 
 	for _, c := range cases {
-		f, err := os.ReadFile(c.in)
-		if err != nil {
-			t.Fatalf("read file: %v", err)
-		}
-
-		lex := lexer.New(strings.NewReader(string(f)))
+		lex := lexer.New(strings.NewReader(c.in))
 		for _, w := range c.want {
 			token, literal := lex.Tokenize()
 			if token != w.token || literal != w.literal {
