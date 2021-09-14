@@ -3,6 +3,7 @@ package evaluator
 import (
 	"fmt"
 	"math"
+	"os"
 	"strings"
 
 	"github.com/itsubaki/q"
@@ -11,6 +12,7 @@ import (
 	"github.com/itsubaki/qasm/pkg/ast"
 	"github.com/itsubaki/qasm/pkg/evaluator/object"
 	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/pkg/parser"
 )
 
 const indent = ".  "
@@ -90,6 +92,27 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 	}
 
 	switch n := n.(type) {
+	case *ast.InclStmt:
+		path := strings.Trim(n.Path.Value, "\"")
+		f, err := os.ReadFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("read file=%s: %v", path, err)
+		}
+
+		l := lexer.New(strings.NewReader(string(f)))
+		p := parser.New(l)
+
+		a := p.Parse()
+		if errs := p.Errors(); len(errs) != 0 {
+			return nil, fmt.Errorf("parse: %v", errs)
+		}
+
+		for _, s := range a.Stmts {
+			if _, err := e.eval(s, e.Env); err != nil {
+				return nil, fmt.Errorf("eval(%v): %v", s, err)
+			}
+		}
+
 	case *ast.ExprStmt:
 		return e.eval(n.X, env)
 
@@ -619,7 +642,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 				s := &ast.ApplyStmt{
 					Kind:     decl.Body.List[j].(*ast.ApplyStmt).Kind,
 					Name:     decl.Body.List[j].(*ast.ApplyStmt).Name,
-					Params:   x.Params,
+					Params:   decl.Body.List[j].(*ast.ApplyStmt).Params,
 					QArgs:    x.QArgs,
 					Modifier: append(x.Modifier, append(a.Modifier, decl.Body.List[j].(*ast.ApplyStmt).Modifier...)...),
 				}

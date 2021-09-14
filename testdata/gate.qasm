@@ -1,6 +1,7 @@
-gate X q { U(pi, 0, pi) q; }
+gate X q { U(pi, 0.0, pi) q; }
+gate H q { U(pi/2.0, 0.0, pi) q; }
 
-qubit[2] q;
-reset q;
+gate CX q, p { ctrl @ X q, p; }
 
-X q[0], q[1];
+gate bell q, p { h q; cx q, p; }
+

@@ -1,8 +1,10 @@
 OPENQASM 3.0;
-include "itsubaki/q.qasm";
+include "testdata/gate.qasm";
 
 qubit[2] q;
+bit[2]   c;
 reset q;
 
-h  q[0];
-cx q[0], q[1];
+H  q[0];
+CX q[0], q[1];
+measure q -> c;

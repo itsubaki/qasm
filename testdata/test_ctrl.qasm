@@ -1,5 +1,4 @@
 OPENQASM 3.0;
-include "itsubaki/q.qasm";
 
 gate X(a, b)    q0         { U(a, b, a)  q0; }
 gate nCX(a, b)  q0, q1     { negctrl @ X(a, b)   q0, q1; }

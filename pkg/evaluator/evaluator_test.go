@@ -21,12 +21,6 @@ func ExampleEvaluator() {
 			},
 		},
 		Stmts: []ast.Stmt{
-			&ast.InclStmt{
-				Path: ast.BasicLit{
-					Kind:  lexer.STRING,
-					Value: "\"stdgates.qasm\"",
-				},
-			},
 			&ast.DeclStmt{
 				Decl: &ast.GenDecl{
 					Kind: lexer.QUBIT,
@@ -130,7 +124,6 @@ func ExampleEvaluator() {
 
 	// Output:
 	// OPENQASM 3.0;
-	// include "stdgates.qasm";
 	// qubit[2] q;
 	// bit[2] c;
 	// reset q;
@@ -153,12 +146,6 @@ func ExampleEvaluator_call() {
 			},
 		},
 		Stmts: []ast.Stmt{
-			&ast.InclStmt{
-				Path: ast.BasicLit{
-					Kind:  lexer.STRING,
-					Value: "\"stdgates.qasm\"",
-				},
-			},
 			&ast.DeclStmt{
 				Decl: &ast.GateDecl{
 					Name: "bell",

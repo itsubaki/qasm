@@ -1,5 +1,4 @@
 OPENQASM 3.0;
-include "itsubaki/q.qasm";
 
 gate H  q    { U(pi/2.0, 0, pi) q; }
 gate X1 q    { pow(3) @ U(pi, 0, pi) q; }

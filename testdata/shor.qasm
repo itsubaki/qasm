@@ -1,5 +1,4 @@
 OPENQASM 3.0;
-include "itsubaki/q.qasm";
 
 const N = 3 * 5;
 const a = 7;
