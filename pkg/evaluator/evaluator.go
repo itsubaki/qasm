@@ -351,21 +351,6 @@ func (e *Evaluator) evalReset(s *ast.ResetStmt, env *object.Environment) error {
 }
 
 func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
-	if s.Kind == lexer.IDENT {
-		x := &ast.CallExpr{
-			Name:     s.Name,
-			Modifier: s.Modifier,
-			Params:   s.Params,
-			QArgs:    s.QArgs,
-		}
-
-		if _, err := e.eval(x, env); err != nil {
-			return fmt.Errorf("eval(%v): %v", x, err)
-		}
-
-		return nil
-	}
-
 	params := make([]float64, 0)
 	for _, p := range s.Params.List.List {
 		v, err := e.eval(p, env)
@@ -595,61 +580,69 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 	return nil, fmt.Errorf("unsupported(%v)", decl)
 }
 
+func isCtrl(mod []ast.Modifier) bool {
+	for _, m := range mod {
+		if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) (object.Object, error) {
 	env := e.extend(x, d, outer)
 
 	for _, b := range d.Body.List {
-		switch a := b.(type) {
+		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			ctrl := false
-			for _, m := range x.Modifier {
-				if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
-					ctrl = true
-					break
-				}
-			}
-
-			// ctrl @ U(pi, 0, pi) q;
-			// U(pi, 0, pi) q, p;
-			if a.Kind != lexer.IDENT && (ctrl || x.QArgs.Len() > d.QArgs.Len()) {
-				a.QArgs = x.QArgs
-				a.Modifier = append(x.Modifier, a.Modifier...)
-				if _, err := e.eval(a, outer); err != nil {
+			// ctrl @ U(pi, 0, pi) q, p;
+			if s.Kind != lexer.IDENT && isCtrl(x.Modifier) {
+				s.QArgs = x.QArgs
+				s.Modifier = append(x.Modifier, s.Modifier...)
+				if _, err := e.eval(s, outer); err != nil {
 					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
 				}
+
 				continue
 			}
 
 			// U(pi, 0, pi) q;
-			if a.Kind != lexer.IDENT {
-				if _, err := e.eval(a, env); err != nil {
+			if s.Kind != lexer.IDENT {
+				if _, err := e.eval(s, env); err != nil {
 					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
 				}
+
 				continue
 			}
 
 			// call declared gate
-			decl := env.Func[a.Name].(*ast.GateDecl)
-			if e.Opts.Verbose {
-				fmt.Printf("%v", strings.Repeat(indent, e.indent))
-				fmt.Printf("%T(%v)\n", decl, decl)
+			if x.QArgs.Len() > s.QArgs.Len() {
+				// H q; of gate BELL q, p { H q; CX q, p; }
+				x := &ast.CallExpr{
+					Modifier: append(x.Modifier, s.Modifier...),
+					Name:     s.Name,
+					Params:   s.Params,
+					QArgs:    s.QArgs,
+				}
+
+				if _, err := e.eval(x, env); err != nil {
+					return nil, fmt.Errorf("eval(%v): %v", x, err)
+				}
+
+				continue
 			}
 
-			for j := range decl.Body.List {
-				// X  q[0];
-				// CX q[0], q[1];
-				// ctrl @ X q[0], q[1];
-				s := &ast.ApplyStmt{
-					Kind:     decl.Body.List[j].(*ast.ApplyStmt).Kind,
-					Name:     decl.Body.List[j].(*ast.ApplyStmt).Name,
-					Params:   decl.Body.List[j].(*ast.ApplyStmt).Params,
-					QArgs:    x.QArgs,
-					Modifier: append(x.Modifier, append(a.Modifier, decl.Body.List[j].(*ast.ApplyStmt).Modifier...)...),
-				}
+			// CX q, p; of gate BELL q, p { H q; CX q, p; }
+			x := &ast.CallExpr{
+				Modifier: append(x.Modifier, s.Modifier...),
+				Name:     s.Name,
+				Params:   x.Params,
+				QArgs:    x.QArgs,
+			}
 
-				if _, err := e.eval(s, outer); err != nil {
-					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
-				}
+			if _, err := e.eval(x, outer); err != nil {
+				return nil, fmt.Errorf("eval(%v): %v", x, err)
 			}
 
 		default:
