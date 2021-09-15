@@ -488,7 +488,7 @@ func (e *Evaluator) tryBultinApply(g lexer.Token, p []float64, qargs [][]q.Qubit
 
 func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit) bool {
 	ctrl := make([][]q.Qubit, 0)
-	negctrl := make([][]q.Qubit, 0)
+	negc := make([][]q.Qubit, 0)
 
 	// ctrl @ ctrl @ X equals to ctrl(0) @ ctrl(1) @ X
 	defaultIndex := 0
@@ -506,26 +506,25 @@ func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]
 		case lexer.CTRL:
 			ctrl = append(ctrl, qargs[c])
 		case lexer.NEGCTRL:
-			negctrl = append(negctrl, qargs[c])
+			negc = append(negc, qargs[c])
 		}
 
 		defaultIndex++
 	}
 
-	if len(ctrl) == 0 && len(negctrl) == 0 {
+	if len(ctrl) == 0 && len(negc) == 0 {
 		return false
 	}
 
-	c := append(flatten(ctrl), flatten(negctrl)...)
-
-	if len(negctrl) > 0 {
-		e.Q.X(flatten(negctrl)...)
+	if len(negc) > 0 {
+		e.Q.X(flatten(negc)...)
 	}
 
+	c := append(flatten(ctrl), flatten(negc)...)
 	e.Q.Controlled(u, c, qargs[len(qargs)-1][0])
 
-	if len(negctrl) > 0 {
-		e.Q.X(flatten(negctrl)...)
+	if len(negc) > 0 {
+		e.Q.X(flatten(negc)...)
 	}
 
 	return true
@@ -617,31 +616,29 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 			}
 
 			// call declared gate
-			if x.QArgs.Len() > s.QArgs.Len() {
-				// H q; of gate BELL q, p { H q; CX q, p; }
+			if isCtrl(x.Modifier) {
 				x := &ast.CallExpr{
 					Modifier: append(x.Modifier, s.Modifier...),
 					Name:     s.Name,
-					Params:   s.Params,
-					QArgs:    s.QArgs,
+					Params:   x.Params,
+					QArgs:    x.QArgs,
 				}
 
-				if _, err := e.eval(x, env); err != nil {
+				if _, err := e.eval(x, outer); err != nil {
 					return nil, fmt.Errorf("eval(%v): %v", x, err)
 				}
 
 				continue
 			}
 
-			// CX q, p; of gate BELL q, p { H q; CX q, p; }
 			x := &ast.CallExpr{
 				Modifier: append(x.Modifier, s.Modifier...),
 				Name:     s.Name,
-				Params:   x.Params,
-				QArgs:    x.QArgs,
+				Params:   s.Params,
+				QArgs:    s.QArgs,
 			}
 
-			if _, err := e.eval(x, outer); err != nil {
+			if _, err := e.eval(x, env); err != nil {
 				return nil, fmt.Errorf("eval(%v): %v", x, err)
 			}
 
