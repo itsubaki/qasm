@@ -4,4 +4,4 @@ include "testdata/gate.qasm";
 qubit[2] q;
 reset q;
 
-BELL q[0], q[1];
+bell q[0], q[1];

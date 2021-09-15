@@ -96,9 +96,9 @@ func TestParseStmt(t *testing.T) {
 		{"gate ident q0 { }"},
 		{"gate bell q0, q1 { h q0; cx q0, q1; }"},
 		{"gate shor(a, N) r0, r1 { h r0; cmodexp2(a, N) r0, r1; iqft r0; }"},
-		{"gate CX q, p { ctrl @ x q, p; }"},
-		{"gate CX q, p { ctrl(0) @ x q, p; }"},
-		{"gate CIX q, p { ctrl @ inv @ x q, p; }"},
+		{"gate cx q, p { ctrl @ x q, p; }"},
+		{"gate cx q, p { ctrl(0) @ x q, p; }"},
+		{"gate cix q, p { ctrl @ inv @ x q, p; }"},
 		{"ctrl @ x q0, q1;"},
 		{"ctrl @ inv @ x q0, q1;"},
 		{"ctrl(0) @ inv @ x q0, q1;"},
@@ -107,7 +107,7 @@ func TestParseStmt(t *testing.T) {
 		{"def shor(int[32] a, int[32] N) qubit[n] r0, qubit[m] r1 -> bit[n] { h r0; cmodexp2(a, N) r0, r1; iqft r0; return measure r0; }"},
 		{"c = shor(a, N) r0, r1;"},
 		{"const N = 7 + 8;"},
-		{"gate Y q { U(pi, pi / 2, pi / 2) q; }"},
+		{"gate y q { U(pi, pi / 2, pi / 2) q; }"},
 	}
 
 	for _, c := range cases {

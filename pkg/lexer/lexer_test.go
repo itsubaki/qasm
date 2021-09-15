@@ -21,16 +21,16 @@ func TestLexer(t *testing.T) {
 			in: `
 OPENQASM 3.0;
 
-gate H  q    { U(pi/2.0, 0.0, pi) q; }
-gate X  q    { U(pi, 0.0, pi) q; }
-gate CX q, p { ctrl @ X q, p; }
+gate h  q    { U(pi/2.0, 0.0, pi) q; }
+gate x  q    { U(pi, 0.0, pi) q; }
+gate cx q, p { ctrl @ x q, p; }
 
 qubit[2] q;
 bit[2]   c;
 reset q;
 
-H  q[0];
-CX q[0], q[1];
+h  q[0];
+cx q[0], q[1];
 measure q -> c;
 `,
 			want: []Token{
@@ -39,7 +39,7 @@ measure q -> c;
 				{lexer.SEMICOLON, ";"},
 
 				{lexer.GATE, "gate"},
-				{lexer.IDENT, "H"},
+				{lexer.IDENT, "h"},
 				{lexer.IDENT, "q"},
 				{lexer.LBRACE, "{"},
 				{lexer.U, "U"},
@@ -57,7 +57,7 @@ measure q -> c;
 				{lexer.RBRACE, "}"},
 
 				{lexer.GATE, "gate"},
-				{lexer.IDENT, "X"},
+				{lexer.IDENT, "x"},
 				{lexer.IDENT, "q"},
 				{lexer.LBRACE, "{"},
 				{lexer.U, "U"},
@@ -73,14 +73,14 @@ measure q -> c;
 				{lexer.RBRACE, "}"},
 
 				{lexer.GATE, "gate"},
-				{lexer.IDENT, "CX"},
+				{lexer.IDENT, "cx"},
 				{lexer.IDENT, "q"},
 				{lexer.COMMA, ","},
 				{lexer.IDENT, "p"},
 				{lexer.LBRACE, "{"},
 				{lexer.CTRL, "ctrl"},
 				{lexer.AT, "@"},
-				{lexer.IDENT, "X"},
+				{lexer.IDENT, "x"},
 				{lexer.IDENT, "q"},
 				{lexer.COMMA, ","},
 				{lexer.IDENT, "p"},
@@ -105,14 +105,14 @@ measure q -> c;
 				{lexer.IDENT, "q"},
 				{lexer.SEMICOLON, ";"},
 
-				{lexer.IDENT, "H"},
+				{lexer.IDENT, "h"},
 				{lexer.IDENT, "q"},
 				{lexer.LBRACKET, "["},
 				{lexer.INT, "0"},
 				{lexer.RBRACKET, "]"},
 				{lexer.SEMICOLON, ";"},
 
-				{lexer.IDENT, "CX"},
+				{lexer.IDENT, "cx"},
 				{lexer.IDENT, "q"},
 				{lexer.LBRACKET, "["},
 				{lexer.INT, "0"},
@@ -141,11 +141,11 @@ measure q -> c;
 				{lexer.IDENT, "q1"},
 				{lexer.LBRACE, "{"},
 
-				{lexer.H, "h"},
+				{lexer.IDENT, "h"},
 				{lexer.IDENT, "q0"},
 				{lexer.SEMICOLON, ";"},
 
-				{lexer.CX, "cx"},
+				{lexer.IDENT, "cx"},
 				{lexer.IDENT, "q0"},
 				{lexer.COMMA, ","},
 				{lexer.IDENT, "q1"},
@@ -155,7 +155,7 @@ measure q -> c;
 			},
 		},
 		{
-			in: "def shor(int[32] a, int[32] N) qubit[n] r0, qubit[m] r1 -> bit[n] { h r0; cmodexp2(a, N) r0, r1; iqft r0; return measure r0; }",
+			in: "def shor(int[32] a, int[32] N) qubit[n] r0, qubit[m] r1 -> bit[n] { h r0; CMODEXP2(a, N) r0, r1; IQFT r0; return measure r0; }",
 			want: []Token{
 				{lexer.DEF, "def"},
 				{lexer.IDENT, "shor"},
@@ -195,11 +195,11 @@ measure q -> c;
 				{lexer.RBRACKET, "]"},
 				{lexer.LBRACE, "{"},
 
-				{lexer.H, "h"},
+				{lexer.IDENT, "h"},
 				{lexer.IDENT, "r0"},
 				{lexer.SEMICOLON, ";"},
 
-				{lexer.CMODEXP2, "cmodexp2"},
+				{lexer.CMODEXP2, "CMODEXP2"},
 				{lexer.LPAREN, "("},
 				{lexer.IDENT, "a"},
 				{lexer.COMMA, ","},
@@ -210,7 +210,7 @@ measure q -> c;
 				{lexer.IDENT, "r1"},
 				{lexer.SEMICOLON, ";"},
 
-				{lexer.IQFT, "iqft"},
+				{lexer.IQFT, "IQFT"},
 				{lexer.IDENT, "r0"},
 				{lexer.SEMICOLON, ";"},
 

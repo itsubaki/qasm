@@ -1,4 +1,5 @@
 OPENQASM 3.0;
+include "testdata/gate.qasm";
 
 const N = 3 * 5;
 const a = 7;
@@ -9,5 +10,5 @@ reset r0, r1;
 
 x r1[-1];
 h r0;
-cmodexp2(a, N) r0, r1;
-iqft r0;
+CMODEXP2(a, N) r0, r1;
+IQFT r0;

@@ -1,10 +1,11 @@
 OPENQASM 3.0;
+include "testdata/gate.qasm";
 
 def shor(int[32] a, int[32] N) qubit[n] r0, qubit[m] r1 -> bit[n] {
-    x r1[-1];
-    h r0;
-    cmodexp2(a, N) r0, r1;
-    iqft r0;
+    X r1[-1];
+    H r0;
+    CMODEXP2(a, N) r0, r1;
+    IQFT r0;
     
     return measure r0;
 }

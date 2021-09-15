@@ -1,5 +1,5 @@
-gate X q { U(pi, 0.0, pi) q; }
-gate H q { U(pi/2.0, 0.0, pi) q; }
+gate x q { U(pi, 0.0, pi) q; }
+gate h q { U(pi/2.0, 0.0, pi) q; }
 
-gate CX q, p { ctrl @ X q, p; }
-gate BELL q, p { H q; CX q, p; }
+gate cx   q, p { ctrl @ x q, p; }
+gate bell q, p { h q; cx q, p; }

@@ -46,20 +46,20 @@ const (
 	QUBIT    // qubit
 	BIT      // bit
 	RESET    // reset
-	X        // x
-	Y        // y
-	Z        // z
-	H        // h
+	X        // X
+	Y        // Y
+	Z        // Z
+	H        // H
 	S        // S
 	T        // T
 	U        // U
-	CX       // cx
-	CZ       // cz
-	CCX      // ccx
-	SWAP     // swap
-	QFT      // qft
-	IQFT     // iqft
-	CMODEXP2 // cmodexp2
+	CX       // CX
+	CZ       // CZ
+	CCX      // CCX
+	SWAP     // SWAP
+	QFT      // QFT
+	IQFT     // IQFT
+	CMODEXP2 // CMODEXP2
 	MEASURE  // measure
 	GATE     // gate
 	PRINT    // print
@@ -114,20 +114,20 @@ var Tokens = [...]string{
 	QUBIT:    "qubit",
 	BIT:      "bit",
 	RESET:    "reset",
-	X:        "x",
-	Y:        "y",
-	Z:        "z",
-	H:        "h",
-	S:        "s",
-	T:        "t",
+	X:        "X",
+	Y:        "Y",
+	Z:        "Z",
+	H:        "H",
+	S:        "S",
+	T:        "T",
 	U:        "U",
-	CX:       "cx",
-	CZ:       "cz",
-	CCX:      "ccx",
-	SWAP:     "swap",
-	QFT:      "qft",
-	IQFT:     "iqft",
-	CMODEXP2: "cmodexp2",
+	CX:       "CX",
+	CZ:       "CZ",
+	CCX:      "CCX",
+	SWAP:     "SWAP",
+	QFT:      "QFT",
+	IQFT:     "IQFT",
+	CMODEXP2: "CMODEXP2",
 	MEASURE:  "measure",
 	GATE:     "gate",
 	PRINT:    "print",

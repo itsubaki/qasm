@@ -127,8 +127,8 @@ func ExampleEvaluator() {
 	// qubit[2] q;
 	// bit[2] c;
 	// reset q;
-	// x q[0];
-	// cx q[0], q[1];
+	// X q[0];
+	// CX q[0], q[1];
 	// c = measure q;
 	//
 	// [11][  3]( 1.0000 0.0000i): 1.0000

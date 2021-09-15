@@ -181,7 +181,7 @@ func TestStmt(t *testing.T) {
 					},
 				},
 			},
-			"x q;",
+			"X q;",
 		},
 		{
 			&ast.ExprStmt{
@@ -352,12 +352,12 @@ func TestStmt(t *testing.T) {
 					},
 				},
 			},
-			"gate bell q0, q1 { h q0; cx q0, q1; }",
+			"gate bell q0, q1 { H q0; CX q0, q1; }",
 		},
 		{
 			&ast.DeclStmt{
 				Decl: &ast.GateDecl{
-					Name: "CX",
+					Name: "cx",
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
@@ -393,12 +393,12 @@ func TestStmt(t *testing.T) {
 					},
 				},
 			},
-			"gate CX q0, q1 { ctrl @ x q0, q1; }",
+			"gate cx q0, q1 { ctrl @ X q0, q1; }",
 		},
 		{
 			&ast.DeclStmt{
 				Decl: &ast.GateDecl{
-					Name: "CX",
+					Name: "cx",
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
@@ -444,12 +444,12 @@ func TestStmt(t *testing.T) {
 					},
 				},
 			},
-			"gate CX q0, q1 { ctrl(0) @ x q0, q1; }",
+			"gate cx q0, q1 { ctrl(0) @ X q0, q1; }",
 		},
 		{
 			&ast.DeclStmt{
 				Decl: &ast.GateDecl{
-					Name: "CIQFT",
+					Name: "ciqft",
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
@@ -488,7 +488,7 @@ func TestStmt(t *testing.T) {
 					},
 				},
 			},
-			"gate CIQFT q0, q1 { ctrl @ inv @ qft q0, q1; }",
+			"gate ciqft q0, q1 { ctrl @ inv @ QFT q0, q1; }",
 		},
 	}
 

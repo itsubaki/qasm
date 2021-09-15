@@ -130,7 +130,7 @@ func TestDecl(t *testing.T) {
 					},
 				},
 			},
-			"gate bell q0, q1 { h q0; cx q0, q1; }",
+			"gate bell q0, q1 { H q0; CX q0, q1; }",
 		},
 		{
 			&ast.ParenDecl{
