@@ -122,13 +122,26 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 	case *ast.ArrowStmt:
 		return e.eval(&ast.AssignStmt{Left: n.Right, Right: n.Left}, env)
 
-	case *ast.ReturnStmt:
-		v, err := e.eval(n.Result, env)
-		if err != nil {
-			return nil, fmt.Errorf("return: %v", err)
+	case *ast.ResetStmt:
+		if err := e.evalReset(n, env); err != nil {
+			return nil, fmt.Errorf("apply(%v): %v", n, err)
 		}
 
-		return &object.ReturnValue{Value: v}, nil
+	case *ast.PrintStmt:
+		if err := e.evalPrint(n, env); err != nil {
+			return nil, fmt.Errorf("print(%v): %v", n, err)
+		}
+
+	case *ast.ApplyStmt:
+		if err := e.evalApply(n, env); err != nil {
+			return nil, fmt.Errorf("apply(%v): %v", n, err)
+		}
+
+	case *ast.CallExpr:
+		return e.call(n, env)
+
+	case *ast.MeasureExpr:
+		return e.measure(n, env)
 
 	case *ast.AssignStmt:
 		rhs, err := e.eval(n.Right, env)
@@ -144,33 +157,6 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 		e := rhs.(*object.Array).Elm
 		for i := range e {
 			c[i] = e[i].(*object.Int).Value
-		}
-
-	case *ast.BlockStmt:
-		for _, b := range n.List {
-			v, err := e.eval(b, env)
-			if err != nil {
-				return nil, fmt.Errorf("eval(%v): %v", b, err)
-			}
-
-			if v.Type() == object.RETURN_VALUE {
-				return v, nil
-			}
-		}
-
-	case *ast.ResetStmt:
-		if err := e.evalReset(n, env); err != nil {
-			return nil, fmt.Errorf("apply(%v): %v", n, err)
-		}
-
-	case *ast.PrintStmt:
-		if err := e.evalPrint(n, env); err != nil {
-			return nil, fmt.Errorf("print(%v): %v", n, err)
-		}
-
-	case *ast.ApplyStmt:
-		if err := e.evalApply(n, env); err != nil {
-			return nil, fmt.Errorf("apply(%v): %v", n, err)
 		}
 
 	case *ast.GenConst:
@@ -198,11 +184,25 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 		// TODO check already exists
 		env.Func[ast.Ident(n)] = n
 
-	case *ast.CallExpr:
-		return e.call(n, env)
+	case *ast.BlockStmt:
+		for _, b := range n.List {
+			v, err := e.eval(b, env)
+			if err != nil {
+				return nil, fmt.Errorf("eval(%v): %v", b, err)
+			}
 
-	case *ast.MeasureExpr:
-		return e.measure(n, env)
+			if v.Type() == object.RETURN_VALUE {
+				return v, nil
+			}
+		}
+
+	case *ast.ReturnStmt:
+		v, err := e.eval(n.Result, env)
+		if err != nil {
+			return nil, fmt.Errorf("return: %v", err)
+		}
+
+		return &object.ReturnValue{Value: v}, nil
 
 	case *ast.BasicLit:
 		switch n.Kind {
@@ -226,11 +226,10 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 			return nil, fmt.Errorf("eval(%v): %v", n.Value, err)
 		}
 
-		if n.Kind == lexer.PLUS {
+		switch n.Kind {
+		case lexer.PLUS:
 			return v, nil
-		}
-
-		if n.Kind == lexer.MINUS {
+		case lexer.MINUS:
 			switch v := v.(type) {
 			case *object.Int:
 				return &object.Int{Value: -1 * v.Value}, nil
@@ -262,47 +261,45 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 }
 
 func (e *Evaluator) evalInfix(kind lexer.Token, lhs, rhs object.Object) (object.Object, error) {
-	if kind == lexer.PLUS {
+	switch kind {
+	case lexer.PLUS:
 		switch t := lhs.(type) {
 		case *object.Int:
 			return &object.Int{Value: t.Value + rhs.(*object.Int).Value}, nil
 		case *object.Float:
 			return &object.Float{Value: t.Value + rhs.(*object.Float).Value}, nil
 		}
-	}
 
-	if kind == lexer.MINUS {
+	case lexer.MINUS:
 		switch t := lhs.(type) {
 		case *object.Int:
 			return &object.Int{Value: t.Value - rhs.(*object.Int).Value}, nil
 		case *object.Float:
 			return &object.Float{Value: t.Value - rhs.(*object.Float).Value}, nil
 		}
-	}
 
-	if kind == lexer.MUL {
+	case lexer.MUL:
 		switch t := lhs.(type) {
 		case *object.Int:
 			return &object.Int{Value: t.Value * rhs.(*object.Int).Value}, nil
 		case *object.Float:
 			return &object.Float{Value: t.Value * rhs.(*object.Float).Value}, nil
 		}
-	}
 
-	if kind == lexer.DIV {
+	case lexer.DIV:
 		switch t := lhs.(type) {
 		case *object.Int:
 			return &object.Int{Value: t.Value / rhs.(*object.Int).Value}, nil
 		case *object.Float:
 			return &object.Float{Value: t.Value / rhs.(*object.Float).Value}, nil
 		}
-	}
 
-	if kind == lexer.MOD {
+	case lexer.MOD:
 		switch t := lhs.(type) {
 		case *object.Int:
 			return &object.Int{Value: t.Value % rhs.(*object.Int).Value}, nil
 		}
+
 	}
 
 	return nil, fmt.Errorf("unsupported(%v)", kind)
@@ -589,64 +586,75 @@ func isCtrl(mod []ast.Modifier) bool {
 	return false
 }
 
+func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *object.Environment) (object.Object, error) {
+	switch s.Kind {
+	case lexer.IDENT:
+		// call declared gate
+		if isCtrl(x.Modifier) {
+			// ctrl @ h q0, q1;
+			x := &ast.CallExpr{
+				Modifier: append(x.Modifier, s.Modifier...),
+				Name:     s.Name,
+				Params:   x.Params,
+				QArgs:    x.QArgs,
+			}
+
+			if _, err := e.eval(x, outer); err != nil {
+				return nil, fmt.Errorf("eval(%v): %v", x, err)
+			}
+
+			return nil, nil
+		}
+
+		// h q0;
+		x := &ast.CallExpr{
+			Modifier: append(x.Modifier, s.Modifier...),
+			Name:     s.Name,
+			Params:   s.Params,
+			QArgs:    s.QArgs,
+		}
+
+		if _, err := e.eval(x, env); err != nil {
+			return nil, fmt.Errorf("eval(%v): %v", x, err)
+		}
+
+		return nil, nil
+	default:
+		// ctrl @ U(pi, 0, pi) q, p;
+		if isCtrl(x.Modifier) {
+			s := &ast.ApplyStmt{
+				Kind:     s.Kind,
+				Modifier: append(x.Modifier, s.Modifier...),
+				Name:     s.Name,
+				Params:   s.Params,
+				QArgs:    x.QArgs,
+			}
+
+			if _, err := e.eval(s, outer); err != nil {
+				return nil, fmt.Errorf("eval(%v): %v", s, err)
+			}
+
+			return nil, nil
+		}
+
+		// U(pi, 0, pi) q;
+		if _, err := e.eval(s, env); err != nil {
+			return nil, fmt.Errorf("eval(%v): %v", s, err)
+		}
+
+		return nil, nil
+	}
+}
+
 func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) (object.Object, error) {
 	env := e.extend(x, d, outer)
 
 	for _, b := range d.Body.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			// ctrl @ U(pi, 0, pi) q, p;
-			if s.Kind != lexer.IDENT && isCtrl(x.Modifier) {
-				s := &ast.ApplyStmt{
-					Kind:     s.Kind,
-					Modifier: append(x.Modifier, s.Modifier...),
-					Name:     s.Name,
-					Params:   s.Params,
-					QArgs:    x.QArgs,
-				}
-				if _, err := e.eval(s, outer); err != nil {
-					return nil, fmt.Errorf("eval(%v): %v", s, err)
-				}
-
-				continue
+			if _, err := e.callApply(s, x, env, outer); err != nil {
+				return nil, fmt.Errorf("callApply: %v", err)
 			}
-
-			// U(pi, 0, pi) q;
-			if s.Kind != lexer.IDENT {
-				if _, err := e.eval(s, env); err != nil {
-					return nil, fmt.Errorf("eval(%v): %v", s, err)
-				}
-
-				continue
-			}
-
-			// call declared gate
-			if isCtrl(x.Modifier) {
-				x := &ast.CallExpr{
-					Modifier: append(x.Modifier, s.Modifier...),
-					Name:     s.Name,
-					Params:   x.Params,
-					QArgs:    x.QArgs,
-				}
-
-				if _, err := e.eval(x, outer); err != nil {
-					return nil, fmt.Errorf("eval(%v): %v", x, err)
-				}
-
-				continue
-			}
-
-			x := &ast.CallExpr{
-				Modifier: append(x.Modifier, s.Modifier...),
-				Name:     s.Name,
-				Params:   s.Params,
-				QArgs:    s.QArgs,
-			}
-
-			if _, err := e.eval(x, env); err != nil {
-				return nil, fmt.Errorf("eval(%v): %v", x, err)
-			}
-
 		default:
 			if _, err := e.eval(b, env); err != nil {
 				return nil, fmt.Errorf("eval(%v): %v", b, err)
