@@ -442,23 +442,6 @@ func (p *Parser) parseFunc() ast.Decl {
 	return &decl
 }
 
-func (p *Parser) parseCall(name string, mod ...ast.Modifier) ast.Expr {
-	x := ast.CallExpr{
-		Name:     name,
-		Modifier: mod,
-	}
-
-	if p.cur.Token == lexer.LPAREN {
-		x.Params = ast.ParenExpr{
-			List: p.parseIdentList(),
-		}
-		p.expect(lexer.RPAREN)
-	}
-
-	x.QArgs = p.parseIdentList()
-	return &x
-}
-
 func (p *Parser) parseMeasure() ast.Expr {
 	p.expect(lexer.MEASURE)
 
@@ -589,6 +572,23 @@ func (p *Parser) parseApplyOrCall() ast.Stmt {
 
 	// ctrl @ U(pi, 0, pi) q, p;
 	return p.parseApplyStmt(mod...)
+}
+
+func (p *Parser) parseCall(name string, mod ...ast.Modifier) ast.Expr {
+	x := ast.CallExpr{
+		Name:     name,
+		Modifier: mod,
+	}
+
+	if p.cur.Token == lexer.LPAREN {
+		x.Params = ast.ParenExpr{
+			List: p.parseIdentList(),
+		}
+		p.expect(lexer.RPAREN)
+	}
+
+	x.QArgs = p.parseIdentList()
+	return &x
 }
 
 func (p *Parser) parseApplyStmt(mod ...ast.Modifier) ast.Stmt {
