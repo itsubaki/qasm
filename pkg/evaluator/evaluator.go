@@ -587,8 +587,7 @@ func isCtrl(mod []ast.Modifier) bool {
 func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) error {
 	if !isCtrl(x.Modifier) {
 		// U(pi, 0, pi) q;
-		env := e.extend(x, d, outer)
-		if _, err := e.eval(&d.Body, env); err != nil {
+		if _, err := e.eval(&d.Body, e.extend(x, d, outer)); err != nil {
 			return fmt.Errorf("eval(%v): %v", d.Body, err)
 		}
 
@@ -620,7 +619,6 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 					Params:   X.Params,
 					QArgs:    x.QArgs,
 				}
-
 			default:
 				return fmt.Errorf("unsupported(%v)", X)
 			}
