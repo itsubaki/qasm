@@ -597,10 +597,15 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 		case *ast.ApplyStmt:
 			// ctrl @ U(pi, 0, pi) q, p;
 			if s.Kind != lexer.IDENT && isCtrl(x.Modifier) {
-				s.QArgs = x.QArgs
-				s.Modifier = append(x.Modifier, s.Modifier...)
+				s := &ast.ApplyStmt{
+					Kind:     s.Kind,
+					Modifier: append(x.Modifier, s.Modifier...),
+					Name:     s.Name,
+					Params:   s.Params,
+					QArgs:    x.QArgs,
+				}
 				if _, err := e.eval(s, outer); err != nil {
-					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
+					return nil, fmt.Errorf("eval(%v): %v", s, err)
 				}
 
 				continue
@@ -609,7 +614,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 			// U(pi, 0, pi) q;
 			if s.Kind != lexer.IDENT {
 				if _, err := e.eval(s, env); err != nil {
-					return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
+					return nil, fmt.Errorf("eval(%v): %v", s, err)
 				}
 
 				continue
@@ -644,7 +649,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 
 		default:
 			if _, err := e.eval(b, env); err != nil {
-				return nil, fmt.Errorf("eval(%v): %v", &d.Body, err)
+				return nil, fmt.Errorf("eval(%v): %v", b, err)
 			}
 		}
 	}
