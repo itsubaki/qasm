@@ -139,9 +139,10 @@ func (p *Parser) parseStmt() ast.Stmt {
 	case lexer.X, lexer.Y, lexer.Z, lexer.U,
 		lexer.H, lexer.S, lexer.T,
 		lexer.CX, lexer.CZ, lexer.CCX,
-		lexer.SWAP, lexer.QFT, lexer.IQFT, lexer.CMODEXP2,
-		lexer.CTRL, lexer.NEGCTRL, lexer.INV, lexer.POW:
+		lexer.SWAP, lexer.QFT, lexer.IQFT, lexer.CMODEXP2:
 		return p.parseApplyStmt()
+	case lexer.CTRL, lexer.NEGCTRL, lexer.INV, lexer.POW:
+		return p.parseApplyOrCall()
 	}
 
 	p.error(fmt.Errorf("invalid stmt token=%#v", p.cur))
@@ -374,7 +375,7 @@ func (p *Parser) parseGate() ast.Decl {
 	p.expect(lexer.LBRACE)
 
 	for p.next().Token != lexer.RBRACE {
-		decl.Body.Append(p.parseApplyStmt())
+		decl.Body.Append(p.parseStmt())
 	}
 	p.expect(lexer.RBRACE)
 
@@ -441,9 +442,10 @@ func (p *Parser) parseFunc() ast.Decl {
 	return &decl
 }
 
-func (p *Parser) parseCall(name string) ast.Expr {
+func (p *Parser) parseCall(name string, mod ...ast.Modifier) ast.Expr {
 	x := ast.CallExpr{
-		Name: name,
+		Name:     name,
+		Modifier: mod,
 	}
 
 	if p.cur.Token == lexer.LPAREN {
@@ -539,7 +541,7 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 	}
 }
 
-func (p *Parser) parseApplyStmt() ast.Stmt {
+func (p *Parser) parseModifier() []ast.Modifier {
 	mod := make([]ast.Modifier, 0)
 	for lexer.IsModifiler(p.cur.Token) {
 		m := ast.Modifier{
@@ -571,24 +573,43 @@ func (p *Parser) parseApplyStmt() ast.Stmt {
 		p.next()
 	}
 
-	x := ast.ApplyStmt{
+	return mod
+}
+
+func (p *Parser) parseApplyOrCall() ast.Stmt {
+	mod := p.parseModifier()
+	name := p.cur.Literal
+	if p.cur.Token == lexer.IDENT {
+		p.next()
+		// ctrl @ x q, p;
+		return &ast.ExprStmt{
+			X: p.parseCall(name, mod...),
+		}
+	}
+
+	// ctrl @ U(pi, 0, pi) q, p;
+	return p.parseApplyStmt(mod...)
+}
+
+func (p *Parser) parseApplyStmt(mod ...ast.Modifier) ast.Stmt {
+	s := ast.ApplyStmt{
 		Kind:     p.cur.Token,
 		Name:     p.cur.Literal,
 		Modifier: mod,
 	}
 
 	if p.next().Token == lexer.LPAREN {
-		x.Params = ast.ParenExpr{
+		s.Params = ast.ParenExpr{
 			List: p.parseIdentList(),
 		}
 		p.expect(lexer.RPAREN)
 	}
 
-	x.QArgs = p.parseIdentList()
+	s.QArgs = p.parseIdentList()
 	p.expectSemi()
 
 	// cx q[0], q[1];
-	return &x
+	return &s
 }
 
 func (p *Parser) parseAssignOrCall() ast.Stmt {
