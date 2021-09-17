@@ -449,7 +449,7 @@ func flatten(qargs [][]q.Qubit) []q.Qubit {
 	return out
 }
 
-func (e *Evaluator) tryBultinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
+func (e *Evaluator) tryBuiltinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
 	switch g {
 	case lexer.SWAP:
 		e.Q.Swap(flatten(qargs)...)
@@ -527,7 +527,7 @@ func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]
 
 func (e *Evaluator) apply(mod []ast.Modifier, gate lexer.Token, params []float64, qargs [][]q.Qubit) error {
 	// cx, swap, qft, cmodexp2, ...
-	if e.tryBultinApply(gate, params, qargs) {
+	if e.tryBuiltinApply(gate, params, qargs) {
 		return nil
 	}
 
