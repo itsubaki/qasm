@@ -92,27 +92,6 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 	}
 
 	switch n := n.(type) {
-	case *ast.InclStmt:
-		path := strings.Trim(n.Path.Value, "\"")
-		f, err := os.ReadFile(path)
-		if err != nil {
-			return nil, fmt.Errorf("read file=%s: %v", path, err)
-		}
-
-		l := lexer.New(strings.NewReader(string(f)))
-		p := parser.New(l)
-
-		a := p.Parse()
-		if errs := p.Errors(); len(errs) != 0 {
-			return nil, fmt.Errorf("parse: %v", errs)
-		}
-
-		for _, s := range a.Stmts {
-			if _, err := e.eval(s, e.Env); err != nil {
-				return nil, fmt.Errorf("eval(%v): %v", s, err)
-			}
-		}
-
 	case *ast.ExprStmt:
 		return e.eval(n.X, env)
 
@@ -142,6 +121,27 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 
 	case *ast.MeasureExpr:
 		return e.measure(n, env)
+
+	case *ast.InclStmt:
+		path := strings.Trim(n.Path.Value, "\"")
+		f, err := os.ReadFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("read file=%s: %v", path, err)
+		}
+
+		l := lexer.New(strings.NewReader(string(f)))
+		p := parser.New(l)
+
+		a := p.Parse()
+		if errs := p.Errors(); len(errs) != 0 {
+			return nil, fmt.Errorf("parse: %v", errs)
+		}
+
+		for _, s := range a.Stmts {
+			if _, err := e.eval(s, e.Env); err != nil {
+				return nil, fmt.Errorf("eval(%v): %v", s, err)
+			}
+		}
 
 	case *ast.AssignStmt:
 		rhs, err := e.eval(n.Right, env)
