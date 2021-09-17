@@ -566,7 +566,7 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 
 	switch decl := decl.(type) {
 	case *ast.GateDecl:
-		return e.callGate(x, decl, env)
+		return nil, e.callGate(x, decl, env)
 	case *ast.FuncDecl:
 		return e.callFunc(x, decl, env)
 	}
@@ -584,7 +584,7 @@ func isCtrl(mod []ast.Modifier) bool {
 	return false
 }
 
-func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *object.Environment) (object.Object, error) {
+func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *object.Environment) error {
 	// call declared gate
 	if s.Kind == lexer.IDENT && isCtrl(x.Modifier) {
 		// ctrl @ h q, p;
@@ -596,10 +596,10 @@ func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *obj
 		}
 
 		if _, err := e.eval(x, outer); err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", x, err)
+			return fmt.Errorf("eval(%v): %v", x, err)
 		}
 
-		return nil, nil
+		return nil
 	}
 
 	// call declared gate
@@ -613,10 +613,10 @@ func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *obj
 		}
 
 		if _, err := e.eval(x, env); err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", x, err)
+			return fmt.Errorf("eval(%v): %v", x, err)
 		}
 
-		return nil, nil
+		return nil
 	}
 
 	// bultin gate
@@ -631,37 +631,72 @@ func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *obj
 		}
 
 		if _, err := e.eval(s, outer); err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", s, err)
+			return fmt.Errorf("eval(%v): %v", s, err)
 		}
 
-		return nil, nil
+		return nil
 	}
 
 	// U(pi, 0, pi) q;
 	if _, err := e.eval(s, env); err != nil {
-		return nil, fmt.Errorf("eval(%v): %v", s, err)
+		return fmt.Errorf("eval(%v): %v", s, err)
 	}
 
-	return nil, nil
+	return nil
 }
 
-func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) (object.Object, error) {
+func (e *Evaluator) callCall(X, x *ast.CallExpr, env, outer *object.Environment) error {
+	mod := append(x.Modifier, X.Modifier...)
+	c := &ast.CallExpr{
+		Modifier: mod,
+		Name:     X.Name,
+		Params:   X.Params,
+		QArgs:    X.QArgs,
+	}
+
+	if isCtrl(x.Modifier) {
+		c.Params = x.Params
+		c.QArgs = x.QArgs
+		if _, err := e.eval(c, outer); err != nil {
+			return fmt.Errorf("eval(%v): %v", c, err)
+		}
+
+		return nil
+	}
+
+	if _, err := e.eval(c, env); err != nil {
+		return fmt.Errorf("eval(%v): %v", c, err)
+	}
+
+	return nil
+}
+
+func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) error {
 	env := e.extend(x, d, outer)
 
 	for _, b := range d.Body.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			if _, err := e.callApply(s, x, env, outer); err != nil {
-				return nil, fmt.Errorf("callApply: %v", err)
+			if err := e.callApply(s, x, env, outer); err != nil {
+				return fmt.Errorf("callApply: %v", err)
 			}
-		default:
-			if _, err := e.eval(b, env); err != nil {
-				return nil, fmt.Errorf("eval(%v): %v", b, err)
+			continue
+		case *ast.ExprStmt:
+			switch X := s.X.(type) {
+			case *ast.CallExpr:
+				if err := e.callCall(X, x, env, outer); err != nil {
+					return fmt.Errorf("callCall: %v", err)
+				}
 			}
+			continue
+		}
+
+		if _, err := e.eval(b, env); err != nil {
+			return fmt.Errorf("eval(%v): %v", b, err)
 		}
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (e *Evaluator) extend(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) *object.Environment {

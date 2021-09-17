@@ -10,6 +10,6 @@ gate cx1(a) q, p { ctrl   @ x4(a) q, p; }
 qubit[2] q;
 reset q;
 
-h     q[0];
+h q[0];
 cx1(0) q[0], q[1];
 
