@@ -585,51 +585,51 @@ func isCtrl(mod []ast.Modifier) bool {
 }
 
 func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *object.Environment) error {
-	if isCtrl(x.Modifier) {
-		// ctrl @ U(pi, 0, pi) q, p;
-		s := &ast.ApplyStmt{
-			Modifier: append(x.Modifier, s.Modifier...),
-			Kind:     s.Kind,
-			Name:     s.Name,
-			Params:   s.Params,
-			QArgs:    x.QArgs,
-		}
-
-		if _, err := e.eval(s, outer); err != nil {
+	if !isCtrl(x.Modifier) {
+		// U(pi, 0, pi) q;
+		if _, err := e.eval(s, env); err != nil {
 			return fmt.Errorf("eval(%v): %v", s, err)
 		}
 
 		return nil
 	}
 
-	// U(pi, 0, pi) q;
-	if _, err := e.eval(s, env); err != nil {
-		return fmt.Errorf("eval(%v): %v", s, err)
+	// ctrl @ U(pi, 0, pi) q, p;
+	c := &ast.ApplyStmt{
+		Modifier: append(x.Modifier, s.Modifier...),
+		Kind:     s.Kind,
+		Name:     s.Name,
+		Params:   s.Params,
+		QArgs:    x.QArgs,
+	}
+
+	if _, err := e.eval(c, outer); err != nil {
+		return fmt.Errorf("eval(%v): %v", c, err)
 	}
 
 	return nil
 }
 
 func (e *Evaluator) callCall(s, x *ast.CallExpr, env, outer *object.Environment) error {
-	if isCtrl(x.Modifier) {
-		// ctrl @ h q, p;
-		s := &ast.CallExpr{
-			Modifier: append(x.Modifier, s.Modifier...),
-			Name:     s.Name,
-			Params:   s.Params,
-			QArgs:    x.QArgs,
-		}
-
-		if _, err := e.eval(s, outer); err != nil {
+	if !isCtrl(x.Modifier) {
+		// h q;
+		if _, err := e.eval(s, env); err != nil {
 			return fmt.Errorf("eval(%v): %v", s, err)
 		}
 
 		return nil
 	}
 
-	// h q;
-	if _, err := e.eval(s, env); err != nil {
-		return fmt.Errorf("eval(%v): %v", s, err)
+	// ctrl @ h q, p;
+	c := &ast.CallExpr{
+		Modifier: append(x.Modifier, s.Modifier...),
+		Name:     s.Name,
+		Params:   s.Params,
+		QArgs:    x.QArgs,
+	}
+
+	if _, err := e.eval(c, outer); err != nil {
+		return fmt.Errorf("eval(%v): %v", c, err)
 	}
 
 	return nil
