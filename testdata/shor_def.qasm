@@ -10,7 +10,7 @@ def shor(int[32] a, int[32] N) qubit[n] r0, qubit[m] r1 -> bit[n] {
     return measure r0;
 }
 
-const N = 15;
+const N = 3 * 5;
 const a = 7;
 
 qubit[3] r0;

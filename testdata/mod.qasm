@@ -1,15 +1,14 @@
 OPENQASM 3.0;
 include "testdata/gate.qasm";
 
-gate x1(a) q     { pow(3) @ U(pi, a, pi) q; }
-gate x2(a) q     { inv    @ x1(a) q;}
-gate x3(a) q     { inv    @ x2(a) q;}
-gate x4(a) q     { inv    @ x3(a) q;}
-gate cx1(a) q, p { ctrl   @ x4(a) q, p; }
+gate u1(a, b, c) q     { pow(3) @ U(a, b, c)  q; }
+gate u2(a, b, c) q     { inv    @ u1(a, b, c) q; }
+gate u3(a, b, c) q     { inv    @ u2(a, b, c) q; }
+gate u4(a, b, c) q     { inv    @ u3(a, b, c) q; }
+gate cu(a, b, c) q, p  { ctrl   @ u4(a, b, c) q, p; }
 
 qubit[2] q;
 reset q;
 
 h q[0];
-cx1(0) q[0], q[1];
-
+cu(pi, 0, pi) q[0], q[1];

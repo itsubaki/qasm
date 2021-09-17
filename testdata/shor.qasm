@@ -1,7 +1,7 @@
 OPENQASM 3.0;
 include "testdata/gate.qasm";
 
-const N = 3 * 5;
+const N = 15;
 const a = 7;
 
 qubit[3] r0;
