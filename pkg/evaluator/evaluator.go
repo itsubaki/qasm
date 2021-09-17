@@ -101,6 +101,12 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 	case *ast.ArrowStmt:
 		return e.eval(&ast.AssignStmt{Left: n.Right, Right: n.Left}, env)
 
+	case *ast.CallExpr:
+		return e.call(n, env)
+
+	case *ast.MeasureExpr:
+		return e.measure(n, env)
+
 	case *ast.ResetStmt:
 		if err := e.evalReset(n, env); err != nil {
 			return nil, fmt.Errorf("apply(%v): %v", n, err)
@@ -116,11 +122,30 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 			return nil, fmt.Errorf("apply(%v): %v", n, err)
 		}
 
-	case *ast.CallExpr:
-		return e.call(n, env)
+	case *ast.GenConst:
+		// TODO check already exists
+		v, err := e.eval(n.Value, env)
+		if err != nil {
+			return nil, fmt.Errorf("eval(%v): %v", n, err)
+		}
+		env.Const[ast.Ident(n)] = v
 
-	case *ast.MeasureExpr:
-		return e.measure(n, env)
+	case *ast.GenDecl:
+		// TODO check already exists
+		switch n.Kind {
+		case lexer.BIT:
+			env.Bit.Add(n, make([]int64, n.Size()))
+		case lexer.QUBIT:
+			env.Qubit.Add(n, e.Q.ZeroWith(n.Size()))
+		}
+
+	case *ast.GateDecl:
+		// TODO check already exists
+		env.Func[ast.Ident(n)] = n
+
+	case *ast.FuncDecl:
+		// TODO check already exists
+		env.Func[ast.Ident(n)] = n
 
 	case *ast.InclStmt:
 		path := strings.Trim(n.Path.Value, "\"")
@@ -158,31 +183,6 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 		for i := range e {
 			c[i] = e[i].(*object.Int).Value
 		}
-
-	case *ast.GenConst:
-		// TODO check already exists
-		v, err := e.eval(n.Value, env)
-		if err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", n, err)
-		}
-		env.Const[ast.Ident(n)] = v
-
-	case *ast.GenDecl:
-		// TODO check already exists
-		switch n.Kind {
-		case lexer.BIT:
-			env.Bit.Add(n, make([]int64, n.Size()))
-		case lexer.QUBIT:
-			env.Qubit.Add(n, e.Q.ZeroWith(n.Size()))
-		}
-
-	case *ast.GateDecl:
-		// TODO check already exists
-		env.Func[ast.Ident(n)] = n
-
-	case *ast.FuncDecl:
-		// TODO check already exists
-		env.Func[ast.Ident(n)] = n
 
 	case *ast.BlockStmt:
 		for _, b := range n.List {
