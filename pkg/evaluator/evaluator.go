@@ -191,7 +191,7 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 				return nil, fmt.Errorf("eval(%v): %v", b, err)
 			}
 
-			if v.Type() == object.RETURN_VALUE {
+			if v != nil && v.Type() == object.RETURN_VALUE {
 				return v, nil
 			}
 		}
@@ -584,79 +584,53 @@ func isCtrl(mod []ast.Modifier) bool {
 	return false
 }
 
-func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *object.Environment) error {
+func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) error {
 	if !isCtrl(x.Modifier) {
 		// U(pi, 0, pi) q;
-		if _, err := e.eval(s, env); err != nil {
-			return fmt.Errorf("eval(%v): %v", s, err)
+		env := e.extend(x, d, outer)
+		if _, err := e.eval(&d.Body, env); err != nil {
+			return fmt.Errorf("eval(%v): %v", d.Body, err)
 		}
 
 		return nil
 	}
 
-	// ctrl @ U(pi, 0, pi) q, p;
-	c := &ast.ApplyStmt{
-		Modifier: append(x.Modifier, s.Modifier...),
-		Kind:     s.Kind,
-		Name:     s.Name,
-		Params:   s.Params,
-		QArgs:    x.QArgs,
-	}
-
-	if _, err := e.eval(c, outer); err != nil {
-		return fmt.Errorf("eval(%v): %v", c, err)
-	}
-
-	return nil
-}
-
-func (e *Evaluator) callCall(s, x *ast.CallExpr, env, outer *object.Environment) error {
-	if !isCtrl(x.Modifier) {
-		// h q;
-		if _, err := e.eval(s, env); err != nil {
-			return fmt.Errorf("eval(%v): %v", s, err)
-		}
-
-		return nil
-	}
-
-	// ctrl @ h q, p;
-	c := &ast.CallExpr{
-		Modifier: append(x.Modifier, s.Modifier...),
-		Name:     s.Name,
-		Params:   s.Params,
-		QArgs:    x.QArgs,
-	}
-
-	if _, err := e.eval(c, outer); err != nil {
-		return fmt.Errorf("eval(%v): %v", c, err)
-	}
-
-	return nil
-}
-
-func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) error {
-	env := e.extend(x, d, outer)
-
+	// ctrl @
 	for _, b := range d.Body.List {
+		var c ast.Node
+
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			if err := e.callApply(s, x, env, outer); err != nil {
-				return fmt.Errorf("callApply: %v", err)
+			// ctrl @ U(pi, 0, pi) q, p;
+			c = &ast.ApplyStmt{
+				Modifier: append(x.Modifier, s.Modifier...),
+				Kind:     s.Kind,
+				Name:     s.Name,
+				Params:   s.Params,
+				QArgs:    x.QArgs,
 			}
-			continue
+
 		case *ast.ExprStmt:
 			switch X := s.X.(type) {
 			case *ast.CallExpr:
-				if err := e.callCall(X, x, env, outer); err != nil {
-					return fmt.Errorf("callCall: %v", err)
+				// ctrl @ h q, p;
+				c = &ast.CallExpr{
+					Modifier: append(x.Modifier, X.Modifier...),
+					Name:     X.Name,
+					Params:   X.Params,
+					QArgs:    x.QArgs,
 				}
+
+			default:
+				return fmt.Errorf("unsupported(%v)", X)
 			}
-			continue
+
+		default:
+			return fmt.Errorf("unsupported(%v)", s)
 		}
 
-		if _, err := e.eval(b, env); err != nil {
-			return fmt.Errorf("eval(%v): %v", b, err)
+		if _, err := e.eval(c, outer); err != nil {
+			return fmt.Errorf("eval(%v): %v", c, err)
 		}
 	}
 
