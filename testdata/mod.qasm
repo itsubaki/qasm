@@ -12,14 +12,4 @@ reset q;
 
 h     q[0];
 cx1(0) q[0], q[1];
-print;
 
-gate ncx  q0, q1     { negctrl @ x   q0, q1; }
-gate cncx q0, q1, q2 { ctrl    @ ncx q0, q1, q2; }
-
-qubit p;
-reset q, p;
-print;
-
-x q[0];
-cncx q[0], q[1], p;
