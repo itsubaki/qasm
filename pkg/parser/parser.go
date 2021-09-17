@@ -35,7 +35,7 @@ func (p *Parser) Parse() *ast.OpenQASM {
 	var version ast.Stmt
 	var stmts []ast.Stmt
 
-	p.next()
+	p.next() // preload
 	for p.next().Token != lexer.EOF {
 		switch p.cur.Token {
 		case lexer.OPENQASM:
