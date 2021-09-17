@@ -665,8 +665,6 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 
 func (e *Evaluator) extend(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) *object.Environment {
 	env := object.NewEnclosedEnvironment(outer)
-	env.Func = outer.Func
-	env.Const = outer.Const
 
 	for i := range d.Params.List.List {
 		if v, ok := outer.Const[ast.Ident(x.Params.List.List[i])]; ok {
@@ -707,8 +705,6 @@ func (e *Evaluator) callFunc(x *ast.CallExpr, d *ast.FuncDecl, outer *object.Env
 
 func (e *Evaluator) extendFunc(x *ast.CallExpr, d *ast.FuncDecl, outer *object.Environment) *object.Environment {
 	env := object.NewEnclosedEnvironment(outer)
-	env.Func = outer.Func
-	env.Const = outer.Const
 
 	for i := range d.QArgs.List {
 		v, ok := outer.Qubit.Get(x.QArgs.List[i])

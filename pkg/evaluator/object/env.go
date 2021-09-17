@@ -36,6 +36,8 @@ func NewEnvironment() *Environment {
 func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env := NewEnvironment()
 	env.Outer = outer
+	env.Func = outer.Func
+	env.Const = outer.Const
 	return env
 }
 
