@@ -490,10 +490,6 @@ func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]
 	// ctrl @ ctrl @ X equals to ctrl(0) @ ctrl(1) @ X
 	defaultIndex := 0
 	for _, m := range mod {
-		if m.Kind == lexer.INV || m.Kind == lexer.POW {
-			continue
-		}
-
 		c := defaultIndex
 		if len(m.Index.List.List) > 0 {
 			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
@@ -504,6 +500,8 @@ func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]
 			ctrl = append(ctrl, qargs[c])
 		case lexer.NEGCTRL:
 			negc = append(negc, qargs[c])
+		default:
+			continue
 		}
 
 		defaultIndex++
@@ -587,26 +585,26 @@ func isCtrl(mod []ast.Modifier) bool {
 }
 
 func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *object.Environment) (object.Object, error) {
-	switch s.Kind {
-	case lexer.IDENT:
-		// call declared gate
-		if isCtrl(x.Modifier) {
-			// ctrl @ h q0, q1;
-			x := &ast.CallExpr{
-				Modifier: append(x.Modifier, s.Modifier...),
-				Name:     s.Name,
-				Params:   x.Params,
-				QArgs:    x.QArgs,
-			}
-
-			if _, err := e.eval(x, outer); err != nil {
-				return nil, fmt.Errorf("eval(%v): %v", x, err)
-			}
-
-			return nil, nil
+	// call declared gate
+	if s.Kind == lexer.IDENT && isCtrl(x.Modifier) {
+		// ctrl @ h q, p;
+		x := &ast.CallExpr{
+			Modifier: append(x.Modifier, s.Modifier...),
+			Name:     s.Name,
+			Params:   x.Params,
+			QArgs:    x.QArgs,
 		}
 
-		// h q0;
+		if _, err := e.eval(x, outer); err != nil {
+			return nil, fmt.Errorf("eval(%v): %v", x, err)
+		}
+
+		return nil, nil
+	}
+
+	// call declared gate
+	if s.Kind == lexer.IDENT {
+		// h q;
 		x := &ast.CallExpr{
 			Modifier: append(x.Modifier, s.Modifier...),
 			Name:     s.Name,
@@ -619,31 +617,32 @@ func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *obj
 		}
 
 		return nil, nil
-	default:
+	}
+
+	// bultin gate
+	if isCtrl(x.Modifier) {
 		// ctrl @ U(pi, 0, pi) q, p;
-		if isCtrl(x.Modifier) {
-			s := &ast.ApplyStmt{
-				Kind:     s.Kind,
-				Modifier: append(x.Modifier, s.Modifier...),
-				Name:     s.Name,
-				Params:   s.Params,
-				QArgs:    x.QArgs,
-			}
-
-			if _, err := e.eval(s, outer); err != nil {
-				return nil, fmt.Errorf("eval(%v): %v", s, err)
-			}
-
-			return nil, nil
+		s := &ast.ApplyStmt{
+			Kind:     s.Kind,
+			Modifier: append(x.Modifier, s.Modifier...),
+			Name:     s.Name,
+			Params:   s.Params,
+			QArgs:    x.QArgs,
 		}
 
-		// U(pi, 0, pi) q;
-		if _, err := e.eval(s, env); err != nil {
+		if _, err := e.eval(s, outer); err != nil {
 			return nil, fmt.Errorf("eval(%v): %v", s, err)
 		}
 
 		return nil, nil
 	}
+
+	// U(pi, 0, pi) q;
+	if _, err := e.eval(s, env); err != nil {
+		return nil, fmt.Errorf("eval(%v): %v", s, err)
+	}
+
+	return nil, nil
 }
 
 func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) (object.Object, error) {
