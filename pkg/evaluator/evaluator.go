@@ -585,46 +585,11 @@ func isCtrl(mod []ast.Modifier) bool {
 }
 
 func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *object.Environment) error {
-	// call declared gate
-	if s.Kind == lexer.IDENT && isCtrl(x.Modifier) {
-		// ctrl @ h q, p;
-		x := &ast.CallExpr{
-			Modifier: append(x.Modifier, s.Modifier...),
-			Name:     s.Name,
-			Params:   x.Params,
-			QArgs:    x.QArgs,
-		}
-
-		if _, err := e.eval(x, outer); err != nil {
-			return fmt.Errorf("eval(%v): %v", x, err)
-		}
-
-		return nil
-	}
-
-	// call declared gate
-	if s.Kind == lexer.IDENT {
-		// h q;
-		x := &ast.CallExpr{
-			Modifier: append(x.Modifier, s.Modifier...),
-			Name:     s.Name,
-			Params:   s.Params,
-			QArgs:    s.QArgs,
-		}
-
-		if _, err := e.eval(x, env); err != nil {
-			return fmt.Errorf("eval(%v): %v", x, err)
-		}
-
-		return nil
-	}
-
-	// bultin gate
 	if isCtrl(x.Modifier) {
 		// ctrl @ U(pi, 0, pi) q, p;
 		s := &ast.ApplyStmt{
-			Kind:     s.Kind,
 			Modifier: append(x.Modifier, s.Modifier...),
+			Kind:     s.Kind,
 			Name:     s.Name,
 			Params:   s.Params,
 			QArgs:    x.QArgs,
@@ -645,27 +610,26 @@ func (e *Evaluator) callApply(s *ast.ApplyStmt, x *ast.CallExpr, env, outer *obj
 	return nil
 }
 
-func (e *Evaluator) callCall(X, x *ast.CallExpr, env, outer *object.Environment) error {
-	mod := append(x.Modifier, X.Modifier...)
-	c := &ast.CallExpr{
-		Modifier: mod,
-		Name:     X.Name,
-		Params:   X.Params,
-		QArgs:    X.QArgs,
-	}
-
+func (e *Evaluator) callCall(s, x *ast.CallExpr, env, outer *object.Environment) error {
 	if isCtrl(x.Modifier) {
-		c.Params = x.Params
-		c.QArgs = x.QArgs
-		if _, err := e.eval(c, outer); err != nil {
-			return fmt.Errorf("eval(%v): %v", c, err)
+		// ctrl @ h q, p;
+		s := &ast.CallExpr{
+			Modifier: append(x.Modifier, s.Modifier...),
+			Name:     s.Name,
+			Params:   s.Params,
+			QArgs:    x.QArgs,
+		}
+
+		if _, err := e.eval(s, outer); err != nil {
+			return fmt.Errorf("eval(%v): %v", s, err)
 		}
 
 		return nil
 	}
 
-	if _, err := e.eval(c, env); err != nil {
-		return fmt.Errorf("eval(%v): %v", c, err)
+	// h q;
+	if _, err := e.eval(s, env); err != nil {
+		return fmt.Errorf("eval(%v): %v", s, err)
 	}
 
 	return nil
