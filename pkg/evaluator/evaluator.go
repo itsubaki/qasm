@@ -573,7 +573,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 	// ctrl @ U(pi, 0, pi) q, p;
 	for _, m := range x.Modifier {
 		if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
-			return e.callCtrlGate(x, body, outer)
+			return e.callCtrlGate(x, d, body, outer)
 		}
 	}
 
@@ -585,13 +585,13 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 	return nil
 }
 
-func (e *Evaluator) callCtrlGate(x *ast.CallExpr, block *ast.BlockStmt, outer *object.Environment) error {
+func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, block *ast.BlockStmt, outer *object.Environment) error {
 	for _, b := range block.List {
 		var c ast.Node
 
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			// ctrl @ U(pi, 0, pi) q, p;
+			// ctrl @ U q0, q1;
 			c = &ast.ApplyStmt{
 				Modifier: append(x.Modifier, s.Modifier...),
 				Kind:     s.Kind,
@@ -603,12 +603,26 @@ func (e *Evaluator) callCtrlGate(x *ast.CallExpr, block *ast.BlockStmt, outer *o
 		case *ast.ExprStmt:
 			switch X := s.X.(type) {
 			case *ast.CallExpr:
-				// ctrl @ h q, p;
+				// ctrl @ bell q0, q1, q2;
+				// -> ctrl @ h q0, q1;
+				// -> ctrl @ cx q0, q1, q2;
+
+				var qargs ast.ExprList
+				qargs.Append(x.QArgs.List[0])
+
+				for i := range X.QArgs.List {
+					for j := range d.QArgs.List {
+						if ast.Equals(X.QArgs.List[i], d.QArgs.List[j]) {
+							qargs.Append(x.QArgs.List[j+1])
+						}
+					}
+				}
+
 				c = &ast.CallExpr{
 					Modifier: append(x.Modifier, X.Modifier...),
 					Name:     X.Name,
 					Params:   X.Params,
-					QArgs:    x.QArgs,
+					QArgs:    qargs,
 				}
 			default:
 				return fmt.Errorf("unsupported(%v)", X)

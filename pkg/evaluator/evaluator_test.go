@@ -44,18 +44,13 @@ gate y q { U(pi, pi/2.0, pi/2.0) q; }
 gate z q { Z q; }
 
 qubit[2] q;
-reset    q;
+reset q;
 
 i q;
 x q; x q;
 y q; y q;
 z q; z q;
 h q; h q;
-
-X q; X q;
-Y q; Y q;
-Z q; Z q;
-H q; H q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -67,6 +62,54 @@ H q; H q;
 	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
+func Example_measure() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+
+qubit[2] q;
+bit[2] c;
+reset q;
+
+x q;
+c = measure q;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [11][  3]( 1.0000 0.0000i): 1.0000
+	// c: 11
+}
+
+func Example_arrow() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+
+qubit[2] q;
+bit[2] c;
+reset q;
+
+x q;
+measure q -> c;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [11][  3]( 1.0000 0.0000i): 1.0000
+	// c: 11
+}
+
 func Example_gate() {
 	qasm := `
 OPENQASM 3.0;
@@ -76,9 +119,9 @@ gate x q { U(pi, 0, pi) q; }
 gate cx c, t { ctrl @ x c, t; }
 
 qubit[2] q;
-reset    q;
+reset q;
 
-h  q[0];
+h q[0];
 cx q[0], q[1];
 `
 
@@ -103,7 +146,7 @@ gate cx c, t { ctrl @ x c, t; }
 gate bell q, p { h q; cx q, p; }
 
 qubit[2] q;
-reset    q;
+reset q;
 
 bell q[0], q[1];
 inv @ bell q[0], q[1];
@@ -127,12 +170,16 @@ OPENQASM 3.0;
 
 gate h q { U(pi/2.0, 0, pi) q; }
 gate x q { U(pi, 0, pi) q; }
+gate cx c, t { ctrl @ x c, t; }
 
-qubit[2] q;
-reset    q;
+gate bell q, p { h q; cx q, p; }
 
-h q[0];
-ctrl @ x q[0], q[1];
+qubit q;
+qubit[2] p;
+reset q, p;
+
+x q;
+ctrl @ bell q, p[0], p[1];
 `
 
 	if err := eval(qasm); err != nil {
@@ -141,8 +188,8 @@ ctrl @ x q[0], q[1];
 	}
 
 	// Output:
-	// [00][  0]( 0.7071 0.0000i): 0.5000
-	// [11][  3]( 0.7071 0.0000i): 0.5000
+	// [1 00][  1   0]( 0.7071 0.0000i): 0.5000
+	// [1 11][  1   3]( 0.7071 0.0000i): 0.5000
 }
 
 func Example_negctrl() {
@@ -150,16 +197,16 @@ func Example_negctrl() {
 OPENQASM 3.0;
 
 gate x q { U(pi, 0, pi) q; }
-gate ncx  q0, q1     { negctrl @ x   q0, q1; }
-gate cncx q0, q1, q2 { ctrl    @ ncx q0, q1, q2; }
+gate ncx  q0, q1 { negctrl @ x q0, q1; }
 
 qubit[3] q;
 reset q;
 
 x q[0];
-cncx q[0], q[1], q[2];
+ctrl @ ncx q[0], q[1], q[2];
 `
 
+	// 000 -> 100 -> 101
 	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
@@ -176,11 +223,10 @@ OPENQASM 3.0;
 gate h q { U(pi/2.0, 0, pi) q; }
 gate x q { U(pi, 0, pi) q; }
 gate cx c, t { ctrl @ x c, t; }
-
 gate bell q, p { h q; cx q, p; }
 
 qubit[2] q;
-reset    q;
+reset q;
 
 bell q[0], q[1];
 `
@@ -337,149 +383,6 @@ func ExampleEvaluator() {
 	//
 	// [11][  3]( 1.0000 0.0000i): 1.0000
 	// c: 11
-}
-
-func ExampleEvaluator_call() {
-	p := &ast.OpenQASM{
-		Version: &ast.DeclStmt{
-			Decl: &ast.VersionDecl{
-				Value: &ast.BasicLit{
-					Kind:  lexer.FLOAT,
-					Value: "3.0",
-				},
-			},
-		},
-		Stmts: []ast.Stmt{
-			&ast.DeclStmt{
-				Decl: &ast.GateDecl{
-					Name: "cx",
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
-								Value: "q0",
-							},
-							&ast.IdentExpr{
-								Value: "q1",
-							},
-						},
-					},
-					Body: ast.BlockStmt{
-						List: []ast.Stmt{
-							&ast.ApplyStmt{
-								Kind: lexer.X,
-								Name: lexer.Tokens[lexer.X],
-								Modifier: []ast.Modifier{
-									{
-										Kind: lexer.CTRL,
-									},
-								},
-								QArgs: ast.ExprList{
-									List: []ast.Expr{
-										&ast.IdentExpr{
-											Value: "q0",
-										},
-										&ast.IdentExpr{
-											Value: "q1",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			&ast.DeclStmt{
-				Decl: &ast.GateDecl{
-					Name: "bell",
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IdentExpr{
-								Value: "q0",
-							},
-							&ast.IdentExpr{
-								Value: "q1",
-							},
-						},
-					},
-					Body: ast.BlockStmt{
-						List: []ast.Stmt{
-							&ast.ApplyStmt{
-								Kind: lexer.H,
-								Name: lexer.Tokens[lexer.H],
-								QArgs: ast.ExprList{
-									List: []ast.Expr{
-										&ast.IdentExpr{
-											Value: "q0",
-										},
-									},
-								},
-							},
-							&ast.ExprStmt{
-								X: &ast.CallExpr{
-									Name: "cx",
-									QArgs: ast.ExprList{
-										List: []ast.Expr{
-											&ast.IdentExpr{
-												Value: "q0",
-											},
-											&ast.IdentExpr{
-												Value: "q1",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			&ast.DeclStmt{
-				Decl: &ast.GenDecl{
-					Kind: lexer.QUBIT,
-					Type: &ast.IndexExpr{
-						Name: ast.IdentExpr{
-							Value: lexer.Tokens[lexer.QUBIT],
-						},
-						Value: "2",
-					},
-					Name: ast.IdentExpr{
-						Value: "q",
-					},
-				},
-			},
-			&ast.ExprStmt{
-				X: &ast.CallExpr{
-					Name: "bell",
-					QArgs: ast.ExprList{
-						List: []ast.Expr{
-							&ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "0",
-							},
-							&ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "q",
-								},
-								Value: "1",
-							},
-						},
-					},
-				},
-			},
-			&ast.PrintStmt{},
-		},
-	}
-
-	if err := evaluator.Default().Eval(p); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// Output:
-	// [00][  0]( 0.7071 0.0000i): 0.5000
-	// [11][  3]( 0.7071 0.0000i): 0.5000
 }
 
 func TestEvalExpr(t *testing.T) {
