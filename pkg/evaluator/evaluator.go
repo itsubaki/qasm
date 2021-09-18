@@ -591,21 +591,51 @@ func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, block *ast.Bl
 
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			// ctrl @ U q0, q1;
-			c = &ast.ApplyStmt{
-				Modifier: append(x.Modifier, s.Modifier...),
-				Kind:     s.Kind,
-				Name:     s.Name,
-				Params:   s.Params,
-				QArgs:    x.QArgs,
+			if d.QArgs.Len() == s.QArgs.Len() {
+				// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
+				// ctrl @ bell q0, q1, q2
+				// ctrl @ ctrl @ x q0, q1, q2
+
+				c = &ast.ApplyStmt{
+					Modifier: append(x.Modifier, s.Modifier...),
+					Kind:     s.Kind,
+					Name:     s.Name,
+					Params:   s.Params,
+					QArgs:    x.QArgs,
+				}
+
+			} else {
+				// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
+				// ctrl @ bell q0, q1, q2
+				// ctrl @ U q0, q1
+
+				var qargs ast.ExprList
+				qargs.Append(x.QArgs.List[0])
+
+				for i := range s.QArgs.List {
+					for j := range d.QArgs.List {
+						if ast.Equals(s.QArgs.List[i], d.QArgs.List[j]) {
+							qargs.Append(x.QArgs.List[j+1])
+						}
+					}
+				}
+
+				c = &ast.ApplyStmt{
+					Modifier: append(x.Modifier, s.Modifier...),
+					Kind:     s.Kind,
+					Name:     s.Name,
+					Params:   s.Params,
+					QArgs:    qargs,
+				}
 			}
 
 		case *ast.ExprStmt:
 			switch X := s.X.(type) {
 			case *ast.CallExpr:
+				// gate bell q, p { h q; cx q, p; }
 				// ctrl @ bell q0, q1, q2;
-				// -> ctrl @ h q0, q1;
-				// -> ctrl @ cx q0, q1, q2;
+				// ctrl @ h q0, q1;
+				// ctrl @ cx q0, q1, q2;
 
 				var qargs ast.ExprList
 				qargs.Append(x.QArgs.List[0])
@@ -624,6 +654,7 @@ func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, block *ast.Bl
 					Params:   X.Params,
 					QArgs:    qargs,
 				}
+
 			default:
 				return fmt.Errorf("unsupported(%v)", X)
 			}
