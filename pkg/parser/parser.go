@@ -524,7 +524,7 @@ func (p *Parser) parsePrintStmt() ast.Stmt {
 }
 
 func (p *Parser) parseModifier() []ast.Modifier {
-	mod := make([]ast.Modifier, 0)
+	var mod []ast.Modifier
 	for lexer.IsModifiler(p.cur.Token) {
 		m := ast.Modifier{
 			Kind: p.cur.Token,

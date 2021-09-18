@@ -16,7 +16,7 @@ func (l *DeclList) Append(d Decl) {
 }
 
 func (l *DeclList) String() string {
-	list := make([]string, 0)
+	var list []string
 	for _, d := range l.List {
 		list = append(list, d.String())
 	}

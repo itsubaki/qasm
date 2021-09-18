@@ -27,7 +27,7 @@ func (l *ExprList) Len() int {
 }
 
 func (l *ExprList) String() string {
-	list := make([]string, 0)
+	var list []string
 	for _, x := range l.List {
 		list = append(list, x.String())
 	}

@@ -67,7 +67,7 @@ func (a *Array) Type() Type {
 func (a *Array) String() string {
 	var out bytes.Buffer
 
-	elm := make([]string, 0)
+	var elm []string
 	for _, e := range a.Elm {
 		elm = append(elm, e.String())
 	}
