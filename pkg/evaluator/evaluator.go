@@ -399,7 +399,17 @@ func builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
 	return nil, false
 }
 
-func inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
+func isCtrl(mod []ast.Modifier) bool {
+	for _, m := range mod {
+		if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isInv(mod []ast.Modifier) bool {
 	var c int
 	for _, m := range mod {
 		if m.Kind == lexer.INV {
@@ -407,11 +417,7 @@ func inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
 		}
 	}
 
-	if c%2 == 1 {
-		u = u.Dagger()
-	}
-
-	return u
+	return c%2 == 1
 }
 
 func pow(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
@@ -538,7 +544,9 @@ func (e *Evaluator) apply(mod []ast.Modifier, gate lexer.Token, params []float64
 	}
 
 	// Inverse U
-	u = inv(mod, u)
+	if isInv(mod) {
+		u = u.Dagger()
+	}
 
 	// Pow(2) U
 	u = pow(mod, u)
@@ -574,28 +582,26 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 	return nil, fmt.Errorf("unsupported(%v)", decl)
 }
 
-func isCtrl(mod []ast.Modifier) bool {
-	for _, m := range mod {
-		if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
-			return true
-		}
+func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) error {
+	body := &d.Body
+	if isInv(x.Modifier) {
+		body = body.Reverse()
 	}
 
-	return false
+	if isCtrl(x.Modifier) {
+		return e.callCtrlGate(x, body, outer)
+	}
+
+	// U(pi, 0, pi) q;
+	if _, err := e.eval(body, e.extend(x, d, outer)); err != nil {
+		return fmt.Errorf("eval(%v): %v", d.Body, err)
+	}
+
+	return nil
 }
 
-func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) error {
-	if !isCtrl(x.Modifier) {
-		// U(pi, 0, pi) q;
-		if _, err := e.eval(&d.Body, e.extend(x, d, outer)); err != nil {
-			return fmt.Errorf("eval(%v): %v", d.Body, err)
-		}
-
-		return nil
-	}
-
-	// ctrl @
-	for _, b := range d.Body.List {
+func (e *Evaluator) callCtrlGate(x *ast.CallExpr, block *ast.BlockStmt, outer *object.Environment) error {
+	for _, b := range block.List {
 		var c ast.Node
 
 		switch s := b.(type) {

@@ -1,6 +1,7 @@
 package ast_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/itsubaki/qasm/pkg/ast"
@@ -498,4 +499,43 @@ func TestStmt(t *testing.T) {
 			t.Errorf("got=%v, want=%v", got, c.want)
 		}
 	}
+}
+
+func ExampleBlockStmt_Reverse() {
+	block := &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.ApplyStmt{
+				Kind: lexer.H,
+				Name: lexer.Tokens[lexer.H],
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q0",
+						},
+					},
+				},
+			},
+			&ast.ApplyStmt{
+				Kind: lexer.CX,
+				Name: lexer.Tokens[lexer.CX],
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q0",
+						},
+						&ast.IdentExpr{
+							Value: "q1",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	fmt.Println(block)
+	fmt.Println(block.Reverse())
+
+	// Output:
+	// { H q0; CX q0, q1; }
+	// { CX q0, q1; H q0; }
 }

@@ -255,6 +255,15 @@ func (s *BlockStmt) Append(stmt Stmt) {
 	s.List = append(s.List, stmt)
 }
 
+func (s *BlockStmt) Reverse() *BlockStmt {
+	out := &BlockStmt{}
+	for i := len(s.List) - 1; i > -1; i-- {
+		out.Append(s.List[i])
+	}
+
+	return out
+}
+
 type IfStmt struct{}
 
 type BranchStmt struct{}
