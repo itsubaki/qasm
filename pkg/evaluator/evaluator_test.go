@@ -153,6 +153,9 @@ inv @ bell q[0], q[1];
 
 inv @ inv @ bell q[0], q[1];
 inv @ inv @ inv @bell q[0], q[1];
+
+QFT q;
+IQFT q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -219,6 +222,7 @@ ctrl @ bell q, p[0], p[1];
 	// [1 00][  1   0]( 0.7071 0.0000i): 0.5000
 	// [1 11][  1   3]( 0.7071 0.0000i): 0.5000
 }
+
 func Example_negctrl() {
 	qasm := `
 OPENQASM 3.0;

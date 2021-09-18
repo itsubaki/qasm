@@ -586,6 +586,21 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 }
 
 func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, block *ast.BlockStmt, outer *object.Environment) error {
+	qargs := func(x, s, d []ast.Expr) ast.ExprList {
+		var out ast.ExprList
+		out.Append(x[0])
+
+		for i := range s {
+			for j := range d {
+				if ast.Equals(s[i], d[j]) {
+					out.Append(x[j+1])
+				}
+			}
+		}
+
+		return out
+	}
+
 	for _, b := range block.List {
 		var c ast.Node
 
@@ -593,8 +608,8 @@ func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, block *ast.Bl
 		case *ast.ApplyStmt:
 			if d.QArgs.Len() == s.QArgs.Len() {
 				// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
-				// ctrl @ bell q0, q1, q2
-				// ctrl @ ctrl @ x q0, q1, q2
+				// ctrl @ bell q0, q1, q2;
+				// ctrl @ ctrl @ x q0, q1, q2;
 
 				c = &ast.ApplyStmt{
 					Modifier: append(x.Modifier, s.Modifier...),
@@ -603,29 +618,17 @@ func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, block *ast.Bl
 					Params:   s.Params,
 					QArgs:    x.QArgs,
 				}
-
 			} else {
 				// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
-				// ctrl @ bell q0, q1, q2
-				// ctrl @ U q0, q1
-
-				var qargs ast.ExprList
-				qargs.Append(x.QArgs.List[0])
-
-				for i := range s.QArgs.List {
-					for j := range d.QArgs.List {
-						if ast.Equals(s.QArgs.List[i], d.QArgs.List[j]) {
-							qargs.Append(x.QArgs.List[j+1])
-						}
-					}
-				}
+				// ctrl @ bell q0, q1, q2;
+				// ctrl @ U q0, q1;
 
 				c = &ast.ApplyStmt{
 					Modifier: append(x.Modifier, s.Modifier...),
 					Kind:     s.Kind,
 					Name:     s.Name,
 					Params:   s.Params,
-					QArgs:    qargs,
+					QArgs:    qargs(x.QArgs.List, s.QArgs.List, d.QArgs.List),
 				}
 			}
 
@@ -637,22 +640,11 @@ func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, block *ast.Bl
 				// ctrl @ h q0, q1;
 				// ctrl @ cx q0, q1, q2;
 
-				var qargs ast.ExprList
-				qargs.Append(x.QArgs.List[0])
-
-				for i := range X.QArgs.List {
-					for j := range d.QArgs.List {
-						if ast.Equals(X.QArgs.List[i], d.QArgs.List[j]) {
-							qargs.Append(x.QArgs.List[j+1])
-						}
-					}
-				}
-
 				c = &ast.CallExpr{
 					Modifier: append(x.Modifier, X.Modifier...),
 					Name:     X.Name,
 					Params:   X.Params,
-					QArgs:    qargs,
+					QArgs:    qargs(x.QArgs.List, X.QArgs.List, d.QArgs.List),
 				}
 
 			default:
