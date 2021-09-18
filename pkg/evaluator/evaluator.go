@@ -101,12 +101,6 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 	case *ast.ArrowStmt:
 		return e.eval(&ast.AssignStmt{Left: n.Right, Right: n.Left}, env)
 
-	case *ast.CallExpr:
-		return e.call(n, env)
-
-	case *ast.MeasureExpr:
-		return e.measure(n, env)
-
 	case *ast.ResetStmt:
 		if err := e.evalReset(n, env); err != nil {
 			return nil, fmt.Errorf("apply(%v): %v", n, err)
@@ -121,31 +115,6 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 		if err := e.evalApply(n, env); err != nil {
 			return nil, fmt.Errorf("apply(%v): %v", n, err)
 		}
-
-	case *ast.GenConst:
-		// TODO check already exists
-		v, err := e.eval(n.Value, env)
-		if err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", n, err)
-		}
-		env.Const[ast.Ident(n)] = v
-
-	case *ast.GenDecl:
-		// TODO check already exists
-		switch n.Kind {
-		case lexer.BIT:
-			env.Bit.Add(n, make([]int64, n.Size()))
-		case lexer.QUBIT:
-			env.Qubit.Add(n, e.Q.ZeroWith(n.Size()))
-		}
-
-	case *ast.GateDecl:
-		// TODO check already exists
-		env.Func[ast.Ident(n)] = n
-
-	case *ast.FuncDecl:
-		// TODO check already exists
-		env.Func[ast.Ident(n)] = n
 
 	case *ast.InclStmt:
 		path := strings.Trim(n.Path.Value, "\"")
@@ -204,21 +173,36 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 
 		return &object.ReturnValue{Value: v}, nil
 
-	case *ast.BasicLit:
-		switch n.Kind {
-		case lexer.INT:
-			return &object.Int{Value: n.Int64()}, nil
-		case lexer.FLOAT:
-			return &object.Float{Value: n.Float64()}, nil
-		case lexer.STRING:
-			return &object.String{Value: n.Value}, nil
-		case lexer.PI:
-			return &object.Float{Value: math.Pi}, nil
-		case lexer.TAU:
-			return &object.Float{Value: math.Pi * 2}, nil
-		case lexer.EULER:
-			return &object.Float{Value: math.E}, nil
+	case *ast.GenConst:
+		// TODO check already exists
+		v, err := e.eval(n.Value, env)
+		if err != nil {
+			return nil, fmt.Errorf("eval(%v): %v", n, err)
 		}
+		env.Const[ast.Ident(n)] = v
+
+	case *ast.GenDecl:
+		// TODO check already exists
+		switch n.Kind {
+		case lexer.BIT:
+			env.Bit.Add(n, make([]int64, n.Size()))
+		case lexer.QUBIT:
+			env.Qubit.Add(n, e.Q.ZeroWith(n.Size()))
+		}
+
+	case *ast.GateDecl:
+		// TODO check already exists
+		env.Func[ast.Ident(n)] = n
+
+	case *ast.FuncDecl:
+		// TODO check already exists
+		env.Func[ast.Ident(n)] = n
+
+	case *ast.CallExpr:
+		return e.call(n, env)
+
+	case *ast.MeasureExpr:
+		return e.measure(n, env)
 
 	case *ast.UnaryExpr:
 		v, err := e.eval(n.Value, env)
@@ -254,6 +238,22 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 	case *ast.IdentExpr:
 		if v, ok := env.Const[ast.Ident(n)]; ok {
 			return v, nil
+		}
+
+	case *ast.BasicLit:
+		switch n.Kind {
+		case lexer.INT:
+			return &object.Int{Value: n.Int64()}, nil
+		case lexer.FLOAT:
+			return &object.Float{Value: n.Float64()}, nil
+		case lexer.STRING:
+			return &object.String{Value: n.Value}, nil
+		case lexer.PI:
+			return &object.Float{Value: math.Pi}, nil
+		case lexer.TAU:
+			return &object.Float{Value: math.Pi * 2}, nil
+		case lexer.EULER:
+			return &object.Float{Value: math.E}, nil
 		}
 	}
 
