@@ -12,6 +12,54 @@ import (
 	"github.com/itsubaki/qasm/pkg/parser"
 )
 
+func Example_dagger() {
+	qasm := `
+OPENQASM 3.0;
+
+gate i q { U(0, 0, 0) q; }
+gate h q { U(pi/2.0, 0, pi/2.0) q; }
+gate x q { U(pi, 0, pi) q; }
+gate y q { U(pi, pi/2.0, pi/2.0) q; }
+gate z q { Z q; }
+
+qubit[2] q;
+reset    q;
+
+i q;
+x q; x q;
+y q; y q;
+z q; z q;
+
+X q; X q;
+Y q; Y q;
+Z q; Z q;
+H q; H q;
+`
+
+	l := lexer.New(strings.NewReader(qasm))
+	p := parser.New(l)
+
+	a := p.Parse()
+	if errs := p.Errors(); len(errs) != 0 {
+		fmt.Printf("parse: %v\n", errs)
+		return
+	}
+
+	e := evaluator.Default()
+	if err := e.Eval(a); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	if err := e.Println(); err != nil {
+		fmt.Printf("print: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [00][  0]( 1.0000 0.0000i): 1.0000
+}
+
 func Example_bell() {
 	qasm := `
 OPENQASM 3.0;
@@ -132,7 +180,7 @@ ctrl @ x q[0], q[1];
 	// [11][  3]( 0.7071 0.0000i): 0.5000
 }
 
-func Example_negc() {
+func Example_ctrl() {
 	qasm := `
 OPENQASM 3.0;
 

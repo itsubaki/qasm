@@ -1,5 +1,5 @@
 OPENQASM 3.0;
-include "testdata/gate.qasm";
+include "testdata/stdgates.qasm";
 
 gate u1(a, b, c) q     { pow(3) @ U(a, b, c)  q; }
 gate u2(a, b, c) q, p  { inv    @ u1(a, b, c) q, p; }
