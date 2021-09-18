@@ -508,12 +508,12 @@ func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]
 }
 
 func (e *Evaluator) apply(mod []ast.Modifier, gate lexer.Token, params []float64, qargs [][]q.Qubit) error {
-	// cx, swap, qft, cmodexp2, ...
+	// QFT, IQFT, CMODEXP2
 	if e.tryBuiltinApply(gate, params, qargs) {
 		return nil
 	}
 
-	// U, x, y, z, h, ...
+	// U, X, Y, Z, H, S, T
 	u, ok := builtin(gate, params)
 	if !ok {
 		return fmt.Errorf("gate=%v(%v) not found", lexer.Tokens[gate], gate)
