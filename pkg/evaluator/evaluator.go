@@ -399,17 +399,7 @@ func builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
 	return nil, false
 }
 
-func isCtrl(mod []ast.Modifier) bool {
-	for _, m := range mod {
-		if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isInv(mod []ast.Modifier) bool {
+func inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
 	var c int
 	for _, m := range mod {
 		if m.Kind == lexer.INV {
@@ -417,7 +407,11 @@ func isInv(mod []ast.Modifier) bool {
 		}
 	}
 
-	return c%2 == 1
+	if c%2 == 1 {
+		u = u.Dagger()
+	}
+
+	return u
 }
 
 func pow(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
@@ -544,9 +538,7 @@ func (e *Evaluator) apply(mod []ast.Modifier, gate lexer.Token, params []float64
 	}
 
 	// Inverse U
-	if isInv(mod) {
-		u = u.Dagger()
-	}
+	u = inv(mod, u)
 
 	// Pow(2) U
 	u = pow(mod, u)
@@ -583,17 +575,15 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 }
 
 func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) error {
-	body := &d.Body
-	if isInv(x.Modifier) {
-		body = body.Reverse()
-	}
-
-	if isCtrl(x.Modifier) {
-		return e.callCtrlGate(x, body, outer)
+	// ctrl @ U(pi, 0, pi) q, p;
+	for _, m := range x.Modifier {
+		if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
+			return e.callCtrlGate(x, &d.Body, outer)
+		}
 	}
 
 	// U(pi, 0, pi) q;
-	if _, err := e.eval(body, e.extend(x, d, outer)); err != nil {
+	if _, err := e.eval(&d.Body, e.extend(x, d, outer)); err != nil {
 		return fmt.Errorf("eval(%v): %v", d.Body, err)
 	}
 
