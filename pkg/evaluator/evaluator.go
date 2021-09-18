@@ -570,22 +570,54 @@ func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Env
 		body = body.Reverse()
 	}
 
-	// ctrl @ U(pi, 0, pi) q, p;
+	// ctrl @ inv @ bell q0, q1;
 	for _, m := range x.Modifier {
 		if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
 			return e.callCtrlGate(x, d, body, outer)
 		}
 	}
 
-	// U(pi, 0, pi) q;
-	if _, err := e.eval(body, e.extend(x, d, outer)); err != nil {
+	// inv @ bell q0, q1;
+	var block ast.BlockStmt
+	for _, b := range body.List {
+		switch s := b.(type) {
+		case *ast.ApplyStmt:
+			block.Append(&ast.ApplyStmt{
+				Modifier: append(x.Modifier, s.Modifier...),
+				Kind:     s.Kind,
+				Name:     s.Name,
+				Params:   s.Params,
+				QArgs:    s.QArgs,
+			})
+
+		case *ast.ExprStmt:
+			switch X := s.X.(type) {
+			case *ast.CallExpr:
+				block.Append(&ast.ExprStmt{
+					X: &ast.CallExpr{
+						Modifier: append(x.Modifier, X.Modifier...),
+						Name:     X.Name,
+						Params:   X.Params,
+						QArgs:    X.QArgs,
+					},
+				})
+			default:
+				return fmt.Errorf("unsupported(%v)", X)
+			}
+
+		default:
+			return fmt.Errorf("unsupported(%v)", s)
+		}
+	}
+
+	if _, err := e.eval(&block, e.extend(x, d, outer)); err != nil {
 		return fmt.Errorf("eval(%v): %v", body, err)
 	}
 
 	return nil
 }
 
-func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, block *ast.BlockStmt, outer *object.Environment) error {
+func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, s *ast.BlockStmt, outer *object.Environment) error {
 	qargs := func(x, s, d []ast.Expr) ast.ExprList {
 		var out ast.ExprList
 		out.Append(x[0])
@@ -601,36 +633,35 @@ func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, block *ast.Bl
 		return out
 	}
 
-	for _, b := range block.List {
-		var c ast.Node
-
+	var block ast.BlockStmt
+	for _, b := range s.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
 			if d.QArgs.Len() == s.QArgs.Len() {
 				// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
 				// ctrl @ bell q0, q1, q2;
 				// ctrl @ ctrl @ x q0, q1, q2;
-
-				c = &ast.ApplyStmt{
+				block.Append(&ast.ApplyStmt{
 					Modifier: append(x.Modifier, s.Modifier...),
 					Kind:     s.Kind,
 					Name:     s.Name,
 					Params:   s.Params,
 					QArgs:    x.QArgs,
-				}
-			} else {
-				// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
-				// ctrl @ bell q0, q1, q2;
-				// ctrl @ U q0, q1;
+				})
 
-				c = &ast.ApplyStmt{
-					Modifier: append(x.Modifier, s.Modifier...),
-					Kind:     s.Kind,
-					Name:     s.Name,
-					Params:   s.Params,
-					QArgs:    qargs(x.QArgs.List, s.QArgs.List, d.QArgs.List),
-				}
+				continue
 			}
+
+			// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
+			// ctrl @ bell q0, q1, q2;
+			// ctrl @ U q0, q1;
+			block.Append(&ast.ApplyStmt{
+				Modifier: append(x.Modifier, s.Modifier...),
+				Kind:     s.Kind,
+				Name:     s.Name,
+				Params:   s.Params,
+				QArgs:    qargs(x.QArgs.List, s.QArgs.List, d.QArgs.List),
+			})
 
 		case *ast.ExprStmt:
 			switch X := s.X.(type) {
@@ -639,13 +670,14 @@ func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, block *ast.Bl
 				// ctrl @ bell q0, q1, q2;
 				// ctrl @ h q0, q1;
 				// ctrl @ cx q0, q1, q2;
-
-				c = &ast.CallExpr{
-					Modifier: append(x.Modifier, X.Modifier...),
-					Name:     X.Name,
-					Params:   X.Params,
-					QArgs:    qargs(x.QArgs.List, X.QArgs.List, d.QArgs.List),
-				}
+				block.Append(&ast.ExprStmt{
+					X: &ast.CallExpr{
+						Modifier: append(x.Modifier, X.Modifier...),
+						Name:     X.Name,
+						Params:   X.Params,
+						QArgs:    qargs(x.QArgs.List, X.QArgs.List, d.QArgs.List),
+					},
+				})
 
 			default:
 				return fmt.Errorf("unsupported(%v)", X)
@@ -654,10 +686,10 @@ func (e *Evaluator) callCtrlGate(x *ast.CallExpr, d *ast.GateDecl, block *ast.Bl
 		default:
 			return fmt.Errorf("unsupported(%v)", s)
 		}
+	}
 
-		if _, err := e.eval(c, outer); err != nil {
-			return fmt.Errorf("eval(%v): %v", c, err)
-		}
+	if _, err := e.eval(&block, outer); err != nil {
+		return fmt.Errorf("eval(%v): %v", block, err)
 	}
 
 	return nil

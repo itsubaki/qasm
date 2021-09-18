@@ -17,7 +17,7 @@ go install github.com/itsubaki/qasm@latest
 ```shell
 $ qasm -f testdata/bell.qasm
 OPENQASM 3.0;
-include "testdata/gate.qasm";
+include "testdata/stdgates.qasm";
 
 qubit[2] q;
 reset q;
