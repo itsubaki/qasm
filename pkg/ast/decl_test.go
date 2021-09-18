@@ -113,16 +113,17 @@ func TestDecl(t *testing.T) {
 								},
 							},
 						},
-						&ast.ApplyStmt{
-							Kind: lexer.CX,
-							Name: lexer.Tokens[lexer.CX],
-							QArgs: ast.ExprList{
-								List: []ast.Expr{
-									&ast.IdentExpr{
-										Value: "q0",
-									},
-									&ast.IdentExpr{
-										Value: "q1",
+						&ast.ExprStmt{
+							X: &ast.CallExpr{
+								Name: "cx",
+								QArgs: ast.ExprList{
+									List: []ast.Expr{
+										&ast.IdentExpr{
+											Value: "q0",
+										},
+										&ast.IdentExpr{
+											Value: "q1",
+										},
 									},
 								},
 							},
@@ -130,7 +131,7 @@ func TestDecl(t *testing.T) {
 					},
 				},
 			},
-			"gate bell q0, q1 { H q0; CX q0, q1; }",
+			"gate bell q0, q1 { H q0; cx q0, q1; }",
 		},
 		{
 			&ast.ParenDecl{

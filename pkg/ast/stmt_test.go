@@ -335,16 +335,17 @@ func TestStmt(t *testing.T) {
 									},
 								},
 							},
-							&ast.ApplyStmt{
-								Kind: lexer.CX,
-								Name: lexer.Tokens[lexer.CX],
-								QArgs: ast.ExprList{
-									List: []ast.Expr{
-										&ast.IdentExpr{
-											Value: "q0",
-										},
-										&ast.IdentExpr{
-											Value: "q1",
+							&ast.ExprStmt{
+								X: &ast.CallExpr{
+									Name: "cx",
+									QArgs: ast.ExprList{
+										List: []ast.Expr{
+											&ast.IdentExpr{
+												Value: "q0",
+											},
+											&ast.IdentExpr{
+												Value: "q1",
+											},
 										},
 									},
 								},
@@ -353,7 +354,7 @@ func TestStmt(t *testing.T) {
 					},
 				},
 			},
-			"gate bell q0, q1 { H q0; CX q0, q1; }",
+			"gate bell q0, q1 { H q0; cx q0, q1; }",
 		},
 		{
 			&ast.DeclStmt{
@@ -515,16 +516,17 @@ func ExampleBlockStmt_Reverse() {
 					},
 				},
 			},
-			&ast.ApplyStmt{
-				Kind: lexer.CX,
-				Name: lexer.Tokens[lexer.CX],
-				QArgs: ast.ExprList{
-					List: []ast.Expr{
-						&ast.IdentExpr{
-							Value: "q0",
-						},
-						&ast.IdentExpr{
-							Value: "q1",
+			&ast.ExprStmt{
+				X: &ast.CallExpr{
+					Name: "cx",
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{
+								Value: "q0",
+							},
+							&ast.IdentExpr{
+								Value: "q1",
+							},
 						},
 					},
 				},
@@ -536,6 +538,6 @@ func ExampleBlockStmt_Reverse() {
 	fmt.Println(block.Reverse())
 
 	// Output:
-	// { H q0; CX q0, q1; }
-	// { CX q0, q1; H q0; }
+	// { H q0; cx q0, q1; }
+	// { cx q0, q1; H q0; }
 }

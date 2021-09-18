@@ -53,10 +53,6 @@ const (
 	S        // S
 	T        // T
 	U        // U
-	CX       // CX
-	CZ       // CZ
-	CCX      // CCX
-	SWAP     // SWAP
 	QFT      // QFT
 	IQFT     // IQFT
 	CMODEXP2 // CMODEXP2
@@ -121,10 +117,6 @@ var Tokens = [...]string{
 	S:        "S",
 	T:        "T",
 	U:        "U",
-	CX:       "CX",
-	CZ:       "CZ",
-	CCX:      "CCX",
-	SWAP:     "SWAP",
 	QFT:      "QFT",
 	IQFT:     "IQFT",
 	CMODEXP2: "CMODEXP2",
