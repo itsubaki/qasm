@@ -557,16 +557,29 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 }
 
 func (e *Evaluator) callGate(x *ast.CallExpr, d *ast.GateDecl, outer *object.Environment) error {
+	// inv @ bell q0, q1;
+	var c int
+	for _, m := range x.Modifier {
+		if m.Kind == lexer.INV {
+			c++
+		}
+	}
+
+	body := &d.Body
+	if c%2 == 1 {
+		body = body.Reverse()
+	}
+
 	// ctrl @ U(pi, 0, pi) q, p;
 	for _, m := range x.Modifier {
 		if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
-			return e.callCtrlGate(x, &d.Body, outer)
+			return e.callCtrlGate(x, body, outer)
 		}
 	}
 
 	// U(pi, 0, pi) q;
-	if _, err := e.eval(&d.Body, e.extend(x, d, outer)); err != nil {
-		return fmt.Errorf("eval(%v): %v", d.Body, err)
+	if _, err := e.eval(body, e.extend(x, d, outer)); err != nil {
+		return fmt.Errorf("eval(%v): %v", body, err)
 	}
 
 	return nil

@@ -33,7 +33,7 @@ func eval(qasm string) error {
 	return nil
 }
 
-func Example_dagger() {
+func Example_hermite() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -67,7 +67,7 @@ H q; H q;
 	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_bell() {
+func Example_gate() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -92,7 +92,7 @@ cx q[0], q[1];
 	// [11][  3]( 0.7071 0.0000i): 0.5000
 }
 
-func Example_bellGate() {
+func Example_inv() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -106,6 +106,33 @@ qubit[2] q;
 reset    q;
 
 bell q[0], q[1];
+inv @ bell q[0], q[1];
+
+inv @ inv @ bell q[0], q[1];
+inv @ inv @ inv @bell q[0], q[1];
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [00][  0]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_ctrl() {
+	qasm := `
+OPENQASM 3.0;
+
+gate h q { U(pi/2.0, 0, pi) q; }
+gate x q { U(pi, 0, pi) q; }
+
+qubit[2] q;
+reset    q;
+
+h q[0];
+ctrl @ x q[0], q[1];
 `
 
 	if err := eval(qasm); err != nil {
@@ -118,18 +145,44 @@ bell q[0], q[1];
 	// [11][  3]( 0.7071 0.0000i): 0.5000
 }
 
-func Example_bellCtrl() {
+func Example_negctrl() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate ncx  q0, q1     { negctrl @ x   q0, q1; }
+gate cncx q0, q1, q2 { ctrl    @ ncx q0, q1, q2; }
+
+qubit[3] q;
+reset q;
+
+x q[0];
+cncx q[0], q[1], q[2];
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [101][  5]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_bell() {
 	qasm := `
 OPENQASM 3.0;
 
 gate h q { U(pi/2.0, 0, pi) q; }
 gate x q { U(pi, 0, pi) q; }
+gate cx c, t { ctrl @ x c, t; }
+
+gate bell q, p { h q; cx q, p; }
 
 qubit[2] q;
 reset    q;
 
-h q[0];
-ctrl @ x q[0], q[1];
+bell q[0], q[1];
 `
 
 	if err := eval(qasm); err != nil {
@@ -185,31 +238,6 @@ IQFT r0;
 	// [110 0111][  6   7]( 0.0000 0.2500i): 0.0625
 	// [110 1101][  6  13]( 0.0000-0.2500i): 0.0625
 }
-
-func Example_ctrl() {
-	qasm := `
-OPENQASM 3.0;
-
-gate x q { U(pi, 0, pi) q; }
-gate ncx  q0, q1     { negctrl @ x   q0, q1; }
-gate cncx q0, q1, q2 { ctrl    @ ncx q0, q1, q2; }
-
-qubit[3] q;
-reset q;
-
-x q[0];
-cncx q[0], q[1], q[2];
-`
-
-	if err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [101][  5]( 1.0000 0.0000i): 1.0000
-}
-
 func ExampleEvaluator() {
 	p := &ast.OpenQASM{
 		Version: &ast.DeclStmt{

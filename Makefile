@@ -18,6 +18,7 @@ parse:
 testdata:
 	go run main.go -v -f testdata/bell.qasm
 	go run main.go -v -f testdata/shor.qasm
+	go run main.go -v -f testdata/test.qasm
 
 install:
 	-rm ${GOPATH}/bin/qasm
