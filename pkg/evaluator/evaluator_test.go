@@ -12,12 +12,33 @@ import (
 	"github.com/itsubaki/qasm/pkg/parser"
 )
 
+func eval(qasm string) error {
+	l := lexer.New(strings.NewReader(qasm))
+	p := parser.New(l)
+
+	a := p.Parse()
+	if errs := p.Errors(); len(errs) != 0 {
+		return fmt.Errorf("parse: %v\n", errs)
+	}
+
+	e := evaluator.Default()
+	if err := e.Eval(a); err != nil {
+		return fmt.Errorf("eval: %v\n", err)
+	}
+
+	if err := e.Println(); err != nil {
+		return fmt.Errorf("print: %v\n", err)
+	}
+
+	return nil
+}
+
 func Example_dagger() {
 	qasm := `
 OPENQASM 3.0;
 
 gate i q { U(0, 0, 0) q; }
-gate h q { U(pi/2.0, 0, pi/2.0) q; }
+gate h q { U(pi/2.0, 0, pi) q; }
 gate x q { U(pi, 0, pi) q; }
 gate y q { U(pi, pi/2.0, pi/2.0) q; }
 gate z q { Z q; }
@@ -29,6 +50,7 @@ i q;
 x q; x q;
 y q; y q;
 z q; z q;
+h q; h q;
 
 X q; X q;
 Y q; Y q;
@@ -36,23 +58,8 @@ Z q; Z q;
 H q; H q;
 `
 
-	l := lexer.New(strings.NewReader(qasm))
-	p := parser.New(l)
-
-	a := p.Parse()
-	if errs := p.Errors(); len(errs) != 0 {
-		fmt.Printf("parse: %v\n", errs)
-		return
-	}
-
-	e := evaluator.Default()
-	if err := e.Eval(a); err != nil {
+	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	if err := e.Println(); err != nil {
-		fmt.Printf("print: %v\n", err)
 		return
 	}
 
@@ -64,7 +71,7 @@ func Example_bell() {
 	qasm := `
 OPENQASM 3.0;
 
-gate h q { U(pi/2.0, 0, pi/2.0) q; }
+gate h q { U(pi/2.0, 0, pi) q; }
 gate x q { U(pi, 0, pi) q; }
 gate cx c, t { ctrl @ x c, t; }
 
@@ -75,23 +82,8 @@ h  q[0];
 cx q[0], q[1];
 `
 
-	l := lexer.New(strings.NewReader(qasm))
-	p := parser.New(l)
-
-	a := p.Parse()
-	if errs := p.Errors(); len(errs) != 0 {
-		fmt.Printf("parse: %v\n", errs)
-		return
-	}
-
-	e := evaluator.Default()
-	if err := e.Eval(a); err != nil {
+	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	if err := e.Println(); err != nil {
-		fmt.Printf("print: %v\n", err)
 		return
 	}
 
@@ -104,7 +96,7 @@ func Example_bellGate() {
 	qasm := `
 OPENQASM 3.0;
 
-gate h q { U(pi/2.0, 0, pi/2.0) q; }
+gate h q { U(pi/2.0, 0, pi) q; }
 gate x q { U(pi, 0, pi) q; }
 gate cx c, t { ctrl @ x c, t; }
 
@@ -116,23 +108,8 @@ reset    q;
 bell q[0], q[1];
 `
 
-	l := lexer.New(strings.NewReader(qasm))
-	p := parser.New(l)
-
-	a := p.Parse()
-	if errs := p.Errors(); len(errs) != 0 {
-		fmt.Printf("parse: %v\n", errs)
-		return
-	}
-
-	e := evaluator.Default()
-	if err := e.Eval(a); err != nil {
+	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	if err := e.Println(); err != nil {
-		fmt.Printf("print: %v\n", err)
 		return
 	}
 
@@ -145,7 +122,7 @@ func Example_bellCtrl() {
 	qasm := `
 OPENQASM 3.0;
 
-gate h q { U(pi/2.0, 0, pi/2.0) q; }
+gate h q { U(pi/2.0, 0, pi) q; }
 gate x q { U(pi, 0, pi) q; }
 
 qubit[2] q;
@@ -155,23 +132,8 @@ h q[0];
 ctrl @ x q[0], q[1];
 `
 
-	l := lexer.New(strings.NewReader(qasm))
-	p := parser.New(l)
-
-	a := p.Parse()
-	if errs := p.Errors(); len(errs) != 0 {
-		fmt.Printf("parse: %v\n", errs)
-		return
-	}
-
-	e := evaluator.Default()
-	if err := e.Eval(a); err != nil {
+	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	if err := e.Println(); err != nil {
-		fmt.Printf("print: %v\n", err)
 		return
 	}
 
@@ -180,51 +142,12 @@ ctrl @ x q[0], q[1];
 	// [11][  3]( 0.7071 0.0000i): 0.5000
 }
 
-func Example_ctrl() {
-	qasm := `
-OPENQASM 3.0;
-
-gate x q { U(pi, 0, pi) q; }
-gate ncx  q0, q1     { negctrl @ x   q0, q1; }
-gate cncx q0, q1, q2 { ctrl    @ ncx q0, q1, q2; }
-
-qubit[3] q;
-reset q;
-
-x q[0];
-cncx q[0], q[1], q[2];
-`
-
-	l := lexer.New(strings.NewReader(qasm))
-	p := parser.New(l)
-
-	a := p.Parse()
-	if errs := p.Errors(); len(errs) != 0 {
-		fmt.Printf("parse: %v\n", errs)
-		return
-	}
-
-	e := evaluator.Default()
-	if err := e.Eval(a); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	if err := e.Println(); err != nil {
-		fmt.Printf("print: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [101][  5]( 1.0000 0.0000i): 1.0000
-}
-
 func Example_shor() {
 	qasm := `
 OPENQASM 3.0;
 
 gate x q { U(pi, 0, pi) q; }
-gate h q { U(pi/2.0, 0, pi/2.0) q; }
+gate h q { U(pi/2.0, 0, pi) q; }
 
 const N = 15;
 const a = 7;
@@ -239,23 +162,8 @@ CMODEXP2(a, N) r0, r1;
 IQFT r0;
 `
 
-	l := lexer.New(strings.NewReader(qasm))
-	p := parser.New(l)
-
-	a := p.Parse()
-	if errs := p.Errors(); len(errs) != 0 {
-		fmt.Printf("parse: %v\n", errs)
-		return
-	}
-
-	e := evaluator.Default()
-	if err := e.Eval(a); err != nil {
+	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	if err := e.Println(); err != nil {
-		fmt.Printf("print: %v\n", err)
 		return
 	}
 
@@ -276,6 +184,30 @@ IQFT r0;
 	// [110 0100][  6   4](-0.2500 0.0000i): 0.0625
 	// [110 0111][  6   7]( 0.0000 0.2500i): 0.0625
 	// [110 1101][  6  13]( 0.0000-0.2500i): 0.0625
+}
+
+func Example_ctrl() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate ncx  q0, q1     { negctrl @ x   q0, q1; }
+gate cncx q0, q1, q2 { ctrl    @ ncx q0, q1, q2; }
+
+qubit[3] q;
+reset q;
+
+x q[0];
+cncx q[0], q[1], q[2];
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [101][  5]( 1.0000 0.0000i): 1.0000
 }
 
 func ExampleEvaluator() {
