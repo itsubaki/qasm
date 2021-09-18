@@ -52,6 +52,5 @@ $ qasm repl
 ## built-in
 
 - `U`, `X`, `Y`, `Z`, `H`, `S`, `T`
-- `CX`, `CZ`, `CCX`
-- `SWAP`, `QFT`, `IQFT`, `CMODEXP2`
+- `QFT`, `IQFT`, `CMODEXP2`
 - `print`

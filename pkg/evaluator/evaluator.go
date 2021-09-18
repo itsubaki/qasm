@@ -451,9 +451,6 @@ func flatten(qargs [][]q.Qubit) []q.Qubit {
 
 func (e *Evaluator) tryBuiltinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
 	switch g {
-	case lexer.SWAP:
-		e.Q.Swap(flatten(qargs)...)
-		return true
 	case lexer.QFT:
 		e.Q.QFT(flatten(qargs)...)
 		return true
@@ -462,21 +459,6 @@ func (e *Evaluator) tryBuiltinApply(g lexer.Token, p []float64, qargs [][]q.Qubi
 		return true
 	case lexer.CMODEXP2:
 		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
-		return true
-	case lexer.CX:
-		for i := range qargs[0] {
-			e.Q.CNOT(qargs[0][i], qargs[1][i])
-		}
-		return true
-	case lexer.CZ:
-		for i := range qargs[0] {
-			e.Q.CZ(qargs[0][i], qargs[1][i])
-		}
-		return true
-	case lexer.CCX:
-		for i := range qargs[0] {
-			e.Q.CCNOT(qargs[0][i], qargs[1][i], qargs[2][i])
-		}
 		return true
 	}
 

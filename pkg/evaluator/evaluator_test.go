@@ -63,31 +63,8 @@ func ExampleEvaluator() {
 				Name: lexer.Tokens[lexer.X],
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
-						&ast.IndexExpr{
-							Name: ast.IdentExpr{
-								Value: "q",
-							},
-							Value: "0",
-						},
-					},
-				},
-			},
-			&ast.ApplyStmt{
-				Kind: lexer.CX,
-				Name: lexer.Tokens[lexer.CX],
-				QArgs: ast.ExprList{
-					List: []ast.Expr{
-						&ast.IndexExpr{
-							Name: ast.IdentExpr{
-								Value: "q",
-							},
-							Value: "0",
-						},
-						&ast.IndexExpr{
-							Name: ast.IdentExpr{
-								Value: "q",
-							},
-							Value: "1",
+						&ast.IdentExpr{
+							Value: "q",
 						},
 					},
 				},
@@ -127,8 +104,7 @@ func ExampleEvaluator() {
 	// qubit[2] q;
 	// bit[2] c;
 	// reset q;
-	// X q[0];
-	// CX q[0], q[1];
+	// X q;
 	// c = measure q;
 	//
 	// [11][  3]( 1.0000 0.0000i): 1.0000
@@ -146,6 +122,44 @@ func ExampleEvaluator_call() {
 			},
 		},
 		Stmts: []ast.Stmt{
+			&ast.DeclStmt{
+				Decl: &ast.GateDecl{
+					Name: "cx",
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{
+								Value: "q0",
+							},
+							&ast.IdentExpr{
+								Value: "q1",
+							},
+						},
+					},
+					Body: ast.BlockStmt{
+						List: []ast.Stmt{
+							&ast.ApplyStmt{
+								Kind: lexer.X,
+								Name: lexer.Tokens[lexer.X],
+								Modifier: []ast.Modifier{
+									{
+										Kind: lexer.CTRL,
+									},
+								},
+								QArgs: ast.ExprList{
+									List: []ast.Expr{
+										&ast.IdentExpr{
+											Value: "q0",
+										},
+										&ast.IdentExpr{
+											Value: "q1",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 			&ast.DeclStmt{
 				Decl: &ast.GateDecl{
 					Name: "bell",
@@ -172,16 +186,17 @@ func ExampleEvaluator_call() {
 									},
 								},
 							},
-							&ast.ApplyStmt{
-								Kind: lexer.CX,
-								Name: lexer.Tokens[lexer.CX],
-								QArgs: ast.ExprList{
-									List: []ast.Expr{
-										&ast.IdentExpr{
-											Value: "q0",
-										},
-										&ast.IdentExpr{
-											Value: "q1",
+							&ast.ExprStmt{
+								X: &ast.CallExpr{
+									Name: "cx",
+									QArgs: ast.ExprList{
+										List: []ast.Expr{
+											&ast.IdentExpr{
+												Value: "q0",
+											},
+											&ast.IdentExpr{
+												Value: "q1",
+											},
 										},
 									},
 								},
