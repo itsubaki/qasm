@@ -22,7 +22,7 @@ h  q[0];
 cx q[0], q[1];
 
 measure q -> c;
-	`
+`
 
 	p := parser.New(lexer.New(strings.NewReader(qasm)))
 	ast := p.Parse()

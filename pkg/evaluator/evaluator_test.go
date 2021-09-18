@@ -2,13 +2,233 @@ package evaluator_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/itsubaki/qasm/pkg/ast"
 	"github.com/itsubaki/qasm/pkg/evaluator"
 	"github.com/itsubaki/qasm/pkg/evaluator/object"
 	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/pkg/parser"
 )
+
+func Example_bell() {
+	qasm := `
+OPENQASM 3.0;
+
+gate h q { U(pi/2.0, 0, pi/2.0) q; }
+gate x q { U(pi, 0, pi) q; }
+gate cx c, t { ctrl @ x c, t; }
+
+qubit[2] q;
+reset    q;
+
+h  q[0];
+cx q[0], q[1];
+`
+
+	l := lexer.New(strings.NewReader(qasm))
+	p := parser.New(l)
+
+	a := p.Parse()
+	if errs := p.Errors(); len(errs) != 0 {
+		fmt.Printf("parse: %v\n", errs)
+		return
+	}
+
+	e := evaluator.Default()
+	if err := e.Eval(a); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	if err := e.Println(); err != nil {
+		fmt.Printf("print: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [00][  0]( 0.7071 0.0000i): 0.5000
+	// [11][  3]( 0.7071 0.0000i): 0.5000
+}
+
+func Example_bellGate() {
+	qasm := `
+OPENQASM 3.0;
+
+gate h q { U(pi/2.0, 0, pi/2.0) q; }
+gate x q { U(pi, 0, pi) q; }
+gate cx c, t { ctrl @ x c, t; }
+
+gate bell q, p { h q; cx q, p; }
+
+qubit[2] q;
+reset    q;
+
+bell q[0], q[1];
+`
+
+	l := lexer.New(strings.NewReader(qasm))
+	p := parser.New(l)
+
+	a := p.Parse()
+	if errs := p.Errors(); len(errs) != 0 {
+		fmt.Printf("parse: %v\n", errs)
+		return
+	}
+
+	e := evaluator.Default()
+	if err := e.Eval(a); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	if err := e.Println(); err != nil {
+		fmt.Printf("print: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [00][  0]( 0.7071 0.0000i): 0.5000
+	// [11][  3]( 0.7071 0.0000i): 0.5000
+}
+
+func Example_bellCtrl() {
+	qasm := `
+OPENQASM 3.0;
+
+gate h q { U(pi/2.0, 0, pi/2.0) q; }
+gate x q { U(pi, 0, pi) q; }
+
+qubit[2] q;
+reset    q;
+
+h q[0];
+ctrl @ x q[0], q[1];
+`
+
+	l := lexer.New(strings.NewReader(qasm))
+	p := parser.New(l)
+
+	a := p.Parse()
+	if errs := p.Errors(); len(errs) != 0 {
+		fmt.Printf("parse: %v\n", errs)
+		return
+	}
+
+	e := evaluator.Default()
+	if err := e.Eval(a); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	if err := e.Println(); err != nil {
+		fmt.Printf("print: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [00][  0]( 0.7071 0.0000i): 0.5000
+	// [11][  3]( 0.7071 0.0000i): 0.5000
+}
+
+func Example_negc() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate ncx  q0, q1     { negctrl @ x   q0, q1; }
+gate cncx q0, q1, q2 { ctrl    @ ncx q0, q1, q2; }
+
+qubit[3] q;
+reset q;
+
+x q[0];
+cncx q[0], q[1], q[2];
+`
+
+	l := lexer.New(strings.NewReader(qasm))
+	p := parser.New(l)
+
+	a := p.Parse()
+	if errs := p.Errors(); len(errs) != 0 {
+		fmt.Printf("parse: %v\n", errs)
+		return
+	}
+
+	e := evaluator.Default()
+	if err := e.Eval(a); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	if err := e.Println(); err != nil {
+		fmt.Printf("print: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [101][  5]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_shor() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate h q { U(pi/2.0, 0, pi/2.0) q; }
+
+const N = 15;
+const a = 7;
+
+qubit[3] r0;
+qubit[4] r1;
+reset r0, r1;
+
+x r1[-1];
+h r0;
+CMODEXP2(a, N) r0, r1;
+IQFT r0;
+`
+
+	l := lexer.New(strings.NewReader(qasm))
+	p := parser.New(l)
+
+	a := p.Parse()
+	if errs := p.Errors(); len(errs) != 0 {
+		fmt.Printf("parse: %v\n", errs)
+		return
+	}
+
+	e := evaluator.Default()
+	if err := e.Eval(a); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	if err := e.Println(); err != nil {
+		fmt.Printf("print: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [000 0001][  0   1]( 0.2500 0.0000i): 0.0625
+	// [000 0100][  0   4]( 0.2500 0.0000i): 0.0625
+	// [000 0111][  0   7]( 0.2500 0.0000i): 0.0625
+	// [000 1101][  0  13]( 0.2500 0.0000i): 0.0625
+	// [010 0001][  2   1]( 0.2500 0.0000i): 0.0625
+	// [010 0100][  2   4](-0.2500 0.0000i): 0.0625
+	// [010 0111][  2   7]( 0.0000-0.2500i): 0.0625
+	// [010 1101][  2  13]( 0.0000 0.2500i): 0.0625
+	// [100 0001][  4   1]( 0.2500 0.0000i): 0.0625
+	// [100 0100][  4   4]( 0.2500 0.0000i): 0.0625
+	// [100 0111][  4   7](-0.2500 0.0000i): 0.0625
+	// [100 1101][  4  13](-0.2500 0.0000i): 0.0625
+	// [110 0001][  6   1]( 0.2500 0.0000i): 0.0625
+	// [110 0100][  6   4](-0.2500 0.0000i): 0.0625
+	// [110 0111][  6   7]( 0.0000 0.2500i): 0.0625
+	// [110 1101][  6  13]( 0.0000-0.2500i): 0.0625
+}
 
 func ExampleEvaluator() {
 	p := &ast.OpenQASM{
