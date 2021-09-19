@@ -657,6 +657,7 @@ func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envi
 		if c < 0 {
 			g.Body = g.Body.Reverse()
 			c = -1 * c
+			// FIXME: Add inv to body
 		}
 
 		for i := 0; i < c; i++ {
