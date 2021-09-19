@@ -72,20 +72,16 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 }
 
 func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object, err error) {
-	defer func() {
-		if !e.Opts.Verbose {
-			return
-		}
-
-		if obj != nil && obj.Type() != object.NIL {
-			fmt.Printf("%v", strings.Repeat(indent, e.indent+1))
-			fmt.Printf("return %T(%v)\n", obj, obj)
-		}
-
-		e.indent--
-	}()
-
 	if e.Opts.Verbose {
+		defer func() {
+			if obj != nil && obj.Type() != object.NIL {
+				fmt.Printf("%v", strings.Repeat(indent, e.indent+1))
+				fmt.Printf("return %T(%v)\n", obj, obj)
+			}
+
+			e.indent--
+		}()
+
 		e.indent++
 		fmt.Printf("%v", strings.Repeat(indent, e.indent))
 		fmt.Printf("%T(%v)\n", n, n)
