@@ -371,7 +371,7 @@ func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
 		qargs = append(qargs, qb)
 	}
 
-	return e.apply(s.Modifier, s.Kind, params, qargs)
+	return e.apply(s.Modifier, s.Kind, params, qargs, env)
 }
 
 func builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
@@ -395,6 +395,15 @@ func builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
 	return nil, false
 }
 
+func flatten(qargs [][]q.Qubit) []q.Qubit {
+	var out []q.Qubit
+	for _, q := range qargs {
+		out = append(out, q...)
+	}
+
+	return out
+}
+
 func inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
 	var c int
 	for _, m := range mod {
@@ -410,16 +419,18 @@ func inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
 	return u
 }
 
-func pow(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
+func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environment) (matrix.Matrix, error) {
 	for _, m := range mod {
 		if m.Kind != lexer.POW {
 			continue
 		}
 
-		var c int
-		if len(m.Index.List.List) > 0 {
-			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
+		p := m.Index.List.List[0]
+		v, err := e.eval(p, env)
+		if err != nil {
+			return nil, fmt.Errorf("eval(%v): %v", p, err)
 		}
+		c := int(v.(*object.Int).Value)
 
 		// pow(-1) U equals to inv @ U
 		if c < 0 {
@@ -433,16 +444,7 @@ func pow(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
 		}
 	}
 
-	return u
-}
-
-func flatten(qargs [][]q.Qubit) []q.Qubit {
-	var out []q.Qubit
-	for _, q := range qargs {
-		out = append(out, q...)
-	}
-
-	return out
+	return u, nil
 }
 
 func (e *Evaluator) tryBuiltinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
@@ -461,13 +463,19 @@ func (e *Evaluator) tryBuiltinApply(g lexer.Token, p []float64, qargs [][]q.Qubi
 	return false
 }
 
-func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit) bool {
+func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *object.Environment) (bool, error) {
 	var ctrl, negc [][]q.Qubit
 	var defaultIndex int // ctrl @ ctrl @ X equals to ctrl(0) @ ctrl(1) @ X
 	for _, m := range mod {
 		c := defaultIndex
 		if len(m.Index.List.List) > 0 {
-			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
+			x := m.Index.List.List[0]
+			v, err := e.eval(x, env)
+			if err != nil {
+				return false, fmt.Errorf("eval(%v): %v", x, err)
+			}
+
+			c = int(v.(*object.Int).Value)
 		}
 
 		switch m.Kind {
@@ -483,7 +491,7 @@ func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]
 	}
 
 	if len(ctrl) == 0 && len(negc) == 0 {
-		return false
+		return false, nil
 	}
 
 	if len(negc) > 0 {
@@ -497,10 +505,10 @@ func (e *Evaluator) tryCtrlApply(mod []ast.Modifier, u matrix.Matrix, qargs [][]
 		e.Q.X(flatten(negc)...)
 	}
 
-	return true
+	return true, nil
 }
 
-func (e *Evaluator) apply(mod []ast.Modifier, gate lexer.Token, params []float64, qargs [][]q.Qubit) error {
+func (e *Evaluator) apply(mod []ast.Modifier, gate lexer.Token, params []float64, qargs [][]q.Qubit, env *object.Environment) error {
 	// QFT, IQFT, CMODEXP2
 	if e.tryBuiltinApply(gate, params, qargs) {
 		return nil
@@ -516,10 +524,17 @@ func (e *Evaluator) apply(mod []ast.Modifier, gate lexer.Token, params []float64
 	u = inv(mod, u)
 
 	// Pow(2) U
-	u = pow(mod, u)
+	u, err := e.pow(mod, u, env)
+	if err != nil {
+		return fmt.Errorf("pow: %v", err)
+	}
 
 	// Controlled-U
-	if e.tryCtrlApply(mod, u, qargs) {
+	if ok, err := e.tryCtrlApply(mod, u, qargs, env); ok || err != nil {
+		if err != nil {
+			return fmt.Errorf("try ctrl apply: %v", err)
+		}
+
 		return nil
 	}
 
@@ -613,10 +628,12 @@ func (e *Evaluator) callPow(pow []ast.Modifier, x *ast.CallExpr, d *ast.GateDecl
 	}
 
 	for _, m := range pow {
-		var c int
-		if len(m.Index.List.List) > 0 {
-			c = int(m.Index.List.List[0].(*ast.BasicLit).Int64())
+		p := m.Index.List.List[0]
+		v, err := e.eval(p, outer)
+		if err != nil {
+			return fmt.Errorf("eval(%v): %v", p, err)
 		}
+		c := int(v.(*object.Int).Value)
 
 		// pow(-1) U equals to inv @ U
 		if c < 0 {

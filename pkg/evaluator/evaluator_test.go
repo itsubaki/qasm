@@ -180,9 +180,8 @@ gate bell q, p { h q; cx q, p; }
 qubit[2] q;
 reset q;
 
-pow(2) @ bell q[0], q[1];
-inv @ bell q[0], q[1];
-inv @ bell q[0], q[1];
+pow(2)  @ bell q[0], q[1];
+pow(-2) @ bell q[0], q[1];
 `
 
 	if err := eval(qasm); err != nil {

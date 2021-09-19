@@ -532,15 +532,30 @@ func (p *Parser) parseModifier() []ast.Modifier {
 
 		if p.next().Token == lexer.LPAREN {
 			v := p.next()
-			p.expect(lexer.INT)
+
+			var x ast.Expr
+			x = &ast.BasicLit{
+				Kind:  v.Token,   // INT
+				Value: v.Literal, // 1
+			}
+
+			if v.Token == lexer.MINUS {
+				u := p.next()
+				p.expect(lexer.INT)
+
+				x = &ast.UnaryExpr{
+					Kind: v.Token, // MINUS
+					Value: &ast.BasicLit{
+						Kind:  u.Token,   // INT
+						Value: u.Literal, // 1
+					},
+				}
+			}
 
 			m.Index = ast.ParenExpr{
 				List: ast.ExprList{
 					List: []ast.Expr{
-						&ast.BasicLit{
-							Kind:  v.Token,
-							Value: v.Literal,
-						},
+						x,
 					},
 				},
 			}
