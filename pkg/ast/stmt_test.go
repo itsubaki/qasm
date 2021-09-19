@@ -534,8 +534,10 @@ func ExampleBlockStmt_Reverse() {
 		},
 	}
 
+	r := block.Reverse()
+
 	fmt.Println(block)
-	fmt.Println(block.Reverse())
+	fmt.Println(&r)
 
 	// Output:
 	// { H q0; cx q0, q1; }

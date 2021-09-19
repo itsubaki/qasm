@@ -255,8 +255,8 @@ func (s *BlockStmt) Append(stmt Stmt) {
 	s.List = append(s.List, stmt)
 }
 
-func (s *BlockStmt) Reverse() *BlockStmt {
-	out := &BlockStmt{}
+func (s *BlockStmt) Reverse() BlockStmt {
+	var out BlockStmt
 	for i := len(s.List) - 1; i > -1; i-- {
 		out.Append(s.List[i])
 	}
