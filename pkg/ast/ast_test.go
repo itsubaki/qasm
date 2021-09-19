@@ -7,7 +7,7 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-func ExampleOpenQASM_String() {
+func Example_openQASM() {
 	p := &ast.OpenQASM{
 		Version: &ast.DeclStmt{
 			Decl: &ast.VersionDecl{
