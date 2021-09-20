@@ -430,8 +430,8 @@ func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environ
 
 	// pow(-1) equals to inv
 	if p < 0 {
-		u = u.Dagger()
 		p = -1 * p
+		u = u.Dagger()
 	}
 
 	// apply pow
@@ -568,7 +568,7 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 	return nil, fmt.Errorf("unsupported(%v)", g)
 }
 
-func AppendMod(body ast.BlockStmt, mod []ast.Modifier) (ast.BlockStmt, error) {
+func appendMod(body ast.BlockStmt, mod []ast.Modifier) (ast.BlockStmt, error) {
 	var block ast.BlockStmt
 	for _, b := range body.List {
 		switch s := b.(type) {
@@ -613,7 +613,7 @@ func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Env
 	}
 
 	// Append ctrl, negctrl, (inv)
-	block, err := AppendMod(g.Body, mod)
+	block, err := appendMod(g.Body, mod)
 	if err != nil {
 		return fmt.Errorf("append mod(%v): %v", mod, err)
 	}
@@ -658,13 +658,14 @@ func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envi
 
 	// pow(-1) equals to Inv
 	if p < 0 {
+		p = -1 * p
+
 		mod := []ast.Modifier{{Kind: lexer.INV}}
-		body, err := AppendMod(g.Body, mod)
+		body, err := appendMod(g.Body, mod)
 		if err != nil {
 			return fmt.Errorf("append mod(%v): %v", mod, err)
 		}
 		g.Body = body.Reverse()
-		p = -1 * p
 	}
 
 	// apply pow
