@@ -604,16 +604,18 @@ func appendMod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
 	return out
 }
 
-func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
-	inv := ast.ModInv(x.Modifier)
-	mod := append(inv, ast.ModCtrl(x.Modifier)...)
+func inverse(block ast.BlockStmt) ast.BlockStmt {
+	out := appendMod(block, []ast.Modifier{{Kind: lexer.INV}})
+	return out.Reverse()
+}
 
-	// Append ctrl, negctrl, (inv)
-	block := appendMod(g.Body, mod)
+func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
+	// Append ctrl, negctrl
+	block := appendMod(g.Body, ast.ModCtrl(x.Modifier))
 
 	// inv
-	if len(inv)%2 == 1 {
-		block = block.Reverse()
+	if len(ast.ModInv(x.Modifier))%2 == 1 {
+		block = inverse(block)
 	}
 
 	// pow
@@ -652,8 +654,7 @@ func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envi
 	// pow(-1) equals to Inv
 	if p < 0 {
 		p = -1 * p
-		g.Body = appendMod(g.Body, []ast.Modifier{{Kind: lexer.INV}})
-		g.Body = g.Body.Reverse()
+		g.Body = inverse(g.Body)
 	}
 
 	// apply pow
