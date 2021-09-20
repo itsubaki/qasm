@@ -404,14 +404,6 @@ func flatten(qargs [][]q.Qubit) []q.Qubit {
 	return out
 }
 
-func inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
-	if len(ast.ModInv(mod))%2 == 1 {
-		u = u.Dagger()
-	}
-
-	return u
-}
-
 func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environment) (matrix.Matrix, error) {
 	// U
 	pow := ast.ModPow(mod)
@@ -531,7 +523,9 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, q
 	}
 
 	// inv U
-	u = inv(mod, u)
+	if len(ast.ModInv(mod))%2 == 1 {
+		u = u.Dagger()
+	}
 
 	// pow(2) U
 	u, err := e.pow(mod, u, env)
@@ -611,10 +605,14 @@ func AppendMod(body ast.BlockStmt, mod []ast.Modifier) (ast.BlockStmt, error) {
 }
 
 func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
-	inv := ast.ModInv(x.Modifier)
-	mod := append(inv, ast.ModCtrl(x.Modifier)...)
+	mod := ast.ModCtrl(x.Modifier)
 
-	// Append inv, ctrl, negctrl
+	inv := ast.ModInv(x.Modifier)
+	if len(inv)%2 == 1 {
+		mod = append(mod, inv...)
+	}
+
+	// Append ctrl, negctrl, (inv)
 	block, err := AppendMod(g.Body, mod)
 	if err != nil {
 		return fmt.Errorf("append mod(%v): %v", mod, err)
