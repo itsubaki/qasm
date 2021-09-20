@@ -417,7 +417,7 @@ func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environ
 		n := m.Index.List.List[0]
 		v, err := e.eval(n, env)
 		if err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", p, err)
+			return nil, fmt.Errorf("eval(%v): %v", n, err)
 		}
 
 		p = p + int(v.(*object.Int).Value)
