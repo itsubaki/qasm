@@ -611,11 +611,13 @@ func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Env
 }
 
 func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
+	// U
 	pow := ast.ModPow(x.Modifier)
 	if len(pow) == 0 {
 		return e.callCall(x, g, outer)
 	}
 
+	// pow(2) @ pow(-2) @ U equals to pow(0) @ U
 	var p int
 	for _, m := range pow {
 		n := m.Index.List.List[0]
