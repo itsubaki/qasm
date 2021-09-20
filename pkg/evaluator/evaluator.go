@@ -405,14 +405,7 @@ func flatten(qargs [][]q.Qubit) []q.Qubit {
 }
 
 func inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
-	var c int
-	for _, m := range mod {
-		if m.Kind == lexer.INV {
-			c++
-		}
-	}
-
-	if c%2 == 1 {
+	if len(ast.ModInv(mod))%2 == 1 {
 		u = u.Dagger()
 	}
 
@@ -420,18 +413,15 @@ func inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
 }
 
 func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environment) (matrix.Matrix, error) {
-	for _, m := range mod {
-		if m.Kind != lexer.POW {
-			continue
-		}
-
+	for _, m := range ast.ModPow(mod) {
 		p := m.Index.List.List[0]
+
 		v, err := e.eval(p, env)
 		if err != nil {
 			return nil, fmt.Errorf("eval(%v): %v", p, err)
 		}
-		c := int(v.(*object.Int).Value)
 
+		c := int(v.(*object.Int).Value)
 		// pow(-1) U equals to inv @ U
 		if c < 0 {
 			u = u.Dagger()
@@ -447,30 +437,15 @@ func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environ
 	return u, nil
 }
 
-func (e *Evaluator) tryBuiltinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
-	switch g {
-	case lexer.QFT:
-		e.Q.QFT(flatten(qargs)...)
-		return true
-	case lexer.IQFT:
-		e.Q.InvQFT(flatten(qargs)...)
-		return true
-	case lexer.CMODEXP2:
-		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
-		return true
-	}
-
-	return false
-}
-
 func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.Environment) ([][]q.Qubit, [][]q.Qubit, error) {
 	var ctrl, negc [][]q.Qubit
 	var defaultIndex int // ctrl @ ctrl @ X equals to ctrl(0) @ ctrl(1) @ X
 
-	for _, m := range mod {
+	for _, m := range ast.ModCtrl(mod) {
 		c := defaultIndex
 		if len(m.Index.List.List) > 0 {
 			x := m.Index.List.List[0]
+
 			v, err := e.eval(x, env)
 			if err != nil {
 				return nil, nil, fmt.Errorf("eval(%v): %v", x, err)
@@ -485,7 +460,7 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 		case lexer.NEGCTRL:
 			negc = append(negc, qargs[c])
 		default:
-			continue
+			return nil, nil, fmt.Errorf("unsupported(%v)", m)
 		}
 
 		defaultIndex++
@@ -511,6 +486,22 @@ func (e *Evaluator) tryCtrlApply(u matrix.Matrix, qargs [][]q.Qubit, ctrl, negc 
 	}
 
 	return true
+}
+
+func (e *Evaluator) tryBuiltinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
+	switch g {
+	case lexer.QFT:
+		e.Q.QFT(flatten(qargs)...)
+		return true
+	case lexer.IQFT:
+		e.Q.InvQFT(flatten(qargs)...)
+		return true
+	case lexer.CMODEXP2:
+		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
+		return true
+	}
+
+	return false
 }
 
 func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, qargs [][]q.Qubit, env *object.Environment) error {
@@ -570,20 +561,8 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 }
 
 func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
-	var mod []ast.Modifier
-	var inv int
-	for i := range x.Modifier {
-		if x.Modifier[i].Kind == lexer.POW {
-			continue // skip pow
-		}
-
-		if x.Modifier[i].Kind == lexer.INV {
-			inv++
-		}
-
-		// ctrl, negctrl, inv
-		mod = append(mod, x.Modifier[i])
-	}
+	inv := ast.ModInv(x.Modifier)
+	mod := append(inv, ast.ModCtrl(x.Modifier)...)
 
 	// append modifier
 	var block ast.BlockStmt
@@ -618,29 +597,21 @@ func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Env
 		}
 	}
 
-	// inverse
-	if inv%2 == 1 {
+	// Inverse
+	if len(inv)%2 == 1 {
 		block = block.Reverse()
 	}
 
-	gg := &ast.GateDecl{
+	return e.callPow(x, &ast.GateDecl{
 		Name:   g.Name,
 		Params: g.Params,
 		QArgs:  g.QArgs,
 		Body:   block,
-	}
-
-	return e.callPow(x, gg, outer)
+	}, outer)
 }
 
 func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
-	var pow []ast.Modifier
-	for i := range x.Modifier {
-		if x.Modifier[i].Kind == lexer.POW {
-			pow = append(pow, x.Modifier[i])
-		}
-	}
-
+	pow := ast.ModPow(x.Modifier)
 	if len(pow) == 0 {
 		return e.callCall(x, g, outer)
 	}
@@ -661,12 +632,14 @@ func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envi
 		return nil
 	}
 
+	// pow(-1) equals to Inv
 	if p < 0 {
 		g.Body = g.Body.Reverse()
 		p = -1 * p
 		// FIXME: Add inv to body
 	}
 
+	// apply pow
 	for i := 0; i < p; i++ {
 		if err := e.callCall(x, g, outer); err != nil {
 			return fmt.Errorf("callCall: %v", err)
@@ -678,10 +651,8 @@ func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envi
 
 func (e *Evaluator) callCall(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
 	// ctrl @ bell q0, q1;
-	for _, m := range x.Modifier {
-		if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
-			return e.callCtrlApply(x, g, outer)
-		}
+	if len(ast.ModCtrl(x.Modifier)) > 0 {
+		return e.callCtrlApply(x, g, outer)
 	}
 
 	// bell @ q0, q1;

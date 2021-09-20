@@ -208,6 +208,39 @@ func (x *Modifier) String() string {
 	return buf.String()
 }
 
+func ModPow(mod []Modifier) []Modifier {
+	var out []Modifier
+	for i, m := range mod {
+		if m.Kind == lexer.POW {
+			out = append(out, mod[i])
+		}
+	}
+
+	return out
+}
+
+func ModInv(mod []Modifier) []Modifier {
+	var out []Modifier
+	for i, m := range mod {
+		if m.Kind == lexer.INV {
+			out = append(out, mod[i])
+		}
+	}
+
+	return out
+}
+
+func ModCtrl(mod []Modifier) []Modifier {
+	var out []Modifier
+	for i, m := range mod {
+		if m.Kind == lexer.CTRL || m.Kind == lexer.NEGCTRL {
+			out = append(out, mod[i])
+		}
+	}
+
+	return out
+}
+
 type CallExpr struct {
 	Name     string
 	Modifier []Modifier // lexer.CTRL, lexer.NEGCTRL, lexer.INV, lexer.POW
