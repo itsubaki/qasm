@@ -574,13 +574,9 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 	return nil, fmt.Errorf("unsupported(%v)", g)
 }
 
-func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
-	inv := ast.ModInv(x.Modifier)
-	mod := append(inv, ast.ModCtrl(x.Modifier)...)
-
-	// append modifier
+func AppendMod(body ast.BlockStmt, mod []ast.Modifier) (ast.BlockStmt, error) {
 	var block ast.BlockStmt
-	for _, b := range g.Body.List {
+	for _, b := range body.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
 			block.Append(&ast.ApplyStmt{
@@ -603,12 +599,25 @@ func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Env
 					},
 				})
 			default:
-				return fmt.Errorf("unsupported(%v)", X)
+				return block, fmt.Errorf("unsupported(%v)", X)
 			}
 
 		default:
-			return fmt.Errorf("unsupported(%v)", s)
+			return block, fmt.Errorf("unsupported(%v)", s)
 		}
+	}
+
+	return block, nil
+}
+
+func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
+	inv := ast.ModInv(x.Modifier)
+	mod := append(inv, ast.ModCtrl(x.Modifier)...)
+
+	// append modifier
+	block, err := AppendMod(g.Body, mod)
+	if err != nil {
+		return fmt.Errorf("append mod(%v): %v", mod, err)
 	}
 
 	// Inverse
@@ -650,9 +659,13 @@ func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envi
 
 	// pow(-1) equals to Inv
 	if p < 0 {
-		g.Body = g.Body.Reverse()
+		mod := []ast.Modifier{{Kind: lexer.INV}}
+		body, err := AppendMod(g.Body, mod)
+		if err != nil {
+			return fmt.Errorf("append mod(%v): %v", mod, err)
+		}
+		g.Body = body.Reverse()
 		p = -1 * p
-		// FIXME: Add inv to body
 	}
 
 	// apply pow
