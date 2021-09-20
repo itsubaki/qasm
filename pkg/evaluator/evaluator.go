@@ -645,25 +645,31 @@ func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envi
 		return e.callCall(x, g, outer)
 	}
 
+	var p int
 	for _, m := range pow {
-		p := m.Index.List.List[0]
-		v, err := e.eval(p, outer)
+		n := m.Index.List.List[0]
+		v, err := e.eval(n, outer)
 		if err != nil {
 			return fmt.Errorf("eval(%v): %v", p, err)
 		}
-		c := int(v.(*object.Int).Value)
 
-		// pow(-1) U equals to inv @ U
-		if c < 0 {
-			g.Body = g.Body.Reverse()
-			c = -1 * c
-			// FIXME: Add inv to body
-		}
+		p = p + int(v.(*object.Int).Value)
+	}
 
-		for i := 0; i < c; i++ {
-			if err := e.callCall(x, g, outer); err != nil {
-				return fmt.Errorf("callCall: %v", err)
-			}
+	// pow(0) equals to Identity
+	if p == 0 {
+		return nil
+	}
+
+	if p < 0 {
+		g.Body = g.Body.Reverse()
+		p = -1 * p
+		// FIXME: Add inv to body
+	}
+
+	for i := 0; i < p; i++ {
+		if err := e.callCall(x, g, outer); err != nil {
+			return fmt.Errorf("callCall: %v", err)
 		}
 	}
 

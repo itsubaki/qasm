@@ -167,14 +167,39 @@ IQFT q;
 	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_pow() {
+func Example_pow0() {
+	qasm := `
+OPENQASM 3.0;
+
+gate h q { U(pi/2.0, 0, pi) q; }
+gate x q { U(pi, 0, pi) q; }
+gate cx c, t { ctrl @ x c, t; }
+
+gate bell q, p { h q; cx q, p; }
+
+qubit[2] q;
+reset q;
+
+pow(0) @ bell q[0], q[1];
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [00][  0]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_pow1() {
 	qasm := `
 OPENQASM 3.0;
 
 qubit q;
 reset q;
 
-pow(3) @ U(pi/2.0, 0, pi) q;
+pow(1) @ U(pi/2.0, 0, pi) q;
 `
 
 	if err := eval(qasm); err != nil {
