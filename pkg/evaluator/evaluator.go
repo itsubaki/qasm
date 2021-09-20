@@ -374,36 +374,6 @@ func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
 	return e.apply(s.Modifier, s.Kind, params, qargs, env)
 }
 
-func builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
-	switch g {
-	case lexer.U:
-		return gate.U(p[0], p[1], p[2]), true
-	case lexer.X:
-		return gate.X(), true
-	case lexer.Y:
-		return gate.Y(), true
-	case lexer.Z:
-		return gate.Z(), true
-	case lexer.H:
-		return gate.H(), true
-	case lexer.T:
-		return gate.T(), true
-	case lexer.S:
-		return gate.S(), true
-	}
-
-	return nil, false
-}
-
-func flatten(qargs [][]q.Qubit) []q.Qubit {
-	var out []q.Qubit
-	for _, q := range qargs {
-		out = append(out, q...)
-	}
-
-	return out
-}
-
 func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environment) (matrix.Matrix, error) {
 	// U
 	pow := ast.ModPow(mod)
@@ -568,47 +538,6 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 	return nil, fmt.Errorf("unsupported(%v)", g)
 }
 
-func appendMod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
-	var out ast.BlockStmt
-	for _, b := range block.List {
-		switch s := b.(type) {
-		case *ast.ApplyStmt:
-			out.Append(&ast.ApplyStmt{
-				Modifier: append(mod, s.Modifier...),
-				Kind:     s.Kind,
-				Name:     s.Name,
-				Params:   s.Params,
-				QArgs:    s.QArgs,
-			})
-
-		case *ast.ExprStmt:
-			switch X := s.X.(type) {
-			case *ast.CallExpr:
-				out.Append(&ast.ExprStmt{
-					X: &ast.CallExpr{
-						Modifier: append(mod, X.Modifier...),
-						Name:     X.Name,
-						Params:   X.Params,
-						QArgs:    X.QArgs,
-					},
-				})
-			default:
-				out.Append(s)
-			}
-
-		default:
-			out.Append(s)
-		}
-	}
-
-	return out
-}
-
-func inverse(block ast.BlockStmt) ast.BlockStmt {
-	out := appendMod(block, []ast.Modifier{{Kind: lexer.INV}})
-	return out.Reverse()
-}
-
 func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
 	// Append ctrl, negctrl
 	block := appendMod(g.Body, ast.ModCtrl(x.Modifier))
@@ -679,78 +608,6 @@ func (e *Evaluator) callCall(x *ast.CallExpr, g *ast.GateDecl, outer *object.Env
 	}
 
 	return nil
-}
-
-func ctrlQArgs(s, x, d ast.ExprList) ast.ExprList {
-	var out ast.ExprList
-	out.Append(x.List[0]) // ctrl qubit
-
-	for i := range s.List {
-		for j := range d.List {
-			if ast.Equals(s.List[i], d.List[j]) {
-				out.Append(x.List[j+1]) // target
-			}
-		}
-	}
-
-	return out
-}
-
-func overrideQArgs(block ast.BlockStmt, x, g ast.ExprList) ast.BlockStmt {
-	var out ast.BlockStmt
-	for _, b := range block.List {
-		switch s := b.(type) {
-		case *ast.ApplyStmt:
-			if s.QArgs.Len() == g.Len() {
-				// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
-				// ctrl @ bell q0, q1, q2;
-				// ctrl @ ctrl @ x q0, q1, q2;
-				out.Append(&ast.ApplyStmt{
-					Modifier: s.Modifier,
-					Kind:     s.Kind,
-					Name:     s.Name,
-					Params:   s.Params,
-					QArgs:    x,
-				})
-
-				continue
-			}
-
-			// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
-			// ctrl @ bell q0, q1, q2;
-			// ctrl @ U(pi/2.0, 0, pi) q0, q1;
-			out.Append(&ast.ApplyStmt{
-				Modifier: s.Modifier,
-				Kind:     s.Kind,
-				Name:     s.Name,
-				Params:   s.Params,
-				QArgs:    ctrlQArgs(s.QArgs, x, g),
-			})
-
-		case *ast.ExprStmt:
-			switch X := s.X.(type) {
-			case *ast.CallExpr:
-				// gate bell q, p { h q; cx q, p; }
-				// ctrl @ bell q0, q1, q2;
-				// ctrl @ h q0, q1;
-				// ctrl @ cx q0, q1, q2;
-				out.Append(&ast.ExprStmt{
-					X: &ast.CallExpr{
-						Modifier: X.Modifier,
-						Name:     X.Name,
-						Params:   X.Params,
-						QArgs:    ctrlQArgs(X.QArgs, x, g),
-					},
-				})
-			default:
-				out.Append(s)
-			}
-		default:
-			out.Append(s)
-		}
-	}
-
-	return out
 }
 
 func (e *Evaluator) callCtrlApply(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
@@ -867,4 +724,147 @@ func (e *Evaluator) Println() error {
 	}
 
 	return nil
+}
+
+func builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
+	switch g {
+	case lexer.U:
+		return gate.U(p[0], p[1], p[2]), true
+	case lexer.X:
+		return gate.X(), true
+	case lexer.Y:
+		return gate.Y(), true
+	case lexer.Z:
+		return gate.Z(), true
+	case lexer.H:
+		return gate.H(), true
+	case lexer.T:
+		return gate.T(), true
+	case lexer.S:
+		return gate.S(), true
+	}
+
+	return nil, false
+}
+
+func flatten(qargs [][]q.Qubit) []q.Qubit {
+	var out []q.Qubit
+	for _, q := range qargs {
+		out = append(out, q...)
+	}
+
+	return out
+}
+
+func appendMod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
+	var out ast.BlockStmt
+	for _, b := range block.List {
+		switch s := b.(type) {
+		case *ast.ApplyStmt:
+			out.Append(&ast.ApplyStmt{
+				Modifier: append(mod, s.Modifier...),
+				Kind:     s.Kind,
+				Name:     s.Name,
+				Params:   s.Params,
+				QArgs:    s.QArgs,
+			})
+
+		case *ast.ExprStmt:
+			switch X := s.X.(type) {
+			case *ast.CallExpr:
+				out.Append(&ast.ExprStmt{
+					X: &ast.CallExpr{
+						Modifier: append(mod, X.Modifier...),
+						Name:     X.Name,
+						Params:   X.Params,
+						QArgs:    X.QArgs,
+					},
+				})
+			default:
+				out.Append(s)
+			}
+
+		default:
+			out.Append(s)
+		}
+	}
+
+	return out
+}
+
+func inverse(block ast.BlockStmt) ast.BlockStmt {
+	out := appendMod(block, []ast.Modifier{{Kind: lexer.INV}})
+	return out.Reverse()
+}
+
+func ctrlQArgs(s, x, d ast.ExprList) ast.ExprList {
+	var out ast.ExprList
+	out.Append(x.List[0]) // ctrl qubit
+
+	for i := range s.List {
+		for j := range d.List {
+			if ast.Equals(s.List[i], d.List[j]) {
+				out.Append(x.List[j+1]) // target
+			}
+		}
+	}
+
+	return out
+}
+
+func overrideQArgs(block ast.BlockStmt, x, g ast.ExprList) ast.BlockStmt {
+	var out ast.BlockStmt
+	for _, b := range block.List {
+		switch s := b.(type) {
+		case *ast.ApplyStmt:
+			if s.QArgs.Len() == g.Len() {
+				// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
+				// ctrl @ bell q0, q1, q2;
+				// ctrl @ ctrl @ x q0, q1, q2;
+				out.Append(&ast.ApplyStmt{
+					Modifier: s.Modifier,
+					Kind:     s.Kind,
+					Name:     s.Name,
+					Params:   s.Params,
+					QArgs:    x,
+				})
+
+				continue
+			}
+
+			// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
+			// ctrl @ bell q0, q1, q2;
+			// ctrl @ U(pi/2.0, 0, pi) q0, q1;
+			out.Append(&ast.ApplyStmt{
+				Modifier: s.Modifier,
+				Kind:     s.Kind,
+				Name:     s.Name,
+				Params:   s.Params,
+				QArgs:    ctrlQArgs(s.QArgs, x, g),
+			})
+
+		case *ast.ExprStmt:
+			switch X := s.X.(type) {
+			case *ast.CallExpr:
+				// gate bell q, p { h q; cx q, p; }
+				// ctrl @ bell q0, q1, q2;
+				// ctrl @ h q0, q1;
+				// ctrl @ cx q0, q1, q2;
+				out.Append(&ast.ExprStmt{
+					X: &ast.CallExpr{
+						Modifier: X.Modifier,
+						Name:     X.Name,
+						Params:   X.Params,
+						QArgs:    ctrlQArgs(X.QArgs, x, g),
+					},
+				})
+			default:
+				out.Append(s)
+			}
+		default:
+			out.Append(s)
+		}
+	}
+
+	return out
 }
