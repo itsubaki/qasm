@@ -254,6 +254,16 @@ func TestExpr(t *testing.T) {
 			},
 			"-1",
 		},
+		{
+			&ast.UnaryExpr{
+				Kind: lexer.MINUS,
+				Value: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "1.0",
+				},
+			},
+			"-1.0",
+		},
 	}
 
 	for _, c := range cases {
