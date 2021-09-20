@@ -431,12 +431,12 @@ func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environ
 		p = p + int(v.(*object.Int).Value)
 	}
 
-	// pow(0) equals to Identity
+	// pow(0) equals to identity
 	if p == 0 {
 		return gate.I(), nil
 	}
 
-	// pow(-1) equals to Inv
+	// pow(-1) equals to inv
 	if p < 0 {
 		u = u.Dagger()
 		p = -1 * p
@@ -530,16 +530,16 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, q
 		return fmt.Errorf("gate=%v(%v) not found", lexer.Tokens[g], g)
 	}
 
-	// Inverse U
+	// inv U
 	u = inv(mod, u)
 
-	// Pow(2) U
+	// pow(2) U
 	u, err := e.pow(mod, u, env)
 	if err != nil {
 		return fmt.Errorf("pow(%v): %v", mod, err)
 	}
 
-	// Controlled-U
+	// controlled-U
 	ctrl, negc, err := e.tryCtrl(mod, qargs, env)
 	if err != nil {
 		return fmt.Errorf("try ctrl(%v): %v", mod, err)
@@ -614,17 +614,18 @@ func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Env
 	inv := ast.ModInv(x.Modifier)
 	mod := append(inv, ast.ModCtrl(x.Modifier)...)
 
-	// append modifier
+	// Append inv, ctrl, negctrl
 	block, err := AppendMod(g.Body, mod)
 	if err != nil {
 		return fmt.Errorf("append mod(%v): %v", mod, err)
 	}
 
-	// Inverse
+	// inv
 	if len(inv)%2 == 1 {
 		block = block.Reverse()
 	}
 
+	// pow
 	return e.callPow(x, &ast.GateDecl{
 		Name:   g.Name,
 		Params: g.Params,
