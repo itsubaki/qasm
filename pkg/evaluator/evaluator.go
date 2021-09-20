@@ -757,6 +757,8 @@ func (e *Evaluator) callCtrlApply(x *ast.CallExpr, g *ast.GateDecl, outer *objec
 	// override qargs
 	block := overrideQArgs(g.Body, x.QArgs, g.QArgs)
 
+	// ctrl @ U q;
+	// ctrl @ bell q0, q1, q2;
 	if _, err := e.eval(&block, outer); err != nil {
 		return fmt.Errorf("eval(%v): %v", &g.Body, err)
 	}
