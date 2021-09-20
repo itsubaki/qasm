@@ -12,7 +12,7 @@ import (
 	"github.com/itsubaki/qasm/pkg/parser"
 )
 
-func eval(qasm string) error {
+func eval(qasm string, verbose ...bool) error {
 	l := lexer.New(strings.NewReader(qasm))
 	p := parser.New(l)
 
@@ -21,7 +21,14 @@ func eval(qasm string) error {
 		return fmt.Errorf("parse: %v\n", errs)
 	}
 
-	e := evaluator.Default()
+	opts := evaluator.Opts{
+		Verbose: false,
+	}
+	if verbose != nil {
+		opts.Verbose = verbose[0]
+	}
+
+	e := evaluator.Default(opts)
 	if err := e.Eval(a); err != nil {
 		return fmt.Errorf("eval: %v\n", err)
 	}
@@ -31,6 +38,74 @@ func eval(qasm string) error {
 	}
 
 	return nil
+}
+
+func Example_verbose() {
+	qasm := `
+OPENQASM 3.0;
+
+gate h q { U(pi/2.0, 0, pi) q; }
+gate x q { U(pi, 0, pi) q; }
+gate cx c, t { ctrl @ x c, t; }
+
+qubit[2] q;
+reset q;
+
+h q[0];
+cx q[0], q[1];
+`
+
+	if err := eval(qasm, true); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// *ast.OpenQASM
+	// .  *ast.DeclStmt(OPENQASM 3.0;)
+	// .  []ast.Stmt
+	// .  .  *ast.DeclStmt(gate h q { U(pi / 2.0, 0, pi) q; })
+	// .  .  .  *ast.GateDecl(gate h q { U(pi / 2.0, 0, pi) q; })
+	// .  .  *ast.DeclStmt(gate x q { U(pi, 0, pi) q; })
+	// .  .  .  *ast.GateDecl(gate x q { U(pi, 0, pi) q; })
+	// .  .  *ast.DeclStmt(gate cx c, t { ctrl @ x c, t; })
+	// .  .  .  *ast.GateDecl(gate cx c, t { ctrl @ x c, t; })
+	// .  .  *ast.DeclStmt(qubit[2] q;)
+	// .  .  .  *ast.GenDecl(qubit[2] q)
+	// .  .  *ast.ResetStmt(reset q;)
+	// .  .  *ast.ExprStmt(h q[0];)
+	// .  .  .  *ast.CallExpr(h q[0])
+	// .  .  .  *ast.GateDecl(gate h q { U(pi / 2.0, 0, pi) q; })
+	// .  .  .  .  *ast.BlockStmt({ U(pi / 2.0, 0, pi) q; })
+	// .  .  .  .  .  *ast.ApplyStmt(U(pi / 2.0, 0, pi) q;)
+	// .  .  .  .  .  .  *ast.InfixExpr(pi / 2.0)
+	// .  .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  .  .  .  .  .  *ast.BasicLit(2.0)
+	// .  .  .  .  .  .  .  .  return *object.Float(2)
+	// .  .  .  .  .  .  .  return *object.Float(1.5707963267948966)
+	// .  .  .  .  .  .  *ast.BasicLit(0)
+	// .  .  .  .  .  .  .  return *object.Int(0)
+	// .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  *ast.ExprStmt(cx q[0], q[1];)
+	// .  .  .  *ast.CallExpr(cx q[0], q[1])
+	// .  .  .  *ast.GateDecl(gate cx c, t { ctrl @ x c, t; })
+	// .  .  .  .  *ast.BlockStmt({ ctrl @ x c, t; })
+	// .  .  .  .  .  *ast.ExprStmt(ctrl @ x c, t;)
+	// .  .  .  .  .  .  *ast.CallExpr(ctrl @ x c, t)
+	// .  .  .  .  .  .  *ast.GateDecl(gate x q { U(pi, 0, pi) q; })
+	// .  .  .  .  .  .  .  *ast.BlockStmt({ ctrl @ U(pi, 0, pi) c, t; })
+	// .  .  .  .  .  .  .  .  *ast.ApplyStmt(ctrl @ U(pi, 0, pi) c, t;)
+	// .  .  .  .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  .  .  .  .  .  .  .  *ast.BasicLit(0)
+	// .  .  .  .  .  .  .  .  .  .  return *object.Int(0)
+	// .  .  .  .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  *ast.PrintStmt(print;)
+	// [00][  0]( 0.7071 0.0000i): 0.5000
+	// [11][  3]( 0.7071 0.0000i): 0.5000
 }
 
 func Example_hermite() {
@@ -140,6 +215,30 @@ cx q[0], q[1];
 	// Output:
 	// [00][  0]( 0.7071 0.0000i): 0.5000
 	// [11][  3]( 0.7071 0.0000i): 0.5000
+}
+
+func Example_print() {
+	qasm := `
+OPENQASM 3.0;
+
+print;
+
+qubit[2] q;
+reset q;
+
+print q;
+print q[0], q[1];
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [00][  0]( 1.0000 0.0000i): 1.0000
+	// [0 0][  0   0]( 1.0000 0.0000i): 1.0000
+	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_inv() {
