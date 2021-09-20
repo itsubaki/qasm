@@ -640,7 +640,7 @@ func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envi
 		n := m.Index.List.List[0]
 		v, err := e.eval(n, outer)
 		if err != nil {
-			return fmt.Errorf("eval(%v): %v", p, err)
+			return fmt.Errorf("eval(%v): %v", n, err)
 		}
 
 		p = p + int(v.(*object.Int).Value)
