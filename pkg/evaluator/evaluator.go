@@ -681,14 +681,14 @@ func (e *Evaluator) callCall(x *ast.CallExpr, g *ast.GateDecl, outer *object.Env
 	return nil
 }
 
-func ctrlQArgs(x, s, d []ast.Expr) ast.ExprList {
+func ctrlQArgs(s, x, d ast.ExprList) ast.ExprList {
 	var out ast.ExprList
-	out.Append(x[0]) // ctrl qubit
+	out.Append(x.List[0]) // ctrl qubit
 
-	for i := range s {
-		for j := range d {
-			if ast.Equals(s[i], d[j]) {
-				out.Append(x[j+1]) // target
+	for i := range s.List {
+		for j := range d.List {
+			if ast.Equals(s.List[i], d.List[j]) {
+				out.Append(x.List[j+1]) // target
 			}
 		}
 	}
@@ -696,23 +696,36 @@ func ctrlQArgs(x, s, d []ast.Expr) ast.ExprList {
 	return out
 }
 
-func (e *Evaluator) callCtrlApply(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
-	// override qargs
-	for _, b := range g.Body.List {
+func overrideQArgs(block ast.BlockStmt, x, g ast.ExprList) ast.BlockStmt {
+	var out ast.BlockStmt
+	for _, b := range block.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			if s.QArgs.Len() == g.QArgs.Len() {
+			if s.QArgs.Len() == g.Len() {
 				// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
 				// ctrl @ bell q0, q1, q2;
 				// ctrl @ ctrl @ x q0, q1, q2;
-				s.QArgs = x.QArgs
+				out.Append(&ast.ApplyStmt{
+					Modifier: s.Modifier,
+					Kind:     s.Kind,
+					Name:     s.Name,
+					Params:   s.Params,
+					QArgs:    x,
+				})
+
 				continue
 			}
 
 			// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
 			// ctrl @ bell q0, q1, q2;
 			// ctrl @ U(pi/2.0, 0, pi) q0, q1;
-			s.QArgs = ctrlQArgs(x.QArgs.List, s.QArgs.List, g.QArgs.List)
+			out.Append(&ast.ApplyStmt{
+				Modifier: s.Modifier,
+				Kind:     s.Kind,
+				Name:     s.Name,
+				Params:   s.Params,
+				QArgs:    ctrlQArgs(s.QArgs, x, g),
+			})
 
 		case *ast.ExprStmt:
 			switch X := s.X.(type) {
@@ -721,18 +734,30 @@ func (e *Evaluator) callCtrlApply(x *ast.CallExpr, g *ast.GateDecl, outer *objec
 				// ctrl @ bell q0, q1, q2;
 				// ctrl @ h q0, q1;
 				// ctrl @ cx q0, q1, q2;
-				X.QArgs = ctrlQArgs(x.QArgs.List, X.QArgs.List, g.QArgs.List)
-
+				out.Append(&ast.ExprStmt{
+					X: &ast.CallExpr{
+						Modifier: X.Modifier,
+						Name:     X.Name,
+						Params:   X.Params,
+						QArgs:    ctrlQArgs(X.QArgs, x, g),
+					},
+				})
 			default:
-				return fmt.Errorf("unsupported(%v)", X)
+				out.Append(s)
 			}
-
 		default:
-			return fmt.Errorf("unsupported(%v)", s)
+			out.Append(s)
 		}
 	}
 
-	if _, err := e.eval(&g.Body, outer); err != nil {
+	return out
+}
+
+func (e *Evaluator) callCtrlApply(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
+	// override qargs
+	block := overrideQArgs(g.Body, x.QArgs, g.QArgs)
+
+	if _, err := e.eval(&block, outer); err != nil {
 		return fmt.Errorf("eval(%v): %v", &g.Body, err)
 	}
 

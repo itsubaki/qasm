@@ -351,6 +351,29 @@ ctrl @ ncx q[0], q[1], q[2];
 	// [101][  5]( 1.0000 0.0000i): 1.0000
 }
 
+func Example_negctrl2() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+
+qubit[3] q;
+reset q;
+
+x q[0];
+ctrl(0) @ negctrl(1) @ x q[0], q[1], q[2];
+`
+
+	// 000 -> 100 -> 101
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [101][  5]( 1.0000 0.0000i): 1.0000
+}
+
 func Example_bell() {
 	qasm := `
 OPENQASM 3.0;
