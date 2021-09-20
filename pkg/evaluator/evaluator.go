@@ -538,7 +538,7 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 	return nil, fmt.Errorf("unsupported(%v)", g)
 }
 
-func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
+func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, env *object.Environment) error {
 	// Append ctrl, negctrl
 	block := appendMod(g.Body, ast.ModCtrl(x.Modifier))
 
@@ -553,21 +553,21 @@ func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Env
 		Params: g.Params,
 		QArgs:  g.QArgs,
 		Body:   block,
-	}, outer)
+	}, env)
 }
 
-func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
+func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, env *object.Environment) error {
 	// U
 	pow := ast.ModPow(x.Modifier)
 	if len(pow) == 0 {
-		return e.callCall(x, g, outer)
+		return e.callCall(x, g, env)
 	}
 
 	// pow(2) @ pow(-2) @ U equals to pow(0) @ U
 	var p int
 	for _, m := range pow {
 		n := m.Index.List.List[0]
-		v, err := e.eval(n, outer)
+		v, err := e.eval(n, env)
 		if err != nil {
 			return fmt.Errorf("eval(%v): %v", n, err)
 		}
@@ -588,7 +588,7 @@ func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envi
 
 	// apply pow
 	for i := 0; i < p; i++ {
-		if err := e.callCall(x, g, outer); err != nil {
+		if err := e.callCall(x, g, env); err != nil {
 			return fmt.Errorf("callCall: %v", err)
 		}
 	}
@@ -596,27 +596,27 @@ func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envi
 	return nil
 }
 
-func (e *Evaluator) callCall(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
+func (e *Evaluator) callCall(x *ast.CallExpr, g *ast.GateDecl, env *object.Environment) error {
 	// ctrl @ bell q0, q1;
 	if len(ast.ModCtrl(x.Modifier)) > 0 {
-		return e.callCtrlApply(x, g, outer)
+		return e.callCtrlApply(x, g, env)
 	}
 
 	// bell @ q0, q1;
-	if _, err := e.eval(&g.Body, e.extend(x, g, outer)); err != nil {
+	if _, err := e.eval(&g.Body, e.extend(x, g, env)); err != nil {
 		return fmt.Errorf("eval(%v): %v", &g.Body, err)
 	}
 
 	return nil
 }
 
-func (e *Evaluator) callCtrlApply(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
+func (e *Evaluator) callCtrlApply(x *ast.CallExpr, g *ast.GateDecl, env *object.Environment) error {
 	// override qargs
 	block := overrideQArgs(g.Body, x.QArgs, g.QArgs)
 
 	// ctrl @ U q;
 	// ctrl @ bell q0, q1, q2;
-	if _, err := e.eval(&block, outer); err != nil {
+	if _, err := e.eval(&block, env); err != nil {
 		return fmt.Errorf("eval(%v): %v", &g.Body, err)
 	}
 
@@ -652,10 +652,8 @@ func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 	return env
 }
 
-func (e *Evaluator) callFunc(x *ast.CallExpr, g *ast.FuncDecl, outer *object.Environment) (object.Object, error) {
-	env := e.extendFunc(x, g, outer)
-
-	v, err := e.eval(&g.Body, env)
+func (e *Evaluator) callFunc(x *ast.CallExpr, g *ast.FuncDecl, env *object.Environment) (object.Object, error) {
+	v, err := e.eval(&g.Body, e.extendFunc(x, g, env))
 	if err != nil {
 		return nil, fmt.Errorf("eval(%v): %v", &g.Body, err)
 	}
