@@ -374,6 +374,54 @@ func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
 	return e.apply(s.Modifier, s.Kind, params, qargs, env)
 }
 
+func (e *Evaluator) measure(x *ast.MeasureExpr, env *object.Environment) (object.Object, error) {
+	qargs := x.QArgs.List
+	if len(qargs) == 0 {
+		return nil, fmt.Errorf("qargs is empty")
+	}
+
+	var m []q.Qubit
+	for _, a := range qargs {
+		qb, ok := env.Qubit.Get(a)
+		if !ok {
+			return nil, fmt.Errorf("qubit(%v) not found", a)
+		}
+
+		e.Q.Measure(qb...)
+		m = append(m, qb...)
+	}
+
+	var bit []object.Object
+	for _, q := range m {
+		bit = append(bit, &object.Int{Value: int64(e.Q.State(q)[0].Int[0])})
+	}
+
+	return &object.Array{Elm: bit}, nil
+}
+
+func (e *Evaluator) Println() error {
+	if _, err := e.eval(&ast.PrintStmt{}, e.Env); err != nil {
+		return fmt.Errorf("print qubit: %v", err)
+	}
+
+	for _, n := range e.Env.Bit.Name {
+		fmt.Printf("%v: ", n)
+
+		c, ok := e.Env.Bit.Get(&ast.IdentExpr{Value: n})
+		if !ok {
+			return fmt.Errorf("bit(%v) not found", n)
+		}
+
+		for _, v := range c {
+			fmt.Printf("%v", v)
+		}
+
+		fmt.Println()
+	}
+
+	return nil
+}
+
 func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environment) (matrix.Matrix, error) {
 	// U
 	pow := ast.ModPow(mod)
@@ -674,54 +722,6 @@ func (e *Evaluator) extendFunc(x *ast.CallExpr, g *ast.FuncDecl, outer *object.E
 	}
 
 	return env
-}
-
-func (e *Evaluator) measure(x *ast.MeasureExpr, env *object.Environment) (object.Object, error) {
-	qargs := x.QArgs.List
-	if len(qargs) == 0 {
-		return nil, fmt.Errorf("qargs is empty")
-	}
-
-	var m []q.Qubit
-	for _, a := range qargs {
-		qb, ok := env.Qubit.Get(a)
-		if !ok {
-			return nil, fmt.Errorf("qubit(%v) not found", a)
-		}
-
-		e.Q.Measure(qb...)
-		m = append(m, qb...)
-	}
-
-	var bit []object.Object
-	for _, q := range m {
-		bit = append(bit, &object.Int{Value: int64(e.Q.State(q)[0].Int[0])})
-	}
-
-	return &object.Array{Elm: bit}, nil
-}
-
-func (e *Evaluator) Println() error {
-	if _, err := e.eval(&ast.PrintStmt{}, e.Env); err != nil {
-		return fmt.Errorf("print qubit: %v", err)
-	}
-
-	for _, n := range e.Env.Bit.Name {
-		fmt.Printf("%v: ", n)
-
-		c, ok := e.Env.Bit.Get(&ast.IdentExpr{Value: n})
-		if !ok {
-			return fmt.Errorf("bit(%v) not found", n)
-		}
-
-		for _, v := range c {
-			fmt.Printf("%v", v)
-		}
-
-		fmt.Println()
-	}
-
-	return nil
 }
 
 func builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
