@@ -568,12 +568,12 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 	return nil, fmt.Errorf("unsupported(%v)", g)
 }
 
-func appendMod(body ast.BlockStmt, mod []ast.Modifier) (ast.BlockStmt, error) {
-	var block ast.BlockStmt
-	for _, b := range body.List {
+func appendMod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
+	var out ast.BlockStmt
+	for _, b := range block.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			block.Append(&ast.ApplyStmt{
+			out.Append(&ast.ApplyStmt{
 				Modifier: append(mod, s.Modifier...),
 				Kind:     s.Kind,
 				Name:     s.Name,
@@ -584,7 +584,7 @@ func appendMod(body ast.BlockStmt, mod []ast.Modifier) (ast.BlockStmt, error) {
 		case *ast.ExprStmt:
 			switch X := s.X.(type) {
 			case *ast.CallExpr:
-				block.Append(&ast.ExprStmt{
+				out.Append(&ast.ExprStmt{
 					X: &ast.CallExpr{
 						Modifier: append(mod, X.Modifier...),
 						Name:     X.Name,
@@ -593,30 +593,23 @@ func appendMod(body ast.BlockStmt, mod []ast.Modifier) (ast.BlockStmt, error) {
 					},
 				})
 			default:
-				return block, fmt.Errorf("unsupported(%v)", X)
+				out.Append(s)
 			}
 
 		default:
-			return block, fmt.Errorf("unsupported(%v)", s)
+			out.Append(s)
 		}
 	}
 
-	return block, nil
+	return out
 }
 
 func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
-	mod := ast.ModCtrl(x.Modifier)
-
 	inv := ast.ModInv(x.Modifier)
-	if len(inv)%2 == 1 {
-		mod = append(mod, inv...)
-	}
+	mod := append(inv, ast.ModCtrl(x.Modifier)...)
 
 	// Append ctrl, negctrl, (inv)
-	block, err := appendMod(g.Body, mod)
-	if err != nil {
-		return fmt.Errorf("append mod(%v): %v", mod, err)
-	}
+	block := appendMod(g.Body, mod)
 
 	// inv
 	if len(inv)%2 == 1 {
@@ -659,13 +652,8 @@ func (e *Evaluator) callPow(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envi
 	// pow(-1) equals to Inv
 	if p < 0 {
 		p = -1 * p
-
-		mod := []ast.Modifier{{Kind: lexer.INV}}
-		body, err := appendMod(g.Body, mod)
-		if err != nil {
-			return fmt.Errorf("append mod(%v): %v", mod, err)
-		}
-		g.Body = body.Reverse()
+		g.Body = appendMod(g.Body, []ast.Modifier{{Kind: lexer.INV}})
+		g.Body = g.Body.Reverse()
 	}
 
 	// apply pow
