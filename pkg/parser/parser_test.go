@@ -103,10 +103,12 @@ func TestParseStmt(t *testing.T) {
 		{"ctrl @ inv @ x q0, q1;"},
 		{"ctrl(0) @ inv @ x q0, q1;"},
 		{"pow(2) @ x q0, q1;"},
+		{"pow(-2) @ x q0, q1;"},
 		{"def bell qubit[n] q0, qubit[m] q1 -> bit[n] { h q0; cx q0, q1; return measure q0, q1; }"},
 		{"def shor(int[32] a, int[32] N) qubit[n] r0, qubit[m] r1 -> bit[n] { h r0; cmodexp2(a, N) r0, r1; iqft r0; return measure r0; }"},
 		{"c = shor(a, N) r0, r1;"},
 		{"const N = 7 + 8;"},
+		{"const N = 15;"},
 		{"gate y q { U(pi, pi / 2, pi / 2) q; }"},
 	}
 

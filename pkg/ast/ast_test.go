@@ -2,6 +2,7 @@ package ast_test
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/itsubaki/qasm/pkg/ast"
 	"github.com/itsubaki/qasm/pkg/lexer"
@@ -54,4 +55,44 @@ func ExampleOpenQASM_String() {
 	// include "stdgates.qasm";
 	// qubit q;
 	// reset q;
+}
+
+func TestIdent(t *testing.T) {
+	var cases = []struct {
+		in   interface{}
+		want string
+	}{
+		{&ast.IdentExpr{Value: "ident"}, "ident"},
+		{&ast.IndexExpr{Name: ast.IdentExpr{Value: "index"}}, "index"},
+		{&ast.ArrayExpr{Name: "array"}, "array"},
+		{&ast.GenDecl{Name: ast.IdentExpr{Value: "gendecl"}}, "gendecl"},
+		{&ast.GenConst{Name: ast.IdentExpr{Value: "genconst"}}, "genconst"},
+		{&ast.GateDecl{Name: "gatedecl"}, "gatedecl"},
+		{&ast.FuncDecl{Name: "funcdecl"}, "funcdecl"},
+		{&ast.BasicLit{Value: "basic"}, "basic"},
+	}
+
+	for _, c := range cases {
+		got := ast.Ident(c.in)
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
+
+func TestEquals(t *testing.T) {
+	var cases = []struct {
+		x, y interface{}
+		want bool
+	}{
+		{&ast.IdentExpr{Value: "x"}, &ast.IdentExpr{Value: "x"}, true},
+		{&ast.IdentExpr{Value: "x"}, &ast.IdentExpr{Value: "y"}, false},
+	}
+
+	for _, c := range cases {
+		got := ast.Equals(c.x, c.y)
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
 }
