@@ -181,6 +181,7 @@ qubit[2] q;
 reset q;
 
 pow(0) @ bell q[0], q[1];
+pow(0) @ U(pi/2.0, 0, pi) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -196,10 +197,13 @@ func Example_pow1() {
 	qasm := `
 OPENQASM 3.0;
 
+gate h q { U(pi/2.0, 0, pi) q; }
+
 qubit q;
 reset q;
 
 pow(1) @ U(pi/2.0, 0, pi) q;
+pow(1) @ h q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -208,8 +212,7 @@ pow(1) @ U(pi/2.0, 0, pi) q;
 	}
 
 	// Output:
-	// [0][  0]( 0.7071 0.0000i): 0.5000
-	// [1][  1]( 0.7071 0.0000i): 0.5000
+	// [0][  0]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_pow2() {
@@ -227,6 +230,8 @@ reset q;
 
 pow(2)  @ bell q[0], q[1];
 pow(-2) @ bell q[0], q[1];
+pow(2)  @ U(pi/2.0, 0, pi) q;
+pow(-2) @ h q;
 `
 
 	if err := eval(qasm); err != nil {

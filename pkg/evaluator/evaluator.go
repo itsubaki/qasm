@@ -413,28 +413,42 @@ func inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
 }
 
 func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environment) (matrix.Matrix, error) {
-	for _, m := range ast.ModPow(mod) {
-		p := m.Index.List.List[0]
+	// U
+	pow := ast.ModPow(mod)
+	if len(pow) == 0 {
+		return u, nil
+	}
 
-		v, err := e.eval(p, env)
+	// pow(2) @ pow(-2) @ U equals to pow(0) @ U
+	var p int
+	for _, m := range pow {
+		n := m.Index.List.List[0]
+		v, err := e.eval(n, env)
 		if err != nil {
 			return nil, fmt.Errorf("eval(%v): %v", p, err)
 		}
 
-		c := int(v.(*object.Int).Value)
-		// pow(-1) U equals to inv @ U
-		if c < 0 {
-			u = u.Dagger()
-			c = -1 * c
-		}
-
-		tmp := u
-		for i := 1; i < c; i++ {
-			u = u.Apply(tmp)
-		}
+		p = p + int(v.(*object.Int).Value)
 	}
 
-	return u, nil
+	// pow(0) equals to Identity
+	if p == 0 {
+		return gate.I(), nil
+	}
+
+	// pow(-1) equals to Inv
+	if p < 0 {
+		u = u.Dagger()
+		p = -1 * p
+	}
+
+	// apply pow
+	out := u
+	for i := 1; i < p; i++ {
+		out = out.Apply(u)
+	}
+
+	return out, nil
 }
 
 func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.Environment) ([][]q.Qubit, [][]q.Qubit, error) {
