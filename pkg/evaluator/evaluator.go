@@ -259,41 +259,41 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 func (e *Evaluator) evalInfix(kind lexer.Token, lhs, rhs object.Object) (object.Object, error) {
 	switch kind {
 	case lexer.PLUS:
-		switch t := lhs.(type) {
+		switch lhs := lhs.(type) {
 		case *object.Int:
-			return &object.Int{Value: t.Value + rhs.(*object.Int).Value}, nil
+			return &object.Int{Value: lhs.Value + rhs.(*object.Int).Value}, nil
 		case *object.Float:
-			return &object.Float{Value: t.Value + rhs.(*object.Float).Value}, nil
+			return &object.Float{Value: lhs.Value + rhs.(*object.Float).Value}, nil
 		}
 
 	case lexer.MINUS:
-		switch t := lhs.(type) {
+		switch lhs := lhs.(type) {
 		case *object.Int:
-			return &object.Int{Value: t.Value - rhs.(*object.Int).Value}, nil
+			return &object.Int{Value: lhs.Value - rhs.(*object.Int).Value}, nil
 		case *object.Float:
-			return &object.Float{Value: t.Value - rhs.(*object.Float).Value}, nil
+			return &object.Float{Value: lhs.Value - rhs.(*object.Float).Value}, nil
 		}
 
 	case lexer.MUL:
-		switch t := lhs.(type) {
+		switch lhs := lhs.(type) {
 		case *object.Int:
-			return &object.Int{Value: t.Value * rhs.(*object.Int).Value}, nil
+			return &object.Int{Value: lhs.Value * rhs.(*object.Int).Value}, nil
 		case *object.Float:
-			return &object.Float{Value: t.Value * rhs.(*object.Float).Value}, nil
+			return &object.Float{Value: lhs.Value * rhs.(*object.Float).Value}, nil
 		}
 
 	case lexer.DIV:
-		switch t := lhs.(type) {
+		switch lhs := lhs.(type) {
 		case *object.Int:
-			return &object.Int{Value: t.Value / rhs.(*object.Int).Value}, nil
+			return &object.Int{Value: lhs.Value / rhs.(*object.Int).Value}, nil
 		case *object.Float:
-			return &object.Float{Value: t.Value / rhs.(*object.Float).Value}, nil
+			return &object.Float{Value: lhs.Value / rhs.(*object.Float).Value}, nil
 		}
 
 	case lexer.MOD:
-		switch t := lhs.(type) {
+		switch lhs := lhs.(type) {
 		case *object.Int:
-			return &object.Int{Value: t.Value % rhs.(*object.Int).Value}, nil
+			return &object.Int{Value: lhs.Value % rhs.(*object.Int).Value}, nil
 		}
 
 	}

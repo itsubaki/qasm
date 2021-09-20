@@ -75,6 +75,40 @@ func TestExpr(t *testing.T) {
 		},
 		{
 			&ast.CallExpr{
+				Name: "bell",
+				Modifier: []ast.Modifier{
+					{
+						Kind: lexer.POW,
+						Index: ast.ParenExpr{
+							List: ast.ExprList{
+								List: []ast.Expr{
+									&ast.UnaryExpr{
+										Kind: lexer.MINUS,
+										Value: &ast.BasicLit{
+											Kind:  lexer.INT,
+											Value: "2",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Value: "q0",
+						},
+						&ast.IdentExpr{
+							Value: "q1",
+						},
+					},
+				},
+			},
+			"pow(-2) @ bell q0, q1",
+		},
+		{
+			&ast.CallExpr{
 				Name: "shor",
 				Params: ast.ParenExpr{
 					List: ast.ExprList{
@@ -226,6 +260,54 @@ func TestExpr(t *testing.T) {
 		got := c.in.String()
 		if got != c.want {
 			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
+
+func TestModPow(t *testing.T) {
+	mod := []ast.Modifier{
+		{Kind: lexer.POW},
+		{Kind: lexer.INV},
+		{Kind: lexer.CTRL},
+		{Kind: lexer.NEGCTRL},
+	}
+
+	pow := ast.ModPow(mod)
+	for _, p := range pow {
+		if p.Kind != lexer.POW {
+			t.Errorf("invalid kind=%v", p.Kind)
+		}
+	}
+}
+
+func TestModInv(t *testing.T) {
+	mod := []ast.Modifier{
+		{Kind: lexer.POW},
+		{Kind: lexer.INV},
+		{Kind: lexer.CTRL},
+		{Kind: lexer.NEGCTRL},
+	}
+
+	inv := ast.ModInv(mod)
+	for _, p := range inv {
+		if p.Kind != lexer.INV {
+			t.Errorf("invalid kind=%v", p.Kind)
+		}
+	}
+}
+
+func TestModCtrl(t *testing.T) {
+	mod := []ast.Modifier{
+		{Kind: lexer.POW},
+		{Kind: lexer.INV},
+		{Kind: lexer.CTRL},
+		{Kind: lexer.NEGCTRL},
+	}
+
+	ctrl := ast.ModCtrl(mod)
+	for _, p := range ctrl {
+		if p.Kind != lexer.CTRL && p.Kind != lexer.NEGCTRL {
+			t.Errorf("invalid kind=%v", p.Kind)
 		}
 	}
 }

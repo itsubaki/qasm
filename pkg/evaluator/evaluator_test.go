@@ -51,6 +51,13 @@ x q; x q;
 y q; y q;
 z q; z q;
 h q; h q;
+
+X q; X q;
+Y q; Y q;
+Z q; Z q;
+H q; H q;
+T q; T q;
+S q; S q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -231,7 +238,7 @@ reset q;
 pow(2)  @ bell q[0], q[1];
 pow(-2) @ bell q[0], q[1];
 pow(2)  @ U(pi/2.0, 0, pi) q;
-pow(-2) @ h q;
+pow(-2) @ U(pi/2.0, 0, pi) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -374,6 +381,32 @@ ctrl(0) @ negctrl(1) @ x q[0], q[1], q[2];
 	// [101][  5]( 1.0000 0.0000i): 1.0000
 }
 
+func Example_def() {
+	qasm := `
+OPENQASM 3.0;
+
+def x qubit[n] q -> bit[n] {
+	X q;
+	return measure q;
+}
+
+qubit[2] q;
+bit[2] c;
+reset q;
+
+c = x q;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [11][  3]( 1.0000 0.0000i): 1.0000
+	// c: 11
+}
+
 func Example_bell() {
 	qasm := `
 OPENQASM 3.0;
@@ -483,6 +516,54 @@ func TestEvalExpr(t *testing.T) {
 		},
 		{
 			in: &ast.InfixExpr{
+				Kind: lexer.PLUS,
+				Left: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "7",
+				},
+				Right: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "11",
+				},
+			},
+			want: &object.Float{
+				Value: 18,
+			},
+		},
+		{
+			in: &ast.InfixExpr{
+				Kind: lexer.MINUS,
+				Left: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "7",
+				},
+				Right: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "11",
+				},
+			},
+			want: &object.Int{
+				Value: -4,
+			},
+		},
+		{
+			in: &ast.InfixExpr{
+				Kind: lexer.MINUS,
+				Left: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "7",
+				},
+				Right: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "11",
+				},
+			},
+			want: &object.Float{
+				Value: -4,
+			},
+		},
+		{
+			in: &ast.InfixExpr{
 				Kind: lexer.MUL,
 				Left: &ast.BasicLit{
 					Kind:  lexer.INT,
@@ -495,6 +576,54 @@ func TestEvalExpr(t *testing.T) {
 			},
 			want: &object.Int{
 				Value: 77,
+			},
+		},
+		{
+			in: &ast.InfixExpr{
+				Kind: lexer.MUL,
+				Left: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "7",
+				},
+				Right: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "11",
+				},
+			},
+			want: &object.Float{
+				Value: 77,
+			},
+		},
+		{
+			in: &ast.InfixExpr{
+				Kind: lexer.DIV,
+				Left: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "15",
+				},
+				Right: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "3",
+				},
+			},
+			want: &object.Int{
+				Value: 5,
+			},
+		},
+		{
+			in: &ast.InfixExpr{
+				Kind: lexer.DIV,
+				Left: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "15",
+				},
+				Right: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "3",
+				},
+			},
+			want: &object.Float{
+				Value: 5,
 			},
 		},
 		{
