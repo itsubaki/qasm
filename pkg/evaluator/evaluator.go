@@ -587,7 +587,7 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 }
 
 func (e *Evaluator) callGate(x *ast.CallExpr, g *ast.GateDecl, env *object.Environment) error {
-	// Append ctrl, negctrl
+	// append ctrl, negctrl
 	block := appendMod(g.Body, ast.ModCtrl(x.Modifier))
 
 	// inv
@@ -759,27 +759,6 @@ func inverse(block ast.BlockStmt) ast.BlockStmt {
 	return out.Reverse()
 }
 
-func ctrlQArgs(s, x, g ast.ExprList) ast.ExprList {
-	var out ast.ExprList
-	out.Append(x.List[0]) // ctrl qubit
-
-	// call: ctrl @ bell q, p0, p1 { h p0; ...}
-	// gate: ctrl @ h p0, p1;
-	// stmt: ctrl @ h p0;
-	// ->
-	// out:  ctrl @ h q, p0;
-
-	for i := range s.List {
-		for j := range g.List {
-			if ast.Equals(s.List[i], g.List[j]) {
-				out.Append(x.List[j+1]) // target qubit
-			}
-		}
-	}
-
-	return out
-}
-
 func appendMod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
 	var out ast.BlockStmt
 	for _, b := range block.List {
@@ -816,29 +795,45 @@ func appendMod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
 	return out
 }
 
+func ctrlQArgs(s, x, g ast.ExprList) ast.ExprList {
+	// map of gate:callexpr
+	gx := make(map[string]ast.Expr)
+	for i := g.Len() - 1; i > -1; i-- {
+		gx[g.List[i].String()] = x.List[i+x.Len()-g.Len()]
+	}
+
+	var out ast.ExprList
+
+	// append ctrl qubit
+	for i := range x.List {
+		var found bool
+		for _, v := range gx {
+			if v.String() == x.List[i].String() {
+				found = true
+				break
+			}
+		}
+
+		if found {
+			continue
+		}
+
+		out.Append(x.List[i])
+	}
+
+	// append target qubit
+	for i := range s.List {
+		out.Append(gx[s.List[i].String()])
+	}
+
+	return out
+}
+
 func overrideQArgs(block ast.BlockStmt, x, g ast.ExprList) ast.BlockStmt {
 	var out ast.BlockStmt
 	for _, b := range block.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
-			if s.QArgs.Len() == g.Len() {
-				// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
-				// ctrl @ bell q0, q1, q2;
-				// ctrl @ ctrl @ U(pi, 0, pi) q0, q1, q2;
-				out.Append(&ast.ApplyStmt{
-					Modifier: s.Modifier,
-					Kind:     s.Kind,
-					Name:     s.Name,
-					Params:   s.Params,
-					QArgs:    x,
-				})
-
-				continue
-			}
-
-			// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
-			// ctrl @ bell q0, q1, q2;
-			// ctrl @ U(pi/2.0, 0, pi) q0, q1;
 			out.Append(&ast.ApplyStmt{
 				Modifier: s.Modifier,
 				Kind:     s.Kind,
@@ -850,10 +845,6 @@ func overrideQArgs(block ast.BlockStmt, x, g ast.ExprList) ast.BlockStmt {
 		case *ast.ExprStmt:
 			switch X := s.X.(type) {
 			case *ast.CallExpr:
-				// gate bell q, p { h q; cx q, p; }
-				// ctrl @ bell q0, q1, q2;
-				// ctrl @ h q0, q1;
-				// ctrl @ cx q0, q1, q2;
 				out.Append(&ast.ExprStmt{
 					X: &ast.CallExpr{
 						Modifier: X.Modifier,
