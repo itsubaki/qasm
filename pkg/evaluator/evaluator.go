@@ -514,12 +514,12 @@ func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environ
 	return out, nil
 }
 
-func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.Environment) ([][]q.Qubit, [][]q.Qubit, error) {
-	var ctrl, negc [][]q.Qubit
-	var defaultIndex int // ctrl @ ctrl @ X equals to ctrl(0) @ ctrl(1) @ X
+func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.Environment) ([]q.Qubit, []q.Qubit, error) {
+	var ctrl, negc []q.Qubit
 
+	var sum int
 	for _, m := range ast.ModCtrl(mod) {
-		c := defaultIndex
+		c := 1
 		if len(m.Index.List.List) > 0 {
 			x := m.Index.List.List[0]
 
@@ -531,27 +531,29 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 			c = int(v.(*object.Int).Value)
 		}
 
+		q := flatten(qargs)[sum : sum+c]
+
 		switch m.Kind {
 		case lexer.CTRL:
-			ctrl = append(ctrl, qargs[c])
+			ctrl = append(ctrl, q...)
 		case lexer.NEGCTRL:
-			negc = append(negc, qargs[c])
+			negc = append(negc, q...)
 		default:
 			return nil, nil, fmt.Errorf("unsupported(%v)", m)
 		}
 
-		defaultIndex++
+		sum = sum + c
 	}
 
 	return ctrl, negc, nil
 }
 
-func (e *Evaluator) tryCtrlApply(ctrl, negc [][]q.Qubit, u matrix.Matrix, qargs [][]q.Qubit) bool {
+func (e *Evaluator) tryCtrlApply(ctrl, negc []q.Qubit, u matrix.Matrix, qargs [][]q.Qubit) bool {
 	if len(ctrl) == 0 && len(negc) == 0 {
 		return false
 	}
 
-	panic("not implemented")
+	panic(fmt.Sprintf("not implemented. ctrl=%v, negc=%v, qargs=%v", ctrl, negc, qargs))
 }
 
 func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Object, error) {
