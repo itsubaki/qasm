@@ -556,7 +556,26 @@ func (e *Evaluator) tryCtrlApply(ctrl, negc [][]q.Qubit, u matrix.Matrix, qargs 
 	}
 
 	c := append(flatten(ctrl), flatten(negc)...)
-	e.Q.Controlled(u, c, qargs[len(qargs)-1][0])
+	var t q.Qubit
+
+	f := flatten(qargs)
+	for i, a := range f {
+		var found bool
+		for _, j := range c {
+			if a == j {
+				found = true
+				break
+			}
+		}
+
+		if found {
+			continue
+		}
+
+		t = f[i]
+	}
+
+	e.Q.Controlled(u, c, t)
 
 	if len(negc) > 0 {
 		e.Q.X(flatten(negc)...)

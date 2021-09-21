@@ -435,6 +435,27 @@ func Example_ctrl4() {
 	qasm := `
 OPENQASM 3.0;
 
+qubit[3] q;
+
+U(pi, 0, pi) q[0];
+U(pi, 0, pi) q[2];
+
+ctrl(0) @ ctrl(2) @ U(pi, 0, pi) q[0], q[1], q[2];	
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [111][  7]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_ctrl5() {
+	qasm := `
+OPENQASM 3.0;
+
 gate x q { U(pi, 0, pi) q; }
 gate xc a, b { ctrl @ x b, a; }
 
