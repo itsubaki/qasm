@@ -381,7 +381,6 @@ func Example_ctrl2() {
 	qasm := `
 OPENQASM 3.0;
 
-gate h q { U(pi/2.0, 0, pi) q; }
 gate x q { U(pi, 0, pi) q; }
 gate cx c, t { ctrl @ x c, t; }
 
@@ -409,7 +408,6 @@ func Example_ctrl3() {
 	qasm := `
 OPENQASM 3.0;
 
-gate h q { U(pi/2.0, 0, pi) q; }
 gate x q { U(pi, 0, pi) q; }
 gate cx c, t { ctrl @ x c, t; }
 
@@ -438,7 +436,7 @@ func Example_ctrl4() {
 OPENQASM 3.0;
 
 gate x q { U(pi, 0, pi) q; }
-gate cx a, b { ctrl @ x b, a; }
+gate xc a, b { ctrl @ x b, a; }
 
 qubit q;
 qubit[2] p;
@@ -446,7 +444,7 @@ reset q, p;
 
 x q;
 x p[1];
-ctrl @ cx q, p[0], p[1];
+ctrl @ xc q, p[0], p[1];
 `
 
 	if err := eval(qasm); err != nil {
