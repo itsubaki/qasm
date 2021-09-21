@@ -824,7 +824,7 @@ func overrideQArgs(block ast.BlockStmt, x, g ast.ExprList) ast.BlockStmt {
 			if s.QArgs.Len() == g.Len() {
 				// gate bell q, p { U(pi/2.0, 0, pi) q; cx q, p; }
 				// ctrl @ bell q0, q1, q2;
-				// ctrl @ ctrl @ x q0, q1, q2;
+				// ctrl @ ctrl @ U(pi, 0, pi) q0, q1, q2;
 				out.Append(&ast.ApplyStmt{
 					Modifier: s.Modifier,
 					Kind:     s.Kind,
