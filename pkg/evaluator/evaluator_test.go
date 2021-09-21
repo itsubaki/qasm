@@ -62,14 +62,14 @@ U(pi/2.0, 0, pi) q;
 U(pi, 0, pi) q;
 U(pi, 0, pi) q;
 
-U(pi, pi/2.0, pi/2.0) q;
-U(pi, pi/2.0, pi/2.0) q;
-
 U(pi, 0, pi) q[0];
 U(pi, 0, pi) q[0];
 
 U(pi, 0, pi) q[0], q[1];
 U(pi, 0, pi) q[0], q[1];
+
+U(pi, pi/2.0, pi/2.0) q;
+U(pi, pi/2.0, pi/2.0) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -189,18 +189,128 @@ pow(-2) @ U(1.0, 2.0, 3.0) q0, q1, q2;
 	// [00 00 00][  0   0   0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrlu() {
+func Example_ctrl() {
 	qasm := `
 OPENQASM 3.0;
 
-qubit[3] q0;
-qubit[3] q1;
+qubit[2] q;
+qubit[2] r;
+reset q, r;
 	
-U(pi, 0, pi) q0[0];
-ctrl @ U(pi, 0, pi) q0, q1;	
+U(pi, 0, pi) q[0];
+ctrl @ U(pi, 0, pi) q[0], r[0];
 `
 
-	// [000 000] -> [100 000] -> [100 100]
+	// [00 00] -> [10 00] -> [10 10]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	//
+}
+
+func Example_ctrlqr() {
+	qasm := `
+OPENQASM 3.0;
+
+qubit[2] q;
+qubit[2] r;
+reset q, r;
+	
+U(pi, 0, pi) q[0];
+ctrl(1) @ U(pi, 0, pi) q, r;	
+`
+
+	// [00 00] -> [10 00] -> [10 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	//
+}
+
+func Example_ctrlq0r() {
+	qasm := `
+OPENQASM 3.0;
+
+qubit[2] q;
+qubit[2] r;
+reset q, r;
+	
+U(pi, 0, pi) q[0];
+ctrl(1) @ U(pi, 0, pi) q[0], r;
+`
+
+	// [00 00] -> [10 00] -> [10 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	//
+}
+
+func Example_ctrlctrl() {
+	qasm := `
+OPENQASM 3.0;
+
+qubit[2] q;
+qubit[2] r;
+	
+U(pi, 0, pi) q;
+ctrl(1) @ ctrl(1) @ U(pi, 0, pi) q, r;	
+`
+
+	// [00 00] -> [11 00] -> [11 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	//
+}
+
+func Example_ctrl2ctrl2() {
+	qasm := `
+OPENQASM 3.0;
+
+qubit[2] q0;
+qubit[2] q1;
+qubit[2] q2;
+	
+U(pi, 0, pi) q0, q1;
+ctrl(2) @ ctrl(2) @ U(pi, 0, pi) q0, q1, q2;	
+`
+
+	// [00 00 00] -> [11 11 00] -> [11 11 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	//
+}
+
+func Example_ctrl2negc2() {
+	qasm := `
+OPENQASM 3.0;
+
+qubit[2] q0;
+qubit[2] q1;
+qubit[2] q2;
+	
+U(pi, 0, pi) q0;
+ctrl(2) @ negctrl(2) @ U(pi, 0, pi) q0, q1, q2;	
+`
+
+	// [00 00 00] -> [11 00 00] -> [11 00 11]
 	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
