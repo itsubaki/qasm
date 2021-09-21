@@ -91,18 +91,20 @@ cx q[0], q[1];
 	// .  .  *ast.ExprStmt(cx q[0], q[1];)
 	// .  .  .  *ast.CallExpr(cx q[0], q[1])
 	// .  .  .  *ast.GateDecl(gate cx c, t { ctrl @ x c, t; })
-	// .  .  .  .  *ast.BlockStmt({ ctrl @ x c, t; })
-	// .  .  .  .  .  *ast.ExprStmt(ctrl @ x c, t;)
-	// .  .  .  .  .  .  *ast.CallExpr(ctrl @ x c, t)
+	// .  .  .  .  *ast.BlockStmt({ ctrl(0) @ x c, t; })
+	// .  .  .  .  .  *ast.ExprStmt(ctrl(0) @ x c, t;)
+	// .  .  .  .  .  .  *ast.CallExpr(ctrl(0) @ x c, t)
 	// .  .  .  .  .  .  *ast.GateDecl(gate x q { U(pi, 0, pi) q; })
-	// .  .  .  .  .  .  .  *ast.BlockStmt({ ctrl @ U(pi, 0, pi) c, t; })
-	// .  .  .  .  .  .  .  .  *ast.ApplyStmt(ctrl @ U(pi, 0, pi) c, t;)
+	// .  .  .  .  .  .  .  *ast.BlockStmt({ ctrl(0) @ U(pi, 0, pi) c, t; })
+	// .  .  .  .  .  .  .  .  *ast.ApplyStmt(ctrl(0) @ U(pi, 0, pi) c, t;)
 	// .  .  .  .  .  .  .  .  .  *ast.BasicLit(pi)
 	// .  .  .  .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
 	// .  .  .  .  .  .  .  .  .  *ast.BasicLit(0)
 	// .  .  .  .  .  .  .  .  .  .  return *object.Int(0)
 	// .  .  .  .  .  .  .  .  .  *ast.BasicLit(pi)
 	// .  .  .  .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  .  .  .  .  .  .  .  *ast.BasicLit(0)
+	// .  .  .  .  .  .  .  .  .  .  return *object.Int(0)
 	// .  .  *ast.PrintStmt(print;)
 	// [00][  0]( 0.7071 0.0000i): 0.5000
 	// [11][  3]( 0.7071 0.0000i): 0.5000
@@ -475,6 +477,29 @@ ctrl @ xc q, p[0], p[1];
 
 	// Output:
 	// [1 11][  1   3]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_ctrl6() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate cx c, t  { ctrl(1) @ x c, t; }
+
+qubit[3] q;
+
+x q[0];
+x q[2];
+ctrl(0) @ cx q[0], q[1], q[2];	
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [111][  7]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_negctrl() {

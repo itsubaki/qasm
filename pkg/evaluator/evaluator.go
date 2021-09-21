@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/itsubaki/q"
@@ -778,13 +779,42 @@ func inverse(block ast.BlockStmt) ast.BlockStmt {
 	return out.Reverse()
 }
 
+func add(s []ast.Modifier, v int) []ast.Modifier {
+	var out []ast.Modifier
+	for i, m := range s {
+		if m.Kind != lexer.CTRL && m.Kind == lexer.NEGCTRL {
+			out = append(out, s[i])
+		}
+
+		if len(m.Index.List.List) > 0 {
+			v = v + int(m.Index.List.List[0].(*ast.BasicLit).Int64())
+		}
+
+		out = append(out, ast.Modifier{
+			Kind: s[i].Kind,
+			Index: ast.ParenExpr{
+				List: ast.ExprList{
+					List: []ast.Expr{
+						&ast.BasicLit{
+							Kind:  lexer.INT,
+							Value: strconv.Itoa(v),
+						},
+					},
+				},
+			},
+		})
+	}
+
+	return out
+}
+
 func appendMod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
 	var out ast.BlockStmt
 	for _, b := range block.List {
 		switch s := b.(type) {
 		case *ast.ApplyStmt:
 			out.Append(&ast.ApplyStmt{
-				Modifier: append(mod, s.Modifier...),
+				Modifier: append(mod, add(s.Modifier, len(ast.ModCtrl(mod)))...),
 				Kind:     s.Kind,
 				Name:     s.Name,
 				Params:   s.Params,
@@ -796,7 +826,7 @@ func appendMod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
 			case *ast.CallExpr:
 				out.Append(&ast.ExprStmt{
 					X: &ast.CallExpr{
-						Modifier: append(mod, X.Modifier...),
+						Modifier: append(mod, add(X.Modifier, len(ast.ModCtrl(mod)))...),
 						Name:     X.Name,
 						Params:   X.Params,
 						QArgs:    X.QArgs,
