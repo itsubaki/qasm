@@ -198,7 +198,7 @@ qubit[2] r;
 reset q, r;
 	
 U(pi, 0, pi) q[0];
-ctrl @ U(pi, 0, pi) q[0], r[0];
+ctrl(1) @ U(pi, 0, pi) q[0], r[0];
 `
 
 	// [00 00] -> [10 00] -> [10 10]
