@@ -422,6 +422,59 @@ func (e *Evaluator) Println() error {
 	return nil
 }
 
+func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, qargs [][]q.Qubit, env *object.Environment) error {
+	// QFT, IQFT, CMODEXP2
+	if e.tryBuiltinApply(g, params, qargs) {
+		return nil
+	}
+
+	// U, X, Y, Z, H, S, T
+	u, ok := builtin(g, params)
+	if !ok {
+		return fmt.Errorf("gate=%v(%v) not found", lexer.Tokens[g], g)
+	}
+
+	// inv U
+	if len(ast.ModInv(mod))%2 == 1 {
+		u = u.Dagger()
+	}
+
+	// pow(2) U
+	u, err := e.pow(mod, u, env)
+	if err != nil {
+		return fmt.Errorf("pow(%v): %v", mod, err)
+	}
+
+	// controlled-U
+	ctrl, negc, err := e.tryCtrl(mod, qargs, env)
+	if err != nil {
+		return fmt.Errorf("try ctrl(%v): %v", mod, err)
+	}
+	if e.tryCtrlApply(ctrl, negc, u, qargs) {
+		return nil
+	}
+
+	// U
+	e.Q.Apply(u, flatten(qargs)...)
+	return nil
+}
+
+func (e *Evaluator) tryBuiltinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
+	switch g {
+	case lexer.QFT:
+		e.Q.QFT(flatten(qargs)...)
+		return true
+	case lexer.IQFT:
+		e.Q.InvQFT(flatten(qargs)...)
+		return true
+	case lexer.CMODEXP2:
+		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
+		return true
+	}
+
+	return false
+}
+
 func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environment) (matrix.Matrix, error) {
 	// U
 	pow := ast.ModPow(mod)
@@ -493,7 +546,7 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 	return ctrl, negc, nil
 }
 
-func (e *Evaluator) tryCtrlApply(u matrix.Matrix, qargs [][]q.Qubit, ctrl, negc [][]q.Qubit) bool {
+func (e *Evaluator) tryCtrlApply(ctrl, negc [][]q.Qubit, u matrix.Matrix, qargs [][]q.Qubit) bool {
 	if len(ctrl) == 0 && len(negc) == 0 {
 		return false
 	}
@@ -510,59 +563,6 @@ func (e *Evaluator) tryCtrlApply(u matrix.Matrix, qargs [][]q.Qubit, ctrl, negc 
 	}
 
 	return true
-}
-
-func (e *Evaluator) tryBuiltinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
-	switch g {
-	case lexer.QFT:
-		e.Q.QFT(flatten(qargs)...)
-		return true
-	case lexer.IQFT:
-		e.Q.InvQFT(flatten(qargs)...)
-		return true
-	case lexer.CMODEXP2:
-		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
-		return true
-	}
-
-	return false
-}
-
-func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, qargs [][]q.Qubit, env *object.Environment) error {
-	// QFT, IQFT, CMODEXP2
-	if e.tryBuiltinApply(g, params, qargs) {
-		return nil
-	}
-
-	// U, X, Y, Z, H, S, T
-	u, ok := builtin(g, params)
-	if !ok {
-		return fmt.Errorf("gate=%v(%v) not found", lexer.Tokens[g], g)
-	}
-
-	// inv U
-	if len(ast.ModInv(mod))%2 == 1 {
-		u = u.Dagger()
-	}
-
-	// pow(2) U
-	u, err := e.pow(mod, u, env)
-	if err != nil {
-		return fmt.Errorf("pow(%v): %v", mod, err)
-	}
-
-	// controlled-U
-	ctrl, negc, err := e.tryCtrl(mod, qargs, env)
-	if err != nil {
-		return fmt.Errorf("try ctrl(%v): %v", mod, err)
-	}
-	if e.tryCtrlApply(u, qargs, ctrl, negc) {
-		return nil
-	}
-
-	// U
-	e.Q.Apply(u, flatten(qargs)...)
-	return nil
 }
 
 func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Object, error) {
@@ -754,6 +754,32 @@ func flatten(qargs [][]q.Qubit) []q.Qubit {
 	return out
 }
 
+func inverse(block ast.BlockStmt) ast.BlockStmt {
+	out := appendMod(block, []ast.Modifier{{Kind: lexer.INV}})
+	return out.Reverse()
+}
+
+func ctrlQArgs(s, x, g ast.ExprList) ast.ExprList {
+	var out ast.ExprList
+	out.Append(x.List[0]) // ctrl qubit
+
+	// call: ctrl @ bell q, p0, p1 { h p0; ...}
+	// gate: ctrl @ h p0, p1;
+	// stmt: ctrl @ h p0;
+	// ->
+	// out:  ctrl @ h q, p0;
+
+	for i := range s.List {
+		for j := range g.List {
+			if ast.Equals(s.List[i], g.List[j]) {
+				out.Append(x.List[j+1]) // target qubit
+			}
+		}
+	}
+
+	return out
+}
+
 func appendMod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
 	var out ast.BlockStmt
 	for _, b := range block.List {
@@ -784,26 +810,6 @@ func appendMod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
 
 		default:
 			out.Append(s)
-		}
-	}
-
-	return out
-}
-
-func inverse(block ast.BlockStmt) ast.BlockStmt {
-	out := appendMod(block, []ast.Modifier{{Kind: lexer.INV}})
-	return out.Reverse()
-}
-
-func ctrlQArgs(s, x, d ast.ExprList) ast.ExprList {
-	var out ast.ExprList
-	out.Append(x.List[0]) // ctrl qubit
-
-	for i := range s.List {
-		for j := range d.List {
-			if ast.Equals(s.List[i], d.List[j]) {
-				out.Append(x.List[j+1]) // target
-			}
 		}
 	}
 
