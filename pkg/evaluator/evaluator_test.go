@@ -219,6 +219,26 @@ cx q[0], q[1];
 	// [11][  3]( 0.7071 0.0000i): 0.5000
 }
 
+func Example_gate1() {
+	qasm := `
+OPENQASM 3.0;
+
+qubit[3] q0;
+qubit[3] q1;
+qubit[3] q2;
+
+U(pi, 0, pi) q0, q1, q2;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [111 111 111][  7   7   7]( 1.0000 0.0000i): 1.0000
+}
+
 func Example_print() {
 	qasm := `
 OPENQASM 3.0;
