@@ -616,7 +616,7 @@ func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environ
 	// U
 	pow := ast.ModPow(x.Modifier)
 	if len(pow) == 0 {
-		if err := e.evalGate(x, gx, env); err != nil {
+		if err := e.ctrlCall(x, gx, env); err != nil {
 			return fmt.Errorf("evalGate(%v): %v", x, err)
 		}
 
@@ -649,7 +649,7 @@ func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environ
 	// apply pow(2) @ U
 	for i := 0; i < p; i++ {
 		// U
-		if err := e.evalGate(x, gx, env); err != nil {
+		if err := e.ctrlCall(x, gx, env); err != nil {
 			return fmt.Errorf("evalGate(%v): %v", x, err)
 		}
 
@@ -659,7 +659,7 @@ func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environ
 	return nil
 }
 
-func (e *Evaluator) evalGate(x *ast.CallExpr, g *ast.GateDecl, env *object.Environment) error {
+func (e *Evaluator) ctrlCall(x *ast.CallExpr, g *ast.GateDecl, env *object.Environment) error {
 	// ctrl @ bell q0, q1;
 	if len(ast.ModCtrl(x.Modifier)) > 0 {
 		fmt.Printf("x: %v\n", x)
