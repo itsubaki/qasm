@@ -515,8 +515,6 @@ func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environ
 }
 
 func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.Environment) ([]q.Qubit, []q.Qubit, error) {
-	flat := flatten(qargs)
-
 	var ctrl, negc []q.Qubit
 	var sum int
 	for _, m := range ast.ModCtrl(mod) {
@@ -531,21 +529,20 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 
 			c = int(v.(*object.Int).Value)
 		}
-
-		q := flat[sum : sum+c]
+		sum = sum + c
 
 		switch m.Kind {
 		case lexer.CTRL:
-			ctrl = append(ctrl, q...)
+			ctrl = append(ctrl, qargs[sum-1]...)
 		case lexer.NEGCTRL:
-			negc = append(negc, q...)
+			negc = append(negc, qargs[sum-1]...)
 		default:
 			return nil, nil, fmt.Errorf("unsupported(%v)", m)
 		}
 
-		sum = sum + c
 	}
 
+	// fmt.Printf("ctrl: %v, negc: %v\n", ctrl, negc)
 	return ctrl, negc, nil
 }
 
@@ -555,15 +552,21 @@ func (e *Evaluator) tryCtrlApply(ctrl, negc []q.Qubit, u matrix.Matrix, qargs []
 	}
 
 	target := qargs[len(qargs)-1]
-	for _, t := range target {
-		if len(negc) > 0 {
-			e.Q.X(negc...)
+	for i := range target {
+		var c []q.Qubit
+		if len(ctrl) > i {
+			c = append(c, ctrl[i])
 		}
 
-		e.Q.Controlled(u, append(ctrl, negc...), t)
+		if len(negc) > i {
+			c = append(c, negc[i])
+			e.Q.X(negc[i])
+		}
 
-		if len(negc) > 0 {
-			e.Q.X(negc...)
+		e.Q.Controlled(u, c, target[i])
+
+		if len(negc) > i {
+			e.Q.X(negc[i])
 		}
 	}
 
