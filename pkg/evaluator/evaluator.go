@@ -515,9 +515,14 @@ func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environ
 }
 
 func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.Environment) ([]q.Qubit, []q.Qubit, error) {
+	cmod := ast.ModCtrl(mod)
+	if len(qargs)-len(cmod) != 1 {
+		return nil, nil, fmt.Errorf("invalid len(qargs)=%v, len(ctrl, negc)=%v", len(qargs), len(cmod))
+	}
+
 	var ctrl, negc []q.Qubit
 	var sum int
-	for _, m := range ast.ModCtrl(mod) {
+	for _, m := range cmod {
 		c := 1
 		if len(m.Index.List.List) > 0 {
 			x := m.Index.List.List[0]
@@ -539,7 +544,6 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 		default:
 			return nil, nil, fmt.Errorf("unsupported(%v)", m)
 		}
-
 	}
 
 	// fmt.Printf("ctrl: %v, negc: %v\n", ctrl, negc)

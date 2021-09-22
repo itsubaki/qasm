@@ -76,8 +76,8 @@ reset q;
 h q; h q;
 x q; x q;
 
-h q[0], q[1]; h q[0], q[1];
-x q[0], q[1]; x q[0], q[1];
+h q[0]; h q[0];
+x q[1]; x q[1];
 `
 
 	if err := eval(qasm); err != nil {
@@ -117,12 +117,10 @@ OPENQASM 3.0;
 
 gate u q { U(1.0, 2.0, 3.0) q; }
 
-qubit[2] q0;
-qubit[2] q1;
-qubit[2] q2;
-reset q0, q1, q2;
+qubit[2] q;
+reset q;
 
-pow(0) @ u(1.0, 2.0, 3.0) q0, q1, q2;
+pow(0) @ u(1.0, 2.0, 3.0) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -140,13 +138,11 @@ OPENQASM 3.0;
 
 gate u q { U(1.0, 2.0, 3.0) q; }
 
-qubit[2] q0;
-qubit[2] q1;
-qubit[2] q2;
-reset q0, q1, q2;
+qubit[2] q;
+reset q;
 
-pow(1) @ u(1.0, 2.0, 3.0) q0, q1, q2;
-inv    @ u(1.0, 2.0, 3.0) q0, q1, q2;
+pow(1) @ u(1.0, 2.0, 3.0) q;
+inv    @ u(1.0, 2.0, 3.0) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -164,13 +160,11 @@ OPENQASM 3.0;
 
 gate u q { U(1.0, 2.0, 3.0) q; }
 
-qubit[2] q0;
-qubit[2] q1;
-qubit[2] q2;
-reset q0, q1, q2;
+qubit[2] q;
+reset q;
 
-pow(2)  @ u(1.0, 2.0, 3.0) q0, q1, q2;
-pow(-2) @ u(1.0, 2.0, 3.0) q0, q1, q2;
+pow(2)  @ u(1.0, 2.0, 3.0) q;
+pow(-2) @ u(1.0, 2.0, 3.0) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -219,7 +213,7 @@ x q[0];
 ctrl(1) @ x q, r;	
 `
 
-	// [00 00] -> [10 00] -> [10 11]
+	// [00 00] -> [10 00] -> [10 10]
 	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
@@ -462,17 +456,8 @@ U(0, 0, 0) q;
 U(pi/2.0, 0, pi) q;
 U(pi/2.0, 0, pi) q;
 
-U(pi, 0, pi) q;
-U(pi, 0, pi) q;
-
 U(pi, 0, pi) q[0];
 U(pi, 0, pi) q[0];
-
-U(pi, 0, pi) q[0], q[1];
-U(pi, 0, pi) q[0], q[1];
-
-U(pi, pi/2.0, pi/2.0) q;
-U(pi, pi/2.0, pi/2.0) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -488,12 +473,10 @@ func Example_qargs() {
 	qasm := `
 OPENQASM 3.0;
 
-qubit[2] q0;
-qubit[2] q1;
-qubit[2] q2;
-reset q0, q1, q2;
+qubit[2] q;
+reset q;
 
-U(pi, 0, pi) q0, q1, q2;
+U(pi, 0, pi) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -502,20 +485,18 @@ U(pi, 0, pi) q0, q1, q2;
 	}
 
 	// Output:
-	// [11 11 11][  3   3   3]( 1.0000 0.0000i): 1.0000
+	// [11][  3]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_inv() {
 	qasm := `
 OPENQASM 3.0;
 
-qubit[2] q0;
-qubit[2] q1;
-qubit[2] q2;
-reset q0, q1, q2;
+qubit[2] q;
+reset q;
 
-U(1.0, 2.0, 3.0) q0, q1, q2;
-inv @ U(1.0, 2.0, 3.0) q0, q1, q2;
+U(1.0, 2.0, 3.0) q;
+inv @ U(1.0, 2.0, 3.0) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -524,19 +505,17 @@ inv @ U(1.0, 2.0, 3.0) q0, q1, q2;
 	}
 
 	// Output:
-	// [00 00 00][  0   0   0]( 1.0000 0.0000i): 1.0000
+	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_pow0() {
 	qasm := `
 OPENQASM 3.0;
 
-qubit[2] q0;
-qubit[2] q1;
-qubit[2] q2;
-reset q0, q1, q2;
+qubit[2] q;
+reset q;
 
-pow(0) @ U(1.0, 2.0, 3.0) q0, q1, q2;
+pow(0) @ U(1.0, 2.0, 3.0) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -545,20 +524,18 @@ pow(0) @ U(1.0, 2.0, 3.0) q0, q1, q2;
 	}
 
 	// Output:
-	// [00 00 00][  0   0   0]( 1.0000 0.0000i): 1.0000
+	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_pow1() {
 	qasm := `
 OPENQASM 3.0;
 
-qubit[2] q0;
-qubit[2] q1;
-qubit[2] q2;
-reset q0, q1, q2;
+qubit[2] q;
+reset q;
 
-pow(1) @ U(1.0, 2.0, 3.0) q0, q1, q2;
-inv    @ U(1.0, 2.0, 3.0) q0, q1, q2;
+pow(1) @ U(1.0, 2.0, 3.0) q;
+inv    @ U(1.0, 2.0, 3.0) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -567,20 +544,18 @@ inv    @ U(1.0, 2.0, 3.0) q0, q1, q2;
 	}
 
 	// Output:
-	// [00 00 00][  0   0   0]( 1.0000 0.0000i): 1.0000
+	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_pow2() {
 	qasm := `
 OPENQASM 3.0;
 
-qubit[2] q0;
-qubit[2] q1;
-qubit[2] q2;
-reset q0, q1, q2;
+qubit[2] q;
+reset q;
 
-pow(2)  @ U(1.0, 2.0, 3.0) q0, q1, q2;
-pow(-2) @ U(1.0, 2.0, 3.0) q0, q1, q2;
+pow(2)  @ U(1.0, 2.0, 3.0) q;
+pow(-2) @ U(1.0, 2.0, 3.0) q;
 `
 
 	if err := eval(qasm); err != nil {
@@ -589,7 +564,7 @@ pow(-2) @ U(1.0, 2.0, 3.0) q0, q1, q2;
 	}
 
 	// Output:
-	// [00 00 00][  0   0   0]( 1.0000 0.0000i): 1.0000
+	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_ctrl() {
@@ -664,6 +639,7 @@ OPENQASM 3.0;
 
 qubit[2] q;
 qubit[2] r;
+reset q, r;
 	
 U(pi, 0, pi) q;
 ctrl(1) @ U(pi, 0, pi) q, r;	
@@ -686,8 +662,10 @@ OPENQASM 3.0;
 qubit[2] q0;
 qubit[2] q1;
 qubit[2] q2;
+reset q0, q1, q2;
 	
-U(pi, 0, pi) q0, q1;
+U(pi, 0, pi) q0;
+U(pi, 0, pi) q1;
 ctrl(1) @ ctrl(1) @ U(pi, 0, pi) q0, q1, q2;	
 `
 
@@ -708,7 +686,8 @@ OPENQASM 3.0;
 qubit[2] q0;
 qubit[2] q1;
 qubit[2] q2;
-	
+reset q0, q1, q2;
+
 U(pi, 0, pi) q0;
 ctrl(1) @ negctrl(1) @ U(pi, 0, pi) q0, q1, q2;	
 `
