@@ -828,6 +828,35 @@ print q[0], q[1];
 	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
+func Example_def() {
+	qasm := `
+OPENQASM 3.0;
+
+def hoge(int[32] a, int[32] N) qubit[n] r0 -> bit[n] {
+    X r0[-1];
+    return measure r0;
+}
+
+const N = 3 * 5;
+const a = 7;
+
+qubit[3] r0;
+bit[3] c;
+reset r0;
+
+c = hoge(a, N) r0;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [001][  1]( 1.0000 0.0000i): 1.0000
+	// c: 001
+}
+
 func TestEvalExpr(t *testing.T) {
 	var cases = []struct {
 		in   ast.Expr

@@ -675,8 +675,6 @@ func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environ
 		if err := e.ctrlCall(x, gx, env); err != nil {
 			return fmt.Errorf("evalGate(%v): %v", x, err)
 		}
-
-		return nil
 	}
 
 	return nil
