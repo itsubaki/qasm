@@ -516,9 +516,7 @@ func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environ
 
 func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.Environment) ([]q.Qubit, []q.Qubit, error) {
 	cmod := ast.ModCtrl(mod)
-	if len(qargs)-len(cmod) != 1 {
-		return nil, nil, fmt.Errorf("invalid len(qargs)=%v, len(ctrl, negc)=%v", len(qargs), len(cmod))
-	}
+	cqargs := flatten(qargs[0 : len(qargs)-1])
 
 	var ctrl, negc []q.Qubit
 	var sum int
@@ -534,16 +532,17 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 
 			c = int(v.(*object.Int).Value)
 		}
-		sum = sum + c
 
 		switch m.Kind {
 		case lexer.CTRL:
-			ctrl = append(ctrl, qargs[sum-1]...)
+			ctrl = append(ctrl, cqargs[sum:sum+c]...)
 		case lexer.NEGCTRL:
-			negc = append(negc, qargs[sum-1]...)
+			negc = append(negc, cqargs[sum:sum+c]...)
 		default:
 			return nil, nil, fmt.Errorf("unsupported(%v)", m)
 		}
+
+		sum = sum + c
 	}
 
 	// fmt.Printf("ctrl: %v, negc: %v\n", ctrl, negc)
@@ -660,20 +659,9 @@ func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environ
 }
 
 func (e *Evaluator) ctrlCall(x *ast.CallExpr, g *ast.GateDecl, env *object.Environment) error {
-	// ctrl @ bell q0, q1;
-	if len(ast.ModCtrl(x.Modifier)) > 0 {
-		fmt.Printf("x: %v\n", x)
-		fmt.Printf("body: %v\n", g.Body)
-		fmt.Printf("qubit: %v\n", env.Qubit)
-		fmt.Println()
-
-		ctrl := ast.ModCtrl(x.Modifier)
-		body := addmod(g.Body, ctrl)
-		fmt.Printf("body: %v\n", body)
-		fmt.Printf("qargs: %v(%v)\n", env.Qubit.Name, env.Qubit.Value)
-		fmt.Println()
-
-		return nil
+	ctrl := ast.ModCtrl(x.Modifier)
+	if len(ctrl) > 0 {
+		g.Body = override(addmod(g.Body, ctrl), env.Qubit.Name)
 	}
 
 	// bell q0, q1;
@@ -682,6 +670,48 @@ func (e *Evaluator) ctrlCall(x *ast.CallExpr, g *ast.GateDecl, env *object.Envir
 	}
 
 	return nil
+}
+
+func override(block ast.BlockStmt, name []string) ast.BlockStmt {
+	var qargs ast.ExprList
+	for i := range name {
+		qargs.Append(&ast.IdentExpr{
+			Value: name[i],
+		})
+	}
+
+	var out ast.BlockStmt
+	for _, b := range block.List {
+		switch s := b.(type) {
+		case *ast.ApplyStmt:
+			out.Append(&ast.ApplyStmt{
+				Modifier: s.Modifier,
+				Kind:     s.Kind,
+				Name:     s.Name,
+				Params:   s.Params,
+				QArgs:    qargs,
+			})
+
+		case *ast.ExprStmt:
+			switch X := s.X.(type) {
+			case *ast.CallExpr:
+				out.Append(&ast.ExprStmt{
+					X: &ast.CallExpr{
+						Modifier: X.Modifier,
+						Name:     X.Name,
+						Params:   X.Params,
+						QArgs:    qargs,
+					},
+				})
+			default:
+				out.Append(s)
+			}
+		default:
+			out.Append(s)
+		}
+	}
+
+	return out
 }
 
 func inverse(block ast.BlockStmt) ast.BlockStmt {
