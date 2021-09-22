@@ -357,7 +357,7 @@ func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
 		case *object.Int:
 			params = append(params, float64(o.Value))
 		default:
-			return fmt.Errorf("unsupported(%v)", o)
+			return fmt.Errorf("unsupported(%v)", p)
 		}
 	}
 

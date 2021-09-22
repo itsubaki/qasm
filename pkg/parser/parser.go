@@ -539,7 +539,7 @@ func (p *Parser) parseModifier() []ast.Modifier {
 				Value: v.Literal, // 1
 			}
 
-			if v.Token == lexer.MINUS {
+			if v.Token == lexer.MINUS || v.Token == lexer.PLUS {
 				u := p.next()
 				p.expect(lexer.INT)
 
