@@ -324,20 +324,93 @@ ctrl(2) @ negctrl(2) @ x q0, q1, q2;
 	// [11 00 11][  3   0   3]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gateCXab() {
+func Example_gateCXqr() {
 	qasm := `
 OPENQASM 3.0;
 
 gate x q { U(pi, 0, pi) q; }
 gate cx a, b { ctrl @ x a, b; }
 
-qubit[2] q0;
+qubit[2] q;
+qubit[2] r;
 	
-x q0;
-cx q0, q1
+x q;
+cx q, r;
 `
 
 	// [00 00] -> [11 00] -> [11 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [11 00 11][  3   0   3]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_gateCXq0r0() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate cx a, b { ctrl @ x a, b; }
+
+qubit[2] q;
+qubit[2] r;
+	
+x q[0];
+cx q[0], r[0];
+`
+
+	// [00 00] -> [10 00] -> [10 10]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [11 00 11][  3   0   3]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_gateCXq0r() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate cx a, b { ctrl @ x a, b; }
+
+qubit[2] q;
+qubit[2] r;
+	
+x q[0];
+cx q[0], r;
+`
+
+	// [00 00] -> [10 00] -> [10 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [11 00 11][  3   0   3]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_gateCXqr0() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate cx a, b { ctrl @ x a, b; }
+
+qubit[2] q;
+qubit[2] r;
+	
+x q;
+cx q, r[0];
+`
+
+	// [00 00] -> [11 00] -> [11 10] -> [11 00]
 	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
@@ -357,7 +430,7 @@ gate cx a, b { ctrl @ x b, a; }
 qubit[2] q0;
 	
 x q1;
-cx q0, q1
+cx q0, q1;
 `
 
 	// [00 00] -> [00 11] -> [11 11]
