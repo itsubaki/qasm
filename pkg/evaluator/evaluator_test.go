@@ -945,6 +945,39 @@ IQFT r0;
 	// [110 1101][  6  13]( 0.0000-0.2500i): 0.0625
 }
 
+func Example_shorgate() {
+	qasm := `
+OPENQASM 3.0;
+
+gate shor(a ,N) r0, r1 {
+	CMODEXP2(a, N) r0, r1;
+	IQFT r0;
+}
+
+const N = 3 * 5;
+const a = 4;
+
+qubit[3] r0;
+qubit[4] r1;
+reset r0, r1;
+
+X r1[-1];
+H r0;
+shor(a, N) r0, r1;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [000 0001][  0   1]( 0.5000 0.0000i): 0.2500
+	// [000 0100][  0   4]( 0.5000 0.0000i): 0.2500
+	// [100 0001][  4   1]( 0.5000 0.0000i): 0.2500
+	// [100 0100][  4   4](-0.5000 0.0000i): 0.2500
+}
+
 func TestEvalExpr(t *testing.T) {
 	var cases = []struct {
 		in   ast.Expr
