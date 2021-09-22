@@ -40,6 +40,52 @@ func eval(qasm string, verbose ...bool) error {
 	return nil
 }
 
+func Example_verbose() {
+	qasm := `
+OPENQASM 3.0;
+
+gate h q { U(pi/2.0, 0, pi) q; }
+
+qubit q;
+reset q;
+
+h q;
+`
+
+	if err := eval(qasm, true); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// *ast.OpenQASM
+	// .  *ast.DeclStmt(OPENQASM 3.0;)
+	// .  []ast.Stmt
+	// .  .  *ast.DeclStmt(gate h q { U(pi / 2.0, 0, pi) q; })
+	// .  .  .  *ast.GateDecl(gate h q { U(pi / 2.0, 0, pi) q; })
+	// .  .  *ast.DeclStmt(qubit q;)
+	// .  .  .  *ast.GenDecl(qubit q)
+	// .  .  *ast.ResetStmt(reset q;)
+	// .  .  *ast.ExprStmt(h q;)
+	// .  .  .  *ast.CallExpr(h q)
+	// .  .  .  *ast.GateDecl(gate h q { U(pi / 2.0, 0, pi) q; })
+	// .  .  .  .  *ast.BlockStmt({ U(pi / 2.0, 0, pi) q; })
+	// .  .  .  .  .  *ast.ApplyStmt(U(pi / 2.0, 0, pi) q;)
+	// .  .  .  .  .  .  *ast.InfixExpr(pi / 2.0)
+	// .  .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  .  .  .  .  .  *ast.BasicLit(2.0)
+	// .  .  .  .  .  .  .  .  return *object.Float(2)
+	// .  .  .  .  .  .  .  return *object.Float(1.5707963267948966)
+	// .  .  .  .  .  .  *ast.BasicLit(0)
+	// .  .  .  .  .  .  .  return *object.Int(0)
+	// .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  *ast.PrintStmt(print;)
+	// [0][  0]( 0.7071 0.0000i): 0.5000
+	// [1][  1]( 0.7071 0.0000i): 0.5000
+}
+
 func Example_gateHermite() {
 	qasm := `
 OPENQASM 3.0;
@@ -508,6 +554,7 @@ Z q; Z q;
 H q; H q;
 T q; T q;
 S q; S q;
+QFT q; IQFT q;
 
 U(0, 0, 0) q;
 

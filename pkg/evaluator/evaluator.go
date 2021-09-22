@@ -515,12 +515,11 @@ func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environ
 }
 
 func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.Environment) ([]q.Qubit, []q.Qubit, error) {
-	cmod := ast.ModCtrl(mod)
 	cqargs := flatten(qargs[0 : len(qargs)-1])
 
 	var ctrl, negc []q.Qubit
 	var sum int
-	for _, m := range cmod {
+	for _, m := range ast.ModCtrl(mod) {
 		c := 1
 		if len(m.Index.List.List) > 0 {
 			x := m.Index.List.List[0]
@@ -538,8 +537,6 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 			ctrl = append(ctrl, cqargs[sum:sum+c]...)
 		case lexer.NEGCTRL:
 			negc = append(negc, cqargs[sum:sum+c]...)
-		default:
-			return nil, nil, fmt.Errorf("unsupported(%v)", m)
 		}
 
 		sum = sum + c
