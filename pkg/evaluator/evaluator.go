@@ -571,7 +571,7 @@ func (e *Evaluator) tryCtrlApply(ctrl, negc []q.Qubit, u matrix.Matrix, qargs []
 }
 
 func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Object, error) {
-	return nil, fmt.Errorf("not implemented")
+	return nil, fmt.Errorf("not implemented. <call(%v), env(%v)>", x, env)
 }
 
 func builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
