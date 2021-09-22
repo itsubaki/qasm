@@ -515,8 +515,9 @@ func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environ
 }
 
 func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.Environment) ([]q.Qubit, []q.Qubit, error) {
-	var ctrl, negc []q.Qubit
+	flat := flatten(qargs)
 
+	var ctrl, negc []q.Qubit
 	var sum int
 	for _, m := range ast.ModCtrl(mod) {
 		c := 1
@@ -531,7 +532,7 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 			c = int(v.(*object.Int).Value)
 		}
 
-		q := flatten(qargs)[sum : sum+c]
+		q := flat[sum : sum+c]
 
 		switch m.Kind {
 		case lexer.CTRL:
@@ -553,7 +554,20 @@ func (e *Evaluator) tryCtrlApply(ctrl, negc []q.Qubit, u matrix.Matrix, qargs []
 		return false
 	}
 
-	panic(fmt.Sprintf("not implemented. ctrl=%v, negc=%v, qargs=%v", ctrl, negc, qargs))
+	target := qargs[len(qargs)-1]
+	for _, t := range target {
+		if len(negc) > 0 {
+			e.Q.X(negc...)
+		}
+
+		e.Q.Controlled(u, append(ctrl, negc...), t)
+
+		if len(negc) > 0 {
+			e.Q.X(negc...)
+		}
+	}
+
+	return true
 }
 
 func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Object, error) {

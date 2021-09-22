@@ -208,7 +208,7 @@ ctrl(1) @ U(pi, 0, pi) q[0], r[0];
 	}
 
 	// Output:
-	//
+	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_ctrlqr() {
@@ -230,7 +230,7 @@ ctrl(1) @ U(pi, 0, pi) q, r;
 	}
 
 	// Output:
-	//
+	// [10 11][  2   3]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_ctrlq0r() {
@@ -252,7 +252,7 @@ ctrl(1) @ U(pi, 0, pi) q[0], r;
 	}
 
 	// Output:
-	//
+	// [10 11][  2   3]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_ctrlctrl() {
@@ -273,7 +273,7 @@ ctrl(1) @ ctrl(1) @ U(pi, 0, pi) q, r;
 	}
 
 	// Output:
-	//
+	// [11 11][  3   3]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_ctrl2ctrl2() {
@@ -295,7 +295,7 @@ ctrl(2) @ ctrl(2) @ U(pi, 0, pi) q0, q1, q2;
 	}
 
 	// Output:
-	//
+	// [11 11 11][  3   3   3]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_ctrl2negc2() {
@@ -317,7 +317,7 @@ ctrl(2) @ negctrl(2) @ U(pi, 0, pi) q0, q1, q2;
 	}
 
 	// Output:
-	//
+	// [11 00 11][  3   0   3]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_measure() {
