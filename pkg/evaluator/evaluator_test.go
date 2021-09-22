@@ -251,7 +251,7 @@ func Example_gateCtrlCX() {
 OPENQASM 3.0;
 
 gate x q { U(pi, 0, pi) q; }
-gate cx a, b { ctrl(1) @ x b, a; }
+gate cx a, b { ctrl(1) @ x a, b; }
 
 qubit q0;
 qubit q1;
