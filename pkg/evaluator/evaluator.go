@@ -663,9 +663,8 @@ func (e *Evaluator) ctrlCall(x *ast.CallExpr, g *ast.GateDecl, env *object.Envir
 	// ctrl @ bell q0, q1;
 	if len(ast.ModCtrl(x.Modifier)) > 0 {
 		fmt.Printf("x: %v\n", x)
-		fmt.Printf("g.Body: %v\n", g.Body)
-		fmt.Printf("extend.qubit: %v\n", env.Qubit)
-		fmt.Printf("outer.qubit: %v\n", env.Outer.Qubit)
+		fmt.Printf("body: %v\n", g.Body)
+		fmt.Printf("qubit: %v\n", env.Qubit)
 		fmt.Println()
 
 		ctrl := ast.ModCtrl(x.Modifier)
@@ -727,6 +726,16 @@ func addmod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
 	return out
 }
 
+func contains(s []int, t int) bool {
+	for _, j := range s {
+		if j == t {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) *object.Environment {
 	env := object.NewEnclosedEnvironment(outer)
 
@@ -744,10 +753,35 @@ func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 		env.Const[ast.Ident(g.Params.List.List[i])] = v
 	}
 
-	for i := range g.QArgs.List {
+	// count ctrl/negctrl
+	c := len(ast.ModCtrl(x.Modifier))
+
+	// target index
+	var target []int
+	for i := range x.QArgs.List {
+		target = append(target, c+i)
+	}
+
+	// ctrl
+	for i := range x.QArgs.List {
+		if contains(target, i) {
+			continue
+		}
+
 		v, ok := outer.Qubit.Get(x.QArgs.List[i])
 		if !ok {
 			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
+		}
+
+		n := fmt.Sprintf("c%v", i)
+		env.Qubit.Add(&ast.IdentExpr{Value: n}, v)
+	}
+
+	// target
+	for i := range g.QArgs.List {
+		v, ok := outer.Qubit.Get(x.QArgs.List[i+c])
+		if !ok {
+			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i+c]))
 		}
 
 		env.Qubit.Add(g.QArgs.List[i], v)
