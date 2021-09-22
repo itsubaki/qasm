@@ -591,10 +591,34 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 	case *ast.GateDecl:
 		return &object.Nil{}, e.gate(x, g, env)
 	case *ast.FuncDecl:
-		return nil, fmt.Errorf("not implemented. <call(%v), env(%v)>", x, env)
+		return e.fnc(x, g, env)
 	}
 
-	return nil, fmt.Errorf("not implemented. <call(%v), env(%v)>", x, env)
+	return nil, fmt.Errorf("unsupported. gate=%v", g)
+}
+
+func (e *Evaluator) fnc(x *ast.CallExpr, g *ast.FuncDecl, env *object.Environment) (object.Object, error) {
+	v, err := e.eval(&g.Body, e.extendf(x, g, env))
+	if err != nil {
+		return nil, fmt.Errorf("eval(%v): %v", &g.Body, err)
+	}
+
+	return v.(*object.ReturnValue).Value, nil
+}
+
+func (e *Evaluator) extendf(x *ast.CallExpr, g *ast.FuncDecl, outer *object.Environment) *object.Environment {
+	env := object.NewEnclosedEnvironment(outer)
+
+	for i := range g.QArgs.List {
+		v, ok := outer.Qubit.Get(x.QArgs.List[i])
+		if !ok {
+			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
+		}
+
+		env.Qubit.Add(g.QArgs.List[i], v)
+	}
+
+	return env
 }
 
 func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
