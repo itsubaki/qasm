@@ -610,7 +610,7 @@ func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environ
 
 	// inv
 	if len(ast.ModInv(x.Modifier))%2 == 1 {
-		gx.Body = inverse(g.Body)
+		gx.Body = inverse(gx.Body)
 	}
 
 	// U
