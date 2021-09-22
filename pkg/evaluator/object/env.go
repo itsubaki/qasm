@@ -1,6 +1,7 @@
 package object
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/itsubaki/q"
@@ -13,6 +14,16 @@ type Environment struct {
 	Const Const
 	Func  Func
 	Outer *Environment
+}
+
+func (e *Environment) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(fmt.Sprintf("const: %v, ", e.Const))
+	buf.WriteString(fmt.Sprintf("bit: %v, ", e.Bit.Value))
+	buf.WriteString(fmt.Sprintf("qubit: %v, ", e.Qubit.Value))
+	buf.WriteString(fmt.Sprintf("func: %v, ", e.Func))
+	return buf.String()
 }
 
 type Func map[string]ast.Decl
