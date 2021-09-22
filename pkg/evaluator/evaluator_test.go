@@ -200,6 +200,32 @@ ctrl(1) @ x q[0], r[0];
 	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
 }
 
+func Example_gateCtrlCX() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate cx a, b { ctrl(1) @ x b, a; }
+
+qubit q0;
+qubit q1;
+qubit q2;
+reset q0, q1, q2;
+
+x q0;
+x q2;
+ctrl(1) @ cx q0, q1, q2;
+`
+
+	// [0 0 0] -> [1 1 0] -> [1 1 1]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
+}
 func Example_gateCtrlqr() {
 	qasm := `
 OPENQASM 3.0;
@@ -423,6 +449,8 @@ gate x q { U(pi, 0, pi) q; }
 gate cx a, b { ctrl @ x b, a; }
 
 qubit[2] q0;
+qubit[2] q1;
+reset q0, q1;
 	
 x q1;
 cx q0, q1;

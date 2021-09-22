@@ -601,10 +601,8 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
 	env := e.extend(x, g, outer)
 
-	// add ctrl, negctrl
-	block := addmod(g.Body, ast.ModCtrl(x.Modifier))
-
 	// inv
+	block := g.Body
 	if len(ast.ModInv(x.Modifier))%2 == 1 {
 		block = inverse(block)
 	}
@@ -612,8 +610,13 @@ func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environ
 	// U
 	pow := ast.ModPow(x.Modifier)
 	if len(pow) == 0 {
-		if _, err := e.eval(&block, env); err != nil {
-			return fmt.Errorf("eval(%v): %v", &block, err)
+		if err := e.evalGate(x, &ast.GateDecl{
+			Name:   g.Name,
+			Params: g.Params,
+			QArgs:  g.QArgs,
+			Body:   block,
+		}, env); err != nil {
+			return fmt.Errorf("evalGate(%v): %v", x, err)
 		}
 
 		return nil
@@ -645,11 +648,42 @@ func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environ
 	// apply pow(2) @ U
 	for i := 0; i < p; i++ {
 		// U
-		if _, err := e.eval(&block, env); err != nil {
-			return fmt.Errorf("eval(%v): %v", &block, err)
+		if err := e.evalGate(x, &ast.GateDecl{
+			Name:   g.Name,
+			Params: g.Params,
+			QArgs:  g.QArgs,
+			Body:   block,
+		}, env); err != nil {
+			return fmt.Errorf("evalGate(%v): %v", x, err)
 		}
 
 		return nil
+	}
+
+	return nil
+}
+
+func (e *Evaluator) evalGate(x *ast.CallExpr, g *ast.GateDecl, env *object.Environment) error {
+	// ctrl @ bell q0, q1;
+	if len(ast.ModCtrl(x.Modifier)) > 0 {
+		fmt.Printf("x: %v\n", x)
+		fmt.Printf("g.Body: %v\n", g.Body)
+		fmt.Printf("extend.qubit: %v\n", env.Qubit)
+		fmt.Printf("outer.qubit: %v\n", env.Outer.Qubit)
+		fmt.Println()
+
+		ctrl := ast.ModCtrl(x.Modifier)
+		body := addmod(g.Body, ctrl)
+		fmt.Printf("body: %v\n", body)
+		fmt.Printf("qargs: %v(%v)\n", env.Qubit.Name, env.Qubit.Value)
+		fmt.Println()
+
+		return nil
+	}
+
+	// bell q0, q1;
+	if _, err := e.eval(&g.Body, env); err != nil {
+		return fmt.Errorf("eval(%v): %v", &g.Body, err)
 	}
 
 	return nil
