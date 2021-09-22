@@ -601,21 +601,22 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
 	env := e.extend(x, g, outer)
 
+	gx := &ast.GateDecl{
+		Name:   g.Name,
+		Params: g.Params,
+		QArgs:  g.QArgs,
+		Body:   g.Body,
+	}
+
 	// inv
-	block := g.Body
 	if len(ast.ModInv(x.Modifier))%2 == 1 {
-		block = inverse(block)
+		gx.Body = inverse(g.Body)
 	}
 
 	// U
 	pow := ast.ModPow(x.Modifier)
 	if len(pow) == 0 {
-		if err := e.evalGate(x, &ast.GateDecl{
-			Name:   g.Name,
-			Params: g.Params,
-			QArgs:  g.QArgs,
-			Body:   block,
-		}, env); err != nil {
+		if err := e.evalGate(x, gx, env); err != nil {
 			return fmt.Errorf("evalGate(%v): %v", x, err)
 		}
 
@@ -642,18 +643,13 @@ func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environ
 	// pow(-1) equals to Inv
 	if p < 0 {
 		p = -1 * p
-		block = inverse(block)
+		gx.Body = inverse(gx.Body)
 	}
 
 	// apply pow(2) @ U
 	for i := 0; i < p; i++ {
 		// U
-		if err := e.evalGate(x, &ast.GateDecl{
-			Name:   g.Name,
-			Params: g.Params,
-			QArgs:  g.QArgs,
-			Body:   block,
-		}, env); err != nil {
+		if err := e.evalGate(x, gx, env); err != nil {
 			return fmt.Errorf("evalGate(%v): %v", x, err)
 		}
 
