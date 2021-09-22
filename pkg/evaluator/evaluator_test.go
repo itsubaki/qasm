@@ -1002,6 +1002,15 @@ func TestEvalExpr(t *testing.T) {
 			},
 		},
 		{
+			in: &ast.BasicLit{
+				Kind:  lexer.STRING,
+				Value: "hoge",
+			},
+			want: &object.String{
+				Value: "hoge",
+			},
+		},
+		{
 			in: &ast.InfixExpr{
 				Kind: lexer.PLUS,
 				Left: &ast.BasicLit{
@@ -1155,6 +1164,30 @@ func TestEvalExpr(t *testing.T) {
 			},
 			want: &object.Int{
 				Value: -3,
+			},
+		},
+		{
+			in: &ast.UnaryExpr{
+				Kind: lexer.MINUS,
+				Value: &ast.BasicLit{
+					Kind:  lexer.FLOAT,
+					Value: "3.0",
+				},
+			},
+			want: &object.Float{
+				Value: -3.0,
+			},
+		},
+		{
+			in: &ast.UnaryExpr{
+				Kind: lexer.PLUS,
+				Value: &ast.BasicLit{
+					Kind:  lexer.INT,
+					Value: "3",
+				},
+			},
+			want: &object.Int{
+				Value: 3,
 			},
 		},
 		{
