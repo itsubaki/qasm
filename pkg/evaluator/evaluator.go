@@ -550,6 +550,10 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 		start = start + c
 	}
 
+	if len(ctrl)+len(negc) > 0 && len(cqargs)-len(ctrl)-len(negc) != 0 {
+		return nil, nil, fmt.Errorf("invalid ctrl/negc length")
+	}
+
 	// fmt.Printf("ctrl: %v, negc: %v\n", ctrl, negc)
 	return ctrl, negc, nil
 }
