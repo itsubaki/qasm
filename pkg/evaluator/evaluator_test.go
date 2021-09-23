@@ -421,6 +421,27 @@ ctrl(3) @ ctrl(1) @ U(pi, 0, pi) q0, q1, q2;
 	// [11 11 11][  3   3   3]( 1.0000 0.0000i): 1.0000
 }
 
+func Example_negcu() {
+	qasm := `
+OPENQASM 3.0;
+
+qubit[2] q;
+qubit[2] r;
+reset q, r;
+
+negctrl @ U(pi, 0, pi) q, r;	
+`
+
+	// [00 00] -> [00 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [00 11][  0   3]( 1.0000 0.0000i): 1.0000
+}
+
 func Example_ctrl2negc2u() {
 	qasm := `
 OPENQASM 3.0;
