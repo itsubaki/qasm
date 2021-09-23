@@ -432,9 +432,6 @@ ctrl(1) @ ctrl(1) @ x q, r;
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
-
-	// Output:
-	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_gateCtrl4() {
@@ -457,9 +454,6 @@ ctrl(4) @ x q0, q1, q2;
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
-
-	// Output:
-	// [11 11 11][  3   3   3]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_gateCXqr() {
