@@ -519,18 +519,26 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 
 	var ctrl, negc []q.Qubit
 	var sum int
-	for _, m := range ast.ModCtrl(mod) {
-		c := 1
-		if len(m.Index.List.List) > 0 {
-			x := m.Index.List.List[0]
-
-			v, err := e.eval(x, env)
-			if err != nil {
-				return nil, nil, fmt.Errorf("eval(%v): %v", x, err)
+	for i, m := range ast.ModCtrl(mod) {
+		if len(m.Index.List.List) == 0 {
+			switch m.Kind {
+			case lexer.CTRL:
+				ctrl = append(ctrl, qargs[i]...)
+			case lexer.NEGCTRL:
+				negc = append(negc, qargs[i]...)
 			}
 
-			c = int(v.(*object.Int).Value)
+			sum = sum + len(qargs[i])
+			continue
 		}
+
+		x := m.Index.List.List[0]
+		v, err := e.eval(x, env)
+		if err != nil {
+			return nil, nil, fmt.Errorf("eval(%v): %v", x, err)
+		}
+
+		c := int(v.(*object.Int).Value)
 
 		switch m.Kind {
 		case lexer.CTRL:
