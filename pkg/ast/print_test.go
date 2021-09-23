@@ -42,6 +42,7 @@ func Example() {
 					},
 				},
 			},
+			nil,
 		},
 	}
 
@@ -57,7 +58,7 @@ func Example() {
 	// .  .  .  }
 	// .  .  }
 	// .  }
-	// .  Stmts: []ast.Stmt (len = 3) {
+	// .  Stmts: []ast.Stmt (len = 4) {
 	// .  .  0: *ast.InclStmt {
 	// .  .  .  Path: ast.BasicLit {
 	// .  .  .  .  Kind: STRING
@@ -84,6 +85,7 @@ func Example() {
 	// .  .  .  .  }
 	// .  .  .  }
 	// .  .  }
+	// .  .  3: nil
 	// .  }
 	// }
 }
