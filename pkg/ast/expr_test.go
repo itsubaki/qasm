@@ -321,3 +321,47 @@ func TestModCtrl(t *testing.T) {
 		}
 	}
 }
+
+func TestBasicLitInt64(t *testing.T) {
+	var cases = []struct {
+		in   ast.BasicLit
+		want int64
+	}{
+		{
+			in: ast.BasicLit{
+				Kind:  lexer.INT,
+				Value: "10",
+			},
+			want: 10,
+		},
+	}
+
+	for _, c := range cases {
+		got := c.in.Int64()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
+
+func TestBasicLitFloat64(t *testing.T) {
+	var cases = []struct {
+		in   ast.BasicLit
+		want float64
+	}{
+		{
+			in: ast.BasicLit{
+				Kind:  lexer.FLOAT,
+				Value: "10.0",
+			},
+			want: 10.0,
+		},
+	}
+
+	for _, c := range cases {
+		got := c.in.Float64()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
