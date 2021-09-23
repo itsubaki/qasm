@@ -79,20 +79,3 @@ func TestIdent(t *testing.T) {
 		}
 	}
 }
-
-func TestEquals(t *testing.T) {
-	var cases = []struct {
-		x, y interface{}
-		want bool
-	}{
-		{&ast.IdentExpr{Value: "x"}, &ast.IdentExpr{Value: "x"}, true},
-		{&ast.IdentExpr{Value: "x"}, &ast.IdentExpr{Value: "y"}, false},
-	}
-
-	for _, c := range cases {
-		got := ast.Equals(c.x, c.y)
-		if got != c.want {
-			t.Errorf("got=%v, want=%v", got, c.want)
-		}
-	}
-}

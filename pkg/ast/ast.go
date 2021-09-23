@@ -44,14 +44,6 @@ type Decl interface {
 	declNode()
 }
 
-func Equals(x, y interface{}) bool {
-	if Ident(x) == Ident(y) {
-		return true
-	}
-
-	return false
-}
-
 func Ident(x interface{}) string {
 	switch x := x.(type) {
 	case *IdentExpr:
