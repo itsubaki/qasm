@@ -1065,16 +1065,13 @@ gate shor(a ,N) r0, r1 {
 	IQFT r0;
 }
 
-const N = 3 * 5;
-const a = 4;
-
 qubit[3] r0;
 qubit[4] r1;
 reset r0, r1;
 
 X r1[-1];
 H r0;
-shor(a, N) r0, r1;
+shor(4, 15) r0, r1;
 `
 
 	if err := eval(qasm); err != nil {
