@@ -745,7 +745,7 @@ ctrl(1) @ ctrl(3) @ x q0, q1, q2;
 	// [11 11 11][  3   3   3]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrl3negctrl1x() {
+func Example_ctrl3negc1x() {
 	qasm := `
 OPENQASM 3.0;
 
