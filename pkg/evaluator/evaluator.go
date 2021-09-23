@@ -518,36 +518,13 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 	cqargs := flatten(qargs[0 : len(qargs)-1])
 
 	var ctrl, negc []q.Qubit
-	var start int
 	for i, m := range ast.ModCtrl(mod) {
-		if len(m.Index.List.List) == 0 {
-			switch m.Kind {
-			case lexer.CTRL:
-				ctrl = append(ctrl, qargs[i]...)
-			case lexer.NEGCTRL:
-				negc = append(negc, qargs[i]...)
-			}
-
-			start = start + len(qargs[i])
-			continue
-		}
-
-		x := m.Index.List.List[0]
-		v, err := e.eval(x, env)
-		if err != nil {
-			return nil, nil, fmt.Errorf("eval(%v): %v", x, err)
-		}
-
-		c := int(v.(*object.Int).Value)
-
 		switch m.Kind {
 		case lexer.CTRL:
-			ctrl = append(ctrl, cqargs[start:start+c]...)
+			ctrl = append(ctrl, qargs[i]...)
 		case lexer.NEGCTRL:
-			negc = append(negc, cqargs[start:start+c]...)
+			negc = append(negc, qargs[i]...)
 		}
-
-		start = start + c
 	}
 
 	if len(ctrl)+len(negc) > 0 && len(cqargs)-len(ctrl)-len(negc) != 0 {
@@ -559,26 +536,21 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 }
 
 func (e *Evaluator) tryCtrlApply(ctrl, negc []q.Qubit, u matrix.Matrix, qargs [][]q.Qubit) bool {
-	if len(ctrl) == 0 && len(negc) == 0 {
+	c := append(ctrl, negc...)
+	if len(c) == 0 {
 		return false
 	}
 
 	target := qargs[len(qargs)-1]
 	for i := range target {
-		var c []q.Qubit
-		if len(ctrl) > i {
-			c = append(c, ctrl[i])
-		}
-
-		if len(negc) > i {
-			c = append(c, negc[i])
-			e.Q.X(negc[i])
+		if len(negc) > 0 {
+			e.Q.X(negc...)
 		}
 
 		e.Q.Controlled(u, c, target[i])
 
-		if len(negc) > i {
-			e.Q.X(negc[i])
+		if len(negc) > 0 {
+			e.Q.X(negc...)
 		}
 	}
 
@@ -736,6 +708,10 @@ func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 	// target index
 	var target []int
 	for i := range x.QArgs.List {
+		if c+i > len(x.QArgs.List)-1 {
+			break
+		}
+
 		target = append(target, c+i)
 	}
 
