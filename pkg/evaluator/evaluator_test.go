@@ -109,7 +109,7 @@ x q; x q;
 	// [0][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gateQargs() {
+func Example_gateArrayQargs() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -139,7 +139,7 @@ func Example_gateInv() {
 	qasm := `
 OPENQASM 3.0;
 
-gate u q { U(1.0, 2.0, 3.0) q; }
+gate u q { U(1.0, 2.0, 3.0) q; U(3.0, 2.0, 1.0) q; }
 
 qubit[2] q;
 reset q;
@@ -246,6 +246,30 @@ ctrl @ x q[0], r[0];
 	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
 }
 
+func Example_gateCtrlXqr() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+
+qubit[2] q;
+qubit[2] r;
+reset q, r;
+	
+x q;
+ctrl @ x q, r;	
+`
+
+	// [00 00] -> [11 00] -> [11 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [11 11][  3   3]( 1.0000 0.0000i): 1.0000
+}
+
 func Example_gateCtrlXq0r() {
 	qasm := `
 OPENQASM 3.0;
@@ -270,7 +294,7 @@ ctrl @ x q[0], r;
 	// [10 11][  2   3]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gateCtrlXqr() {
+func Example_gateCtrlXq0qr() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -317,30 +341,7 @@ ctrl(2) @ x q, r;
 	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gateCtrl1Ctrl1Xq0q1r() {
-	qasm := `
-OPENQASM 3.0;
-
-gate x q { U(pi, 0, pi) q; }
-
-qubit[2] q;
-qubit[2] r;
-
-x q[0];
-ctrl(1) @ ctrl(1) @ x q[0], q[1], r;	
-`
-
-	// [00 00] -> [10 00] -> [10 10]
-	if err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
-}
-
-func Example_gateCtrl2ctrl2() {
+func Example_gateCtrl1ctrl3() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -352,7 +353,7 @@ qubit[2] q2;
 	
 x q0;
 x q1;
-ctrl(2) @ ctrl(2) @ x q0, q1, q2;	
+ctrl(1) @ ctrl(3) @ x q0, q1, q2;	
 `
 
 	// [00 00 00] -> [11 11 00] -> [11 11 11]
@@ -365,7 +366,7 @@ ctrl(2) @ ctrl(2) @ x q0, q1, q2;
 	// [11 11 11][  3   3   3]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gateCtrl2negc2() {
+func Example_gateCtrl3negc1() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -376,17 +377,60 @@ qubit[2] q1;
 qubit[2] q2;
 	
 x q0;
-ctrl(2) @ negctrl(2) @ x q0, q1, q2;	
+x q1[0];
+ctrl(3) @ negctrl(1) @ x q0, q1, q2;	
 `
 
-	// [00 00 00] -> [11 00 00] -> [11 00 11]
+	// [00 00 00] -> [11 10 00] -> [11 10 11]
 	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
 
 	// Output:
-	// [11 00 11][  3   0   3]( 1.0000 0.0000i): 1.0000
+	// [11 10 11][  3   2   3]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_gateCtrl1Ctrl1() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+
+qubit[2] q;
+qubit[2] r;
+
+x q[0];
+ctrl(1) @ ctrl(1) @ x q, r;	
+`
+
+	// [00 00] -> [10 00] -> [10 10]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+}
+
+func Example_gateCtrl4() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+
+qubit[2] q0;
+qubit[2] q1;
+qubit[2] q2;
+	
+x q0;
+x q1;
+ctrl(4) @ x q0, q1, q2;	
+`
+
+	// [00 00 00] -> [11 11 00] -> [11 11 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
 }
 
 func Example_gateCXqr() {
@@ -466,7 +510,7 @@ func Example_gateCXqr0() {
 OPENQASM 3.0;
 
 gate x q { U(pi, 0, pi) q; }
-gate cx a, b { ctrl(1) @ x a, b; }
+gate cx a, b { ctrl @ x a, b; }
 
 qubit[2] q;
 qubit[2] r;
@@ -490,7 +534,7 @@ func Example_gateCXba() {
 OPENQASM 3.0;
 
 gate x q { U(pi, 0, pi) q; }
-gate cx a, b { ctrl(1) @ x b, a; }
+gate cx a, b { ctrl @ x b, a; }
 
 qubit[2] q0;
 qubit[2] q1;
@@ -597,7 +641,7 @@ U(pi, 0, pi) q[0];
 	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_qargs() {
+func Example_arrayQargs() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -770,7 +814,7 @@ qubit[2] r;
 reset q, r;
 	
 U(pi, 0, pi) q;
-ctrl(1) @ U(pi, 0, pi) q, r;	
+ctrl(2) @ U(pi, 0, pi) q, r;	
 `
 
 	// [00 00] -> [11 00] -> [11 11]
@@ -783,7 +827,7 @@ ctrl(1) @ U(pi, 0, pi) q, r;
 	// [11 11][  3   3]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrl2ctrl2() {
+func Example_ctrl3ctrl1() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -794,7 +838,7 @@ reset q0, q1, q2;
 	
 U(pi, 0, pi) q0;
 U(pi, 0, pi) q1;
-ctrl(1) @ ctrl(1) @ U(pi, 0, pi) q0, q1, q2;	
+ctrl(3) @ ctrl(1) @ U(pi, 0, pi) q0, q1, q2;	
 `
 
 	// [00 00 00] -> [11 11 00] -> [11 11 11]

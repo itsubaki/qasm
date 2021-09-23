@@ -518,7 +518,7 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 	cqargs := flatten(qargs[0 : len(qargs)-1])
 
 	var ctrl, negc []q.Qubit
-	var sum int
+	var start int
 	for i, m := range ast.ModCtrl(mod) {
 		if len(m.Index.List.List) == 0 {
 			switch m.Kind {
@@ -528,7 +528,7 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 				negc = append(negc, qargs[i]...)
 			}
 
-			sum = sum + len(qargs[i])
+			start = start + len(qargs[i])
 			continue
 		}
 
@@ -542,12 +542,16 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 
 		switch m.Kind {
 		case lexer.CTRL:
-			ctrl = append(ctrl, cqargs[sum:sum+c]...)
+			ctrl = append(ctrl, cqargs[start:start+c]...)
 		case lexer.NEGCTRL:
-			negc = append(negc, cqargs[sum:sum+c]...)
+			negc = append(negc, cqargs[start:start+c]...)
 		}
 
-		sum = sum + c
+		start = start + c
+	}
+
+	if len(ctrl)+len(negc) > 0 && len(cqargs)-len(ctrl)-len(negc) != 0 {
+		return nil, nil, fmt.Errorf("invalid ctrl/negc length")
 	}
 
 	// fmt.Printf("ctrl: %v, negc: %v\n", ctrl, negc)
@@ -699,6 +703,70 @@ func (e *Evaluator) ctrlCall(x *ast.CallExpr, g *ast.GateDecl, env *object.Envir
 	return nil
 }
 
+func contains(s []int, t int) bool {
+	for _, j := range s {
+		if j == t {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) *object.Environment {
+	env := object.NewEnclosedEnvironment(outer)
+
+	for i := range g.Params.List.List {
+		if v, ok := outer.Const[ast.Ident(x.Params.List.List[i])]; ok {
+			env.Const[ast.Ident(g.Params.List.List[i])] = v
+			continue
+		}
+
+		v, err := e.eval(x.Params.List.List[i], outer)
+		if err != nil {
+			panic(fmt.Sprintf("eval(%v): %v", x.Params.List.List[i], err))
+		}
+
+		env.Const[ast.Ident(g.Params.List.List[i])] = v
+	}
+
+	// count ctrl/negctrl
+	c := len(ast.ModCtrl(x.Modifier))
+
+	// target index
+	var target []int
+	for i := range x.QArgs.List {
+		target = append(target, c+i)
+	}
+
+	// ctrl
+	for i := range x.QArgs.List {
+		if contains(target, i) {
+			continue
+		}
+
+		v, ok := outer.Qubit.Get(x.QArgs.List[i])
+		if !ok {
+			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
+		}
+
+		n := fmt.Sprintf("c%v", i)
+		env.Qubit.Add(&ast.IdentExpr{Value: n}, v)
+	}
+
+	// target
+	for i := range g.QArgs.List {
+		v, ok := outer.Qubit.Get(x.QArgs.List[i+c])
+		if !ok {
+			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i+c]))
+		}
+
+		env.Qubit.Add(g.QArgs.List[i], v)
+	}
+
+	return env
+}
+
 func override(block ast.BlockStmt, name []string) ast.BlockStmt {
 	var qargs ast.ExprList
 	for i := range name {
@@ -781,70 +849,6 @@ func addmod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
 	}
 
 	return out
-}
-
-func contains(s []int, t int) bool {
-	for _, j := range s {
-		if j == t {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) *object.Environment {
-	env := object.NewEnclosedEnvironment(outer)
-
-	for i := range g.Params.List.List {
-		if v, ok := outer.Const[ast.Ident(x.Params.List.List[i])]; ok {
-			env.Const[ast.Ident(g.Params.List.List[i])] = v
-			continue
-		}
-
-		v, err := e.eval(x.Params.List.List[i], outer)
-		if err != nil {
-			panic(fmt.Sprintf("eval(%v): %v", x.Params.List.List[i], err))
-		}
-
-		env.Const[ast.Ident(g.Params.List.List[i])] = v
-	}
-
-	// count ctrl/negctrl
-	c := len(ast.ModCtrl(x.Modifier))
-
-	// target index
-	var target []int
-	for i := range x.QArgs.List {
-		target = append(target, c+i)
-	}
-
-	// ctrl
-	for i := range x.QArgs.List {
-		if contains(target, i) {
-			continue
-		}
-
-		v, ok := outer.Qubit.Get(x.QArgs.List[i])
-		if !ok {
-			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
-		}
-
-		n := fmt.Sprintf("c%v", i)
-		env.Qubit.Add(&ast.IdentExpr{Value: n}, v)
-	}
-
-	// target
-	for i := range g.QArgs.List {
-		v, ok := outer.Qubit.Get(x.QArgs.List[i+c])
-		if !ok {
-			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i+c]))
-		}
-
-		env.Qubit.Add(g.QArgs.List[i], v)
-	}
-
-	return env
 }
 
 func builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
