@@ -518,7 +518,7 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 	cqargs := flatten(qargs[0 : len(qargs)-1])
 
 	var ctrl, negc []q.Qubit
-	var sum int
+	var start int
 	for i, m := range ast.ModCtrl(mod) {
 		if len(m.Index.List.List) == 0 {
 			switch m.Kind {
@@ -528,7 +528,7 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 				negc = append(negc, qargs[i]...)
 			}
 
-			sum = sum + len(qargs[i])
+			start = start + len(qargs[i])
 			continue
 		}
 
@@ -542,12 +542,12 @@ func (e *Evaluator) tryCtrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.E
 
 		switch m.Kind {
 		case lexer.CTRL:
-			ctrl = append(ctrl, cqargs[sum:sum+c]...)
+			ctrl = append(ctrl, cqargs[start:start+c]...)
 		case lexer.NEGCTRL:
-			negc = append(negc, cqargs[sum:sum+c]...)
+			negc = append(negc, cqargs[start:start+c]...)
 		}
 
-		sum = sum + c
+		start = start + c
 	}
 
 	// fmt.Printf("ctrl: %v, negc: %v\n", ctrl, negc)
