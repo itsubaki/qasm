@@ -103,20 +103,6 @@ func (p *printer) print(x reflect.Value) {
 		p.indent--
 		p.printf("}")
 
-	case reflect.Array:
-		p.printf("%s {", x.Type())
-		if x.Len() > 0 {
-			p.indent++
-			p.printf("\n")
-			for i, n := 0, x.Len(); i < n; i++ {
-				p.printf("%d: ", i)
-				p.print(x.Index(i))
-				p.printf("\n")
-			}
-			p.indent--
-		}
-		p.printf("}")
-
 	case reflect.Slice:
 		p.printf("%s (len = %d) {", x.Type(), x.Len())
 		if x.Len() > 0 {
