@@ -157,6 +157,27 @@ h q;
 	// [1][  1]( 0.7071 0.0000i): 0.5000
 }
 
+func Example_incl() {
+	qasm := `
+OPENQASM 3.0;
+include "../../testdata/stdgates.qasm";
+
+qubit q;
+reset q;
+
+h q;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [0][  0]( 0.7071 0.0000i): 0.5000
+	// [1][  1]( 0.7071 0.0000i): 0.5000
+}
+
 func Example_u() {
 	qasm := `
 OPENQASM 3.0;
@@ -1014,7 +1035,7 @@ IQFT r0;
 	// [110 1101][  6  13]( 0.0000-0.2500i): 0.0625
 }
 
-func Example_shorgate() {
+func Example_shor2() {
 	qasm := `
 OPENQASM 3.0;
 
