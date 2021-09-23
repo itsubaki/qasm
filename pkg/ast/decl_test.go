@@ -246,3 +246,45 @@ func TestDecl(t *testing.T) {
 		}
 	}
 }
+
+func TestGenDecl(t *testing.T) {
+	var cases = []struct {
+		in   ast.GenDecl
+		want int
+	}{
+		{
+			in: ast.GenDecl{
+				Kind: lexer.QUBIT,
+				Type: &ast.IndexExpr{
+					Name: ast.IdentExpr{
+						Value: lexer.Tokens[lexer.QUBIT],
+					},
+					Value: "2",
+				},
+				Name: ast.IdentExpr{
+					Value: "q",
+				},
+			},
+			want: 2,
+		},
+		{
+			in: ast.GenDecl{
+				Kind: lexer.QUBIT,
+				Type: &ast.IdentExpr{
+					Value: lexer.Tokens[lexer.QUBIT],
+				},
+				Name: ast.IdentExpr{
+					Value: "q",
+				},
+			},
+			want: 1,
+		},
+	}
+
+	for _, c := range cases {
+		got := c.in.Size()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
