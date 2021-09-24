@@ -359,19 +359,8 @@ func TestExprList(t *testing.T) {
 	}
 }
 
-func TestParenExpr(t *testing.T) {
-	x := &ast.ParenExpr{}
-
-	if x.Literal() != lexer.Tokens[lexer.LPAREN] {
-		t.Errorf("invalid literal= %v", x.Literal())
-	}
-}
 func TestBadExpr(t *testing.T) {
 	x := &ast.BadExpr{}
-
-	if len(x.Literal()) > 0 {
-		t.Errorf("invalid literal= %v", x.Literal())
-	}
 
 	if len(x.String()) > 0 {
 		t.Errorf("invalid literal= %v", x.Literal())
