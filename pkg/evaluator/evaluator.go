@@ -669,16 +669,6 @@ func (e *Evaluator) ctrlCall(x *ast.CallExpr, body ast.BlockStmt, env *object.En
 	return nil
 }
 
-func contains(s []int, t int) bool {
-	for _, j := range s {
-		if j == t {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) *object.Environment {
 	env := object.NewEnclosedEnvironment(outer)
 
@@ -696,25 +686,14 @@ func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 		env.Const[ast.Ident(g.Params.List.List[i])] = v
 	}
 
-	// count ctrl/negctrl
+	// count ctrl/negctrl equals to target
+	// ctrl @ negctrl @ x q0, q1, q2
+	// q2 is target
 	c := len(ast.ModCtrl(x.Modifier))
 
-	// target index
-	var target []int
-	for i := range x.QArgs.List {
-		if c+i > len(x.QArgs.List)-1 {
-			break
-		}
-
-		target = append(target, c+i)
-	}
-
 	// ctrl
-	for i := range x.QArgs.List {
-		if contains(target, i) {
-			continue
-		}
-
+	// loop with x.QArgs.List
+	for i := 0; i < c; i++ {
 		v, ok := outer.Qubit.Get(x.QArgs.List[i])
 		if !ok {
 			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
@@ -726,9 +705,9 @@ func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 
 	// target
 	for i := range g.QArgs.List {
-		v, ok := outer.Qubit.Get(x.QArgs.List[i+c])
+		v, ok := outer.Qubit.Get(x.QArgs.List[c+i])
 		if !ok {
-			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i+c]))
+			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[c+i]))
 		}
 
 		env.Qubit.Add(g.QArgs.List[i], v)
