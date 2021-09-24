@@ -747,11 +747,7 @@ func override(block ast.BlockStmt, name []string) ast.BlockStmt {
 						QArgs:    qargs,
 					},
 				})
-			default:
-				out.Append(s)
 			}
-		default:
-			out.Append(s)
 		}
 	}
 
@@ -788,12 +784,7 @@ func addmod(block ast.BlockStmt, mod []ast.Modifier) ast.BlockStmt {
 						QArgs:    X.QArgs,
 					},
 				})
-			default:
-				out.Append(s)
 			}
-
-		default:
-			out.Append(s)
 		}
 	}
 
