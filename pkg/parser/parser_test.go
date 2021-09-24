@@ -84,6 +84,8 @@ func TestParseStmt(t *testing.T) {
 		{"measure q[0], q[1];"},
 		{"c = measure q;"},
 		{"c[0] = measure q[0];"},
+		{"return;"},
+		{"return measure q;"},
 		{"print;"},
 		{"print q;"},
 		{"print q, p;"},
