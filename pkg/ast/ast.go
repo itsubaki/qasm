@@ -62,5 +62,5 @@ func Ident(x interface{}) string {
 		return x.Value
 	}
 
-	panic(fmt.Errorf("invalid type=%#v", x))
+	panic(fmt.Sprintf("invalid type=%T", x))
 }

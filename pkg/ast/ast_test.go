@@ -78,3 +78,14 @@ func TestIdent(t *testing.T) {
 		}
 	}
 }
+
+func TestIdentPanic(t *testing.T) {
+	defer func() {
+		if err := recover(); err != "invalid type=string" {
+			t.Fail()
+		}
+	}()
+
+	ast.Ident("hoge")
+	t.Fail()
+}
