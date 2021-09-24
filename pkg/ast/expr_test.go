@@ -365,3 +365,46 @@ func TestBasicLitFloat64(t *testing.T) {
 		}
 	}
 }
+
+func TestExprLiteral(t *testing.T) {
+	var cases = []struct {
+		in   ast.Expr
+		want string
+	}{}
+
+	for _, c := range cases {
+		got := c.in.Literal()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
+
+func TestExprList(t *testing.T) {
+	x := &ast.ExprList{}
+	x.Append(&ast.BadExpr{})
+	x.Append(&ast.BadExpr{})
+
+	if x.Len() != 2 {
+		t.Errorf("invalid length=%v", x.Len())
+	}
+}
+
+func TestParenExpr(t *testing.T) {
+	x := &ast.ParenExpr{}
+
+	if x.Literal() != lexer.Tokens[lexer.LPAREN] {
+		t.Errorf("invalid literal= %v", x.Literal())
+	}
+}
+func TestBadExpr(t *testing.T) {
+	x := &ast.BadExpr{}
+
+	if len(x.Literal()) > 0 {
+		t.Errorf("invalid literal= %v", x.Literal())
+	}
+
+	if len(x.String()) > 0 {
+		t.Errorf("invalid literal= %v", x.Literal())
+	}
+}
