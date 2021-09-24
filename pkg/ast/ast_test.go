@@ -64,7 +64,6 @@ func TestIdent(t *testing.T) {
 	}{
 		{&ast.IdentExpr{Value: "ident"}, "ident"},
 		{&ast.IndexExpr{Name: ast.IdentExpr{Value: "index"}}, "index"},
-		{&ast.ArrayExpr{Name: "array"}, "array"},
 		{&ast.GenDecl{Name: ast.IdentExpr{Value: "gendecl"}}, "gendecl"},
 		{&ast.GenConst{Name: ast.IdentExpr{Value: "genconst"}}, "genconst"},
 		{&ast.GateDecl{Name: "gatedecl"}, "gatedecl"},

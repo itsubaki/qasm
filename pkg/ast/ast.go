@@ -50,8 +50,6 @@ func Ident(x interface{}) string {
 		return x.Value
 	case *IndexExpr:
 		return x.Name.Value
-	case *ArrayExpr:
-		return x.Name
 	case *GenDecl:
 		return x.Name.Value
 	case *GenConst:

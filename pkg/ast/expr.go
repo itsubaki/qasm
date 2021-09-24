@@ -112,27 +112,6 @@ func (x *IndexExpr) Int() int {
 	return v
 }
 
-type ArrayExpr struct {
-	Type IndexExpr
-	Name string
-}
-
-func (x *ArrayExpr) exprNode() {}
-
-func (x *ArrayExpr) Literal() string {
-	return x.Type.Literal()
-}
-
-func (x *ArrayExpr) String() string {
-	var buf bytes.Buffer
-
-	buf.WriteString(x.Type.String())
-	buf.WriteString(" ")
-	buf.WriteString(x.Name)
-
-	return buf.String()
-}
-
 type BasicLit struct {
 	Kind  lexer.Token // lexer.INT, lexer.FLOAT, lexer.STRING
 	Value string

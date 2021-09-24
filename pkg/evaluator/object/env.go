@@ -70,9 +70,6 @@ func (b *Bit) Get(a ast.Expr) ([]int64, bool) {
 	case *ast.IdentExpr:
 		out, ok := b.Value[x.Value]
 		return out, ok
-	case *ast.ArrayExpr:
-		out, ok := b.Value[x.Name]
-		return out, ok
 	case *ast.IndexExpr:
 		out, ok := b.Value[x.Name.Value]
 		index := Index(x.Int(), len(out))
@@ -97,9 +94,6 @@ func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 	switch x := a.(type) {
 	case *ast.IdentExpr:
 		out, ok := qb.Value[x.Value]
-		return out, ok
-	case *ast.ArrayExpr:
-		out, ok := qb.Value[x.Name]
 		return out, ok
 	case *ast.IndexExpr:
 		out, ok := qb.Value[x.Name.Value]

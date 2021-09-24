@@ -13,18 +13,6 @@ func TestExpr(t *testing.T) {
 		want string
 	}{
 		{
-			&ast.ArrayExpr{
-				Type: ast.IndexExpr{
-					Name: ast.IdentExpr{
-						Value: "int",
-					},
-					Value: "32",
-				},
-				Name: "a",
-			},
-			"int[32] a",
-		},
-		{
 			&ast.MeasureExpr{
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
@@ -149,33 +137,6 @@ func TestExpr(t *testing.T) {
 				},
 			},
 			"(a, N)",
-		},
-		{
-			&ast.ParenExpr{
-				List: ast.ExprList{
-					List: []ast.Expr{
-						&ast.ArrayExpr{
-							Type: ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "int",
-								},
-								Value: "32",
-							},
-							Name: "a",
-						},
-						&ast.ArrayExpr{
-							Type: ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "int",
-								},
-								Value: "32",
-							},
-							Name: "N",
-						},
-					},
-				},
-			},
-			"(int[32] a, int[32] N)",
 		},
 		{
 			&ast.InfixExpr{

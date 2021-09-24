@@ -62,20 +62,6 @@ func TestStmt(t *testing.T) {
 			"measure q -> c;",
 		},
 		{
-			&ast.ExprStmt{
-				X: &ast.ArrayExpr{
-					Type: ast.IndexExpr{
-						Name: ast.IdentExpr{
-							Value: "int",
-						},
-						Value: "32",
-					},
-					Name: "a",
-				},
-			},
-			"int[32] a;",
-		},
-		{
 			&ast.ResetStmt{
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
