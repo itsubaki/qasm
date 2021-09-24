@@ -331,7 +331,15 @@ func TestExprLiteral(t *testing.T) {
 	var cases = []struct {
 		in   ast.Expr
 		want string
-	}{}
+	}{
+		{&ast.BadExpr{}, ""},
+		{&ast.ExprList{}, ""},
+		{&ast.ParenExpr{}, lexer.Tokens[lexer.LPAREN]},
+		{&ast.IdentExpr{}, lexer.Tokens[lexer.IDENT]},
+		{&ast.IndexExpr{}, lexer.Tokens[lexer.IDENT]},
+		{&ast.BasicLit{Kind: lexer.INT}, lexer.Tokens[lexer.INT]},
+		{&ast.CallExpr{}, lexer.Tokens[lexer.GATE]},
+	}
 
 	for _, c := range cases {
 		got := c.in.Literal()
