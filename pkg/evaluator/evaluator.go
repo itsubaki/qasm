@@ -604,24 +604,18 @@ func (e *Evaluator) extendf(x *ast.CallExpr, g *ast.FuncDecl, outer *object.Envi
 
 func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
 	env := e.extend(x, g, outer)
-
-	gx := &ast.GateDecl{
-		Name:   g.Name,
-		Params: g.Params,
-		QArgs:  g.QArgs,
-		Body:   g.Body,
-	}
+	body := g.Body
 
 	// inv
 	if len(ast.ModInv(x.Modifier))%2 == 1 {
-		gx.Body = inverse(gx.Body)
+		body = inverse(body)
 	}
 
 	// U
 	pow := ast.ModPow(x.Modifier)
 	if len(pow) == 0 {
-		if err := e.ctrlCall(x, gx, env); err != nil {
-			return fmt.Errorf("evalGate(%v): %v", x, err)
+		if err := e.ctrlCall(x, body, env); err != nil {
+			return fmt.Errorf("ctrlCall(%v): %v", x, err)
 		}
 
 		return nil
@@ -647,29 +641,29 @@ func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environ
 	// pow(-1) equals to Inv
 	if p < 0 {
 		p = -1 * p
-		gx.Body = inverse(gx.Body)
+		body = inverse(body)
 	}
 
 	// apply pow(2) @ U
 	for i := 0; i < p; i++ {
 		// U
-		if err := e.ctrlCall(x, gx, env); err != nil {
-			return fmt.Errorf("evalGate(%v): %v", x, err)
+		if err := e.ctrlCall(x, body, env); err != nil {
+			return fmt.Errorf("ctrlCall(%v): %v", x, err)
 		}
 	}
 
 	return nil
 }
 
-func (e *Evaluator) ctrlCall(x *ast.CallExpr, g *ast.GateDecl, env *object.Environment) error {
+func (e *Evaluator) ctrlCall(x *ast.CallExpr, body ast.BlockStmt, env *object.Environment) error {
 	ctrl := ast.ModCtrl(x.Modifier)
 	if len(ctrl) > 0 {
-		g.Body = override(addmod(g.Body, ctrl), env.Qubit.Name)
+		body = override(addmod(body, ctrl), env.Qubit.Name)
 	}
 
 	// bell q0, q1;
-	if _, err := e.eval(&g.Body, env); err != nil {
-		return fmt.Errorf("eval(%v): %v", &g.Body, err)
+	if _, err := e.eval(&body, env); err != nil {
+		return fmt.Errorf("eval(%v): %v", &body, err)
 	}
 
 	return nil
