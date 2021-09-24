@@ -11,14 +11,14 @@ type DeclList struct {
 	List []Decl
 }
 
-func (l *DeclList) Append(d Decl) {
-	l.List = append(l.List, d)
+func (d *DeclList) Append(e Decl) {
+	d.List = append(d.List, e)
 }
 
-func (l *DeclList) String() string {
+func (d *DeclList) String() string {
 	var list []string
-	for _, d := range l.List {
-		list = append(list, d.String())
+	for _, e := range d.List {
+		list = append(list, e.String())
 	}
 
 	return strings.Join(list, ", ")
@@ -44,8 +44,8 @@ func (d *ParenDecl) String() string {
 	return buf.String()
 }
 
-func (d *ParenDecl) Append(decl Decl) {
-	d.List.Append(decl)
+func (d *ParenDecl) Append(e Decl) {
+	d.List.Append(e)
 }
 
 type BadDecl struct{}

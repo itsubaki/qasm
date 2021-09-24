@@ -12,24 +12,24 @@ type ExprList struct {
 	List []Expr
 }
 
-func (l *ExprList) exprNode() {}
+func (x *ExprList) exprNode() {}
 
-func (l *ExprList) Literal() string {
+func (x *ExprList) Literal() string {
 	return ""
 }
 
-func (l *ExprList) Append(x Expr) {
-	l.List = append(l.List, x)
+func (x *ExprList) Append(e Expr) {
+	x.List = append(x.List, e)
 }
 
-func (l *ExprList) Len() int {
-	return len(l.List)
+func (x *ExprList) Len() int {
+	return len(x.List)
 }
 
-func (l *ExprList) String() string {
+func (x *ExprList) String() string {
 	var list []string
-	for _, x := range l.List {
-		list = append(list, x.String())
+	for _, e := range x.List {
+		list = append(list, e.String())
 	}
 
 	return strings.Join(list, ", ")

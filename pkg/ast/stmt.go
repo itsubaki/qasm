@@ -251,8 +251,8 @@ func (s *BlockStmt) String() string {
 	return buf.String()
 }
 
-func (s *BlockStmt) Append(stmt Stmt) {
-	s.List = append(s.List, stmt)
+func (s *BlockStmt) Append(e Stmt) {
+	s.List = append(s.List, e)
 }
 
 func (s *BlockStmt) Reverse() BlockStmt {
