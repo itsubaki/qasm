@@ -106,10 +106,14 @@ func (l *Lexer) Scan() (Token, string) {
 	return ILLEGAL, string(ch)
 }
 
+func (l *Lexer) error(e error) {
+	l.errors = append(l.errors, e)
+}
+
 func (l *Lexer) scan() string {
 	var buf bytes.Buffer
 	if _, err := buf.WriteRune(l.read()); err != nil {
-		l.errors = append(l.errors, err)
+		l.error(err)
 	}
 
 	for {
@@ -120,7 +124,7 @@ func (l *Lexer) scan() string {
 
 		if isLetter(ch) || isDigit(ch) {
 			if _, err := buf.WriteRune(ch); err != nil {
-				l.errors = append(l.errors, err)
+				l.error(err)
 			}
 
 			continue
@@ -136,7 +140,7 @@ func (l *Lexer) scan() string {
 func (l *Lexer) scanString() string {
 	var buf bytes.Buffer
 	if _, err := buf.WriteRune(l.read()); err != nil {
-		l.errors = append(l.errors, err)
+		l.error(err)
 	}
 
 	for {
@@ -146,7 +150,7 @@ func (l *Lexer) scanString() string {
 		}
 
 		if _, err := buf.WriteRune(ch); err != nil {
-			l.errors = append(l.errors, err)
+			l.error(err)
 		}
 
 		if isString(ch) {
@@ -160,7 +164,7 @@ func (l *Lexer) scanString() string {
 func (l *Lexer) scanNumber() (Token, string) {
 	var buf bytes.Buffer
 	if _, err := buf.WriteRune(l.read()); err != nil {
-		l.errors = append(l.errors, err)
+		l.error(err)
 	}
 
 	token := INT
@@ -172,7 +176,7 @@ func (l *Lexer) scanNumber() (Token, string) {
 
 		if ch == '.' {
 			if _, err := buf.WriteRune(ch); err != nil {
-				l.errors = append(l.errors, err)
+				l.error(err)
 			}
 
 			token = FLOAT
@@ -181,7 +185,7 @@ func (l *Lexer) scanNumber() (Token, string) {
 
 		if isDigit(ch) {
 			if _, err := buf.WriteRune(ch); err != nil {
-				l.errors = append(l.errors, err)
+				l.error(err)
 			}
 
 			continue
@@ -197,7 +201,7 @@ func (l *Lexer) scanNumber() (Token, string) {
 func (l *Lexer) whitespace() (Token, string) {
 	var buf bytes.Buffer
 	if _, err := buf.WriteRune(l.read()); err != nil {
-		l.errors = append(l.errors, err)
+		l.error(err)
 	}
 
 	for {
@@ -208,7 +212,7 @@ func (l *Lexer) whitespace() (Token, string) {
 
 		if isWhitespace(ch) {
 			if _, err := buf.WriteRune(ch); err != nil {
-				l.errors = append(l.errors, err)
+				l.error(err)
 			}
 
 			continue
@@ -232,7 +236,7 @@ func (l *Lexer) read() rune {
 
 func (l *Lexer) unread() {
 	if err := l.r.UnreadRune(); err != nil {
-		l.errors = append(l.errors, err)
+		l.error(err)
 	}
 }
 

@@ -288,3 +288,21 @@ func TestGenDecl(t *testing.T) {
 		}
 	}
 }
+
+func TestDeclLiteral(t *testing.T) {
+	var cases = []struct {
+		in   ast.Decl
+		want string
+	}{
+		{&ast.BadDecl{}, ""},
+		{&ast.ParenDecl{}, lexer.Tokens[lexer.LPAREN]},
+		{&ast.GenDecl{Kind: lexer.QUBIT}, lexer.Tokens[lexer.QUBIT]},
+	}
+
+	for _, c := range cases {
+		got := c.in.Literal()
+		if got != c.want {
+			t.Errorf("got=%v, want=%v", got, c.want)
+		}
+	}
+}
