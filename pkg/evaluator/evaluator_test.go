@@ -73,7 +73,7 @@ qubit[2] r;
 reset q, r;
 	
 x q[0];
-ctrl @ x q, r;	
+ctrl @ x q, r;
 `
 
 	// [00 00] -> [10 00] -> [10 10]
