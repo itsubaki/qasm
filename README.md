@@ -16,7 +16,7 @@ go install github.com/itsubaki/qasm@latest
 ## Example
 
 ```shell
-$ qasm -f testdata/bell.qasm
+$ cat testdata/bell.qasm
 OPENQASM 3.0;
 include "testdata/stdgates.qasm";
 
@@ -26,6 +26,7 @@ reset q;
 h q[0];
 cx q[0], q[1];
 
+$ qasm -f testdata/bell.qasm
 [00][  0]( 0.7071 0.0000i): 0.5000
 [11][  3]( 0.7071 0.0000i): 0.5000
 ```
