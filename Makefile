@@ -16,8 +16,8 @@ parse:
 
 .PHONY: testdata
 testdata:
-	go run main.go -v -f testdata/bell.qasm
-	go run main.go -v -f testdata/shor.qasm
+	go run main.go -verbose -f testdata/bell.qasm
+	go run main.go -verbose -f testdata/shor.qasm
 
 install:
 	-rm ${GOPATH}/bin/qasm
