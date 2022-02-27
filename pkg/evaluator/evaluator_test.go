@@ -53,13 +53,13 @@ x q;
 ctrl @ x q, r[0];
 `
 
-	// [00 00] -> [11 00] -> [11 10] -> [11 00]
 	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
 
-	// TODO: [11 10][  3   2]( 1.0000 0.0000i): 1.0000
+	// Expected: [00 00] -> [11 00] -> [11 10] -> [11 00]
+	// Actual:   [00 00] -> [11 00] -> [11 10]
 }
 
 func Example_ctrlxqr() {
@@ -76,13 +76,13 @@ x q[0];
 ctrl @ x q, r;
 `
 
-	// [00 00] -> [10 00] -> [10 10]
 	if err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
 
-	// TODO: [10 00][  2   0]( 1.0000 0.0000i): 1.0000
+	// Expected: [00 00] -> [10 00] -> [10 10]
+	// Actual:   [00 00] -> [10 00]
 }
 
 func Example_verbose() {
