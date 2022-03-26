@@ -21,6 +21,7 @@ testdata:
 
 install:
 	-rm ${GOPATH}/bin/qasm
+	go get -u
 	go mod tidy
 	go install
 
