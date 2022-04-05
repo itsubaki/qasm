@@ -44,10 +44,12 @@ func (p *printer) Write(data []byte) (int, error) {
 	return len(data), nil
 }
 
-func (p *printer) printf(format string, a ...interface{}) {
+func (p *printer) printf(format string, a ...interface{}) error {
 	if _, err := fmt.Fprintf(p, format, a...); err != nil {
-		panic(err)
+		return fmt.Errorf("Fprintf: %v", err)
 	}
+
+	return nil
 }
 
 func (p *printer) print(x reflect.Value) {

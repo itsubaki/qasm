@@ -23,6 +23,7 @@ func (e *Environment) String() string {
 	buf.WriteString(fmt.Sprintf("bit: %v, ", e.Bit.Value))
 	buf.WriteString(fmt.Sprintf("qubit: %v, ", e.Qubit.Value))
 	buf.WriteString(fmt.Sprintf("func: %v, ", e.Func))
+
 	return buf.String()
 }
 
@@ -49,6 +50,7 @@ func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env.Outer = outer
 	env.Func = outer.Func
 	env.Const = outer.Const
+
 	return env
 }
 
@@ -71,9 +73,9 @@ func (b *Bit) Get(a ast.Expr) ([]int64, bool) {
 		out, ok := b.Value[x.Value]
 		return out, ok
 	case *ast.IndexExpr:
-		out, ok := b.Value[x.Name.Value]
-		index := Index(x.Int(), len(out))
-		return append(make([]int64, 0), out[index]), ok
+		out, ok := b.Value[x.Name]
+		idx := index(x.Int(), len(out))
+		return append(make([]int64, 0), out[idx]), ok
 	}
 
 	panic(fmt.Sprintf("invalid expr=%#v", a))
@@ -96,23 +98,22 @@ func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 		out, ok := qb.Value[x.Value]
 		return out, ok
 	case *ast.IndexExpr:
-		out, ok := qb.Value[x.Name.Value]
-		index := Index(x.Int(), len(out))
-		return append(make([]q.Qubit, 0), out[index]), ok
+		out, ok := qb.Value[x.Name]
+		idx := index(x.Int(), len(out))
+		return append(make([]q.Qubit, 0), out[idx]), ok
 	}
 
 	panic(fmt.Sprintf("invalid expr=%#v", a))
 }
 
-func Index(index, len int) int {
-	out := index
-	if index < 0 {
-		out = len + index
+func index(idx, len int) int {
+	out := idx
+	if idx < 0 {
+		out = len + idx
 	}
 
 	if out > len || out < 0 {
-		msg := fmt.Sprintf("index out of range[%v] with length %v", out, len)
-		panic(msg)
+		panic(fmt.Sprintf("index out of range[%v] with length %v", out, len))
 	}
 
 	return out

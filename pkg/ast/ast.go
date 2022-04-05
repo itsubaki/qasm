@@ -49,11 +49,11 @@ func Ident(x interface{}) string {
 	case *IdentExpr:
 		return x.Value
 	case *IndexExpr:
-		return x.Name.Value
+		return x.Name
 	case *GenDecl:
-		return x.Name.Value
+		return x.Name
 	case *GenConst:
-		return x.Name.Value
+		return x.Name
 	case *GateDecl:
 		return x.Name
 	case *FuncDecl:

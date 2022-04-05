@@ -63,7 +63,7 @@ func (d *BadDecl) String() string {
 type GenDecl struct {
 	Kind lexer.Token // lexer.QUBIT, lexer.BIT
 	Type Expr
-	Name IdentExpr
+	Name string
 }
 
 func (d *GenDecl) declNode() {}
@@ -77,7 +77,7 @@ func (d *GenDecl) String() string {
 
 	buf.WriteString(d.Type.String())
 	buf.WriteString(" ")
-	buf.WriteString(d.Name.Value)
+	buf.WriteString(d.Name)
 
 	return buf.String()
 }
@@ -92,7 +92,7 @@ func (d *GenDecl) Size() int {
 }
 
 type GenConst struct {
-	Name  IdentExpr
+	Name  string
 	Value Expr
 }
 
@@ -107,7 +107,7 @@ func (d *GenConst) String() string {
 
 	buf.WriteString(d.Literal())
 	buf.WriteString(" ")
-	buf.WriteString(d.Name.String())
+	buf.WriteString(d.Name)
 	buf.WriteString(" ")
 	buf.WriteString(lexer.Tokens[lexer.EQUALS])
 	buf.WriteString(" ")

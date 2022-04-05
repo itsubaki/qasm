@@ -2,11 +2,20 @@ package ast
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
+
+func Must[T int | int64 | float64](v T, err error) T {
+	if err != nil {
+		panic(fmt.Sprintf("must: %v", err))
+	}
+
+	return v
+}
 
 type ExprList struct {
 	List []Expr
@@ -82,7 +91,7 @@ func (x *IdentExpr) String() string {
 }
 
 type IndexExpr struct {
-	Name  IdentExpr
+	Name  string
 	Value string
 }
 
@@ -95,7 +104,7 @@ func (x *IndexExpr) Literal() string {
 func (x *IndexExpr) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(x.Name.Value)
+	buf.WriteString(x.Name)
 	buf.WriteString(lexer.Tokens[lexer.LBRACKET])
 	buf.WriteString(x.Value)
 	buf.WriteString(lexer.Tokens[lexer.RBRACKET])
@@ -104,12 +113,7 @@ func (x *IndexExpr) String() string {
 }
 
 func (x *IndexExpr) Int() int {
-	v, err := strconv.Atoi(x.Value)
-	if err != nil {
-		panic(err)
-	}
-
-	return v
+	return Must(strconv.Atoi(x.Value))
 }
 
 type BasicLit struct {
@@ -128,21 +132,11 @@ func (x *BasicLit) String() string {
 }
 
 func (x *BasicLit) Int64() int64 {
-	v, err := strconv.ParseInt(x.Value, 10, 64)
-	if err != nil {
-		panic(err)
-	}
-
-	return v
+	return Must(strconv.ParseInt(x.Value, 10, 64))
 }
 
 func (x *BasicLit) Float64() float64 {
-	v, err := strconv.ParseFloat(x.Value, 64)
-	if err != nil {
-		panic(err)
-	}
-
-	return v
+	return Must(strconv.ParseFloat(x.Value, 64))
 }
 
 type MeasureExpr struct {

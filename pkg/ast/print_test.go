@@ -28,9 +28,7 @@ func Example() {
 					Type: &ast.IdentExpr{
 						Value: lexer.Tokens[lexer.QUBIT],
 					},
-					Name: ast.IdentExpr{
-						Value: "q",
-					},
+					Name: "q",
 				},
 			},
 			&ast.ResetStmt{
@@ -71,9 +69,7 @@ func Example() {
 	// .  .  .  .  Type: *ast.IdentExpr {
 	// .  .  .  .  .  Value: qubit
 	// .  .  .  .  }
-	// .  .  .  .  Name: ast.IdentExpr {
-	// .  .  .  .  .  Value: q
-	// .  .  .  .  }
+	// .  .  .  .  Name: q
 	// .  .  .  }
 	// .  .  }
 	// .  .  2: *ast.ResetStmt {

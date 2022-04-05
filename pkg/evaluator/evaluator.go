@@ -591,12 +591,12 @@ func (e *Evaluator) extendf(x *ast.CallExpr, g *ast.FuncDecl, outer *object.Envi
 	env := object.NewEnclosedEnvironment(outer)
 
 	for i := range g.QArgs.List {
-		v, ok := outer.Qubit.Get(x.QArgs.List[i])
-		if !ok {
-			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
+		if v, ok := outer.Qubit.Get(x.QArgs.List[i]); ok {
+			env.Qubit.Add(g.QArgs.List[i], v)
+			continue
 		}
 
-		env.Qubit.Add(g.QArgs.List[i], v)
+		panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
 	}
 
 	return env
@@ -694,23 +694,23 @@ func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 	// ctrl
 	// loop with x.QArgs.List
 	for i := 0; i < c; i++ {
-		v, ok := outer.Qubit.Get(x.QArgs.List[i])
-		if !ok {
-			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
+		if v, ok := outer.Qubit.Get(x.QArgs.List[i]); ok {
+			n := fmt.Sprintf("c%v", i)
+			env.Qubit.Add(&ast.IdentExpr{Value: n}, v)
+			continue
 		}
 
-		n := fmt.Sprintf("c%v", i)
-		env.Qubit.Add(&ast.IdentExpr{Value: n}, v)
+		panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
 	}
 
 	// target
 	for i := range g.QArgs.List {
-		v, ok := outer.Qubit.Get(x.QArgs.List[c+i])
-		if !ok {
-			panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[c+i]))
+		if v, ok := outer.Qubit.Get(x.QArgs.List[c+i]); ok {
+			env.Qubit.Add(g.QArgs.List[i], v)
+			continue
 		}
 
-		env.Qubit.Add(g.QArgs.List[i], v)
+		panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[c+i]))
 	}
 
 	return env

@@ -49,8 +49,7 @@ func Run(in io.Reader, out io.Writer) error {
 		}
 
 		if err := e.Eval(ast); err != nil {
-			msg := fmt.Sprintf("[ERROR] eval: %v\n", err)
-			io.WriteString(out, msg)
+			io.WriteString(out, fmt.Sprintf("[ERROR] eval: %v\n", err))
 		}
 
 		if strings.HasPrefix(txt, "print") {
@@ -58,8 +57,7 @@ func Run(in io.Reader, out io.Writer) error {
 		}
 
 		if err := e.Println(); err != nil {
-			msg := fmt.Sprintf("[ERROR] print: %v\n", err)
-			io.WriteString(out, msg)
+			io.WriteString(out, fmt.Sprintf("[ERROR] print: %v\n", err))
 		}
 	}
 

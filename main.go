@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/itsubaki/qasm/cmd"
@@ -72,6 +73,6 @@ func New() *cli.App {
 
 func main() {
 	if err := New().Run(os.Args); err != nil {
-		panic(err)
+		panic(fmt.Sprintf("run: %v", err))
 	}
 }

@@ -3,7 +3,7 @@ module github.com/itsubaki/qasm
 go 1.18
 
 require (
-	github.com/itsubaki/q v1.1.0
+	github.com/itsubaki/q v1.1.1
 	github.com/urfave/cli/v2 v2.4.0
 )
 

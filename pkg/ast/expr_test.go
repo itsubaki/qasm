@@ -29,15 +29,11 @@ func TestExpr(t *testing.T) {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IndexExpr{
-							Name: ast.IdentExpr{
-								Value: "q",
-							},
+							Name:  "q",
 							Value: "0",
 						},
 						&ast.IndexExpr{
-							Name: ast.IdentExpr{
-								Value: "q",
-							},
+							Name:  "q",
 							Value: "1",
 						},
 					},

@@ -249,13 +249,11 @@ func (p *Parser) parseIdent() ast.Expr {
 	}
 	p.expect(lexer.IDENT)
 
-	x := ast.IdentExpr{
-		Value: c.Literal,
-	}
-
 	if p.peek.Token != lexer.LBRACKET {
 		// q
-		return &x
+		return &ast.IdentExpr{
+			Value: c.Literal,
+		}
 	}
 
 	p.next()
@@ -273,7 +271,7 @@ func (p *Parser) parseIdent() ast.Expr {
 
 	// q[0]
 	return &ast.IndexExpr{
-		Name:  x,
+		Name:  c.Literal,
 		Value: v,
 	}
 }
@@ -291,18 +289,14 @@ func (p *Parser) parseGenConst() ast.Decl {
 	if lexer.IsBinaryOperator(p.peek.Token) {
 		// const N = pi * 2
 		return &ast.GenConst{
-			Name: ast.IdentExpr{
-				Value: n.Literal,
-			},
+			Name:  n.Literal,
 			Value: p.parseInfix(),
 		}
 	}
 
 	// const N = 15
 	return &ast.GenConst{
-		Name: ast.IdentExpr{
-			Value: n.Literal,
-		},
+		Name: n.Literal,
 		Value: &ast.BasicLit{
 			Kind:  v.Token,
 			Value: v.Literal,
@@ -320,9 +314,7 @@ func (p *Parser) parseGenDecl() ast.Decl {
 			Type: &ast.IdentExpr{
 				Value: strings.ToLower(lexer.Tokens[kind]),
 			},
-			Name: ast.IdentExpr{
-				Value: p.cur.Literal,
-			},
+			Name: p.cur.Literal,
 		}
 	}
 
@@ -341,14 +333,10 @@ func (p *Parser) parseGenDecl() ast.Decl {
 	return &ast.GenDecl{
 		Kind: kind,
 		Type: &ast.IndexExpr{
-			Name: ast.IdentExpr{
-				Value: strings.ToLower(lexer.Tokens[kind]),
-			},
+			Name:  strings.ToLower(lexer.Tokens[kind]),
 			Value: index.Literal,
 		},
-		Name: ast.IdentExpr{
-			Value: v.Literal,
-		},
+		Name: v.Literal,
 	}
 }
 
@@ -423,9 +411,7 @@ func (p *Parser) parseFunc() ast.Decl {
 	p.expect(lexer.RBRACKET)
 
 	decl.Result = &ast.IndexExpr{
-		Name: ast.IdentExpr{
-			Value: bit.Literal,
-		},
+		Name:  bit.Literal,
 		Value: val.Literal,
 	}
 

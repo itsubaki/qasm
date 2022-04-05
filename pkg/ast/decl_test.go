@@ -23,9 +23,7 @@ func TestDecl(t *testing.T) {
 		},
 		{
 			&ast.GenConst{
-				Name: ast.IdentExpr{
-					Value: "N",
-				},
+				Name: "N",
 				Value: &ast.BasicLit{
 					Kind:  lexer.INT,
 					Value: "15",
@@ -39,9 +37,7 @@ func TestDecl(t *testing.T) {
 				Type: &ast.IdentExpr{
 					Value: lexer.Tokens[lexer.BIT],
 				},
-				Name: ast.IdentExpr{
-					Value: "c",
-				},
+				Name: "c",
 			},
 			"bit c",
 		},
@@ -51,9 +47,7 @@ func TestDecl(t *testing.T) {
 				Type: &ast.IdentExpr{
 					Value: lexer.Tokens[lexer.QUBIT],
 				},
-				Name: ast.IdentExpr{
-					Value: "q",
-				},
+				Name: "q",
 			},
 			"qubit q",
 		},
@@ -61,14 +55,10 @@ func TestDecl(t *testing.T) {
 			&ast.GenDecl{
 				Kind: lexer.QUBIT,
 				Type: &ast.IndexExpr{
-					Name: ast.IdentExpr{
-						Value: lexer.Tokens[lexer.QUBIT],
-					},
+					Name:  lexer.Tokens[lexer.QUBIT],
 					Value: "2",
 				},
-				Name: ast.IdentExpr{
-					Value: "q",
-				},
+				Name: "q",
 			},
 			"qubit[2] q",
 		},
@@ -76,14 +66,10 @@ func TestDecl(t *testing.T) {
 			&ast.GenDecl{
 				Kind: lexer.INT,
 				Type: &ast.IndexExpr{
-					Name: ast.IdentExpr{
-						Value: "int",
-					},
+					Name:  "int",
 					Value: "32",
 				},
-				Name: ast.IdentExpr{
-					Value: "a",
-				},
+				Name: "a",
 			},
 			"int[32] a",
 		},
@@ -140,26 +126,18 @@ func TestDecl(t *testing.T) {
 						&ast.GenDecl{
 							Kind: lexer.INT,
 							Type: &ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "int",
-								},
+								Name:  "int",
 								Value: "32",
 							},
-							Name: ast.IdentExpr{
-								Value: "a",
-							},
+							Name: "a",
 						},
 						&ast.GenDecl{
 							Kind: lexer.INT,
 							Type: &ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: "int",
-								},
+								Name:  "int",
 								Value: "32",
 							},
-							Name: ast.IdentExpr{
-								Value: "N",
-							},
+							Name: "N",
 						},
 					},
 				},
@@ -175,26 +153,18 @@ func TestDecl(t *testing.T) {
 							&ast.GenDecl{
 								Kind: lexer.INT,
 								Type: &ast.IndexExpr{
-									Name: ast.IdentExpr{
-										Value: "int",
-									},
+									Name:  "int",
 									Value: "32",
 								},
-								Name: ast.IdentExpr{
-									Value: "a",
-								},
+								Name: "a",
 							},
 							&ast.GenDecl{
 								Kind: lexer.INT,
 								Type: &ast.IndexExpr{
-									Name: ast.IdentExpr{
-										Value: "int",
-									},
+									Name:  "int",
 									Value: "32",
 								},
-								Name: ast.IdentExpr{
-									Value: "N",
-								},
+								Name: "N",
 							},
 						},
 					},
@@ -204,34 +174,24 @@ func TestDecl(t *testing.T) {
 						&ast.GenDecl{
 							Kind: lexer.QUBIT,
 							Type: &ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: lexer.Tokens[lexer.QUBIT],
-								},
+								Name:  lexer.Tokens[lexer.QUBIT],
 								Value: "n",
 							},
-							Name: ast.IdentExpr{
-								Value: "r0",
-							},
+							Name: "r0",
 						},
 						&ast.GenDecl{
 							Kind: lexer.QUBIT,
 							Type: &ast.IndexExpr{
-								Name: ast.IdentExpr{
-									Value: lexer.Tokens[lexer.QUBIT],
-								},
+								Name:  lexer.Tokens[lexer.QUBIT],
 								Value: "m",
 							},
-							Name: ast.IdentExpr{
-								Value: "r1",
-							},
+							Name: "r1",
 						},
 					},
 				},
 				Body: ast.BlockStmt{},
 				Result: &ast.IndexExpr{
-					Name: ast.IdentExpr{
-						Value: "bit",
-					},
+					Name:  "bit",
 					Value: "n",
 				},
 			},
@@ -256,14 +216,10 @@ func TestGenDecl(t *testing.T) {
 			in: ast.GenDecl{
 				Kind: lexer.QUBIT,
 				Type: &ast.IndexExpr{
-					Name: ast.IdentExpr{
-						Value: lexer.Tokens[lexer.QUBIT],
-					},
+					Name:  lexer.Tokens[lexer.QUBIT],
 					Value: "2",
 				},
-				Name: ast.IdentExpr{
-					Value: "q",
-				},
+				Name: "q",
 			},
 			want: 2,
 		},
@@ -273,9 +229,7 @@ func TestGenDecl(t *testing.T) {
 				Type: &ast.IdentExpr{
 					Value: lexer.Tokens[lexer.QUBIT],
 				},
-				Name: ast.IdentExpr{
-					Value: "q",
-				},
+				Name: "q",
 			},
 			want: 1,
 		},
