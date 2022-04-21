@@ -302,31 +302,12 @@ func (e *Evaluator) evalInfix(kind lexer.Token, lhs, rhs object.Object) (object.
 }
 
 func (e *Evaluator) evalPrint(s *ast.PrintStmt, env *object.Environment) error {
-	if len(env.Qubit.Name) == 0 {
-		return nil
+	state, err := e.state(s, env)
+	if err != nil {
+		return fmt.Errorf("state: %v", err)
 	}
 
-	qargs := s.QArgs.List
-	if len(qargs) == 0 {
-		for _, n := range env.Qubit.Name {
-			qargs = append(qargs, &ast.IdentExpr{Value: n})
-		}
-	}
-
-	var index [][]int
-	for _, a := range qargs {
-		qb, ok := env.Qubit.Get(a)
-		if !ok {
-			return fmt.Errorf("qubit(%v) not found", a)
-		}
-
-		index = append(index, q.Index(qb...))
-	}
-
-	for _, s := range e.Q.Raw().State(index...) {
-		fmt.Println(s)
-	}
-
+	e.Println(state)
 	return nil
 }
 
@@ -399,27 +380,61 @@ func (e *Evaluator) measure(x *ast.MeasureExpr, env *object.Environment) (object
 	return &object.Array{Elm: bit}, nil
 }
 
-func (e *Evaluator) Println() error {
-	if _, err := e.eval(&ast.PrintStmt{}, e.Env); err != nil {
-		return fmt.Errorf("print qubit: %v", err)
+func (e *Evaluator) state(s *ast.PrintStmt, env *object.Environment) (*State, error) {
+	out := &State{Classical: make([]Classical, 0)}
+	for _, n := range env.Bit.Name {
+		v, ok := e.Env.Bit.Get(&ast.IdentExpr{Value: n})
+		if !ok {
+			return nil, fmt.Errorf("bit(%v) not found", n)
+		}
+		out.Classical = append(out.Classical, Classical{
+			Name:  n,
+			Value: v,
+		})
 	}
 
-	for _, n := range e.Env.Bit.Name {
-		fmt.Printf("%v: ", n)
+	if len(env.Qubit.Name) == 0 {
+		return out, nil
+	}
 
-		c, ok := e.Env.Bit.Get(&ast.IdentExpr{Value: n})
+	qargs := s.QArgs.List
+	if len(qargs) == 0 {
+		for _, n := range env.Qubit.Name {
+			qargs = append(qargs, &ast.IdentExpr{Value: n})
+		}
+	}
+
+	var index [][]int
+	for _, a := range qargs {
+		qb, ok := env.Qubit.Get(a)
 		if !ok {
-			return fmt.Errorf("bit(%v) not found", n)
+			return nil, fmt.Errorf("qubit(%v) not found", a)
 		}
 
-		for _, v := range c {
+		index = append(index, q.Index(qb...))
+	}
+	out.Quantum = e.Q.Raw().State(index...)
+
+	return out, nil
+}
+
+func (e *Evaluator) State() (*State, error) {
+	return e.state(&ast.PrintStmt{}, e.Env)
+}
+
+func (e *Evaluator) Println(s *State) {
+	for _, s := range s.Quantum {
+		fmt.Println(s)
+	}
+
+	for _, s := range s.Classical {
+		fmt.Printf("%v: ", s.Name)
+		for _, v := range s.Value {
 			fmt.Printf("%v", v)
 		}
 
 		fmt.Println()
 	}
-
-	return nil
 }
 
 func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, qargs [][]q.Qubit, env *object.Environment) error {

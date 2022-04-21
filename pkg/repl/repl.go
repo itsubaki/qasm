@@ -11,7 +11,7 @@ import (
 	"github.com/itsubaki/qasm/pkg/parser"
 )
 
-func Run(in io.Reader, out io.Writer) error {
+func Run(in io.Reader) error {
 	s := bufio.NewScanner(in)
 	e := evaluator.Default()
 
@@ -42,23 +42,27 @@ func Run(in io.Reader, out io.Writer) error {
 		ast := p.Parse()
 		if errs := p.Errors(); len(errs) != 0 {
 			for _, err := range errs {
-				fmt.Printf("[ERROR] %v\n", err)
+				fmt.Printf("[ERROR] parse: %v\n", err)
 			}
-
 			continue
 		}
 
 		if err := e.Eval(ast); err != nil {
-			io.WriteString(out, fmt.Sprintf("[ERROR] eval: %v\n", err))
+			fmt.Printf("[ERROR] eval: %v\n", err)
+			continue
 		}
 
 		if strings.HasPrefix(txt, "print") {
 			continue
 		}
 
-		if err := e.Println(); err != nil {
-			io.WriteString(out, fmt.Sprintf("[ERROR] print: %v\n", err))
+		s, err := e.State()
+		if err != nil {
+			fmt.Printf("[ERROR] state: %v\n", err)
+			continue
 		}
+
+		e.Println(s)
 	}
 
 	return nil

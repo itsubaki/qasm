@@ -9,7 +9,7 @@ import (
 )
 
 func Action(c *cli.Context) error {
-	if err := repl.Run(os.Stdin, os.Stdout); err != nil {
+	if err := repl.Run(os.Stdin); err != nil {
 		return fmt.Errorf("repl run: %v", err)
 	}
 

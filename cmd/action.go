@@ -39,9 +39,11 @@ func Action(c *cli.Context) error {
 		return fmt.Errorf("eval: %v\n", err)
 	}
 
-	if err := e.Println(); err != nil {
-		return fmt.Errorf("print: %v", err)
+	s, err := e.State()
+	if err != nil {
+		return fmt.Errorf("state: %v", err)
 	}
 
+	e.Println(s)
 	return nil
 }

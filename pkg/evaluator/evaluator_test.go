@@ -33,10 +33,12 @@ func eval(qasm string, verbose ...bool) error {
 		return fmt.Errorf("eval: %v\n", err)
 	}
 
-	if err := e.Println(); err != nil {
-		return fmt.Errorf("print: %v\n", err)
+	s, err := e.State()
+	if err != nil {
+		return fmt.Errorf("state: %v\n", err)
 	}
 
+	e.Println(s)
 	return nil
 }
 
@@ -222,7 +224,6 @@ h q;
 	// .  .  .  .  .  .  .  return *object.Int(0)
 	// .  .  .  .  .  .  *ast.BasicLit(pi)
 	// .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
-	// .  .  *ast.PrintStmt(print;)
 	// [0][  0]( 0.7071 0.0000i): 0.5000
 	// [1][  1]( 0.7071 0.0000i): 0.5000
 }
