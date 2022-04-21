@@ -62,7 +62,7 @@ type Bit struct {
 }
 
 func (b *Bit) Add(n ast.Node, value []int64) {
-	name := ast.Ident(n)
+	name := ast.Must(ast.Ident(n))
 	b.Name = append(b.Name, name)
 	b.Value[name] = value
 }
@@ -70,15 +70,19 @@ func (b *Bit) Add(n ast.Node, value []int64) {
 func (b *Bit) Get(a ast.Expr) ([]int64, bool) {
 	switch x := a.(type) {
 	case *ast.IdentExpr:
-		out, ok := b.Value[x.Value]
+		out, ok := b.Value[x.Name]
 		return out, ok
 	case *ast.IndexExpr:
 		out, ok := b.Value[x.Name]
-		idx := index(x.Int(), len(out))
-		return append(make([]int64, 0), out[idx]), ok
+		idx, err := index(x.Int(), len(out))
+		if err != nil {
+			return nil, false
+		}
+
+		return []int64{out[idx]}, ok
 	}
 
-	panic(fmt.Sprintf("invalid expr=%#v", a))
+	return nil, false
 }
 
 type Qubit struct {
@@ -87,7 +91,7 @@ type Qubit struct {
 }
 
 func (qb *Qubit) Add(n ast.Node, value []q.Qubit) {
-	name := ast.Ident(n)
+	name := ast.Must(ast.Ident(n))
 	qb.Name = append(qb.Name, name)
 	qb.Value[name] = value
 }
@@ -95,26 +99,30 @@ func (qb *Qubit) Add(n ast.Node, value []q.Qubit) {
 func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 	switch x := a.(type) {
 	case *ast.IdentExpr:
-		out, ok := qb.Value[x.Value]
+		out, ok := qb.Value[x.Name]
 		return out, ok
 	case *ast.IndexExpr:
 		out, ok := qb.Value[x.Name]
-		idx := index(x.Int(), len(out))
-		return append(make([]q.Qubit, 0), out[idx]), ok
+		idx, err := index(x.Int(), len(out))
+		if err != nil {
+			return nil, false
+		}
+
+		return []q.Qubit{out[idx]}, ok
 	}
 
-	panic(fmt.Sprintf("invalid expr=%#v", a))
+	return nil, false
 }
 
-func index(idx, len int) int {
+func index(idx, len int) (int, error) {
 	out := idx
 	if idx < 0 {
 		out = len + idx
 	}
 
 	if out > len || out < 0 {
-		panic(fmt.Sprintf("index out of range[%v] with length %v", out, len))
+		return 0, fmt.Errorf("index out of range[%v] with length %v", out, len)
 	}
 
-	return out
+	return out, nil
 }

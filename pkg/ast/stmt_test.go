@@ -19,7 +19,7 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "q",
+								Name: "q",
 							},
 						},
 					},
@@ -30,13 +30,13 @@ func TestStmt(t *testing.T) {
 		{
 			&ast.AssignStmt{
 				Left: &ast.IdentExpr{
-					Value: "c",
+					Name: "c",
 				},
 				Right: &ast.MeasureExpr{
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "q",
+								Name: "q",
 							},
 						},
 					},
@@ -50,13 +50,13 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "q",
+								Name: "q",
 							},
 						},
 					},
 				},
 				Right: &ast.IdentExpr{
-					Value: "c",
+					Name: "c",
 				},
 			},
 			"measure q -> c;",
@@ -66,7 +66,7 @@ func TestStmt(t *testing.T) {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
-							Value: "q",
+							Name: "q",
 						},
 					},
 				},
@@ -117,7 +117,7 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "q",
+								Name: "q",
 							},
 						},
 					},
@@ -151,7 +151,7 @@ func TestStmt(t *testing.T) {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
-							Value: "q",
+							Name: "q",
 						},
 					},
 				},
@@ -165,10 +165,10 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "q0",
+								Name: "q0",
 							},
 							&ast.IdentExpr{
-								Value: "q1",
+								Name: "q1",
 							},
 						},
 					},
@@ -184,10 +184,10 @@ func TestStmt(t *testing.T) {
 						List: ast.ExprList{
 							List: []ast.Expr{
 								&ast.IdentExpr{
-									Value: "a",
+									Name: "a",
 								},
 								&ast.IdentExpr{
-									Value: "N",
+									Name: "N",
 								},
 							},
 						},
@@ -195,10 +195,10 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "r0",
+								Name: "r0",
 							},
 							&ast.IdentExpr{
-								Value: "r1",
+								Name: "r1",
 							},
 						},
 					},
@@ -223,7 +223,7 @@ func TestStmt(t *testing.T) {
 				Decl: &ast.GenDecl{
 					Kind: lexer.BIT,
 					Type: &ast.IdentExpr{
-						Value: lexer.Tokens[lexer.BIT],
+						Name: lexer.Tokens[lexer.BIT],
 					},
 					Name: "c",
 				},
@@ -235,7 +235,7 @@ func TestStmt(t *testing.T) {
 				Decl: &ast.GenDecl{
 					Kind: lexer.QUBIT,
 					Type: &ast.IdentExpr{
-						Value: lexer.Tokens[lexer.QUBIT],
+						Name: lexer.Tokens[lexer.QUBIT],
 					},
 					Name: "q",
 				},
@@ -275,10 +275,10 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "q0",
+								Name: "q0",
 							},
 							&ast.IdentExpr{
-								Value: "q1",
+								Name: "q1",
 							},
 						},
 					},
@@ -290,7 +290,7 @@ func TestStmt(t *testing.T) {
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{
-											Value: "q0",
+											Name: "q0",
 										},
 									},
 								},
@@ -301,10 +301,10 @@ func TestStmt(t *testing.T) {
 									QArgs: ast.ExprList{
 										List: []ast.Expr{
 											&ast.IdentExpr{
-												Value: "q0",
+												Name: "q0",
 											},
 											&ast.IdentExpr{
-												Value: "q1",
+												Name: "q1",
 											},
 										},
 									},
@@ -323,10 +323,10 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "q0",
+								Name: "q0",
 							},
 							&ast.IdentExpr{
-								Value: "q1",
+								Name: "q1",
 							},
 						},
 					},
@@ -343,10 +343,10 @@ func TestStmt(t *testing.T) {
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{
-											Value: "q0",
+											Name: "q0",
 										},
 										&ast.IdentExpr{
-											Value: "q1",
+											Name: "q1",
 										},
 									},
 								},
@@ -364,10 +364,10 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "q0",
+								Name: "q0",
 							},
 							&ast.IdentExpr{
-								Value: "q1",
+								Name: "q1",
 							},
 						},
 					},
@@ -394,10 +394,10 @@ func TestStmt(t *testing.T) {
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{
-											Value: "q0",
+											Name: "q0",
 										},
 										&ast.IdentExpr{
-											Value: "q1",
+											Name: "q1",
 										},
 									},
 								},
@@ -415,10 +415,10 @@ func TestStmt(t *testing.T) {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "q0",
+								Name: "q0",
 							},
 							&ast.IdentExpr{
-								Value: "q1",
+								Name: "q1",
 							},
 						},
 					},
@@ -438,10 +438,10 @@ func TestStmt(t *testing.T) {
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{
-											Value: "q0",
+											Name: "q0",
 										},
 										&ast.IdentExpr{
-											Value: "q1",
+											Name: "q1",
 										},
 									},
 								},
@@ -471,7 +471,7 @@ func ExampleBlockStmt_Reverse() {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
-							Value: "q0",
+							Name: "q0",
 						},
 					},
 				},
@@ -482,10 +482,10 @@ func ExampleBlockStmt_Reverse() {
 					QArgs: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "q0",
+								Name: "q0",
 							},
 							&ast.IdentExpr{
-								Value: "q1",
+								Name: "q1",
 							},
 						},
 					},

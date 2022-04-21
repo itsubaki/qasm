@@ -26,7 +26,7 @@ func Example() {
 				Decl: &ast.GenDecl{
 					Kind: lexer.QUBIT,
 					Type: &ast.IdentExpr{
-						Value: lexer.Tokens[lexer.QUBIT],
+						Name: lexer.Tokens[lexer.QUBIT],
 					},
 					Name: "q",
 				},
@@ -35,7 +35,7 @@ func Example() {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
-							Value: "q",
+							Name: "q",
 						},
 					},
 				},
@@ -67,7 +67,7 @@ func Example() {
 	// .  .  .  Decl: *ast.GenDecl {
 	// .  .  .  .  Kind: qubit
 	// .  .  .  .  Type: *ast.IdentExpr {
-	// .  .  .  .  .  Value: qubit
+	// .  .  .  .  .  Name: qubit
 	// .  .  .  .  }
 	// .  .  .  .  Name: q
 	// .  .  .  }
@@ -76,7 +76,7 @@ func Example() {
 	// .  .  .  QArgs: ast.ExprList {
 	// .  .  .  .  List: []ast.Expr (len = 1) {
 	// .  .  .  .  .  0: *ast.IdentExpr {
-	// .  .  .  .  .  .  Value: q
+	// .  .  .  .  .  .  Name: q
 	// .  .  .  .  .  }
 	// .  .  .  .  }
 	// .  .  .  }

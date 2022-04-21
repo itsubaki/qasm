@@ -17,7 +17,7 @@ func TestExpr(t *testing.T) {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
-							Value: "q",
+							Name: "q",
 						},
 					},
 				},
@@ -47,10 +47,10 @@ func TestExpr(t *testing.T) {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
-							Value: "q0",
+							Name: "q0",
 						},
 						&ast.IdentExpr{
-							Value: "q1",
+							Name: "q1",
 						},
 					},
 				},
@@ -81,10 +81,10 @@ func TestExpr(t *testing.T) {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
-							Value: "q0",
+							Name: "q0",
 						},
 						&ast.IdentExpr{
-							Value: "q1",
+							Name: "q1",
 						},
 					},
 				},
@@ -98,10 +98,10 @@ func TestExpr(t *testing.T) {
 					List: ast.ExprList{
 						List: []ast.Expr{
 							&ast.IdentExpr{
-								Value: "a",
+								Name: "a",
 							},
 							&ast.IdentExpr{
-								Value: "N",
+								Name: "N",
 							},
 						},
 					},
@@ -109,10 +109,10 @@ func TestExpr(t *testing.T) {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
-							Value: "r0",
+							Name: "r0",
 						},
 						&ast.IdentExpr{
-							Value: "r1",
+							Name: "r1",
 						},
 					},
 				},
@@ -124,10 +124,10 @@ func TestExpr(t *testing.T) {
 				List: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
-							Value: "a",
+							Name: "a",
 						},
 						&ast.IdentExpr{
-							Value: "N",
+							Name: "N",
 						},
 					},
 				},
@@ -169,7 +169,7 @@ func TestExpr(t *testing.T) {
 												Value: "5",
 											},
 											Right: &ast.IdentExpr{
-												Value: "a",
+												Name: "a",
 											},
 										},
 									},

@@ -8,14 +8,6 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-func Must[T int | int64 | float64](v T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-
-	return v
-}
-
 type ExprList struct {
 	List []Expr
 }
@@ -76,7 +68,7 @@ func (x *BadExpr) String() string {
 }
 
 type IdentExpr struct {
-	Value string
+	Name string
 }
 
 func (x *IdentExpr) exprNode() {}
@@ -86,7 +78,7 @@ func (x *IdentExpr) Literal() string {
 }
 
 func (x *IdentExpr) String() string {
-	return x.Value
+	return x.Name
 }
 
 type IndexExpr struct {
