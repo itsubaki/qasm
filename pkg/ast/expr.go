@@ -2,7 +2,6 @@ package ast
 
 import (
 	"bytes"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -11,7 +10,7 @@ import (
 
 func Must[T int | int64 | float64](v T, err error) T {
 	if err != nil {
-		panic(fmt.Sprintf("must: %v", err))
+		panic(err)
 	}
 
 	return v
