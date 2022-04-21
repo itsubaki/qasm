@@ -383,7 +383,7 @@ func (e *Evaluator) measure(x *ast.MeasureExpr, env *object.Environment) (object
 func (e *Evaluator) state(s *ast.PrintStmt, env *object.Environment) (*State, error) {
 	out := &State{Classical: make([]Classical, 0)}
 	for _, n := range env.Bit.Name {
-		v, ok := e.Env.Bit.Get(&ast.IdentExpr{Value: n})
+		v, ok := e.Env.Bit.Get(&ast.IdentExpr{Name: n})
 		if !ok {
 			return nil, fmt.Errorf("bit(%v) not found", n)
 		}
@@ -400,7 +400,7 @@ func (e *Evaluator) state(s *ast.PrintStmt, env *object.Environment) (*State, er
 	qargs := s.QArgs.List
 	if len(qargs) == 0 {
 		for _, n := range env.Qubit.Name {
-			qargs = append(qargs, &ast.IdentExpr{Value: n})
+			qargs = append(qargs, &ast.IdentExpr{Name: n})
 		}
 	}
 
@@ -711,7 +711,7 @@ func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 	for i := 0; i < c; i++ {
 		if v, ok := outer.Qubit.Get(x.QArgs.List[i]); ok {
 			n := fmt.Sprintf("c%v", i)
-			env.Qubit.Add(&ast.IdentExpr{Value: n}, v)
+			env.Qubit.Add(&ast.IdentExpr{Name: n}, v)
 			continue
 		}
 
@@ -734,9 +734,7 @@ func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 func override(block ast.BlockStmt, name []string) ast.BlockStmt {
 	var qargs ast.ExprList
 	for i := range name {
-		qargs.Append(&ast.IdentExpr{
-			Value: name[i],
-		})
+		qargs.Append(&ast.IdentExpr{Name: name[i]})
 	}
 
 	var out ast.BlockStmt

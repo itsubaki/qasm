@@ -35,7 +35,7 @@ func TestDecl(t *testing.T) {
 			&ast.GenDecl{
 				Kind: lexer.BIT,
 				Type: &ast.IdentExpr{
-					Value: lexer.Tokens[lexer.BIT],
+					Name: lexer.Tokens[lexer.BIT],
 				},
 				Name: "c",
 			},
@@ -45,7 +45,7 @@ func TestDecl(t *testing.T) {
 			&ast.GenDecl{
 				Kind: lexer.QUBIT,
 				Type: &ast.IdentExpr{
-					Value: lexer.Tokens[lexer.QUBIT],
+					Name: lexer.Tokens[lexer.QUBIT],
 				},
 				Name: "q",
 			},
@@ -79,10 +79,10 @@ func TestDecl(t *testing.T) {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
-							Value: "q0",
+							Name: "q0",
 						},
 						&ast.IdentExpr{
-							Value: "q1",
+							Name: "q1",
 						},
 					},
 				},
@@ -94,7 +94,7 @@ func TestDecl(t *testing.T) {
 							QArgs: ast.ExprList{
 								List: []ast.Expr{
 									&ast.IdentExpr{
-										Value: "q0",
+										Name: "q0",
 									},
 								},
 							},
@@ -105,10 +105,10 @@ func TestDecl(t *testing.T) {
 								QArgs: ast.ExprList{
 									List: []ast.Expr{
 										&ast.IdentExpr{
-											Value: "q0",
+											Name: "q0",
 										},
 										&ast.IdentExpr{
-											Value: "q1",
+											Name: "q1",
 										},
 									},
 								},
@@ -227,7 +227,7 @@ func TestGenDecl(t *testing.T) {
 			in: ast.GenDecl{
 				Kind: lexer.QUBIT,
 				Type: &ast.IdentExpr{
-					Value: lexer.Tokens[lexer.QUBIT],
+					Name: lexer.Tokens[lexer.QUBIT],
 				},
 				Name: "q",
 			},

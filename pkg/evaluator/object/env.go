@@ -70,7 +70,7 @@ func (b *Bit) Add(n ast.Node, value []int64) {
 func (b *Bit) Get(a ast.Expr) ([]int64, bool) {
 	switch x := a.(type) {
 	case *ast.IdentExpr:
-		out, ok := b.Value[x.Value]
+		out, ok := b.Value[x.Name]
 		return out, ok
 	case *ast.IndexExpr:
 		out, ok := b.Value[x.Name]
@@ -95,7 +95,7 @@ func (qb *Qubit) Add(n ast.Node, value []q.Qubit) {
 func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 	switch x := a.(type) {
 	case *ast.IdentExpr:
-		out, ok := qb.Value[x.Value]
+		out, ok := qb.Value[x.Name]
 		return out, ok
 	case *ast.IndexExpr:
 		out, ok := qb.Value[x.Name]

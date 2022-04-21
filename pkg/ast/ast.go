@@ -47,7 +47,7 @@ type Decl interface {
 func Ident(x interface{}) string {
 	switch x := x.(type) {
 	case *IdentExpr:
-		return x.Value
+		return x.Name
 	case *IndexExpr:
 		return x.Name
 	case *GenDecl:

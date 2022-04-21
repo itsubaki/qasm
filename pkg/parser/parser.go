@@ -252,7 +252,7 @@ func (p *Parser) parseIdent() ast.Expr {
 	if p.peek.Token != lexer.LBRACKET {
 		// q
 		return &ast.IdentExpr{
-			Value: c.Literal,
+			Name: c.Literal,
 		}
 	}
 
@@ -312,7 +312,7 @@ func (p *Parser) parseGenDecl() ast.Decl {
 		return &ast.GenDecl{
 			Kind: kind,
 			Type: &ast.IdentExpr{
-				Value: strings.ToLower(lexer.Tokens[kind]),
+				Name: strings.ToLower(lexer.Tokens[kind]),
 			},
 			Name: p.cur.Literal,
 		}

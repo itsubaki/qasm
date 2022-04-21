@@ -76,7 +76,7 @@ func (x *BadExpr) String() string {
 }
 
 type IdentExpr struct {
-	Value string
+	Name string
 }
 
 func (x *IdentExpr) exprNode() {}
@@ -86,7 +86,7 @@ func (x *IdentExpr) Literal() string {
 }
 
 func (x *IdentExpr) String() string {
-	return x.Value
+	return x.Name
 }
 
 type IndexExpr struct {

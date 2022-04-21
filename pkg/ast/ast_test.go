@@ -29,7 +29,7 @@ func ExampleOpenQASM_String() {
 				Decl: &ast.GenDecl{
 					Kind: lexer.QUBIT,
 					Type: &ast.IdentExpr{
-						Value: lexer.Tokens[lexer.QUBIT],
+						Name: lexer.Tokens[lexer.QUBIT],
 					},
 					Name: "q",
 				},
@@ -38,7 +38,7 @@ func ExampleOpenQASM_String() {
 				QArgs: ast.ExprList{
 					List: []ast.Expr{
 						&ast.IdentExpr{
-							Value: "q",
+							Name: "q",
 						},
 					},
 				},
@@ -60,7 +60,7 @@ func TestIdent(t *testing.T) {
 		in   interface{}
 		want string
 	}{
-		{&ast.IdentExpr{Value: "ident"}, "ident"},
+		{&ast.IdentExpr{Name: "ident"}, "ident"},
 		{&ast.IndexExpr{Name: "index"}, "index"},
 		{&ast.GenDecl{Name: "gendecl"}, "gendecl"},
 		{&ast.GenConst{Name: "genconst"}, "genconst"},
