@@ -175,7 +175,7 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 		if err != nil {
 			return nil, fmt.Errorf("eval(%v): %v", n, err)
 		}
-		env.Const[ast.Ident(n)] = v
+		env.Const[ast.Must(ast.Ident(n))] = v
 
 	case *ast.GenDecl:
 		// TODO check already exists
@@ -188,11 +188,11 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 
 	case *ast.GateDecl:
 		// TODO check already exists
-		env.Func[ast.Ident(n)] = n
+		env.Func[ast.Must(ast.Ident(n))] = n
 
 	case *ast.FuncDecl:
 		// TODO check already exists
-		env.Func[ast.Ident(n)] = n
+		env.Func[ast.Must(ast.Ident(n))] = n
 
 	case *ast.CallExpr:
 		return e.call(n, env)
@@ -232,7 +232,7 @@ func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object
 		return e.evalInfix(n.Kind, lhs, rhs)
 
 	case *ast.IdentExpr:
-		if v, ok := env.Const[ast.Ident(n)]; ok {
+		if v, ok := env.Const[ast.Must(ast.Ident(n))]; ok {
 			return v, nil
 		}
 
@@ -594,7 +594,12 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 }
 
 func (e *Evaluator) fnc(x *ast.CallExpr, g *ast.FuncDecl, env *object.Environment) (object.Object, error) {
-	v, err := e.eval(&g.Body, e.extendf(x, g, env))
+	ext, err := e.extendf(x, g, env)
+	if err != nil {
+		return nil, fmt.Errorf("extend: %v", err)
+	}
+
+	v, err := e.eval(&g.Body, ext)
 	if err != nil {
 		return nil, fmt.Errorf("eval(%v): %v", &g.Body, err)
 	}
@@ -602,7 +607,7 @@ func (e *Evaluator) fnc(x *ast.CallExpr, g *ast.FuncDecl, env *object.Environmen
 	return v.(*object.ReturnValue).Value, nil
 }
 
-func (e *Evaluator) extendf(x *ast.CallExpr, g *ast.FuncDecl, outer *object.Environment) *object.Environment {
+func (e *Evaluator) extendf(x *ast.CallExpr, g *ast.FuncDecl, outer *object.Environment) (*object.Environment, error) {
 	env := object.NewEnclosedEnvironment(outer)
 
 	for i := range g.QArgs.List {
@@ -611,14 +616,18 @@ func (e *Evaluator) extendf(x *ast.CallExpr, g *ast.FuncDecl, outer *object.Envi
 			continue
 		}
 
-		panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
+		return nil, fmt.Errorf("qubit(%v) not found", x.QArgs.List[i])
 	}
 
-	return env
+	return env, nil
 }
 
 func (e *Evaluator) gate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
-	env := e.extend(x, g, outer)
+	env, err := e.extend(x, g, outer)
+	if err != nil {
+		return fmt.Errorf("extend: %v", err)
+	}
+
 	body := g.Body
 
 	// inv
@@ -684,21 +693,21 @@ func (e *Evaluator) ctrlCall(x *ast.CallExpr, body ast.BlockStmt, env *object.En
 	return nil
 }
 
-func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) *object.Environment {
+func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) (*object.Environment, error) {
 	env := object.NewEnclosedEnvironment(outer)
 
 	for i := range g.Params.List.List {
-		if v, ok := outer.Const[ast.Ident(x.Params.List.List[i])]; ok {
-			env.Const[ast.Ident(g.Params.List.List[i])] = v
+		if v, ok := outer.Const[ast.Must(ast.Ident(x.Params.List.List[i]))]; ok {
+			env.Const[ast.Must(ast.Ident(g.Params.List.List[i]))] = v
 			continue
 		}
 
 		v, err := e.eval(x.Params.List.List[i], outer)
 		if err != nil {
-			panic(fmt.Sprintf("eval(%v): %v", x.Params.List.List[i], err))
+			return nil, fmt.Errorf("eval(%v): %v", x.Params.List.List[i], err)
 		}
 
-		env.Const[ast.Ident(g.Params.List.List[i])] = v
+		env.Const[ast.Must(ast.Ident(g.Params.List.List[i]))] = v
 	}
 
 	// count ctrl/negctrl equals to target
@@ -715,7 +724,7 @@ func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 			continue
 		}
 
-		panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[i]))
+		return nil, fmt.Errorf("qubit(%v) not found", x.QArgs.List[i])
 	}
 
 	// target
@@ -725,10 +734,10 @@ func (e *Evaluator) extend(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 			continue
 		}
 
-		panic(fmt.Sprintf("qubit(%v) not found", x.QArgs.List[c+i]))
+		return nil, fmt.Errorf("qubit(%v) not found", x.QArgs.List[c+i])
 	}
 
-	return env
+	return env, nil
 }
 
 func override(block ast.BlockStmt, name []string) ast.BlockStmt {

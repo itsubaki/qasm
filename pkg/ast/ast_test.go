@@ -70,20 +70,9 @@ func TestIdent(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got := ast.Ident(c.in)
+		got, _ := ast.Ident(c.in)
 		if got != c.want {
 			t.Errorf("got=%v, want=%v", got, c.want)
 		}
 	}
-}
-
-func TestIdentPanic(t *testing.T) {
-	defer func() {
-		if err := recover(); err != "invalid type=string" {
-			t.Fail()
-		}
-	}()
-
-	ast.Ident("hoge")
-	t.Fail()
 }

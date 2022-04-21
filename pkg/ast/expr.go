@@ -8,14 +8,6 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
-func Must[T int | int64 | float64](v T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-
-	return v
-}
-
 type ExprList struct {
 	List []Expr
 }

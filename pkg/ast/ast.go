@@ -44,23 +44,23 @@ type Decl interface {
 	declNode()
 }
 
-func Ident(x interface{}) string {
+func Ident(x interface{}) (string, error) {
 	switch x := x.(type) {
 	case *IdentExpr:
-		return x.Name
+		return x.Name, nil // q
 	case *IndexExpr:
-		return x.Name
+		return x.Name, nil // q[2]
 	case *GenDecl:
-		return x.Name
+		return x.Name, nil // qubit q, qubit[2] q
 	case *GenConst:
-		return x.Name
+		return x.Name, nil // const N = 15
 	case *GateDecl:
-		return x.Name
+		return x.Name, nil // gate X {}
 	case *FuncDecl:
-		return x.Name
+		return x.Name, nil // def shor(){}
 	case *BasicLit:
-		return x.Value
+		return x.Value, nil
 	}
 
-	panic(fmt.Sprintf("invalid type=%T", x))
+	return "", fmt.Errorf("invalid type=%T", x)
 }
