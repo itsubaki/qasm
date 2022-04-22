@@ -380,63 +380,6 @@ func (e *Evaluator) measure(x *ast.MeasureExpr, env *object.Environment) (object
 	return &object.Array{Elm: bit}, nil
 }
 
-func (e *Evaluator) state(s *ast.PrintStmt, env *object.Environment) (*State, error) {
-	out := &State{Classical: make([]Classical, 0)}
-	for _, n := range env.Bit.Name {
-		v, ok := e.Env.Bit.Get(&ast.IdentExpr{Name: n})
-		if !ok {
-			return nil, fmt.Errorf("bit(%v) not found", n)
-		}
-		out.Classical = append(out.Classical, Classical{
-			Name:  n,
-			Value: v,
-		})
-	}
-
-	if len(env.Qubit.Name) == 0 {
-		return out, nil
-	}
-
-	qargs := s.QArgs.List
-	if len(qargs) == 0 {
-		for _, n := range env.Qubit.Name {
-			qargs = append(qargs, &ast.IdentExpr{Name: n})
-		}
-	}
-
-	var index [][]int
-	for _, a := range qargs {
-		qb, ok := env.Qubit.Get(a)
-		if !ok {
-			return nil, fmt.Errorf("qubit(%v) not found", a)
-		}
-
-		index = append(index, q.Index(qb...))
-	}
-	out.Quantum = e.Q.Raw().State(index...)
-
-	return out, nil
-}
-
-func (e *Evaluator) State() (*State, error) {
-	return e.state(&ast.PrintStmt{}, e.Env)
-}
-
-func (e *Evaluator) Println(s *State) {
-	for _, s := range s.Quantum {
-		fmt.Println(s)
-	}
-
-	for _, s := range s.Classical {
-		fmt.Printf("%v: ", s.Name)
-		for _, v := range s.Value {
-			fmt.Printf("%v", v)
-		}
-
-		fmt.Println()
-	}
-}
-
 func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, qargs [][]q.Qubit, env *object.Environment) error {
 	// QFT, IQFT, CMODEXP2
 	if e.tryBuiltinApply(g, params, qargs) {
@@ -586,16 +529,30 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 
 	switch f := f.(type) {
 	case *ast.GateDecl:
-		return &object.Nil{}, e.applyGate(x, f, env)
+		return &object.Nil{}, e.applyg(x, f, env)
 	case *ast.FuncDecl:
-		return e.applyFunc(x, f, env)
+		return e.applyf(x, f, env)
 	}
 
 	return nil, fmt.Errorf("unsupported. call=%v", f)
 }
 
-func (e *Evaluator) applyGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
-	env, err := e.ext(x, g, outer)
+func (e *Evaluator) ctrl(x *ast.CallExpr, body ast.BlockStmt, env *object.Environment) error {
+	ctrl := ast.ModCtrl(x.Modifier)
+	if len(ctrl) > 0 {
+		body = override(addmod(body, ctrl), env.Qubit.Name)
+	}
+
+	// bell q0, q1;
+	if _, err := e.eval(&body, env); err != nil {
+		return fmt.Errorf("eval(%v): %v", &body, err)
+	}
+
+	return nil
+}
+
+func (e *Evaluator) applyg(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
+	env, err := e.extg(x, g, outer)
 	if err != nil {
 		return fmt.Errorf("extend: %v", err)
 	}
@@ -610,8 +567,8 @@ func (e *Evaluator) applyGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.En
 	// U
 	pow := ast.ModPow(x.Modifier)
 	if len(pow) == 0 {
-		if err := e.ctrlCall(x, body, env); err != nil {
-			return fmt.Errorf("ctrlCall(%v): %v", x, err)
+		if err := e.ctrl(x, body, env); err != nil {
+			return fmt.Errorf("ctrl(%v): %v", x, err)
 		}
 
 		return nil
@@ -643,15 +600,15 @@ func (e *Evaluator) applyGate(x *ast.CallExpr, g *ast.GateDecl, outer *object.En
 	// apply pow(2) @ U
 	for i := 0; i < p; i++ {
 		// U
-		if err := e.ctrlCall(x, body, env); err != nil {
-			return fmt.Errorf("ctrlCall(%v): %v", x, err)
+		if err := e.ctrl(x, body, env); err != nil {
+			return fmt.Errorf("ctrl(%v): %v", x, err)
 		}
 	}
 
 	return nil
 }
 
-func (e *Evaluator) ext(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) (*object.Environment, error) {
+func (e *Evaluator) extg(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) (*object.Environment, error) {
 	env := object.NewEnclosedEnvironment(outer)
 
 	for i, p := range g.Params.List.List {
@@ -700,18 +657,90 @@ func (e *Evaluator) ext(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environm
 	return env, nil
 }
 
-func (e *Evaluator) ctrlCall(x *ast.CallExpr, body ast.BlockStmt, env *object.Environment) error {
-	ctrl := ast.ModCtrl(x.Modifier)
-	if len(ctrl) > 0 {
-		body = override(addmod(body, ctrl), env.Qubit.Name)
+func (e *Evaluator) applyf(x *ast.CallExpr, g *ast.FuncDecl, env *object.Environment) (object.Object, error) {
+	ext, err := e.extf(x, g, env)
+	if err != nil {
+		return nil, fmt.Errorf("extend: %v", err)
 	}
 
-	// bell q0, q1;
-	if _, err := e.eval(&body, env); err != nil {
-		return fmt.Errorf("eval(%v): %v", &body, err)
+	v, err := e.eval(&g.Body, ext)
+	if err != nil {
+		return nil, fmt.Errorf("eval(%v): %v", &g.Body, err)
 	}
 
-	return nil
+	return v.(*object.ReturnValue).Value, nil
+}
+
+func (e *Evaluator) extf(x *ast.CallExpr, g *ast.FuncDecl, outer *object.Environment) (*object.Environment, error) {
+	env := object.NewEnclosedEnvironment(outer)
+
+	for i := range g.QArgs.List {
+		if v, ok := outer.Qubit.Get(x.QArgs.List[i]); ok {
+			env.Qubit.Add(g.QArgs.List[i], v)
+			continue
+		}
+
+		return nil, fmt.Errorf("qubit(%v) not found", x.QArgs.List[i])
+	}
+
+	return env, nil
+}
+
+func (e *Evaluator) state(s *ast.PrintStmt, env *object.Environment) (*State, error) {
+	out := &State{Classical: make([]Classical, 0)}
+	for _, n := range env.Bit.Name {
+		v, ok := e.Env.Bit.Get(&ast.IdentExpr{Name: n})
+		if !ok {
+			return nil, fmt.Errorf("bit(%v) not found", n)
+		}
+		out.Classical = append(out.Classical, Classical{
+			Name:  n,
+			Value: v,
+		})
+	}
+
+	if len(env.Qubit.Name) == 0 {
+		return out, nil
+	}
+
+	qargs := s.QArgs.List
+	if len(qargs) == 0 {
+		for _, n := range env.Qubit.Name {
+			qargs = append(qargs, &ast.IdentExpr{Name: n})
+		}
+	}
+
+	var index [][]int
+	for _, a := range qargs {
+		qb, ok := env.Qubit.Get(a)
+		if !ok {
+			return nil, fmt.Errorf("qubit(%v) not found", a)
+		}
+
+		index = append(index, q.Index(qb...))
+	}
+	out.Quantum = e.Q.Raw().State(index...)
+
+	return out, nil
+}
+
+func (e *Evaluator) State() (*State, error) {
+	return e.state(&ast.PrintStmt{}, e.Env)
+}
+
+func (e *Evaluator) Println(s *State) {
+	for _, s := range s.Quantum {
+		fmt.Println(s)
+	}
+
+	for _, s := range s.Classical {
+		fmt.Printf("%v: ", s.Name)
+		for _, v := range s.Value {
+			fmt.Printf("%v", v)
+		}
+
+		fmt.Println()
+	}
 }
 
 func override(block ast.BlockStmt, name []string) ast.BlockStmt {
@@ -815,33 +844,4 @@ func flatten(qargs [][]q.Qubit) []q.Qubit {
 	}
 
 	return out
-}
-
-func (e *Evaluator) applyFunc(x *ast.CallExpr, g *ast.FuncDecl, env *object.Environment) (object.Object, error) {
-	ext, err := e.extf(x, g, env)
-	if err != nil {
-		return nil, fmt.Errorf("extend: %v", err)
-	}
-
-	v, err := e.eval(&g.Body, ext)
-	if err != nil {
-		return nil, fmt.Errorf("eval(%v): %v", &g.Body, err)
-	}
-
-	return v.(*object.ReturnValue).Value, nil
-}
-
-func (e *Evaluator) extf(x *ast.CallExpr, g *ast.FuncDecl, outer *object.Environment) (*object.Environment, error) {
-	env := object.NewEnclosedEnvironment(outer)
-
-	for i := range g.QArgs.List {
-		if v, ok := outer.Qubit.Get(x.QArgs.List[i]); ok {
-			env.Qubit.Add(g.QArgs.List[i], v)
-			continue
-		}
-
-		return nil, fmt.Errorf("qubit(%v) not found", x.QArgs.List[i])
-	}
-
-	return env, nil
 }
