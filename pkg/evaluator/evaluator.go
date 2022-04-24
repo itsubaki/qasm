@@ -537,7 +537,7 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 	return nil, fmt.Errorf("unsupported. call=%v", f)
 }
 
-func (e *Evaluator) ctrl(x *ast.CallExpr, body ast.BlockStmt, env *object.Environment) error {
+func (e *Evaluator) tryCtrlCall(x *ast.CallExpr, body ast.BlockStmt, env *object.Environment) error {
 	ctrl := ast.ModCtrl(x.Modifier)
 	if len(ctrl) > 0 {
 		body = override(addmod(body, ctrl), env.Qubit.Name)
@@ -567,7 +567,7 @@ func (e *Evaluator) applyg(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 	// U
 	pow := ast.ModPow(x.Modifier)
 	if len(pow) == 0 {
-		if err := e.ctrl(x, body, env); err != nil {
+		if err := e.tryCtrlCall(x, body, env); err != nil {
 			return fmt.Errorf("ctrl(%v): %v", x, err)
 		}
 
@@ -600,7 +600,7 @@ func (e *Evaluator) applyg(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 	// apply pow(2) @ U
 	for i := 0; i < p; i++ {
 		// U
-		if err := e.ctrl(x, body, env); err != nil {
+		if err := e.tryCtrlCall(x, body, env); err != nil {
 			return fmt.Errorf("ctrl(%v): %v", x, err)
 		}
 	}
