@@ -42,7 +42,7 @@ func eval(qasm string, verbose ...bool) error {
 	return nil
 }
 
-func Example_ctrlxqr0() {
+func Example_ctrl_x_qr0() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -65,7 +65,7 @@ ctrl @ x q, r[0];
 	// [11 10][  3   2]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrlctrlxq0q1r0() {
+func Example_ctrlCtrl_x_q0q1r0() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -88,7 +88,7 @@ ctrl @ ctrl @ x q[0], q[1], r[0];
 	// [11 10][  3   2]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrlxqr() {
+func Example_ctrl_x_qr() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -111,7 +111,7 @@ ctrl @ x q, r;
 	// [11 1][  3   1]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrlxqr2() {
+func Example_ctrl_x_qr1() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -135,7 +135,7 @@ ctrl @ x q, r;
 	// [10 00][  2   0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrlxqr3() {
+func Example_ctrl_x_qr2() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -159,7 +159,7 @@ ctrl @ x q[1], r[1];
 	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrlctrlxq0q1r() {
+func Example_ctrlCtrl_x_q0q1r() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -228,7 +228,7 @@ h q;
 	// [1][  1]( 0.7071 0.0000i): 0.5000
 }
 
-func Example_incl() {
+func Example_include() {
 	qasm := `
 OPENQASM 3.0;
 include "../../testdata/stdgates.qasm";
@@ -268,7 +268,7 @@ U(pi, 0, pi) q;
 	// [11][  3]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_uhermite() {
+func Example_hermite() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -380,7 +380,7 @@ pow(-2) @ U(1.0, 2.0, 3.0) q;
 	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_negcu() {
+func Example_negctrl_u() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -401,7 +401,7 @@ negctrl @ U(pi, 0, pi) q, r;
 	// [00 11][  0   3]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gHermite() {
+func Example_hermite_gate() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -424,7 +424,7 @@ x q; x q;
 	// [0][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gHermiteArray() {
+func Example_hermite_gate_array() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -450,7 +450,7 @@ x q[1]; x q[1];
 	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gInv() {
+func Example_inv_gate() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -472,7 +472,7 @@ inv @ u q;
 	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gPow0() {
+func Example_pow0_gate() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -493,7 +493,7 @@ pow(0) @ u(1.0, 2.0, 3.0) q;
 	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gPow1() {
+func Example_pow1_gate() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -515,7 +515,7 @@ inv    @ u(1.0, 2.0, 3.0) q;
 	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gPow2() {
+func Example_pow2_gate() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -537,7 +537,7 @@ pow(-2) @ u(1.0, 2.0, 3.0) q;
 	// [00][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrlx() {
+func Example_ctrl_x() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -561,7 +561,7 @@ ctrl @ x q[0], r[0];
 	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrlx2() {
+func Example_ctrl_x2() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -585,7 +585,7 @@ ctrl @ x q, r;
 	// [11 11][  3   3]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrlx3() {
+func Example_ctrl_x3() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -633,7 +633,7 @@ cx q[0], r[0];
 	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_cx2() {
+func Example_cx1() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -657,7 +657,7 @@ cx q, r;
 	// [11 11][  3   3]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_cx3() {
+func Example_cx2() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -681,7 +681,7 @@ cx q[0], r;
 	// [10 11][  2   3]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_cxba() {
+func Example_cx_ba() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -706,7 +706,7 @@ cx q0, q1;
 	// [11 11][  3   3]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrlcx() {
+func Example_ctrl_cx() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -733,7 +733,7 @@ ctrl @ cx q0, q1, q2;
 	// [1 1 1][  1   1   1]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ccx() {
+func Example_cCX() {
 	qasm := `
 OPENQASM 3.0;
 
