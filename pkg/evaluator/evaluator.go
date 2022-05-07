@@ -302,12 +302,31 @@ func (e *Evaluator) evalInfix(kind lexer.Token, lhs, rhs object.Object) (object.
 }
 
 func (e *Evaluator) evalPrint(s *ast.PrintStmt, env *object.Environment) error {
-	state, err := e.state(s, env)
-	if err != nil {
-		return fmt.Errorf("state: %v", err)
+	if len(env.Qubit.Name) == 0 {
+		return nil
 	}
 
-	e.Println(state)
+	qargs := s.QArgs.List
+	if len(qargs) == 0 {
+		for _, n := range env.Qubit.Name {
+			qargs = append(qargs, &ast.IdentExpr{Name: n})
+		}
+	}
+
+	var index [][]int
+	for _, a := range qargs {
+		qb, ok := env.Qubit.Get(a)
+		if !ok {
+			return fmt.Errorf("qubit(%v) not found", a)
+		}
+
+		index = append(index, q.Index(qb...))
+	}
+
+	for _, s := range e.Q.Raw().State(index...) {
+		fmt.Println(s)
+	}
+
 	return nil
 }
 
@@ -686,61 +705,27 @@ func (e *Evaluator) extf(x *ast.CallExpr, g *ast.FuncDecl, outer *object.Environ
 	return env, nil
 }
 
-func (e *Evaluator) state(s *ast.PrintStmt, env *object.Environment) (*State, error) {
-	out := &State{Classical: make([]Classical, 0)}
-	for _, n := range env.Bit.Name {
-		v, ok := e.Env.Bit.Get(&ast.IdentExpr{Name: n})
+func (e *Evaluator) Println() error {
+	if _, err := e.eval(&ast.PrintStmt{}, e.Env); err != nil {
+		return fmt.Errorf("print qubit: %v", err)
+	}
+
+	for _, n := range e.Env.Bit.Name {
+		fmt.Printf("%v: ", n)
+
+		c, ok := e.Env.Bit.Get(&ast.IdentExpr{Name: n})
 		if !ok {
-			return nil, fmt.Errorf("bit(%v) not found", n)
-		}
-		out.Classical = append(out.Classical, Classical{
-			Name:  n,
-			Value: v,
-		})
-	}
-
-	if len(env.Qubit.Name) == 0 {
-		return out, nil
-	}
-
-	qargs := s.QArgs.List
-	if len(qargs) == 0 {
-		for _, n := range env.Qubit.Name {
-			qargs = append(qargs, &ast.IdentExpr{Name: n})
-		}
-	}
-
-	var index [][]int
-	for _, a := range qargs {
-		qb, ok := env.Qubit.Get(a)
-		if !ok {
-			return nil, fmt.Errorf("qubit(%v) not found", a)
+			return fmt.Errorf("bit(%v) not found", n)
 		}
 
-		index = append(index, q.Index(qb...))
-	}
-	out.Quantum = e.Q.Raw().State(index...)
-
-	return out, nil
-}
-
-func (e *Evaluator) State() (*State, error) {
-	return e.state(&ast.PrintStmt{}, e.Env)
-}
-
-func (e *Evaluator) Println(s *State) {
-	for _, s := range s.Quantum {
-		fmt.Println(s)
-	}
-
-	for _, s := range s.Classical {
-		fmt.Printf("%v: ", s.Name)
-		for _, v := range s.Value {
+		for _, v := range c {
 			fmt.Printf("%v", v)
 		}
 
 		fmt.Println()
 	}
+
+	return nil
 }
 
 func override(block ast.BlockStmt, name []string) ast.BlockStmt {

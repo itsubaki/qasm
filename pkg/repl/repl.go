@@ -42,13 +42,13 @@ func Run(in io.Reader) error {
 		ast := p.Parse()
 		if errs := p.Errors(); len(errs) != 0 {
 			for _, err := range errs {
-				fmt.Printf("[ERROR] parse: %v\n", err)
+				fmt.Printf("parse: %v\n", err)
 			}
 			continue
 		}
 
 		if err := e.Eval(ast); err != nil {
-			fmt.Printf("[ERROR] eval: %v\n", err)
+			fmt.Printf("eval: %v\n", err)
 			continue
 		}
 
@@ -56,13 +56,9 @@ func Run(in io.Reader) error {
 			continue
 		}
 
-		s, err := e.State()
-		if err != nil {
-			fmt.Printf("[ERROR] state: %v\n", err)
-			continue
+		if err := e.Println(); err != nil {
+			fmt.Printf("print: %v\n", err)
 		}
-
-		e.Println(s)
 	}
 
 	return nil
