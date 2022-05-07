@@ -18,9 +18,4 @@ qubit[4] r1;
 bit[3] c;
 reset r0, r1;
 
-x r1[-1];
-h r0;
-CMODEXP2(a, N) r0, r1;
-IQFT r0;
-
-c = measure r0;
+c = shor(a, N) r0, r1;
