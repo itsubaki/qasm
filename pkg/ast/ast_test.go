@@ -57,20 +57,27 @@ func ExampleOpenQASM_String() {
 
 func TestIdent(t *testing.T) {
 	var cases = []struct {
-		in   interface{}
-		want string
+		in     interface{}
+		want   string
+		hasErr bool
 	}{
-		{&ast.IdentExpr{Name: "ident"}, "ident"},
-		{&ast.IndexExpr{Name: "index"}, "index"},
-		{&ast.GenDecl{Name: "gendecl"}, "gendecl"},
-		{&ast.GenConst{Name: "genconst"}, "genconst"},
-		{&ast.GateDecl{Name: "gatedecl"}, "gatedecl"},
-		{&ast.FuncDecl{Name: "funcdecl"}, "funcdecl"},
-		{&ast.BasicLit{Value: "basic"}, "basic"},
+		{&ast.IdentExpr{Name: "ident"}, "ident", false},
+		{&ast.IndexExpr{Name: "index"}, "index", false},
+		{&ast.GenDecl{Name: "gendecl"}, "gendecl", false},
+		{&ast.GenConst{Name: "genconst"}, "genconst", false},
+		{&ast.GateDecl{Name: "gatedecl"}, "gatedecl", false},
+		{&ast.FuncDecl{Name: "funcdecl"}, "funcdecl", false},
+		{&ast.BasicLit{Value: "basic"}, "basic", false},
+		{"foobar", "", true},
 	}
 
 	for _, c := range cases {
-		got, _ := ast.Ident(c.in)
+		got, err := ast.Ident(c.in)
+		if (err != nil) != c.hasErr {
+			t.Errorf("err: %v", err)
+			continue
+		}
+
 		if got != c.want {
 			t.Errorf("got=%v, want=%v", got, c.want)
 		}

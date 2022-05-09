@@ -260,3 +260,25 @@ func TestDeclLiteral(t *testing.T) {
 		}
 	}
 }
+
+func TestDeclList(t *testing.T) {
+	l := &ast.DeclList{}
+	l.Append(&ast.BadDecl{})
+	l.Append(&ast.BadDecl{})
+
+	if len(l.List) != 2 {
+		t.Errorf("invalid length=%v", len(l.List))
+	}
+}
+
+func TestBadDecl(t *testing.T) {
+	d := &ast.BadDecl{}
+
+	if len(d.String()) > 0 {
+		t.Errorf("invalid string= %v", d.String())
+	}
+
+	if len(d.Literal()) > 0 {
+		t.Errorf("invalid literal= %v", d.Literal())
+	}
+}

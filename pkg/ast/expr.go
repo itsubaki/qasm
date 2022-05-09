@@ -8,6 +8,18 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
+type BadExpr struct{}
+
+func (x *BadExpr) exprNode() {}
+
+func (x *BadExpr) Literal() string {
+	return ""
+}
+
+func (x *BadExpr) String() string {
+	return ""
+}
+
 type ExprList struct {
 	List []Expr
 }
@@ -20,10 +32,6 @@ func (x *ExprList) Literal() string {
 
 func (x *ExprList) Append(e Expr) {
 	x.List = append(x.List, e)
-}
-
-func (x *ExprList) Len() int {
-	return len(x.List)
 }
 
 func (x *ExprList) String() string {
@@ -53,18 +61,6 @@ func (x *ParenExpr) String() string {
 	buf.WriteString(lexer.Tokens[lexer.RPAREN])
 
 	return buf.String()
-}
-
-type BadExpr struct{}
-
-func (x *BadExpr) exprNode() {}
-
-func (x *BadExpr) Literal() string {
-	return ""
-}
-
-func (x *BadExpr) String() string {
-	return ""
 }
 
 type IdentExpr struct {

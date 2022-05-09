@@ -503,3 +503,15 @@ func ExampleBlockStmt_Reverse() {
 	// { H q0; cx q0, q1; }
 	// { cx q0, q1; H q0; }
 }
+
+func TestBadStmt(t *testing.T) {
+	s := &ast.BadStmt{}
+
+	if len(s.String()) > 0 {
+		t.Errorf("invalid string= %v", s.String())
+	}
+
+	if len(s.Literal()) > 0 {
+		t.Errorf("invalid literal= %v", s.Literal())
+	}
+}

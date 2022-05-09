@@ -7,6 +7,18 @@ import (
 	"github.com/itsubaki/qasm/pkg/lexer"
 )
 
+type BadDecl struct{}
+
+func (d *BadDecl) declNode() {}
+
+func (d *BadDecl) Literal() string {
+	return ""
+}
+
+func (d *BadDecl) String() string {
+	return ""
+}
+
 type DeclList struct {
 	List []Decl
 }
@@ -30,6 +42,10 @@ type ParenDecl struct {
 
 func (d *ParenDecl) declNode() {}
 
+func (d *ParenDecl) Append(e Decl) {
+	d.List.Append(e)
+}
+
 func (d *ParenDecl) Literal() string {
 	return lexer.Tokens[lexer.LPAREN]
 }
@@ -42,22 +58,6 @@ func (d *ParenDecl) String() string {
 	buf.WriteString(lexer.Tokens[lexer.RPAREN])
 
 	return buf.String()
-}
-
-func (d *ParenDecl) Append(e Decl) {
-	d.List.Append(e)
-}
-
-type BadDecl struct{}
-
-func (d *BadDecl) declNode() {}
-
-func (d *BadDecl) Literal() string {
-	return ""
-}
-
-func (d *BadDecl) String() string {
-	return ""
 }
 
 type GenDecl struct {
