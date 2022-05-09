@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/itsubaki/q v1.1.4
-	github.com/urfave/cli/v2 v2.5.1
+	github.com/urfave/cli/v2 v2.6.0
 )
 
 require (
