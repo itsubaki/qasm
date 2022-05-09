@@ -10,6 +10,7 @@ import (
 	"github.com/itsubaki/q/pkg/math/matrix"
 	"github.com/itsubaki/q/pkg/quantum/gate"
 	"github.com/itsubaki/qasm/pkg/ast"
+	"github.com/itsubaki/qasm/pkg/evaluator/env"
 	"github.com/itsubaki/qasm/pkg/evaluator/object"
 	"github.com/itsubaki/qasm/pkg/lexer"
 	"github.com/itsubaki/qasm/pkg/parser"
@@ -19,7 +20,7 @@ const indent = ".  "
 
 type Evaluator struct {
 	Q      *q.Q
-	Env    *object.Environment
+	Env    *env.Environment
 	Opts   Opts
 	indent int
 }
@@ -28,7 +29,7 @@ type Opts struct {
 	Verbose bool
 }
 
-func New(qsim *q.Q, env *object.Environment, opts ...Opts) *Evaluator {
+func New(qsim *q.Q, env *env.Environment, opts ...Opts) *Evaluator {
 	e := &Evaluator{
 		Q:   qsim,
 		Env: env,
@@ -42,11 +43,11 @@ func New(qsim *q.Q, env *object.Environment, opts ...Opts) *Evaluator {
 }
 
 func Default(opts ...Opts) *Evaluator {
-	return New(q.New(), object.NewEnvironment(), opts...)
+	return New(q.New(), env.New(), opts...)
 }
 
 func Eval(n ast.Node) (object.Object, error) {
-	return Default().eval(n, object.NewEnvironment())
+	return Default().eval(n, env.New())
 }
 
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
@@ -71,7 +72,7 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	return nil
 }
 
-func (e *Evaluator) eval(n ast.Node, env *object.Environment) (obj object.Object, err error) {
+func (e *Evaluator) eval(n ast.Node, env *env.Environment) (obj object.Object, err error) {
 	if e.Opts.Verbose {
 		defer func() {
 			if obj != nil && obj.Type() != object.NIL {
@@ -297,7 +298,7 @@ func (e *Evaluator) evalInfix(kind lexer.Token, lhs, rhs object.Object) (object.
 	return nil, fmt.Errorf("unsupported(%v)", kind)
 }
 
-func (e *Evaluator) evalPrint(s *ast.PrintStmt, env *object.Environment) error {
+func (e *Evaluator) evalPrint(s *ast.PrintStmt, env *env.Environment) error {
 	if len(env.Qubit.Name) == 0 {
 		return nil
 	}
@@ -326,7 +327,7 @@ func (e *Evaluator) evalPrint(s *ast.PrintStmt, env *object.Environment) error {
 	return nil
 }
 
-func (e *Evaluator) evalReset(s *ast.ResetStmt, env *object.Environment) error {
+func (e *Evaluator) evalReset(s *ast.ResetStmt, env *env.Environment) error {
 	for _, a := range s.QArgs.List {
 		qb, ok := env.Qubit.Get(a)
 		if !ok {
@@ -339,7 +340,7 @@ func (e *Evaluator) evalReset(s *ast.ResetStmt, env *object.Environment) error {
 	return nil
 }
 
-func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
+func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *env.Environment) error {
 	var params []float64
 	for _, p := range s.Params.List.List {
 		v, err := e.eval(p, env)
@@ -370,7 +371,7 @@ func (e *Evaluator) evalApply(s *ast.ApplyStmt, env *object.Environment) error {
 	return e.apply(s.Modifier, s.Kind, params, qargs, env)
 }
 
-func (e *Evaluator) measure(x *ast.MeasureExpr, env *object.Environment) (object.Object, error) {
+func (e *Evaluator) measure(x *ast.MeasureExpr, env *env.Environment) (object.Object, error) {
 	qargs := x.QArgs.List
 	if len(qargs) == 0 {
 		return nil, fmt.Errorf("qargs is empty")
@@ -396,7 +397,7 @@ func (e *Evaluator) measure(x *ast.MeasureExpr, env *object.Environment) (object
 	return &object.Array{Elm: bit}, nil
 }
 
-func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, qargs [][]q.Qubit, env *object.Environment) error {
+func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, qargs [][]q.Qubit, env *env.Environment) error {
 	// QFT, IQFT, CMODEXP2
 	if e.builtinApply(g, params, qargs) {
 		return nil
@@ -451,7 +452,7 @@ func (e *Evaluator) builtinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) 
 	return false
 }
 
-func (e *Evaluator) ctrl(mod []ast.Modifier, qargs [][]q.Qubit, env *object.Environment) ([]q.Qubit, []q.Qubit, error) {
+func (e *Evaluator) ctrl(mod []ast.Modifier, qargs [][]q.Qubit, env *env.Environment) ([]q.Qubit, []q.Qubit, error) {
 	cqargs := flatten(qargs[0 : len(qargs)-1])
 
 	var ctrl, negc []q.Qubit
@@ -488,7 +489,7 @@ func (e *Evaluator) ctrlApply(ctrl, negc []q.Qubit, u matrix.Matrix, qargs [][]q
 	}
 }
 
-func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environment) (matrix.Matrix, error) {
+func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *env.Environment) (matrix.Matrix, error) {
 	// U
 	pow := ast.ModPow(mod)
 	if len(pow) == 0 {
@@ -527,7 +528,7 @@ func (e *Evaluator) pow(mod []ast.Modifier, u matrix.Matrix, env *object.Environ
 	return out, nil
 }
 
-func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Object, error) {
+func (e *Evaluator) call(x *ast.CallExpr, env *env.Environment) (object.Object, error) {
 	f, ok := env.Func[x.Name]
 	if !ok {
 		return nil, fmt.Errorf("decl(%v) not found", x.Name)
@@ -548,7 +549,7 @@ func (e *Evaluator) call(x *ast.CallExpr, env *object.Environment) (object.Objec
 	return nil, fmt.Errorf("unsupported. call=%v", f)
 }
 
-func (e *Evaluator) ctrlCall(x *ast.CallExpr, body ast.BlockStmt, env *object.Environment) error {
+func (e *Evaluator) ctrlCall(x *ast.CallExpr, body ast.BlockStmt, env *env.Environment) error {
 	ctrl := ast.ModCtrl(x.Modifier)
 	if len(ctrl) > 0 {
 		body = override(addmod(body, ctrl), env.Qubit.Name)
@@ -562,7 +563,7 @@ func (e *Evaluator) ctrlCall(x *ast.CallExpr, body ast.BlockStmt, env *object.En
 	return nil
 }
 
-func (e *Evaluator) applyg(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) error {
+func (e *Evaluator) applyg(x *ast.CallExpr, g *ast.GateDecl, outer *env.Environment) error {
 	// extend
 	env, err := e.extg(x, g, outer)
 	if err != nil {
@@ -618,8 +619,8 @@ func (e *Evaluator) applyg(x *ast.CallExpr, g *ast.GateDecl, outer *object.Envir
 	return nil
 }
 
-func (e *Evaluator) extg(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environment) (*object.Environment, error) {
-	env := object.NewEnclosedEnvironment(outer)
+func (e *Evaluator) extg(x *ast.CallExpr, g *ast.GateDecl, outer *env.Environment) (*env.Environment, error) {
+	env := env.NewEnclosed(outer)
 
 	for i, p := range g.Params.List.List {
 		n := ast.Must(ast.Ident(p))
@@ -665,7 +666,7 @@ func (e *Evaluator) extg(x *ast.CallExpr, g *ast.GateDecl, outer *object.Environ
 	return env, nil
 }
 
-func (e *Evaluator) applyf(x *ast.CallExpr, g *ast.FuncDecl, env *object.Environment) (object.Object, error) {
+func (e *Evaluator) applyf(x *ast.CallExpr, g *ast.FuncDecl, env *env.Environment) (object.Object, error) {
 	// extned
 	ext, err := e.extf(x, g, env)
 	if err != nil {
@@ -681,8 +682,8 @@ func (e *Evaluator) applyf(x *ast.CallExpr, g *ast.FuncDecl, env *object.Environ
 	return v.(*object.ReturnValue).Value, nil
 }
 
-func (e *Evaluator) extf(x *ast.CallExpr, g *ast.FuncDecl, outer *object.Environment) (*object.Environment, error) {
-	env := object.NewEnclosedEnvironment(outer)
+func (e *Evaluator) extf(x *ast.CallExpr, g *ast.FuncDecl, outer *env.Environment) (*env.Environment, error) {
+	env := env.NewEnclosed(outer)
 
 	for i := range g.QArgs.List {
 		if v, ok := outer.Qubit.Get(x.QArgs.List[i]); ok {

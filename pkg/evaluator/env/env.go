@@ -1,4 +1,4 @@
-package object
+package env
 
 import (
 	"bytes"
@@ -6,13 +6,18 @@ import (
 
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/pkg/ast"
+	"github.com/itsubaki/qasm/pkg/evaluator/object"
 )
 
+type Func map[string]ast.Decl
+
+type Const map[string]object.Object
+
 type Environment struct {
-	Bit   *Bit
-	Qubit *Qubit
 	Const Const
 	Func  Func
+	Bit   *Bit
+	Qubit *Qubit
 	Outer *Environment
 }
 
@@ -27,9 +32,7 @@ func (e *Environment) String() string {
 	return buf.String()
 }
 
-type Func map[string]ast.Decl
-
-func NewEnvironment() *Environment {
+func New() *Environment {
 	return &Environment{
 		Bit: &Bit{
 			Name:  make([]string, 0),
@@ -39,22 +42,20 @@ func NewEnvironment() *Environment {
 			Name:  make([]string, 0),
 			Value: make(map[string][]q.Qubit),
 		},
-		Const: make(map[string]Object),
+		Const: make(map[string]object.Object),
 		Func:  make(map[string]ast.Decl),
 		Outer: nil,
 	}
 }
 
-func NewEnclosedEnvironment(outer *Environment) *Environment {
-	env := NewEnvironment()
+func NewEnclosed(outer *Environment) *Environment {
+	env := New()
 	env.Outer = outer
 	env.Func = outer.Func
 	env.Const = outer.Const
 
 	return env
 }
-
-type Const map[string]Object
 
 type Bit struct {
 	Name  []string
@@ -114,6 +115,7 @@ func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 	return nil, false
 }
 
+// q[-1] -> q[len(q)-1]
 func index(idx, len int) (int, error) {
 	out := idx
 	if idx < 0 {
