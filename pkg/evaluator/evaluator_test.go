@@ -280,7 +280,6 @@ Z q; Z q;
 H q; H q;
 T q; T q;
 S q; S q;
-QFT q; IQFT q;
 
 U(0, 0, 0) q;
 
@@ -298,6 +297,28 @@ U(pi, 0, pi) q[0];
 
 	// Output:
 	// [00][  0]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_qFT() {
+	qasm := `
+OPENQASM 3.0;
+
+qubit[3] q;
+reset q;
+
+X q[1];
+
+QFT q;
+IQFT q;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [010][  2]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_inv() {
