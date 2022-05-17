@@ -421,11 +421,7 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, q
 	}
 
 	// ctrl/negc @ U
-	ctrl, negc, err := e.ctrl(mod, qargs, env)
-	if err != nil {
-		return fmt.Errorf("ctrl(%v): %v", mod, err)
-	}
-
+	ctrl, negc := e.ctrl(mod, qargs, env)
 	if len(ctrl)+len(negc) > 0 {
 		e.ctrlApply(ctrl, negc, u, qargs)
 		return nil
@@ -452,9 +448,7 @@ func (e *Evaluator) builtinApply(g lexer.Token, p []float64, qargs [][]q.Qubit) 
 	return false
 }
 
-func (e *Evaluator) ctrl(mod []ast.Modifier, qargs [][]q.Qubit, env *env.Environment) ([]q.Qubit, []q.Qubit, error) {
-	cqargs := flatten(qargs[0 : len(qargs)-1])
-
+func (e *Evaluator) ctrl(mod []ast.Modifier, qargs [][]q.Qubit, env *env.Environment) ([]q.Qubit, []q.Qubit) {
 	var ctrl, negc []q.Qubit
 	for i, m := range ast.ModCtrl(mod) {
 		switch m.Kind {
@@ -465,11 +459,7 @@ func (e *Evaluator) ctrl(mod []ast.Modifier, qargs [][]q.Qubit, env *env.Environ
 		}
 	}
 
-	if len(ctrl)+len(negc) > 0 && len(cqargs)-len(ctrl)-len(negc) != 0 {
-		return nil, nil, fmt.Errorf("invalid ctrl/negc length")
-	}
-
-	return ctrl, negc, nil
+	return ctrl, negc
 }
 
 func (e *Evaluator) ctrlApply(ctrl, negc []q.Qubit, u matrix.Matrix, qargs [][]q.Qubit) {
