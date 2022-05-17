@@ -423,10 +423,7 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, q
 	// ctrl/negc @ U
 	ctrl, negc := e.ctrl(mod, qargs, env)
 	if len(ctrl)+len(negc) > 0 {
-		if err := e.ctrlApply(mod, ctrl, negc, u, qargs); err != nil {
-			return fmt.Errorf("ctrl apply: %v", err)
-		}
-
+		e.ctrlApply(mod, ctrl, negc, u, qargs)
 		return nil
 	}
 
@@ -465,9 +462,10 @@ func (e *Evaluator) ctrl(mod []ast.Modifier, qargs [][]q.Qubit, env *env.Environ
 	return ctrl, negc
 }
 
-func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix.Matrix, qargs [][]q.Qubit) error {
+func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix.Matrix, qargs [][]q.Qubit) {
 	c := append(ctrl, negc...)
 	t := qargs[len(qargs)-1]
+	m := ast.ModCtrl(mod)
 
 	if len(c) == len(t) {
 		// qubit[2] q;
@@ -481,7 +479,7 @@ func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix
 			e.negc(negc, func() { e.Q.C(u, c[i], t[i]) })
 		}
 
-		return nil
+		return
 	}
 
 	if len(c) == 1 {
@@ -499,10 +497,10 @@ func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix
 			e.negc(negc, func() { e.Q.C(u, c[0], t[i]) })
 		}
 
-		return nil
+		return
 	}
 
-	if len(t) == 1 && len(ast.ModCtrl(mod)) == 1 {
+	if len(t) == 1 && len(m) == 1 {
 		// qubit[2] q;
 		// qubit[2] r;
 		// ctrl @ x q, r[0];
@@ -514,19 +512,16 @@ func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix
 			e.negc(negc, func() { e.Q.C(u, c[i], t[0]) })
 		}
 
-		return nil
+		return
 	}
 
-	if len(ast.ModCtrl(mod)) > 1 {
-		// ctrl @ ctrl @ x q[0], q[1], r[0];
-		for i := range t {
-			e.negc(negc, func() { e.Q.Controlled(u, c, t[i]) })
-		}
-
-		return nil
+	// ctrl @ ctrl @ x q[0], q[1], r[0];
+	for i := range t {
+		e.negc(negc, func() { e.Q.Controlled(u, c, t[i]) })
 	}
 
-	return fmt.Errorf("undefined operation. len(c)=%v, len(t)=%v, len(mod)=%v", len(c), len(t), len(ast.ModCtrl(mod)))
+	// len(c) > 1 && len(t) > 1 && len(c) != len(t)
+	// ?
 }
 
 func (e *Evaluator) negc(negc []q.Qubit, f func()) {
