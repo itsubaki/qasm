@@ -465,74 +465,17 @@ func (e *Evaluator) ctrl(mod []ast.Modifier, qargs [][]q.Qubit, env *env.Environ
 func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix.Matrix, qargs [][]q.Qubit) {
 	c := append(ctrl, negc...)
 	t := qargs[len(qargs)-1]
-	m := ast.ModCtrl(mod)
 
-	if len(c) == len(t) {
-		// qubit[2] q;
-		// qubit[2] r;
-		// ctrl @ x q, r;
-		//
-		// equals to
-		// ctrl @ x q[0], r[0];
-		// ctrl @ x q[1], r[1];
-		for i := range c {
-			e.negc(negc, func() { e.Q.C(u, c[i], t[i]) })
-		}
-
-		return
-	}
-
-	if len(c) == 1 {
-		// qubit[2] q;
-		// qubit[2] r;
-		// ctrl @ x q[0], r;
-		//
-		// equals to
-		// ctrl @ x q[0], r[0];
-		// ctrl @ x q[0], r[1];
-		//
-		// or
-		// ctrl @ x q[0], r[0];
-		for i := range t {
-			e.negc(negc, func() { e.Q.C(u, c[0], t[i]) })
-		}
-
-		return
-	}
-
-	if len(t) == 1 && len(m) == 1 {
-		// qubit[2] q;
-		// qubit[2] r;
-		// ctrl @ x q, r[0];
-		//
-		// equals to
-		// ctrl @ q[0], r[0];
-		// ctrl @ q[1], r[0];
-		for i := range c {
-			e.negc(negc, func() { e.Q.C(u, c[i], t[0]) })
-		}
-
-		return
-	}
-
-	// ctrl @ ctrl @ x q[0], q[1], r[0];
 	for i := range t {
-		e.negc(negc, func() { e.Q.Controlled(u, c, t[i]) })
-	}
+		if len(negc) > 0 {
+			e.Q.X(negc...)
+		}
 
-	// len(c) > 1 && len(t) > 1 && len(c) != len(t)
-	// ?
-}
+		e.Q.Controlled(u, c, t[i])
 
-func (e *Evaluator) negc(negc []q.Qubit, f func()) {
-	if len(negc) > 0 {
-		e.Q.X(negc...)
-	}
-
-	f()
-
-	if len(negc) > 0 {
-		e.Q.X(negc...)
+		if len(negc) > 0 {
+			e.Q.X(negc...)
+		}
 	}
 }
 
