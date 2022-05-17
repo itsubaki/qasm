@@ -502,7 +502,7 @@ func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix
 		return nil
 	}
 
-	if len(ast.ModCtrl(mod)) == 1 && len(t) == 1 {
+	if len(c) > 0 && len(t) == 1 && len(ast.ModCtrl(mod)) == 1 {
 		// qubit[2] q;
 		// qubit[2] r;
 		// ctrl @ x q, r[0];
@@ -517,7 +517,7 @@ func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix
 		return nil
 	}
 
-	if len(ast.ModCtrl(mod)) > 1 && len(t) > 0 {
+	if len(c) > 0 && len(t) > 0 && len(ast.ModCtrl(mod)) == len(c) {
 		// ctrl @ ctrl @ x q[0], q[1], r[0];
 		for i := range t {
 			e.negc(negc, func() { e.Q.Controlled(u, c, t[i]) })
@@ -526,7 +526,7 @@ func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix
 		return nil
 	}
 
-	return fmt.Errorf("undefined operation")
+	return fmt.Errorf("undefined operation. len(c)=%v, len(t)=%v, len(mod)=%v", len(c), len(t), len(ast.ModCtrl(mod)))
 }
 
 func (e *Evaluator) negc(negc []q.Qubit, f func()) {
