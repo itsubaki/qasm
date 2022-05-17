@@ -236,7 +236,6 @@ reset q, r;
 	
 x q[0];
 ctrl @ ctrl @ x q[0], q[1], r[0];
-ctrl @ ctrl @ x q[0], q[1], r[1];
 `
 
 	if err := eval(qasm); err != nil {
