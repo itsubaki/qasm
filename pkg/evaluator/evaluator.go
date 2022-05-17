@@ -466,6 +466,29 @@ func (e *Evaluator) ctrlApply(ctrl, negc []q.Qubit, u matrix.Matrix, qargs [][]q
 	c := append(ctrl, negc...)
 	t := qargs[len(qargs)-1]
 
+	if len(c) == len(t) {
+		// qubit[2] q;
+		// qubit[2] r;
+		// ctrl @ x q, r;
+		//
+		// equals to
+		// ctrl @ x q[0], r[1]
+		// ctrl @ x q[1], r[1]
+		for i := range c {
+			if len(negc) > 0 {
+				e.Q.X(negc...)
+			}
+
+			e.Q.C(u, c[i], t[i])
+
+			if len(negc) > 0 {
+				e.Q.X(negc...)
+			}
+		}
+
+		return
+	}
+
 	for i := range t {
 		if len(negc) > 0 {
 			e.Q.X(negc...)
