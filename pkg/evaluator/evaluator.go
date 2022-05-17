@@ -472,33 +472,61 @@ func (e *Evaluator) ctrlApply(ctrl, negc []q.Qubit, u matrix.Matrix, qargs [][]q
 		// ctrl @ x q, r;
 		//
 		// equals to
-		// ctrl @ x q[0], r[1]
-		// ctrl @ x q[1], r[1]
+		// ctrl @ x q[0], r[1];
+		// ctrl @ x q[1], r[1];
 		for i := range c {
-			if len(negc) > 0 {
-				e.Q.X(negc...)
-			}
-
-			e.Q.C(u, c[i], t[i])
-
-			if len(negc) > 0 {
-				e.Q.X(negc...)
-			}
+			e.negc(negc, func() { e.Q.C(u, c[i], t[i]) })
 		}
 
 		return
 	}
 
-	for i := range t {
-		if len(negc) > 0 {
-			e.Q.X(negc...)
+	if len(c) > 1 && len(t) == 1 {
+		// ctrl @ ctrl @ x q[0], q[1], r[0];
+		e.negc(negc, func() { e.Q.Controlled(u, c, t[0]) })
+		return
+	}
+
+	if len(c) == 1 && len(t) > 0 {
+		// qubit[2] q;
+		// qubit[2] r;
+		// ctrl @ x q[0], r;
+		//
+		// equals to
+		// ctrl @ x q[0], r[0];
+		// ctrl @ x q[0], r[1];
+		//
+		// or
+		// ctrl @ x q[0], r[0];
+		for i := range t {
+			e.negc(negc, func() { e.Q.Controlled(u, c, t[i]) })
 		}
 
-		e.Q.Controlled(u, c, t[i])
+		return
+	}
 
-		if len(negc) > 0 {
-			e.Q.X(negc...)
-		}
+	// qubit[2] q;
+	// qubit[2] r;
+	// x q;
+	// ctrl @ x q, r[0];
+	//
+	// equals to
+	// ctrl @ q[0], r[0];
+	// ctrl @ q[1], r[0];
+
+	fmt.Println("hello")
+
+}
+
+func (e *Evaluator) negc(negc []q.Qubit, f func()) {
+	if len(negc) > 0 {
+		e.Q.X(negc...)
+	}
+
+	f()
+
+	if len(negc) > 0 {
+		e.Q.X(negc...)
 	}
 }
 
