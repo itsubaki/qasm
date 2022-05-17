@@ -423,7 +423,7 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, q
 	// ctrl/negc @ U
 	ctrl, negc := e.ctrl(mod, qargs, env)
 	if len(ctrl)+len(negc) > 0 {
-		e.ctrlApply(mod, ctrl, negc, u, qargs)
+		e.ctrlApply(ctrl, negc, u, qargs)
 		return nil
 	}
 
@@ -462,7 +462,7 @@ func (e *Evaluator) ctrl(mod []ast.Modifier, qargs [][]q.Qubit, env *env.Environ
 	return ctrl, negc
 }
 
-func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix.Matrix, qargs [][]q.Qubit) {
+func (e *Evaluator) ctrlApply(ctrl, negc []q.Qubit, u matrix.Matrix, qargs [][]q.Qubit) {
 	c := append(ctrl, negc...)
 	t := qargs[len(qargs)-1]
 
