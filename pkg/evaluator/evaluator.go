@@ -424,7 +424,7 @@ func (e *Evaluator) apply(mod []ast.Modifier, g lexer.Token, params []float64, q
 	ctrl, negc := e.ctrl(mod, qargs, env)
 	if len(ctrl)+len(negc) > 0 {
 		if err := e.ctrlApply(mod, ctrl, negc, u, qargs); err != nil {
-			return fmt.Errorf("ctrl: %v", err)
+			return fmt.Errorf("ctrl apply: %v", err)
 		}
 
 		return nil
@@ -484,7 +484,7 @@ func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix
 		return nil
 	}
 
-	if len(c) == 1 && len(t) > 0 {
+	if len(c) == 1 {
 		// qubit[2] q;
 		// qubit[2] r;
 		// ctrl @ x q[0], r;
@@ -502,7 +502,7 @@ func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix
 		return nil
 	}
 
-	if len(c) > 0 && len(t) == 1 && len(ast.ModCtrl(mod)) == 1 {
+	if len(t) == 1 && len(ast.ModCtrl(mod)) == 1 {
 		// qubit[2] q;
 		// qubit[2] r;
 		// ctrl @ x q, r[0];
@@ -517,7 +517,7 @@ func (e *Evaluator) ctrlApply(mod []ast.Modifier, ctrl, negc []q.Qubit, u matrix
 		return nil
 	}
 
-	if len(c) > 0 && len(t) > 0 && len(ast.ModCtrl(mod)) == len(c) {
+	if len(ast.ModCtrl(mod)) > 1 {
 		// ctrl @ ctrl @ x q[0], q[1], r[0];
 		for i := range t {
 			e.negc(negc, func() { e.Q.Controlled(u, c, t[i]) })

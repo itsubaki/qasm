@@ -48,10 +48,9 @@ gate x q { U(pi, 0, pi) q; }
 
 qubit[2] q;
 qubit r;
-reset q, r;
 	
 x q;
-ctrl @ x q, r;
+ctrl(2) @ x q, r;
 `
 
 	if err := eval(qasm); err != nil {
@@ -71,10 +70,9 @@ gate x q { U(pi, 0, pi) q; }
 
 qubit[2] q;
 qubit[2] r;
-reset q, r;
-	
+
 x q;
-ctrl @ x q, r;	
+ctrl(2) @ x q, r;
 `
 
 	// [00 00] -> [11 00] -> [11 11]
@@ -95,10 +93,9 @@ gate x q { U(pi, 0, pi) q; }
 
 qubit[2] q;
 qubit[2] r;
-reset q, r;
 	
 x q[0];
-ctrl @ x q, r;
+ctrl(2) @ x q, r;
 `
 
 	// [00 00] -> [10 00] -> [10 00]
@@ -119,7 +116,6 @@ gate x q { U(pi, 0, pi) q; }
 
 qubit[2] q;
 qubit[2] r;
-reset q, r;
 
 x q[0];
 ctrl @ x q[0], r[0];
@@ -143,7 +139,6 @@ gate x q { U(pi, 0, pi) q; }
 
 qubit[2] q;
 qubit[2] r;
-reset q, r;
 	
 x q[0];
 ctrl @ x q[0], r[0];
@@ -169,7 +164,7 @@ qubit[2] q;
 qubit[2] r;
 	
 x q;
-ctrl @ x q, r[0];
+ctrl(2) @ x q, r[0];
 `
 
 	// [00 00] -> [11 00] -> [11 10] -> [11 00]
@@ -253,7 +248,104 @@ ctrl @ ctrl @ x q[0], q[1], r[1];
 	// [10 00][  2   0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrl_ctrl_gate() {
+func Example_gate_ctrl() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate cx a, b { ctrl @ x a, b; }
+
+qubit[2] q;
+qubit[2] r;
+	
+x q[0];
+cx q[0], r[0];
+`
+
+	// [00 00] -> [10 00] -> [10 10]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_gate_ctrl_array() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate cx a, b { ctrl @ x a, b; }
+
+qubit[2] q;
+qubit[2] r;
+	
+x q;
+cx q, r;
+`
+
+	// [00 00] -> [11 00] -> [11 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [11 11][  3   3]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_gate_ctrl_array2() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate cx a, b { ctrl @ x a, b; }
+
+qubit[2] q;
+qubit[2] r;
+	
+x q[0];
+cx q[0], r;
+`
+
+	// [00 00] -> [10 00] -> [10 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [10 11][  2   3]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_gate_ctrl_ba() {
+	qasm := `
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate cx a, b { ctrl @ x b, a; }
+
+qubit[2] q0;
+qubit[2] q1;
+reset q0, q1;
+	
+x q1;
+cx q0, q1;
+`
+
+	// [00 00] -> [00 11] -> [11 11]
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [11 11][  3   3]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_gate_ctrl_ctrl() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -280,104 +372,7 @@ ccx q0, q1, q2;
 	// [1 1 1][  1   1   1]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrl_gate() {
-	qasm := `
-OPENQASM 3.0;
-
-gate x q { U(pi, 0, pi) q; }
-gate cx a, b { ctrl @ x a, b; }
-
-qubit[2] q;
-qubit[2] r;
-	
-x q[0];
-cx q[0], r[0];
-`
-
-	// [00 00] -> [10 00] -> [10 10]
-	if err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [10 10][  2   2]( 1.0000 0.0000i): 1.0000
-}
-
-func Example_ctrl_gate2() {
-	qasm := `
-OPENQASM 3.0;
-
-gate x q { U(pi, 0, pi) q; }
-gate cx a, b { ctrl @ x a, b; }
-
-qubit[2] q;
-qubit[2] r;
-	
-x q;
-cx q, r;
-`
-
-	// [00 00] -> [11 00] -> [11 11]
-	if err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [11 11][  3   3]( 1.0000 0.0000i): 1.0000
-}
-
-func Example_ctrl_gate3() {
-	qasm := `
-OPENQASM 3.0;
-
-gate x q { U(pi, 0, pi) q; }
-gate cx a, b { ctrl @ x a, b; }
-
-qubit[2] q;
-qubit[2] r;
-	
-x q[0];
-cx q[0], r;
-`
-
-	// [00 00] -> [10 00] -> [10 11]
-	if err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [10 11][  2   3]( 1.0000 0.0000i): 1.0000
-}
-
-func Example_ctrl_gate4() {
-	qasm := `
-OPENQASM 3.0;
-
-gate x q { U(pi, 0, pi) q; }
-gate cx a, b { ctrl @ x b, a; }
-
-qubit[2] q0;
-qubit[2] q1;
-reset q0, q1;
-	
-x q1;
-cx q0, q1;
-`
-
-	// [00 00] -> [00 11] -> [11 11]
-	if err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [11 11][  3   3]( 1.0000 0.0000i): 1.0000
-}
-
-func Example_ctrl_cx() {
+func Example_gate_ctrl_cx() {
 	qasm := `
 OPENQASM 3.0;
 
