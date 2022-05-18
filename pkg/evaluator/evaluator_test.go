@@ -549,6 +549,31 @@ u(pi, 0, pi) q;
 	// [11][  3]( 1.0000 0.0000i): 1.0000
 }
 
+func Example_gate_pow() {
+	qasm := `
+OPENQASM 3.0;
+
+gate pow2(a, b, c) q { pow(2) @ U(a, b, c) q; }
+gate pow3(a, b, c) q { pow(3) @ U(a, b, c) q; }
+
+qubit q;
+
+pow2(pi, 0, pi) q;
+print;
+
+pow3(pi, 0, pi) q;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [0][  0]( 1.0000 0.0000i): 1.0000
+	// [1][  1]( 1.0000 0.0000i): 1.0000
+}
+
 func Example_gate_cu() {
 	qasm := `
 OPENQASM 3.0;
