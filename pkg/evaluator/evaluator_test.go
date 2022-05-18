@@ -373,7 +373,7 @@ inv     @ U(1.0, 2.0, 3.0) q;
 	// [0][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrl_u() {
+func Example_ctrl_U() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -396,7 +396,7 @@ ctrl @ U(pi, 0, pi) q, r;
 	// [1 1][  1   1]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrl_ctrl_u() {
+func Example_ctrl_Ctrl_U() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -421,7 +421,7 @@ ctrl @ ctrl @ U(pi, 0, pi) q, r;
 	// [11 1][  3   1]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrl2_u() {
+func Example_ctrl2_U() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -444,7 +444,7 @@ ctrl(2) @ U(pi, 0, pi) q, r;
 	// [11 1][  3   1]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrl3_ctrl1_u() {
+func Example_ctrl3_Ctrl1_U() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -473,7 +473,7 @@ ctrl(1) @ ctrl(3) @ U(pi, 0, pi) q, p, r;
 	// [11 11 0][  3   3   0]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_negctrl_u() {
+func Example_negctrl_U() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -492,7 +492,7 @@ negctrl @ U(pi, 0, pi) q, r;
 	// [0 1][  0   1]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_ctrl_negctrl_u() {
+func Example_ctrl_Negctrl_U() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -512,7 +512,7 @@ ctrl @ negctrl @ U(pi, 0, pi) q, r;
 	// [10 1][  2   1]( 1.0000 0.0000i): 1.0000
 }
 
-func Example_gate_u() {
+func Example_gate() {
 	qasm := `
 OPENQASM 3.0;
 
