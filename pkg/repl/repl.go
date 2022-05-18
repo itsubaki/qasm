@@ -57,7 +57,7 @@ func Run(in io.Reader) error {
 		}
 
 		if err := e.Println(); err != nil {
-			fmt.Printf("print: %v\n", err)
+			fmt.Printf("println: %v\n", err)
 		}
 	}
 
