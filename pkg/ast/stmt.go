@@ -255,10 +255,34 @@ func (s *BlockStmt) Append(e Stmt) {
 	s.List = append(s.List, e)
 }
 
-func (s *BlockStmt) Reverse() BlockStmt {
+func (s *BlockStmt) Inverse() BlockStmt {
 	var out BlockStmt
 	for i := len(s.List) - 1; i > -1; i-- {
-		out.Append(s.List[i])
+		switch s := s.List[i].(type) {
+		case *ApplyStmt:
+			out.Append(&ApplyStmt{
+				Modifier: append(s.Modifier, Modifier{Kind: lexer.INV}),
+				Kind:     s.Kind,
+				Name:     s.Name,
+				Params:   s.Params,
+				QArgs:    s.QArgs,
+			})
+
+		case *ExprStmt:
+			switch X := s.X.(type) {
+			case *CallExpr:
+				out.Append(&ExprStmt{
+					X: &CallExpr{
+						Modifier: append(X.Modifier, Modifier{Kind: lexer.INV}),
+						Name:     X.Name,
+						Params:   X.Params,
+						QArgs:    X.QArgs,
+					},
+				})
+			}
+		default:
+			out.Append(s)
+		}
 	}
 
 	return out

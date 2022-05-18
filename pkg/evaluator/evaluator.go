@@ -20,7 +20,7 @@ const indent = ".  "
 
 type Evaluator struct {
 	Q      *q.Q
-	Env    *env.Environment
+	Env    *env.Environ
 	Opts   Opts
 	indent int
 }
@@ -29,7 +29,7 @@ type Opts struct {
 	Verbose bool
 }
 
-func New(qsim *q.Q, env *env.Environment, opts ...Opts) *Evaluator {
+func New(qsim *q.Q, env *env.Environ, opts ...Opts) *Evaluator {
 	e := &Evaluator{
 		Q:   qsim,
 		Env: env,
@@ -72,7 +72,7 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	return nil
 }
 
-func (e *Evaluator) eval(n ast.Node, env *env.Environment) (obj object.Object, err error) {
+func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err error) {
 	if e.Opts.Verbose {
 		defer func() {
 			if obj != nil && obj.Type() != object.NIL {
@@ -298,7 +298,7 @@ func (e *Evaluator) Infix(kind lexer.Token, lhs, rhs object.Object) (object.Obje
 	return nil, fmt.Errorf("unsupported(%v)", kind)
 }
 
-func (e *Evaluator) Print(s *ast.PrintStmt, env *env.Environment) error {
+func (e *Evaluator) Print(s *ast.PrintStmt, env *env.Environ) error {
 	if len(env.Qubit.Name) == 0 {
 		return nil
 	}
@@ -349,7 +349,7 @@ func (e *Evaluator) Println() error {
 	return nil
 }
 
-func (e *Evaluator) Reset(s *ast.ResetStmt, env *env.Environment) error {
+func (e *Evaluator) Reset(s *ast.ResetStmt, env *env.Environ) error {
 	for _, a := range s.QArgs.List {
 		qb, ok := env.Qubit.Get(a)
 		if !ok {
@@ -362,7 +362,7 @@ func (e *Evaluator) Reset(s *ast.ResetStmt, env *env.Environment) error {
 	return nil
 }
 
-func (e *Evaluator) Measure(x *ast.MeasureExpr, env *env.Environment) (object.Object, error) {
+func (e *Evaluator) Measure(x *ast.MeasureExpr, env *env.Environ) (object.Object, error) {
 	qargs := x.QArgs.List
 	if len(qargs) == 0 {
 		return nil, fmt.Errorf("qargs is empty")
@@ -388,7 +388,7 @@ func (e *Evaluator) Measure(x *ast.MeasureExpr, env *env.Environment) (object.Ob
 	return &object.Array{Elm: bit}, nil
 }
 
-func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environment) error {
+func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 	params, err := e.Params(s, env)
 	if err != nil {
 		return fmt.Errorf("params: %v", err)
@@ -414,7 +414,7 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environment) error {
 	u, ctrl, negc := e.Mod(s.Modifier, u, flatten(qargs), env)
 	if len(ctrl)+len(negc) > 0 {
 		// ctrl @ negctrl @ u
-		e.Negc(negc, func() { e.Q.Apply(u) })
+		e.X(negc, func() { e.Q.Apply(u) })
 		return nil
 	}
 
@@ -422,7 +422,7 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environment) error {
 	return nil
 }
 
-func (e *Evaluator) Params(s *ast.ApplyStmt, env *env.Environment) ([]float64, error) {
+func (e *Evaluator) Params(s *ast.ApplyStmt, env *env.Environ) ([]float64, error) {
 	var params []float64
 	for _, p := range s.Params.List.List {
 		v, err := e.eval(p, env)
@@ -443,7 +443,7 @@ func (e *Evaluator) Params(s *ast.ApplyStmt, env *env.Environment) ([]float64, e
 	return params, nil
 }
 
-func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *env.Environment) ([][]q.Qubit, error) {
+func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *env.Environ) ([][]q.Qubit, error) {
 	var qargs [][]q.Qubit
 	for _, a := range s.QArgs.List {
 		qb, ok := env.Qubit.Get(a)
@@ -457,13 +457,21 @@ func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *env.Environment) ([][]q.Qubit, 
 	return qargs, nil
 }
 
-func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, qargs []q.Qubit, env *env.Environment) (matrix.Matrix, []q.Qubit, []q.Qubit) {
+func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, qargs []q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
 	u = e.Inv(mod, u)
 	u = e.Pow(mod, u, env)
 	return e.Ctrl(mod, u, qargs, env)
 }
 
-func (e *Evaluator) Pow(mod []ast.Modifier, u matrix.Matrix, env *env.Environment) matrix.Matrix {
+func (e *Evaluator) Inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
+	if len(ast.ModInv(mod))%2 == 1 {
+		u = u.Dagger()
+	}
+
+	return u
+}
+
+func (e *Evaluator) Pow(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
 	pow := ast.ModPow(mod)
 	if len(pow) == 0 {
 		return u
@@ -472,7 +480,7 @@ func (e *Evaluator) Pow(mod []ast.Modifier, u matrix.Matrix, env *env.Environmen
 	// pow(2) @ pow(-2) is equal to pow(0)
 	var p int
 	for _, m := range pow {
-		v := Must(e.eval(m.Index.List.List[0], env))
+		v := ast.Must(e.eval(m.Index.List.List[0], env))
 		p = p + int(v.(*object.Int).Value)
 	}
 
@@ -487,7 +495,7 @@ func (e *Evaluator) Pow(mod []ast.Modifier, u matrix.Matrix, env *env.Environmen
 		u = u.Dagger()
 	}
 
-	// pow(p) @ g
+	// pow(p) @ u
 	out := u
 	for i := 1; i < p; i++ {
 		out = out.Apply(u)
@@ -496,16 +504,7 @@ func (e *Evaluator) Pow(mod []ast.Modifier, u matrix.Matrix, env *env.Environmen
 	return out
 }
 
-func (e *Evaluator) Inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
-	// inv @ U
-	if len(ast.ModInv(mod))%2 == 1 {
-		u = u.Dagger()
-	}
-
-	return u
-}
-
-func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs []q.Qubit, env *env.Environment) (matrix.Matrix, []q.Qubit, []q.Qubit) {
+func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs []q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
 	var ctrl, negc []q.Qubit
 	if len(ast.ModCtrl(mod)) == 0 {
 		return u, ctrl, negc
@@ -515,7 +514,7 @@ func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs []q.Qubit, e
 	for _, m := range ast.ModCtrl(mod) {
 		p := 1
 		if len(m.Index.List.List) > 0 {
-			v := Must(e.eval(m.Index.List.List[0], env))
+			v := ast.Must(e.eval(m.Index.List.List[0], env))
 			p = int(v.(*object.Int).Value)
 		}
 
@@ -529,10 +528,15 @@ func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs []q.Qubit, e
 		begin = begin + p
 	}
 
-	return gate.Controlled(u, len(qargs), q.Index(append(ctrl, negc...)...), qargs[len(qargs)-1].Index()), ctrl, negc
+	n := e.Q.NumberOfBit()
+	c := q.Index(append(ctrl, negc...)...)
+	t := qargs[len(qargs)-1].Index()
+	g := gate.Controlled(u, n, c, t)
+
+	return g, ctrl, negc
 }
 
-func (e *Evaluator) Negc(negc []q.Qubit, f func()) {
+func (e *Evaluator) X(negc []q.Qubit, f func()) {
 	if len(negc) > 0 {
 		e.Q.X(negc...)
 	}
@@ -544,7 +548,49 @@ func (e *Evaluator) Negc(negc []q.Qubit, f func()) {
 	}
 }
 
-func (e *Evaluator) Call(s *ast.CallExpr, env *env.Environment) (object.Object, error) {
-	fmt.Println(s)
-	return nil, nil
+func (e *Evaluator) Call(x *ast.CallExpr, outer *env.Environ) (object.Object, error) {
+	f, ok := outer.Func[x.Name]
+	if !ok {
+		return nil, fmt.Errorf("decl=%v not found", x.Name)
+	}
+
+	if e.Opts.Verbose {
+		fmt.Printf("%v", strings.Repeat(indent, e.indent))
+		fmt.Printf("%T(%v)\n", f, f)
+	}
+
+	switch decl := f.(type) {
+	case *ast.GateDecl:
+		return e.eval(&decl.Body, e.Enclosed(x, decl, outer))
+	}
+
+	return nil, fmt.Errorf("unsupported decl=%v", f)
+}
+
+func (e *Evaluator) Enclosed(x *ast.CallExpr, g *ast.GateDecl, outer *env.Environ) *env.Environ {
+	env := outer.NewEnclosed()
+	e.SetConst(env, outer, g.Params.List.List, x.Params.List.List)
+	e.SetQArgs(env, outer, g.QArgs.List, x.QArgs.List)
+	return env
+}
+
+func (e *Evaluator) SetConst(env, outer *env.Environ, defs, args []ast.Expr) {
+	for i, d := range defs {
+		n := ast.Must(ast.Ident(d))
+		if v, ok := outer.Const[n]; ok {
+			env.Const[n] = v
+			continue
+		}
+
+		v := ast.Must(e.eval(args[i], outer))
+		env.Const[n] = v
+	}
+}
+
+func (e *Evaluator) SetQArgs(env, outer *env.Environ, defs, args []ast.Expr) {
+	for i := range defs {
+		if qb, ok := outer.Qubit.Get(args[i]); ok {
+			env.Qubit.Add(defs[i], qb)
+		}
+	}
 }
