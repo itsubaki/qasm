@@ -17,6 +17,7 @@ type Environ struct {
 	Bit   *Bit
 	Qubit *Qubit
 	Outer *Environ
+	Decl  ast.Decl
 }
 
 func New() *Environ {
@@ -25,16 +26,18 @@ func New() *Environ {
 		Const: make(map[string]object.Object),
 		Bit:   NewBit(),
 		Qubit: NewQubit(),
+		Decl:  nil,
 		Outer: nil,
 	}
 }
 
-func (e *Environ) NewEnclosed() *Environ {
+func (e *Environ) NewEnclosed(decl ast.Decl) *Environ {
 	return &Environ{
 		Func:  e.Func,
 		Const: e.Const,
 		Bit:   NewBit(),
 		Qubit: NewQubit(),
+		Decl:  decl,
 		Outer: e,
 	}
 }

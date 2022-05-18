@@ -411,7 +411,7 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 	}
 
 	// modifier
-	u, ctrl, negc := e.Mod(s.Modifier, u, flatten(qargs), env)
+	u, ctrl, negc := e.Mod(s.Modifier, u, qargs, env)
 	if len(ctrl)+len(negc) > 0 {
 		// ctrl @ negctrl @ u
 		e.X(negc, func() { e.Q.Apply(u) })
@@ -457,7 +457,7 @@ func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *env.Environ) ([][]q.Qubit, erro
 	return qargs, nil
 }
 
-func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, qargs []q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
+func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
 	u = e.Inv(mod, u)
 	u = e.Pow(mod, u, env)
 	return e.Ctrl(mod, u, qargs, env)
@@ -504,12 +504,42 @@ func (e *Evaluator) Pow(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) m
 	return out
 }
 
-func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs []q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
+func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
 	var ctrl, negc []q.Qubit
 	if len(ast.ModCtrl(mod)) == 0 {
 		return u, ctrl, negc
 	}
 
+	// gate
+	switch env.Decl.(type) {
+	case *ast.GateDecl:
+		// for j ← 0, 1 do
+		//  g q[j], r[j];
+		//
+		// g q[0], r;
+		// equals to
+		// g q[0], r[0];
+		// g q[0], r[1];
+		//
+		// g q, r[0];
+		// equals to
+		// g q[0], r[0];
+		// g q[1], r[0];
+
+		n := e.Q.NumberOfBit()
+		list := make([]matrix.Matrix, 0)
+		for i := 0; i < len(qargs)-1; i++ {
+			for j := range qargs[i] {
+				ctrl = append(ctrl, qargs[i][j])
+				list = append(list, gate.C(u, n, qargs[i][j].Index(), qargs[i+1][j].Index()))
+			}
+		}
+
+		return matrix.Apply(list...), ctrl, negc
+	}
+
+	// built-in
+	fqargs := flatten(qargs)
 	begin := 0
 	for _, m := range ast.ModCtrl(mod) {
 		p := 1
@@ -520,9 +550,9 @@ func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs []q.Qubit, e
 
 		switch m.Kind {
 		case lexer.CTRL:
-			ctrl = append(ctrl, qargs[begin:begin+p]...)
+			ctrl = append(ctrl, fqargs[begin:begin+p]...)
 		case lexer.NEGCTRL:
-			negc = append(negc, qargs[begin:begin+p]...)
+			negc = append(negc, fqargs[begin:begin+p]...)
 		}
 
 		begin = begin + p
@@ -530,10 +560,9 @@ func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs []q.Qubit, e
 
 	n := e.Q.NumberOfBit()
 	c := q.Index(append(ctrl, negc...)...)
-	t := qargs[len(qargs)-1].Index()
-	g := gate.Controlled(u, n, c, t)
+	t := fqargs[len(fqargs)-1].Index()
 
-	return g, ctrl, negc
+	return gate.Controlled(u, n, c, t), ctrl, negc
 }
 
 func (e *Evaluator) X(negc []q.Qubit, f func()) {
@@ -567,15 +596,15 @@ func (e *Evaluator) Call(x *ast.CallExpr, outer *env.Environ) (object.Object, er
 	return nil, fmt.Errorf("unsupported decl=%v", f)
 }
 
-func (e *Evaluator) Enclosed(x *ast.CallExpr, g *ast.GateDecl, outer *env.Environ) *env.Environ {
-	env := outer.NewEnclosed()
-	e.SetConst(env, outer, g.Params.List.List, x.Params.List.List)
-	e.SetQArgs(env, outer, g.QArgs.List, x.QArgs.List)
+func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *env.Environ) *env.Environ {
+	env := outer.NewEnclosed(decl)
+	e.SetConst(env, outer, decl.Params.List.List, x.Params.List.List)
+	e.SetQArgs(env, outer, decl.QArgs.List, x.QArgs.List)
 	return env
 }
 
-func (e *Evaluator) SetConst(env, outer *env.Environ, defs, args []ast.Expr) {
-	for i, d := range defs {
+func (e *Evaluator) SetConst(env, outer *env.Environ, decl, args []ast.Expr) {
+	for i, d := range decl {
 		n := ast.Must(ast.Ident(d))
 		if v, ok := outer.Const[n]; ok {
 			env.Const[n] = v
@@ -587,10 +616,10 @@ func (e *Evaluator) SetConst(env, outer *env.Environ, defs, args []ast.Expr) {
 	}
 }
 
-func (e *Evaluator) SetQArgs(env, outer *env.Environ, defs, args []ast.Expr) {
-	for i := range defs {
+func (e *Evaluator) SetQArgs(env, outer *env.Environ, decl, args []ast.Expr) {
+	for i := range decl {
 		if qb, ok := outer.Qubit.Get(args[i]); ok {
-			env.Qubit.Add(defs[i], qb)
+			env.Qubit.Add(decl[i], qb)
 		}
 	}
 }
