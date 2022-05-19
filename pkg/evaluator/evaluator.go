@@ -343,21 +343,6 @@ func (e *Evaluator) Println() error {
 		return fmt.Errorf("print: %v", err)
 	}
 
-	for _, n := range e.Env.Bit.Name {
-		fmt.Printf("%v: ", n)
-
-		c, ok := e.Env.Bit.Get(&ast.IdentExpr{Name: n})
-		if !ok {
-			return fmt.Errorf("bit=%v not found", n)
-		}
-
-		for _, v := range c {
-			fmt.Printf("%v", v)
-		}
-
-		fmt.Println()
-	}
-
 	return nil
 }
 
