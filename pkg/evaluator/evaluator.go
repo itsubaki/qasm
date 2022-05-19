@@ -470,6 +470,7 @@ func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *env.Environ) ([][]q.Qubit, erro
 }
 
 func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
+	mod = append(mod, env.Modifier...)
 	u = e.Inv(mod, u, env)
 	u = e.Pow(mod, u, env)
 	return e.Ctrl(mod, u, qargs, env)
@@ -489,7 +490,13 @@ func (e *Evaluator) Pow(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) m
 		return u
 	}
 
-	// pow(3) @ pow(2) @ U is equal to U**2**3
+	// pow(2) @ pow(3) @ U q; -> UUU q; UUU q;
+	s := len(pow) - 1
+	for i := 0; i < len(pow)/2; i++ {
+		pow[i], pow[s-i] = pow[s-i], pow[i]
+	}
+
+	// pow(2) @ pow(3) @ U is equal to U**3**2
 	p := ast.Must(e.eval(pow[0].Index.List.List[0], env)).(*object.Int).Value
 	for i := 1; i < len(pow); i++ {
 		v := ast.Must(e.eval(pow[i].Index.List.List[0], env)).(*object.Int).Value
