@@ -30,10 +30,6 @@ func eval(qasm string, verbose ...bool) error {
 		return fmt.Errorf("eval: %v\n", err)
 	}
 
-	if err := e.Println(); err != nil {
-		return fmt.Errorf("println: %v\n", err)
-	}
-
 	return nil
 }
 
@@ -75,7 +71,6 @@ include "../../testdata/stdgates.qasm";
 	// .  .  .  .  *ast.GateDecl(gate ccx c0, c1, t { ctrl @ ctrl @ x c0, c1, t; })
 	// .  .  .  *ast.DeclStmt(gate swap q, p { cx q, p; cx p, q; cx q, p; })
 	// .  .  .  .  *ast.GateDecl(gate swap q, p { cx q, p; cx p, q; cx q, p; })
-	// .  .  *ast.PrintStmt(print;)
 }
 
 func Example_measure() {
@@ -87,6 +82,7 @@ qubit[2] p;
 
 U(pi, 0, pi) q, p;
 measure q;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -108,6 +104,7 @@ bit[2] b;
 
 U(pi, 0, pi) q;
 c = measure q;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -117,8 +114,8 @@ c = measure q;
 
 	// Output:
 	// [11][  3]( 1.0000 0.0000i): 1.0000
-	// c: 11
-	// b: 00
+	// c: [1 1]
+	// b: [0 0]
 }
 
 func Example_measure_arrow() {
@@ -131,6 +128,7 @@ bit[2] c;
 U(pi, 0, pi) q;
 
 measure q -> c;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -140,7 +138,7 @@ measure q -> c;
 
 	// Output:
 	// [11][  3]( 1.0000 0.0000i): 1.0000
-	// c: 11
+	// c: [1 1]
 }
 
 func Example_reset() {
@@ -151,6 +149,7 @@ qubit[2] q;
 
 U(pi/2.0, 0, pi) q;
 reset q;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -184,7 +183,6 @@ print q;
 	// [1][  1]( 1.0000 0.0000i): 1.0000
 	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
 	// [10][  2]( 1.0000 0.0000i): 1.0000
-	// [10][  2]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_u() {
@@ -194,6 +192,7 @@ OPENQASM 3.0;
 qubit q;
 
 U(pi/2.0, 0, pi) q;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -213,6 +212,7 @@ OPENQASM 3.0;
 qubit[2] q;
 
 U(pi/2.0, 0, pi) q;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -234,6 +234,7 @@ OPENQASM 3.0;
 qubit[2] q;
 
 U(pi/2.0, 0, pi) q[0];
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -253,8 +254,9 @@ OPENQASM 3.0;
 qubit[3] q;
 
 U(pi, 0, pi) q[1];
-
 QFT q;
+
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -280,9 +282,10 @@ OPENQASM 3.0;
 qubit[3] q;
 
 U(pi, 0, pi) q[1];
-
 QFT q;
 IQFT q;
+
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -305,6 +308,8 @@ X r1[-1];
 H r0;
 CMODEXP2(7, 15) r0, r1;
 IQFT r0;
+
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -344,6 +349,7 @@ inv @ U(1.0, 2.0, 3.0) q;
 print;
 
 inv @ inv @ U(1.0, 2.0, 3.0) q;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -376,8 +382,8 @@ pow(3) @ U(pi/2.0, 0, pi) q;
 print;
 
 reset q;
-
 pow(3) @ pow(2) @ pow(2) @ U(pi/2.0, 0, pi) q;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -403,6 +409,7 @@ qubit r;
 
 U(pi/2.0, 0, pi) q;
 ctrl @ U(pi, 0, pi) q, r;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -426,6 +433,7 @@ U(pi, 0, pi) q;
 print;
 
 ctrl(2) @ U(pi, 0, pi) q, r;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -451,6 +459,7 @@ print;
 
 U(pi, 0, pi) q[1];
 ctrl @ ctrl @ U(pi, 0, pi) q, r;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -479,6 +488,7 @@ ctrl(3) @ ctrl(1) @ U(pi, 0, pi) q, p, r;
 print;
 
 ctrl(1) @ ctrl(3) @ U(pi, 0, pi) q, p, r;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -501,6 +511,7 @@ qubit r;
 
 U(pi, 0, pi) q[0];
 ctrl @ negctrl @ U(pi, 0, pi) q, r;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -520,6 +531,7 @@ gate u(a, b, c) q { U(a, b, c) q; }
 
 qubit[2] q;
 u(pi, 0, pi) q;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -543,7 +555,7 @@ U(1, 2, 3) q;
 print;
 
 invu(1, 2, 3) q;
-
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -561,19 +573,30 @@ func Example_gate_pow() {
 	qasm := `
 OPENQASM 3.0;
 
-gate pow2(a, b, c) q { pow(2) @ U(a, b, c) q; }
-gate pow3(a, b, c) q { pow(3) @ U(a, b, c) q; }
-gate powa(a) q { pow(a) @ U(pi, 0, pi) q; }
+gate pow2(a, b, c) q    { pow(2) @ U(a, b, c) q; }
+gate pow3(a, b, c) q    { pow(3) @ U(a, b, c) q; }
+gate powu(a, b, c, p) q { pow(p) @ U(a, b, c) q; }
 
 qubit q;
 
 pow2(pi, 0, pi) q;
 print;
+reset q;
 
 pow3(pi, 0, pi) q;
 print;
+reset q;
 
-powa(3) q;
+powu(pi, 0, pi, 2) q;
+print;
+reset q;
+
+powu(pi, 0, pi, 3) q;
+print;
+reset q;
+
+powu(pi, 0, pi, 4) q;
+print;
 `
 
 	if err := eval(qasm); err != nil {
@@ -582,6 +605,8 @@ powa(3) q;
 	}
 
 	// Output:
+	// [0][  0]( 1.0000 0.0000i): 1.0000
+	// [1][  1]( 1.0000 0.0000i): 1.0000
 	// [0][  0]( 1.0000 0.0000i): 1.0000
 	// [1][  1]( 1.0000 0.0000i): 1.0000
 	// [0][  0]( 1.0000 0.0000i): 1.0000
