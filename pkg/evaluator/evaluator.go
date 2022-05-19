@@ -458,12 +458,12 @@ func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *env.Environ) ([][]q.Qubit, erro
 }
 
 func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
-	u = e.Inv(mod, u)
+	u = e.Inv(mod, u, env)
 	u = e.Pow(mod, u, env)
 	return e.Ctrl(mod, u, qargs, env)
 }
 
-func (e *Evaluator) Inv(mod []ast.Modifier, u matrix.Matrix) matrix.Matrix {
+func (e *Evaluator) Inv(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
 	if len(ast.ModInv(mod))%2 == 1 {
 		u = u.Dagger()
 	}
@@ -477,27 +477,16 @@ func (e *Evaluator) Pow(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) m
 		return u
 	}
 
-	// pow(2) @ pow(-2) is equal to pow(0)
-	var p int
-	for _, m := range pow {
-		v := ast.Must(e.eval(m.Index.List.List[0], env))
-		p = p + int(v.(*object.Int).Value)
-	}
-
-	// pow(0) is equal to identity
-	if p == 0 {
-		return gate.I()
-	}
-
-	// pow(-1) is equals to inv
-	if p < 0 {
-		p = -1 * p
-		u = u.Dagger()
+	// pow(3) @ pow(2) @ U is equal to U**2**3
+	p := ast.Must(e.eval(pow[0].Index.List.List[0], env)).(*object.Int).Value
+	for i := 1; i < len(pow); i++ {
+		v := ast.Must(e.eval(pow[i].Index.List.List[0], env)).(*object.Int).Value
+		p = int64(math.Pow(float64(p), float64(v)))
 	}
 
 	// pow(p) @ u
 	out := u
-	for i := 1; i < p; i++ {
+	for i := int64(1); i < p; i++ {
 		out = out.Apply(u)
 	}
 
@@ -510,35 +499,6 @@ func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit,
 		return u, ctrl, negc
 	}
 
-	// gate
-	switch env.Decl.(type) {
-	case *ast.GateDecl:
-		// for j ← 0, 1 do
-		//  g q[j], r[j];
-		//
-		// g q[0], r;
-		// equals to
-		// g q[0], r[0];
-		// g q[0], r[1];
-		//
-		// g q, r[0];
-		// equals to
-		// g q[0], r[0];
-		// g q[1], r[0];
-
-		n := e.Q.NumberOfBit()
-		list := make([]matrix.Matrix, 0)
-		for i := 0; i < len(qargs)-1; i++ {
-			for j := range qargs[i] {
-				ctrl = append(ctrl, qargs[i][j])
-				list = append(list, gate.C(u, n, qargs[i][j].Index(), qargs[i+1][j].Index()))
-			}
-		}
-
-		return matrix.Apply(list...), ctrl, negc
-	}
-
-	// built-in
 	fqargs := flatten(qargs)
 	begin := 0
 	for _, m := range ast.ModCtrl(mod) {
@@ -565,15 +525,15 @@ func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit,
 	return gate.Controlled(u, n, c, t), ctrl, negc
 }
 
-func (e *Evaluator) X(negc []q.Qubit, f func()) {
-	if len(negc) > 0 {
-		e.Q.X(negc...)
+func (e *Evaluator) X(target []q.Qubit, f func()) {
+	if len(target) > 0 {
+		e.Q.X(target...)
 	}
 
 	f()
 
-	if len(negc) > 0 {
-		e.Q.X(negc...)
+	if len(target) > 0 {
+		e.Q.X(target...)
 	}
 }
 
@@ -598,19 +558,19 @@ func (e *Evaluator) Call(x *ast.CallExpr, outer *env.Environ) (object.Object, er
 
 func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *env.Environ) *env.Environ {
 	env := outer.NewEnclosed(decl)
+	e.Add(env, x.Modifier)
 	e.SetConst(env, outer, decl.Params.List.List, x.Params.List.List)
 	e.SetQArgs(env, outer, decl.QArgs.List, x.QArgs.List)
 	return env
 }
 
+func (e *Evaluator) Add(env *env.Environ, mod []ast.Modifier) {
+	env.Modifier = append(env.Modifier, mod...)
+}
+
 func (e *Evaluator) SetConst(env, outer *env.Environ, decl, args []ast.Expr) {
 	for i, d := range decl {
 		n := ast.Must(ast.Ident(d))
-		if v, ok := outer.Const[n]; ok {
-			env.Const[n] = v
-			continue
-		}
-
 		v := ast.Must(e.eval(args[i], outer))
 		env.Const[n] = v
 	}

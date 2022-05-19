@@ -462,7 +462,7 @@ func TestStmt(t *testing.T) {
 	}
 }
 
-func ExampleBlockStmt_Inverse() {
+func ExampleBlockStmt_Reverse() {
 	block := &ast.BlockStmt{
 		List: []ast.Stmt{
 			&ast.ApplyStmt{
@@ -494,14 +494,14 @@ func ExampleBlockStmt_Inverse() {
 		},
 	}
 
-	inv := block.Inverse()
+	rev := block.Reverse()
 
 	fmt.Println(block)
-	fmt.Println(&inv)
+	fmt.Println(rev)
 
 	// Output:
 	// { H q0; cx q0, q1; }
-	// { inv @ cx q0, q1; inv @ H q0; }
+	// { cx q0, q1; H q0; }
 }
 
 func TestBadStmt(t *testing.T) {
