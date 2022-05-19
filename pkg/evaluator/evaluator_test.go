@@ -693,3 +693,23 @@ print;
 	// [0][  0]( 0.7071 0.0000i): 0.5000
 	// [1][  1]( 0.7071 0.0000i): 0.5000
 }
+
+func Example_ctrl_gate() {
+	qasm := `
+OPENQASM 3.0;
+
+gate u(a, b, c) q { U(a, b, c) q; }
+
+qubit q;
+qubit r;
+
+ctrl @ u(pi/2.0, 0, pi) q, r;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Not Implemented.
+}
