@@ -525,10 +525,18 @@ func (p *Parser) parseModifier() []ast.Modifier {
 				Value: v.Literal, // 1
 			}
 
+			if v.Token == lexer.IDENT {
+				// pow(a)
+				x = &ast.IdentExpr{
+					Name: v.Literal,
+				}
+			}
+
 			if v.Token == lexer.MINUS || v.Token == lexer.PLUS {
 				u := p.next()
 				p.expect(lexer.INT)
 
+				// pow(-1)
 				x = &ast.UnaryExpr{
 					Kind: v.Token, // MINUS
 					Value: &ast.BasicLit{

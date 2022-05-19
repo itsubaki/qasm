@@ -255,13 +255,13 @@ func (s *BlockStmt) Append(e Stmt) {
 	s.List = append(s.List, e)
 }
 
-func (s *BlockStmt) Reverse() BlockStmt {
+func (s *BlockStmt) Reverse() *BlockStmt {
 	var out BlockStmt
 	for i := len(s.List) - 1; i > -1; i-- {
 		out.Append(s.List[i])
 	}
 
-	return out
+	return &out
 }
 
 type IfStmt struct{}
