@@ -562,9 +562,10 @@ func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit,
 
 	n := e.Q.NumberOfBit()
 	c := q.Index(append(ctrl, negc...)...)
-	t := fqargs[len(fqargs)-1].Index()
+	t := q.Index(qargs[len(qargs)-1]...)
 
-	return gate.Controlled(u, n, c, t), ctrl, negc
+	// FIXME: fixed target.
+	return gate.Controlled(u, n, c, t[0]), ctrl, negc
 }
 
 func (e *Evaluator) X(target []q.Qubit, f func()) {
