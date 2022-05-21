@@ -182,17 +182,16 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 
 		if len(env.Modifier) == 0 {
 			// No modifier.
-			return e.ApplyBolck(n, env) // NOTE: defs has not modifier.
+			// NOTE: defs has not modifier.
+			return e.ApplyBolck(n, env)
 		}
 
 		for _, m := range env.Modifier {
 			// inv, pow for gate.
 			switch m.Kind {
 			case lexer.INV:
-				n = n.Reverse()
-				e.AddInv(env)
 				// NOTE: gate has not return value.
-				if _, err := e.ApplyBolck(n, env); err != nil {
+				if _, err := e.ApplyBolck(Inverse(n, env), env); err != nil {
 					return nil, fmt.Errorf("apply block=%v: %v", n, err)
 				}
 
@@ -613,10 +612,6 @@ func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *env.Env
 	return env
 }
 
-func (e *Evaluator) AddInv(env *env.Environ) {
-	env.Modifier = append(env.Modifier, ast.Modifier{Kind: lexer.INV})
-}
-
 func (e *Evaluator) SetConst(env, outer *env.Environ, decl, args []ast.Expr) {
 	for i, d := range decl {
 		n := ast.Must(ast.Ident(d))
@@ -631,4 +626,9 @@ func (e *Evaluator) SetQArgs(env, outer *env.Environ, decl, args []ast.Expr) {
 			env.Qubit.Add(decl[i], qb)
 		}
 	}
+}
+
+func Inverse(n *ast.BlockStmt, env *env.Environ) *ast.BlockStmt {
+	env.Modifier = append(env.Modifier, ast.Modifier{Kind: lexer.INV})
+	return n.Reverse()
 }
