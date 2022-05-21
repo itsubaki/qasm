@@ -151,6 +151,10 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		}
 
 	case *ast.BlockStmt:
+		if len(ast.ModInv(env.Modifier))%2 == 1 {
+			n = n.Reverse()
+		}
+
 		for _, b := range n.List {
 			v, err := e.eval(b, env)
 			if err != nil {
