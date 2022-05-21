@@ -151,9 +151,34 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		}
 
 	case *ast.BlockStmt:
-		if len(ast.ModInv(env.Modifier))%2 == 1 {
-			n = n.Reverse()
-		}
+		// TODO: modifier
+		//
+		// gate inv(a, b, c) q { inv @ U(a, b, c) q; inv @ U(c, b, a) q;}
+		// pow(2) @ inv(pi/2.0, 0, pi) q;
+		//
+		// is
+		// inv @ U(a, b, c) q;
+		// inv @ U(c, b, a) q;
+		// inv @ U(a, b, c) q;
+		// inv @ U(c, b, a) q;
+		//
+		// is not
+		// inv @ U(a, b, c) q;
+		// inv @ U(a, b, c) q;
+		// inv @ U(c, b, a) q;
+		// inv @ U(c, b, a) q;
+		//
+		//
+		// gate pow23(a, b, c) q { pow(2) @ U(a, b, c) q; pow(3) @ U(c, b, a) q;}
+		// inv @ pow23(pi/2.0, 0, pi) q;
+		//
+		// is
+		// inv @ pow(3) @ U(c, b, a) q;
+		// inv @ pow(2) @ U(a, b, c) q;
+		//
+		// is not
+		// inv @ pow(2) @ U(a, b, c) q;
+		// inv @ pow(3) @ U(c, b, a) q;
 
 		for _, b := range n.List {
 			v, err := e.eval(b, env)
@@ -459,46 +484,17 @@ func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *env.Environ) ([][]q.Qubit, erro
 }
 
 func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
-	mod = append(mod, env.Modifier...)
-	u = e.Inv(mod, u, env)
-	u = e.Pow(mod, u, env)
+	for _, m := range mod {
+		switch m.Kind {
+		case lexer.INV:
+			u = u.Dagger()
+		case lexer.POW:
+			p := ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value
+			u = matrix.ApplyN(u, int(p))
+		}
+	}
+
 	return e.Ctrl(mod, u, qargs, env)
-}
-
-func (e *Evaluator) Inv(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
-	if len(ast.ModInv(mod))%2 == 1 {
-		u = u.Dagger()
-	}
-
-	return u
-}
-
-func (e *Evaluator) Pow(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
-	pow := ast.ModPow(mod)
-	if len(pow) == 0 {
-		return u
-	}
-
-	// pow(2) @ pow(3) @ U q; -> UUU q; UUU q;
-	s := len(pow) - 1
-	for i := 0; i < len(pow)/2; i++ {
-		pow[i], pow[s-i] = pow[s-i], pow[i]
-	}
-
-	// pow(2) @ pow(3) @ U is equal to U**3**2
-	p := ast.Must(e.eval(pow[0].Index.List.List[0], env)).(*object.Int).Value
-	for i := 1; i < len(pow); i++ {
-		v := ast.Must(e.eval(pow[i].Index.List.List[0], env)).(*object.Int).Value
-		p = int64(math.Pow(float64(p), float64(v)))
-	}
-
-	// pow(p) @ u
-	out := u
-	for i := int64(1); i < p; i++ {
-		out = out.Apply(u)
-	}
-
-	return out
 }
 
 func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
