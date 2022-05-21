@@ -542,6 +542,13 @@ func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit,
 		return u, ctrl, negc
 	}
 
+	// if env.Decl != nil {
+	// 	fmt.Printf("here is in decl=%v\n", env.Decl)
+	//
+	//  for j ← 0, 1 do
+	//    g qr0[0],qr1[j],qr2[0],qr3[j];
+	// }
+
 	fqargs, begin := flatten(qargs), 0
 	for _, m := range ast.ModCtrl(mod) {
 		p := 1
