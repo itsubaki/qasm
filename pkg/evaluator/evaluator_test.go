@@ -294,7 +294,7 @@ print;
 	// [1][  1]( 0.7071 0.0000i): 0.5000
 }
 
-func Example_u_arr() {
+func Example_u_register() {
 	qasm := `
 OPENQASM 3.0;
 
@@ -773,7 +773,7 @@ print;
 	// [1][  1]( 0.7071 0.0000i): 0.5000
 }
 
-func Example_gate_ctrl() {
+func Example_gate_ctrl_single() {
 	qasm := `
 OPENQASM 3.0;
 
