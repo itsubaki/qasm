@@ -151,7 +151,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		}
 
 	case *ast.BlockStmt:
-		// TODO: modifier
+		// NOTE: Modifier
 		//
 		// gate inv(a, b, c) q { inv @ U(a, b, c) q; inv @ U(c, b, a) q;}
 		// pow(2) @ inv(pi/2.0, 0, pi) q;
@@ -180,14 +180,30 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		// inv @ pow(2) @ U(a, b, c) q;
 		// inv @ pow(3) @ U(c, b, a) q;
 
-		for _, b := range n.List {
-			v, err := e.eval(b, env)
-			if err != nil {
-				return nil, fmt.Errorf("block: eval(%v): %v", b, err)
-			}
+		if len(env.Modifier) == 0 {
+			// No modifier.
+			return e.ApplyBolck(n, env) // NOTE: defs has not modifier.
+		}
 
-			if v != nil && v.Type() == object.RETURN_VALUE {
-				return v, nil
+		for _, m := range env.Modifier {
+			// inv, pow for gate.
+			switch m.Kind {
+			case lexer.INV:
+				n = n.Reverse()
+				e.AddInv(env)
+				// NOTE: gate has not return value.
+				if _, err := e.ApplyBolck(n, env); err != nil {
+					return nil, fmt.Errorf("apply block=%v: %v", n, err)
+				}
+
+			case lexer.POW:
+				p := ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value
+				for i := int64(0); i < p; i++ {
+					// NOTE: gate has not return value.
+					if _, err := e.ApplyBolck(n, env); err != nil {
+						return nil, fmt.Errorf("apply block=%v: %v", n, err)
+					}
+				}
 			}
 		}
 
@@ -414,6 +430,21 @@ func (e *Evaluator) Measure(x *ast.MeasureExpr, env *env.Environ) (object.Object
 	return &object.Array{Elm: bit}, nil
 }
 
+func (e *Evaluator) ApplyBolck(s *ast.BlockStmt, env *env.Environ) (object.Object, error) {
+	for _, b := range s.List {
+		v, err := e.eval(b, env)
+		if err != nil {
+			return nil, fmt.Errorf("block=%v: %v", b, err)
+		}
+
+		if v != nil && v.Type() == object.RETURN_VALUE {
+			return v, nil
+		}
+	}
+
+	return nil, nil
+}
+
 func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 	params, err := e.Params(s, env)
 	if err != nil {
@@ -436,14 +467,21 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 		return fmt.Errorf("gate=%v not found", lexer.Tokens[s.Kind])
 	}
 
-	// modifier
-	u, ctrl, negc := e.Mod(s.Modifier, u, qargs, env)
+	// Modifier
+	// FIXME: ctrl and inv, pow cannot be specified at the same time.
+	if s.HasModCtrl() && (s.HasModInv() || s.HasModPow()) {
+		return fmt.Errorf("invalid modifier=%v", s.Modifier)
+	}
+
+	u, ctrl, negc := e.Ctrl(s.Modifier, u, qargs, env)
 	if len(ctrl)+len(negc) > 0 {
 		// ctrl @ negctrl @ u
 		e.X(negc, func() { e.Q.Apply(u) })
 		return nil
 	}
 
+	// inv, pow or nothing.
+	u = e.Mod(s.Modifier, u, env)
 	e.Q.Apply(u, flatten(qargs)...)
 	return nil
 }
@@ -483,7 +521,8 @@ func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *env.Environ) ([][]q.Qubit, erro
 	return qargs, nil
 }
 
-func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
+func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
+	// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
 	for _, m := range mod {
 		switch m.Kind {
 		case lexer.INV:
@@ -494,7 +533,7 @@ func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, 
 		}
 	}
 
-	return e.Ctrl(mod, u, qargs, env)
+	return u
 }
 
 func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
@@ -503,8 +542,7 @@ func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit,
 		return u, ctrl, negc
 	}
 
-	fqargs := flatten(qargs)
-	begin := 0
+	fqargs, begin := flatten(qargs), 0
 	for _, m := range ast.ModCtrl(mod) {
 		p := 1
 		if len(m.Index.List.List) > 0 {
@@ -566,6 +604,10 @@ func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *env.Env
 	e.SetConst(env, outer, decl.Params.List.List, x.Params.List.List)
 	e.SetQArgs(env, outer, decl.QArgs.List, x.QArgs.List)
 	return env
+}
+
+func (e *Evaluator) AddInv(env *env.Environ) {
+	e.Add(env, []ast.Modifier{{Kind: lexer.INV}})
 }
 
 func (e *Evaluator) Add(env *env.Environ, mod []ast.Modifier) {
