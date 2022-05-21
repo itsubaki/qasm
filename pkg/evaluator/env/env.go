@@ -16,9 +16,9 @@ type Environ struct {
 	Func     Func
 	Bit      *Bit
 	Qubit    *Qubit
-	Outer    *Environ
-	Decl     ast.Decl
+	Decl     []ast.Decl
 	Modifier []ast.Modifier
+	Outer    *Environ
 }
 
 func New() *Environ {
@@ -27,24 +27,24 @@ func New() *Environ {
 		Const:    make(map[string]object.Object),
 		Bit:      NewBit(),
 		Qubit:    NewQubit(),
-		Decl:     nil,
-		Outer:    nil,
+		Decl:     make([]ast.Decl, 0),
 		Modifier: make([]ast.Modifier, 0),
+		Outer:    nil,
 	}
 }
 
-func (e *Environ) NewEnclosed(decl ast.Decl) *Environ {
+func (e *Environ) NewEnclosed(decl ast.Decl, mod []ast.Modifier) *Environ {
 	return &Environ{
 		Func:     e.Func,
 		Const:    e.Const,
 		Bit:      NewBit(),
 		Qubit:    NewQubit(),
-		Decl:     decl,
+		Decl:     append(e.Decl, decl),
+		Modifier: append(e.Modifier, mod...),
 		Outer:    e,
-		Modifier: e.Modifier,
 	}
 }
 
 func (e *Environ) String() string {
-	return fmt.Sprintf("func: %v, const: %v, bit: %v, qubit: %v, modifier: %v", e.Func, e.Const, e.Bit, e.Qubit, e.Modifier)
+	return fmt.Sprintf("func: %v, const: %v, bit: %v, qubit: %v, modifier: %v, decl: %v", e.Func, e.Const, e.Bit, e.Qubit, e.Modifier, e.Decl)
 }

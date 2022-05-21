@@ -542,7 +542,7 @@ func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit,
 		return u, ctrl, negc
 	}
 
-	// if env.Decl != nil {
+	// if len(env.Decl) > 0 {
 	// 	fmt.Printf("here is in decl=%v\n", env.Decl)
 	//
 	//  for j ← 0, 1 do
@@ -607,19 +607,14 @@ func (e *Evaluator) Call(x *ast.CallExpr, outer *env.Environ) (object.Object, er
 }
 
 func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *env.Environ) *env.Environ {
-	env := outer.NewEnclosed(decl)
-	e.Add(env, x.Modifier)
+	env := outer.NewEnclosed(decl, x.Modifier)
 	e.SetConst(env, outer, decl.Params.List.List, x.Params.List.List)
 	e.SetQArgs(env, outer, decl.QArgs.List, x.QArgs.List)
 	return env
 }
 
 func (e *Evaluator) AddInv(env *env.Environ) {
-	e.Add(env, []ast.Modifier{{Kind: lexer.INV}})
-}
-
-func (e *Evaluator) Add(env *env.Environ, mod []ast.Modifier) {
-	env.Modifier = append(env.Modifier, mod...)
+	env.Modifier = append(env.Modifier, ast.Modifier{Kind: lexer.INV})
 }
 
 func (e *Evaluator) SetConst(env, outer *env.Environ, decl, args []ast.Expr) {
