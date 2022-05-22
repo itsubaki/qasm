@@ -455,12 +455,11 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 		return fmt.Errorf("qargs: %v", err)
 	}
 
-	// if len(env.Decl) > 0 && len(qargs) > 0{
-	// 	fmt.Printf("here is in decl=%v\n", env.Decl)
-	//
-	//  for j ← 0, 1 do
-	//    g qr0[0],qr1[j],qr2[0],qr3[j];
-	// }
+	if len(env.Decl) > 0 && len(qargs) > 1 {
+		fmt.Printf("here is in decl=%v, qargs=%v\n", env.Decl, qargs)
+		//  for j ← 0, 1 do
+		//    g qr0[0],qr1[j],qr2[0],qr3[j];
+	}
 
 	// QFT, IQFT, CMODEXP2
 	if BuiltinApply(e.Q, s.Kind, params, qargs) {
