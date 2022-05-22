@@ -276,6 +276,13 @@ func (s *BlockStmt) Reverse() *BlockStmt {
 	return &out
 }
 
+func (s *BlockStmt) Pow(y int) {
+	x := s.List
+	for i := 1; i < y; i++ {
+		s.List = append(s.List, x...)
+	}
+}
+
 type IfStmt struct{}
 
 type BranchStmt struct{}
