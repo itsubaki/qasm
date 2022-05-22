@@ -797,9 +797,5 @@ print;
 		return
 	}
 
-	// Output:
-	// [0 0][  0   0]( 1.0000 0.0000i): 1.0000
-	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
-	// here is in decl=[gate cx c, t { ctrl @ U(pi, 0, pi) c, t; }], qargs=[[0] [1]]
-	// [1 1][  1   1]( 1.0000 0.0000i): 1.0000
+	// Not Implemented.
 }

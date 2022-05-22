@@ -441,9 +441,9 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 	}
 
 	if len(env.Decl) > 0 && len(qargs) > 1 {
-		fmt.Printf("here is in decl=%v, qargs=%v\n", env.Decl, qargs)
-		//  for j ← 0, 1 do
-		//    g qr0[0],qr1[j],qr2[0],qr3[j];
+		// for j ← 0, 1 do
+		//   g qr0[0],qr1[j],qr2[0],qr3[j];
+		return e.ApplyInBlock(params, qargs, s, env)
 	}
 
 	// QFT, IQFT, CMODEXP2
@@ -473,6 +473,11 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 	// inv, pow or nothing.
 	u = e.Mod(s.Modifier, u, env)
 	e.Q.Apply(u, flatten(qargs)...)
+	return nil
+}
+
+func (e *Evaluator) ApplyInBlock(params []float64, qargs [][]q.Qubit, s *ast.ApplyStmt, env *env.Environ) error {
+	fmt.Printf("here is in decl=%v, qargs=%v\n", env.Decl, qargs)
 	return nil
 }
 
