@@ -180,31 +180,20 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		// inv @ pow(2) @ U(a, b, c) q;
 		// inv @ pow(3) @ U(c, b, a) q;
 
-		if len(env.Modifier) == 0 {
-			// No modifier.
-			// NOTE: defs has not modifier.
-			return e.ApplyBolck(n, env)
-		}
-
+		list := n.List
 		for _, m := range env.Modifier {
-			// inv, pow for gate.
 			switch m.Kind {
 			case lexer.INV:
-				// NOTE: gate has not return value.
-				if _, err := e.ApplyBolck(Inverse(n, env), env); err != nil {
-					return nil, fmt.Errorf("apply block=%v: %v", n, err)
-				}
-
+				n = Inverse(n, env)
 			case lexer.POW:
 				p := ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value
-				for i := int64(0); i < p; i++ {
-					// NOTE: gate has not return value.
-					if _, err := e.ApplyBolck(n, env); err != nil {
-						return nil, fmt.Errorf("apply block=%v: %v", n, err)
-					}
+				for i := int64(1); i < p; i++ {
+					n.List = append(n.List, list...)
 				}
 			}
 		}
+
+		return e.ApplyBolck(n, env)
 
 	case *ast.ReturnStmt:
 		v, err := e.eval(n.Result, env)
