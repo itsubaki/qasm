@@ -180,13 +180,13 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		// inv @ pow(2) @ U(a, b, c) q;
 		// inv @ pow(3) @ U(c, b, a) q;
 
-		list := n.List
 		for _, m := range env.Modifier {
 			switch m.Kind {
 			case lexer.INV:
 				n = Inverse(n, env)
 			case lexer.POW:
 				p := ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value
+				list := n.List
 				for i := int64(1); i < p; i++ {
 					n.List = append(n.List, list...)
 				}
