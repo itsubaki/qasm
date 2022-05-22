@@ -185,7 +185,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 			case lexer.INV:
 				n = Inverse(n, env)
 			case lexer.POW:
-				n.Pow(int(ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value))
+				n = n.Pow(int(ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value))
 			}
 		}
 

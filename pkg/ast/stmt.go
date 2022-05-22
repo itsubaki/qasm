@@ -276,11 +276,15 @@ func (s *BlockStmt) Reverse() *BlockStmt {
 	return &out
 }
 
-func (s *BlockStmt) Pow(y int) {
+func (s *BlockStmt) Pow(y int) *BlockStmt {
+	var out BlockStmt
+
 	x := s.List
-	for i := 1; i < y; i++ {
-		s.List = append(s.List, x...)
+	for i := 0; i < y; i++ {
+		out.List = append(out.List, x...)
 	}
+
+	return &out
 }
 
 type IfStmt struct{}
