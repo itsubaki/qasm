@@ -278,10 +278,8 @@ func (s *BlockStmt) Reverse() *BlockStmt {
 
 func (s *BlockStmt) Pow(y int) *BlockStmt {
 	var out BlockStmt
-
-	x := s.List
 	for i := 0; i < y; i++ {
-		out.List = append(out.List, x...)
+		out.List = append(out.List, s.List...)
 	}
 
 	return &out
