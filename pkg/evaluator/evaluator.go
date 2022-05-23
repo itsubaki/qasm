@@ -440,12 +440,6 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 		return fmt.Errorf("qargs: %v", err)
 	}
 
-	if len(env.Decl) > 0 && len(qargs) > 1 {
-		// for j ← 0, 1 do
-		//   g qr0[0],qr1[j],qr2[0],qr3[j];
-		return e.ApplyInBlock(params, qargs, s, env)
-	}
-
 	// QFT, IQFT, CMODEXP2
 	if BuiltinApply(e.Q, s.Kind, params, qargs) {
 		return nil
@@ -463,9 +457,14 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 		return fmt.Errorf("invalid modifier=%v", s.Modifier)
 	}
 
-	u, ctrl, negc := e.Ctrl(s.Modifier, u, qargs, env)
-	if len(ctrl)+len(negc) > 0 {
-		// ctrl @ negctrl @ u
+	if s.HasModCtrl() && len(env.Decl) > 0 && len(qargs) > 1 {
+		// for j ← 0, 1 do
+		//   g qr0[0],qr1[j],qr2[0],qr3[j];
+		return e.ApplyCtrlInBlock(s.Modifier, u, params, qargs, env)
+	}
+
+	if s.HasModCtrl() {
+		u, _, negc := e.Ctrl(s.Modifier, u, qargs, env)
 		e.X(negc, func() { e.Q.Apply(u) })
 		return nil
 	}
@@ -476,8 +475,37 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 	return nil
 }
 
-func (e *Evaluator) ApplyInBlock(params []float64, qargs [][]q.Qubit, s *ast.ApplyStmt, env *env.Environ) error {
-	fmt.Printf("here is in decl=%v, qargs=%v\n", env.Decl, qargs)
+func (e *Evaluator) ApplyCtrlInBlock(mod []ast.Modifier, u matrix.Matrix, params []float64, qargs [][]q.Qubit, env *env.Environ) error {
+	size := 0
+	for i := range qargs {
+		if len(qargs[i]) > size {
+			size = len(qargs[i])
+		}
+	}
+
+	for i := range qargs {
+		if len(qargs[i]) == 1 || len(qargs[i]) == size {
+			continue
+		}
+
+		return fmt.Errorf("invalid qargs size=%v", qargs)
+	}
+
+	for i := 0; i < size; i++ {
+		cqargs := make([][]q.Qubit, 0)
+		for j := range qargs {
+			if len(qargs[j]) == 1 {
+				cqargs = append(cqargs, []q.Qubit{qargs[j][0]})
+				continue
+			}
+
+			cqargs = append(cqargs, []q.Qubit{qargs[j][i]})
+		}
+
+		u, _, negc := e.Ctrl(mod, u, cqargs, env)
+		e.X(negc, func() { e.Q.Apply(u) })
+	}
+
 	return nil
 }
 
