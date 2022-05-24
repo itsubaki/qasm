@@ -441,7 +441,7 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 	}
 
 	// QFT, IQFT, CMODEXP2
-	if BuiltinApply(e.Q, s.Kind, params, qargs) {
+	if e.ApplyBuiltin(s.Kind, params, qargs) {
 		return nil
 	}
 
@@ -460,6 +460,22 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 
 	e.ApplyU(s.Modifier, u, qargs, env)
 	return nil
+}
+
+func (e *Evaluator) ApplyBuiltin(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
+	switch g {
+	case lexer.QFT:
+		e.Q.QFT(flatten(qargs)...)
+		return true
+	case lexer.IQFT:
+		e.Q.InvQFT(flatten(qargs)...)
+		return true
+	case lexer.CMODEXP2:
+		e.Q.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
+		return true
+	}
+
+	return false
 }
 
 func (e *Evaluator) ApplyU(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) error {

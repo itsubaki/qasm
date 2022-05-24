@@ -28,22 +28,6 @@ func Builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {
 	return nil, false
 }
 
-func BuiltinApply(qsim *q.Q, g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
-	switch g {
-	case lexer.QFT:
-		qsim.QFT(flatten(qargs)...)
-		return true
-	case lexer.IQFT:
-		qsim.InvQFT(flatten(qargs)...)
-		return true
-	case lexer.CMODEXP2:
-		qsim.CModExp2(int(p[0]), int(p[1]), qargs[0], qargs[1])
-		return true
-	}
-
-	return false
-}
-
 func flatten(qargs [][]q.Qubit) []q.Qubit {
 	var out []q.Qubit
 	for _, q := range qargs {
