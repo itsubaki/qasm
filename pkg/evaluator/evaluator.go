@@ -151,7 +151,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		}
 
 	case *ast.BlockStmt:
-		// NOTE: Modifier
+		// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
 		//
 		// gate inv(a, b, c) q { inv @ U(a, b, c) q; inv @ U(c, b, a) q;}
 		// pow(2) @ inv(pi/2.0, 0, pi) q;
@@ -179,7 +179,6 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		// is not
 		// inv @ pow(2) @ U(a, b, c) q;
 		// inv @ pow(3) @ U(c, b, a) q;
-
 		for _, m := range env.Modifier {
 			switch m.Kind {
 			case lexer.INV:
@@ -451,11 +450,17 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 		return fmt.Errorf("gate=%v not found", lexer.Tokens[s.Kind])
 	}
 
+	// fmt.Printf("mod: %v\n", s.Modifier)
+	// fmt.Printf("env.mod: %v\n", env.Modifier)
+	// fmt.Printf("env.decl: %v\n", env.Decl)
+	// fmt.Printf("qargs: %v\n", qargs)
+
 	if len(env.Decl) > 0 && len(qargs) > 1 {
 		// for j ← 0, 1 do
 		//   g qr0[0],qr1[j],qr2[0],qr3[j];
 		// https://qiskit.github.io/openqasm/language/gates.html#hierarchically-defined-unitary-gates
-		return e.ApplyInBlock(s.Modifier, u, qargs, env)
+		e.ApplyParallel(s.Modifier, u, qargs, env)
+		return nil
 	}
 
 	e.ApplyU(s.Modifier, u, qargs, env)
@@ -480,28 +485,38 @@ func (e *Evaluator) ApplyBuiltin(g lexer.Token, p []float64, qargs [][]q.Qubit) 
 
 func (e *Evaluator) ApplyU(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) error {
 	// Modifier
-	// FIXME: ctrl and pow cannot be specified at the same time.
-	if len(ast.ModCtrl(mod)) > 0 && len(ast.ModPow(mod)) > 0 {
-		return fmt.Errorf("invalid modifier=%v", mod)
-	}
+	modctrl := ast.ModCtrl(mod)
+	m := append(mod, ast.ModInv(env.Modifier)...)
+	u = e.Modify(m, u, env)
 
-	if len(ast.ModCtrl(mod)) > 0 {
+	if len(modctrl) > 0 {
 		// NOTE: That is, inv @ ctrl @ U = ctrl @ inv @ U.
 		// https://qiskit.github.io/openqasm/language/gates.html#quantum-gate-modifiers
-		if len(ast.ModInv(append(mod, env.Modifier...)))%2 == 1 {
-			u = u.Dagger()
-		}
 
-		u, _, negc := e.Ctrl(mod, u, qargs, env)
+		u, _, negc := e.Ctrl(modctrl, u, qargs, env)
 		e.X(negc, func() { e.Q.Apply(u) })
 		return nil
 	}
 
-	e.Q.Apply(e.Mod(mod, u, env), flatten(qargs)...)
+	e.Q.Apply(u, flatten(qargs)...)
 	return nil
 }
 
-func (e *Evaluator) ApplyInBlock(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) error {
+func (e *Evaluator) ApplyAt(i int, mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) {
+	cqargs := make([][]q.Qubit, 0)
+	for j := range qargs {
+		if len(qargs[j]) == 1 {
+			cqargs = append(cqargs, []q.Qubit{qargs[j][0]})
+			continue
+		}
+
+		cqargs = append(cqargs, []q.Qubit{qargs[j][i]})
+	}
+
+	e.ApplyU(mod, u, cqargs, env)
+}
+
+func (e *Evaluator) ApplyParallel(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) error {
 	size := 0
 	for i := range qargs {
 		if len(qargs[i]) > size {
@@ -518,46 +533,22 @@ func (e *Evaluator) ApplyInBlock(mod []ast.Modifier, u matrix.Matrix, qargs [][]
 		return fmt.Errorf("invalid qargs size=%v", qargs)
 	}
 
-	// We provide this so that user-defined gates can be applied in parallel like the built-in gates.
-	// https://qiskit.github.io/openqasm/language/gates.html#hierarchically-defined-unitary-gates
-	if len(ast.ModInv(append(mod, env.Modifier...)))%2 == 1 {
-		// reverse if inv @ exists
-		for i := size - 1; i > -1; i-- {
-			e.ApplyWith(i, mod, u, qargs, env)
-		}
-
-		return nil
-	}
-
 	for i := 0; i < size; i++ {
-		e.ApplyWith(i, mod, u, qargs, env)
+		e.ApplyAt(i, mod, u, qargs, env)
 	}
 
 	return nil
 }
 
-func (e *Evaluator) ApplyWith(i int, mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) {
-	cqargs := make([][]q.Qubit, 0)
-	for j := range qargs {
-		if len(qargs[j]) == 1 {
-			cqargs = append(cqargs, []q.Qubit{qargs[j][0]})
-			continue
-		}
-
-		cqargs = append(cqargs, []q.Qubit{qargs[j][i]})
-	}
-
-	e.ApplyU(mod, u, cqargs, env)
-}
-
-// Mod returns modified(inv, pow) U
-func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
+// Modify returns modified(inv, pow) U
+func (e *Evaluator) Modify(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
 	// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
 	for _, m := range mod {
 		switch m.Kind {
 		case lexer.INV:
 			u = u.Dagger()
 		case lexer.POW:
+			// NOTE: Pow
 			p := ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value
 			u = matrix.ApplyN(u, int(p))
 		}
@@ -567,14 +558,14 @@ func (e *Evaluator) Mod(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) m
 }
 
 // Ctrl returns ctrl @ U
-func (e *Evaluator) Ctrl(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
+func (e *Evaluator) Ctrl(modctrl []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
 	var ctrl, negc []q.Qubit
-	if len(ast.ModCtrl(mod)) == 0 {
+	if len(modctrl) == 0 {
 		return u, ctrl, negc
 	}
 
 	fqargs, begin := flatten(qargs), 0
-	for _, m := range ast.ModCtrl(mod) {
+	for _, m := range modctrl {
 		p := 1
 		if len(m.Index.List.List) > 0 {
 			v := ast.Must(e.eval(m.Index.List.List[0], env))
@@ -686,4 +677,11 @@ func (e *Evaluator) SetQArgs(env, outer *env.Environ, decl, args []ast.Expr) {
 			env.Qubit.Add(decl[i], qb)
 		}
 	}
+
+	// fmt.Printf("decl: %v\n", decl)
+	// fmt.Printf("args: %v\n", args)
+	// fmt.Printf("outer.Modifier: %v\n", outer.Modifier)
+	// fmt.Printf("outer.Qubit: %v\n", outer.Qubit)
+	// fmt.Printf("env.Modifier: %v\n", env.Modifier)
+	// fmt.Printf("env.Qubit: %v\n", env.Qubit)
 }

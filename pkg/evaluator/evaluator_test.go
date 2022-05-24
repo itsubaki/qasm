@@ -959,3 +959,26 @@ print;
 	// [1 1][  1   1]( 0.4746 0.0677i): 0.2298
 	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
 }
+
+func Example_ctrl_x() {
+	qasm := `
+OPENQASM 3.0;
+gate x q { U(pi, 0, pi) q; }
+
+qubit c;
+qubit t;
+
+x c;
+ctrl @ x c, t;
+print;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Not Implemented.
+	// [0 0][  0   0]( 0.7071 0.0000i): 0.5000
+	// [1 1][  1   1]( 0.7071 0.0000i): 0.5000
+}
