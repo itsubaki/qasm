@@ -533,7 +533,7 @@ func (e *Evaluator) ApplyParallel(mod []ast.Modifier, u matrix.Matrix, qargs [][
 		return fmt.Errorf("invalid qargs size=%v", qargs)
 	}
 
-	// parallel
+	// gates can be applied in parallel
 	for i := 0; i < size; i++ {
 		e.ApplyAt(i, mod, u, qargs, env)
 	}
