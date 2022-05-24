@@ -34,10 +34,10 @@ func (p *printer) Write(data []byte) (int, error) {
 
 	for _, b := range data {
 		if p.last == '\n' {
-			fmt.Printf(indent)
+			fmt.Print(indent)
 		}
 
-		fmt.Printf(string(b))
+		fmt.Print(string(b))
 		p.last = b
 	}
 
@@ -46,7 +46,7 @@ func (p *printer) Write(data []byte) (int, error) {
 
 func (p *printer) printf(format string, a ...interface{}) error {
 	if _, err := fmt.Fprintf(p, format, a...); err != nil {
-		return fmt.Errorf("Fprintf: %v", err)
+		return fmt.Errorf("fmt.Fprintf: %v", err)
 	}
 
 	return nil

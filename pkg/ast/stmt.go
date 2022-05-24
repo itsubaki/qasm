@@ -227,18 +227,6 @@ func (s *ApplyStmt) String() string {
 	return buf.String()
 }
 
-func (s *ApplyStmt) HasModInv() bool {
-	return len(ModInv(s.Modifier)) > 0
-}
-
-func (s *ApplyStmt) HasModPow() bool {
-	return len(ModPow(s.Modifier)) > 0
-}
-
-func (s *ApplyStmt) HasModCtrl() bool {
-	return len(ModCtrl(s.Modifier)) > 0
-}
-
 type BlockStmt struct {
 	List []Stmt
 }

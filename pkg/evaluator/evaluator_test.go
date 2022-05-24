@@ -523,6 +523,46 @@ print;
 	// [10 1][  2   1]( 1.0000 0.0000i): 1.0000
 }
 
+func Example_ctrl_inv() {
+	qasm := `
+OPENQASM 3.0;
+
+qubit q;
+qubit p;
+print;
+
+U(pi, 0, pi) q;
+print;
+
+ctrl @ inv @ U(1.0, 2.0, 3.0) q, p;
+print;
+
+ctrl @ U(1.0, 2.0, 3.0) q, p;
+print;
+
+inv @ ctrl @ U(1.0, 2.0, 3.0) q, p;
+print;
+
+ctrl @ U(1.0, 2.0, 3.0) q, p;
+print;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [0 0][  0   0]( 1.0000 0.0000i): 1.0000
+	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
+	// [1 0][  1   0]( 0.8776 0.0000i): 0.7702
+	// [1 1][  1   1]( 0.4746 0.0677i): 0.2298
+	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
+	// [1 0][  1   0]( 0.8776 0.0000i): 0.7702
+	// [1 1][  1   1]( 0.4746 0.0677i): 0.2298
+	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
+}
+
 func Example_gate_u() {
 	qasm := `
 OPENQASM 3.0;
@@ -717,7 +757,7 @@ qubit q;
 u(pi/2.0, 0, pi) q;
 print;
 
-inv@ u(pi/2.0, 0, pi) q;
+inv @ u(pi/2.0, 0, pi) q;
 print;
 `
 
@@ -885,4 +925,37 @@ print;
 	// [0 00][  0   0]( 1.0000 0.0000i): 1.0000
 	// [1 00][  1   0]( 1.0000 0.0000i): 1.0000
 	// [1 11][  1   3]( 1.0000 0.0000i): 1.0000
+}
+
+func Example_gate_ctrl_inv() {
+	qasm := `
+OPENQASM 3.0;
+
+gate cu(x, y, z) c, t { inv @ ctrl @ U(x, y, z) c, t; }
+
+qubit q;
+qubit p;
+print;
+
+U(pi, 0, pi) q;
+print;
+
+cu(1, 2, 3) q, p;
+print;
+
+inv @ cu(1, 2, 3) q, p;
+print;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [0 0][  0   0]( 1.0000 0.0000i): 1.0000
+	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
+	// [1 0][  1   0]( 0.8776 0.0000i): 0.7702
+	// [1 1][  1   1]( 0.4746 0.0677i): 0.2298
+	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
 }
