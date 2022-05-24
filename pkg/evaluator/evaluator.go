@@ -534,6 +534,7 @@ func (e *Evaluator) ApplyParallel(mod []ast.Modifier, u matrix.Matrix, qargs [][
 	}
 
 	// gates can be applied in parallel
+	// REVIEW: Should not need to be reversed when inv @ ctrl @ u qr0, qr1;
 	for i := 0; i < size; i++ {
 		e.ApplyAt(i, mod, u, qargs, env)
 	}
