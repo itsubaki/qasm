@@ -151,44 +151,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		}
 
 	case *ast.BlockStmt:
-		// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
-		//
-		// gate inv(a, b, c) q { inv @ U(a, b, c) q; inv @ U(c, b, a) q;}
-		// pow(2) @ inv(pi/2.0, 0, pi) q;
-		//
-		// is
-		// inv @ U(a, b, c) q;
-		// inv @ U(c, b, a) q;
-		// inv @ U(a, b, c) q;
-		// inv @ U(c, b, a) q;
-		//
-		// is not
-		// inv @ U(a, b, c) q;
-		// inv @ U(a, b, c) q;
-		// inv @ U(c, b, a) q;
-		// inv @ U(c, b, a) q;
-		//
-		//
-		// gate pow23(a, b, c) q { pow(2) @ U(a, b, c) q; pow(3) @ U(c, b, a) q;}
-		// inv @ pow23(pi/2.0, 0, pi) q;
-		//
-		// is
-		// inv @ pow(3) @ U(c, b, a) q;
-		// inv @ pow(2) @ U(a, b, c) q;
-		//
-		// is not
-		// inv @ pow(2) @ U(a, b, c) q;
-		// inv @ pow(3) @ U(c, b, a) q;
-		for _, m := range env.Modifier {
-			switch m.Kind {
-			case lexer.INV:
-				n = n.Reverse()
-			case lexer.POW:
-				n = n.Pow(int(ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value))
-			}
-		}
-
-		return e.EvalBolck(n, env)
+		return e.EvalBolck(e.ModifyStmt(n, env), env)
 
 	case *ast.ReturnStmt:
 		v, err := e.eval(n.Result, env)
@@ -467,6 +430,78 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 	return nil
 }
 
+// ModifyU returns modified(inv, pow) U
+func (e *Evaluator) ModifyU(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
+	// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
+	for _, m := range mod {
+		switch m.Kind {
+		case lexer.INV:
+			u = u.Dagger()
+		case lexer.POW:
+			u = matrix.ApplyN(u, int(ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value))
+		}
+	}
+
+	return u
+}
+
+// ModifyStmt returns modified(inv, pow) BlockStmt
+func (e *Evaluator) ModifyStmt(s *ast.BlockStmt, env *env.Environ) *ast.BlockStmt {
+	// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
+	//
+	// gate inv(a, b, c) q { inv @ U(a, b, c) q; inv @ U(c, b, a) q;}
+	// pow(2) @ inv(pi/2.0, 0, pi) q;
+	//
+	// is
+	// inv @ U(a, b, c) q;
+	// inv @ U(c, b, a) q;
+	// inv @ U(a, b, c) q;
+	// inv @ U(c, b, a) q;
+	//
+	// is not
+	// inv @ U(a, b, c) q;
+	// inv @ U(a, b, c) q;
+	// inv @ U(c, b, a) q;
+	// inv @ U(c, b, a) q;
+	//
+	//
+	// gate pow23(a, b, c) q { pow(2) @ U(a, b, c) q; pow(3) @ U(c, b, a) q;}
+	// inv @ pow23(pi/2.0, 0, pi) q;
+	//
+	// is
+	// inv @ pow(3) @ U(c, b, a) q;
+	// inv @ pow(2) @ U(a, b, c) q;
+	//
+	// is not
+	// inv @ pow(2) @ U(a, b, c) q;
+	// inv @ pow(3) @ U(c, b, a) q;
+	for _, m := range env.Modifier {
+		switch m.Kind {
+		case lexer.INV:
+			s = s.Reverse()
+
+			for _, b := range s.List {
+				switch s := b.(type) {
+				case *ast.ApplyStmt:
+					s.Modifier = append(s.Modifier, m)
+				case *ast.ExprStmt:
+					switch X := s.X.(type) {
+					case *ast.CallExpr:
+						X.Modifier = append(X.Modifier, m)
+					}
+				}
+			}
+
+		case lexer.POW:
+			s = s.Pow(int(ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value))
+		case lexer.CTRL, lexer.NEGCTRL:
+			// FIXME: copy s. add mod ctrl, negctrl
+		}
+	}
+
+	return s
+}
+
 func (e *Evaluator) ApplyBuiltin(g lexer.Token, p []float64, qargs [][]q.Qubit) bool {
 	switch g {
 	case lexer.QFT:
@@ -485,19 +520,20 @@ func (e *Evaluator) ApplyBuiltin(g lexer.Token, p []float64, qargs [][]q.Qubit) 
 
 func (e *Evaluator) ApplyU(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) error {
 	// Modifier
-	modctrl := ast.ModCtrl(mod)
-	m := append(mod, ast.ModInv(env.Modifier)...)
-	u = e.Modify(m, u, env)
+	u = e.ModifyU(mod, u, env)
 
-	if len(modctrl) > 0 {
+	// ctrl
+	ctrl := ast.ModCtrl(mod)
+	if len(ctrl) > 0 {
 		// NOTE: That is, inv @ ctrl @ U = ctrl @ inv @ U.
 		// https://qiskit.github.io/openqasm/language/gates.html#quantum-gate-modifiers
 
-		u, _, negc := e.Ctrl(modctrl, u, qargs, env)
+		u, _, negc := e.Ctrl(ctrl, u, qargs, env)
 		e.X(negc, func() { e.Q.Apply(u) })
 		return nil
 	}
 
+	// no ctrl
 	e.Q.Apply(u, flatten(qargs)...)
 	return nil
 }
@@ -540,23 +576,6 @@ func (e *Evaluator) ApplyParallel(mod []ast.Modifier, u matrix.Matrix, qargs [][
 	}
 
 	return nil
-}
-
-// Modify returns modified(inv, pow) U
-func (e *Evaluator) Modify(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
-	// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
-	for _, m := range mod {
-		switch m.Kind {
-		case lexer.INV:
-			u = u.Dagger()
-		case lexer.POW:
-			// NOTE: Pow
-			p := ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value
-			u = matrix.ApplyN(u, int(p))
-		}
-	}
-
-	return u
 }
 
 // Ctrl returns ctrl @ U
