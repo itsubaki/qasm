@@ -23,10 +23,6 @@ type DeclList struct {
 	List []Decl
 }
 
-func (d *DeclList) Append(e Decl) {
-	d.List = append(d.List, e)
-}
-
 func (d *DeclList) String() string {
 	var list []string
 	for _, e := range d.List {
@@ -41,10 +37,6 @@ type ParenDecl struct {
 }
 
 func (d *ParenDecl) declNode() {}
-
-func (d *ParenDecl) Append(e Decl) {
-	d.List.Append(e)
-}
 
 func (d *ParenDecl) Literal() string {
 	return lexer.Tokens[lexer.LPAREN]

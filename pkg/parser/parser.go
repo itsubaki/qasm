@@ -162,12 +162,11 @@ func (p *Parser) parseDeclStmt() ast.Stmt {
 
 func (p *Parser) parseDeclList() ast.DeclList {
 	list := ast.DeclList{}
-	list.Append(p.parseDecl())
+	list.List = append(list.List, p.parseDecl())
 
 	for p.next().Token == lexer.COMMA {
 		p.next() // skip COMMA token
-
-		list.Append(p.parseDecl())
+		list.List = append(list.List, p.parseDecl())
 	}
 
 	return list
@@ -199,12 +198,11 @@ func (p *Parser) parseDecl() ast.Decl {
 
 func (p *Parser) parseIdentList() ast.ExprList {
 	list := ast.ExprList{}
-	list.Append(p.parseIdent())
+	list.List = append(list.List, p.parseIdent())
 
 	for p.next().Token == lexer.COMMA {
 		p.next() // skip COMMNA token
-
-		list.Append(p.parseIdent())
+		list.List = append(list.List, p.parseIdent())
 	}
 
 	return list
@@ -362,7 +360,7 @@ func (p *Parser) parseGate() ast.Decl {
 	p.expect(lexer.LBRACE)
 
 	for p.next().Token != lexer.RBRACE {
-		decl.Body.Append(p.parseStmt())
+		decl.Body.List = append(decl.Body.List, p.parseStmt())
 	}
 	p.expect(lexer.RBRACE)
 
@@ -420,7 +418,7 @@ func (p *Parser) parseFunc() ast.Decl {
 	p.expect(lexer.LBRACE)
 
 	for p.next().Token != lexer.RBRACE {
-		decl.Body.Append(p.parseStmt())
+		decl.Body.List = append(decl.Body.List, p.parseStmt())
 	}
 	p.expect(lexer.RBRACE)
 

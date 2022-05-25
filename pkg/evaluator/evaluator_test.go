@@ -976,6 +976,9 @@ qubit t;
 x c;
 ctrl @ x c, t;
 print;
+
+ctrl @ x c, t;
+print;
 `
 
 	if err := eval(qasm); err != nil {

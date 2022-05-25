@@ -30,10 +30,6 @@ func (x *ExprList) Literal() string {
 	return ""
 }
 
-func (x *ExprList) Append(e Expr) {
-	x.List = append(x.List, e)
-}
-
 func (x *ExprList) String() string {
 	var list []string
 	for _, e := range x.List {

@@ -261,16 +261,6 @@ func TestDeclLiteral(t *testing.T) {
 	}
 }
 
-func TestDeclList(t *testing.T) {
-	l := &ast.DeclList{}
-	l.Append(&ast.BadDecl{})
-	l.Append(&ast.BadDecl{})
-
-	if len(l.List) != 2 {
-		t.Errorf("invalid length=%v", len(l.List))
-	}
-}
-
 func TestBadDecl(t *testing.T) {
 	d := &ast.BadDecl{}
 

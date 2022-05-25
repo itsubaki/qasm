@@ -345,16 +345,6 @@ func TestExprLiteral(t *testing.T) {
 	}
 }
 
-func TestExprList(t *testing.T) {
-	l := &ast.ExprList{}
-	l.Append(&ast.BadExpr{})
-	l.Append(&ast.BadExpr{})
-
-	if len(l.List) != 2 {
-		t.Errorf("invalid length=%v", len(l.List))
-	}
-}
-
 func TestBadExpr(t *testing.T) {
 	x := &ast.BadExpr{}
 

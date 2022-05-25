@@ -150,9 +150,6 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 			c[i] = e[i].(*object.Int).Value
 		}
 
-	case *ast.BlockStmt:
-		return e.EvalBolck(e.ModifyStmt(n, env), env)
-
 	case *ast.ReturnStmt:
 		v, err := e.eval(n.Result, env)
 		if err != nil {
@@ -184,6 +181,9 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 
 	case *ast.CallExpr:
 		return e.Call(n, env)
+
+	case *ast.BlockStmt:
+		return e.EvalBolck(e.ModifyStmt(n, env), env)
 
 	case *ast.MeasureExpr:
 		return e.Measure(n, env)
@@ -487,10 +487,10 @@ func (e *Evaluator) ApplyUAt(i int, mod []ast.Modifier, u matrix.Matrix, qargs [
 }
 
 func (e *Evaluator) ApplyU(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) error {
-	// Modifier
+	// Modify inv, pow
 	u = e.ModifyU(mod, u, env)
 
-	// ctrl
+	// Modify ctrl
 	ctrl := ast.ModCtrl(mod)
 	if len(ctrl) > 0 {
 		// NOTE: That is, inv @ ctrl @ U = ctrl @ inv @ U.
@@ -627,12 +627,17 @@ func (e *Evaluator) SetQArgs(env, outer *env.Environ, decl, args []ast.Expr) {
 		}
 	}
 
-	// fmt.Printf("decl: %v\n", decl)
 	// fmt.Printf("args: %v\n", args)
-	// fmt.Printf("outer.Modifier: %v\n", outer.Modifier)
-	// fmt.Printf("outer.Qubit: %v\n", outer.Qubit)
 	// fmt.Printf("env.Modifier: %v\n", env.Modifier)
+	// fmt.Printf("env.Decl: %v\n", env.Decl)
+	// fmt.Printf("out.Qubit: %v\n", outer.Qubit)
 	// fmt.Printf("env.Qubit: %v\n", env.Qubit)
+
+	// args: [c t]
+	// env.Modifier: [{51 {{[]}}}]
+	// env.Decl: [gate x q { U(pi, 0, pi) q; }]
+	// out.Qubit: [c t], map[c:[0] t:[1]]
+	// env.Qubit: [q], map[q:[0]]
 }
 
 // ModifyU returns modified(inv, pow) U
@@ -650,7 +655,7 @@ func (e *Evaluator) ModifyU(mod []ast.Modifier, u matrix.Matrix, env *env.Enviro
 	return u
 }
 
-// ModifyStmt returns modified(inv, pow) BlockStmt
+// ModifyStmt returns modified BlockStmt
 func (e *Evaluator) ModifyStmt(s *ast.BlockStmt, env *env.Environ) *ast.BlockStmt {
 	// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
 	//
@@ -682,25 +687,12 @@ func (e *Evaluator) ModifyStmt(s *ast.BlockStmt, env *env.Environ) *ast.BlockStm
 	// inv @ pow(3) @ U(c, b, a) q;
 	for _, m := range env.Modifier {
 		switch m.Kind {
+		case lexer.CTRL, lexer.NEGCTRL:
+			s = s.Add(m)
 		case lexer.INV:
-			s = s.Reverse()
-
-			for _, b := range s.List {
-				switch s := b.(type) {
-				case *ast.ApplyStmt:
-					s.Modifier = append(s.Modifier, m)
-				case *ast.ExprStmt:
-					switch X := s.X.(type) {
-					case *ast.CallExpr:
-						X.Modifier = append(X.Modifier, m)
-					}
-				}
-			}
-
+			s = s.Inv()
 		case lexer.POW:
 			s = s.Pow(int(ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value))
-		case lexer.CTRL, lexer.NEGCTRL:
-			// FIXME: copy s. add mod ctrl, negctrl
 		}
 	}
 

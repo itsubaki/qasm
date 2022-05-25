@@ -251,23 +251,53 @@ func (s *BlockStmt) String() string {
 	return buf.String()
 }
 
-func (s *BlockStmt) Append(e Stmt) {
-	s.List = append(s.List, e)
-}
-
-func (s *BlockStmt) Reverse() *BlockStmt {
-	var out BlockStmt
+func (s *BlockStmt) Inv() *BlockStmt {
+	var rev BlockStmt
 	for i := len(s.List) - 1; i > -1; i-- {
-		out.Append(s.List[i])
+		rev.List = append(rev.List, s.List[i])
 	}
 
-	return &out
+	return rev.Add(Modifier{Kind: lexer.INV})
 }
 
 func (s *BlockStmt) Pow(y int) *BlockStmt {
 	var out BlockStmt
 	for i := 0; i < y; i++ {
 		out.List = append(out.List, s.List...)
+	}
+
+	return &out
+}
+
+func (s *BlockStmt) Add(m Modifier) *BlockStmt {
+	var out BlockStmt
+	for _, b := range s.List {
+		switch s := b.(type) {
+		case *ApplyStmt:
+			out.List = append(out.List, &ApplyStmt{
+				Kind:     s.Kind,
+				Modifier: append(s.Modifier, m),
+				Name:     s.Name,
+				Params:   s.Params,
+				QArgs:    s.QArgs,
+			})
+		case *ExprStmt:
+			switch X := s.X.(type) {
+			case *CallExpr:
+				out.List = append(out.List, &ExprStmt{
+					X: &CallExpr{
+						Name:     X.Name,
+						Modifier: append(X.Modifier, m),
+						Params:   X.Params,
+						QArgs:    X.QArgs,
+					},
+				})
+			default:
+				out.List = append(out.List, &ExprStmt{X: X})
+			}
+		default:
+			out.List = append(out.List, s)
+		}
 	}
 
 	return &out
