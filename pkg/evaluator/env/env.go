@@ -12,24 +12,26 @@ type Func map[string]ast.Decl
 type Const map[string]object.Object
 
 type Environ struct {
-	Const    Const
-	Func     Func
-	Bit      *Bit
-	Qubit    *Qubit
-	Decl     []ast.Decl
-	Modifier []ast.Modifier
-	Outer    *Environ
+	Const     Const
+	Func      Func
+	Bit       *Bit
+	Qubit     *Qubit
+	Modifier  []ast.Modifier
+	Decl      []ast.Decl
+	CtrlQArgs []ast.Expr
+	Outer     *Environ
 }
 
 func New() *Environ {
 	return &Environ{
-		Func:     make(map[string]ast.Decl),
-		Const:    make(map[string]object.Object),
-		Bit:      NewBit(),
-		Qubit:    NewQubit(),
-		Decl:     make([]ast.Decl, 0),
-		Modifier: make([]ast.Modifier, 0),
-		Outer:    nil,
+		Func:      make(map[string]ast.Decl),
+		Const:     make(map[string]object.Object),
+		Bit:       NewBit(),
+		Qubit:     NewQubit(),
+		Modifier:  make([]ast.Modifier, 0),
+		Decl:      make([]ast.Decl, 0),
+		CtrlQArgs: nil,
+		Outer:     nil,
 	}
 }
 
@@ -39,8 +41,8 @@ func (e *Environ) NewEnclosed(decl ast.Decl, mod []ast.Modifier) *Environ {
 		Const:    e.Const,
 		Bit:      NewBit(),
 		Qubit:    NewQubit(),
-		Decl:     append(e.Decl, decl),
 		Modifier: append(e.Modifier, mod...),
+		Decl:     append(e.Decl, decl),
 		Outer:    e,
 	}
 }

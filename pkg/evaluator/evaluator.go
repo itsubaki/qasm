@@ -413,11 +413,6 @@ func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
 		return fmt.Errorf("gate=%v not found", lexer.Tokens[s.Kind])
 	}
 
-	// fmt.Printf("mod: %v\n", s.Modifier)
-	// fmt.Printf("env.mod: %v\n", env.Modifier)
-	// fmt.Printf("env.decl: %v\n", env.Decl)
-	// fmt.Printf("qargs: %v\n", qargs)
-
 	if len(env.Decl) > 0 && len(qargs) > 1 {
 		// for j ← 0, 1 do
 		//   g qr0[0],qr1[j],qr2[0],qr3[j];
@@ -621,38 +616,38 @@ func (e *Evaluator) SetConst(env, outer *env.Environ, decl, args []ast.Expr) {
 }
 
 func (e *Evaluator) SetQArgs(env, outer *env.Environ, decl, args []ast.Expr) {
+	if len(ast.ModCtrl(env.Modifier)) == 0 {
+		for i := range decl {
+			if qb, ok := outer.Qubit.Get(args[i]); ok {
+				env.Qubit.Add(decl[i], qb)
+			}
+		}
+
+		return
+	}
+
+	ctrl := make([]ast.Expr, 0)
+	for i := range ast.ModCtrl(env.Modifier) {
+		switch x := args[i].(type) {
+		case *ast.IdentExpr:
+			ctrl = append(ctrl, &ast.IdentExpr{Name: fmt.Sprintf("_v%d", i)})
+		case *ast.IndexExpr:
+			ctrl = append(ctrl, &ast.IndexExpr{Name: fmt.Sprintf("_v%d", i), Value: x.Value})
+		}
+	}
+	env.CtrlQArgs = ctrl
+
+	cdecl := append(make([]ast.Expr, 0), ctrl...)
 	for i := range decl {
+		cdecl = append(cdecl, decl[i])
+	}
+
+	for i := range cdecl {
 		if qb, ok := outer.Qubit.Get(args[i]); ok {
-			env.Qubit.Add(decl[i], qb)
+			env.Qubit.Add(cdecl[i], qb)
+			continue
 		}
 	}
-
-	// fmt.Printf("args: %v\n", args)
-	// fmt.Printf("env.Modifier: %v\n", env.Modifier)
-	// fmt.Printf("env.Decl: %v\n", env.Decl)
-	// fmt.Printf("out.Qubit: %v\n", outer.Qubit)
-	// fmt.Printf("env.Qubit: %v\n", env.Qubit)
-
-	// args: [c t]
-	// env.Modifier: [{51 {{[]}}}]
-	// env.Decl: [gate x q { U(pi, 0, pi) q; }]
-	// out.Qubit: [c t], map[c:[0] t:[1]]
-	// env.Qubit: [q], map[q:[0]]
-}
-
-// ModifyU returns modified(inv, pow) U
-func (e *Evaluator) ModifyU(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
-	// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
-	for _, m := range mod {
-		switch m.Kind {
-		case lexer.INV:
-			u = u.Dagger()
-		case lexer.POW:
-			u = matrix.ApplyN(u, int(ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value))
-		}
-	}
-
-	return u
 }
 
 // ModifyStmt returns modified BlockStmt
@@ -685,10 +680,13 @@ func (e *Evaluator) ModifyStmt(s *ast.BlockStmt, env *env.Environ) *ast.BlockStm
 	// is not
 	// inv @ pow(2) @ U(a, b, c) q;
 	// inv @ pow(3) @ U(c, b, a) q;
+
+	var i int
 	for _, m := range env.Modifier {
 		switch m.Kind {
 		case lexer.CTRL, lexer.NEGCTRL:
-			s = s.Add(m)
+			s = s.Add(m, []ast.Expr{env.CtrlQArgs[i]}...)
+			i++
 		case lexer.INV:
 			s = s.Inv()
 		case lexer.POW:
@@ -697,4 +695,19 @@ func (e *Evaluator) ModifyStmt(s *ast.BlockStmt, env *env.Environ) *ast.BlockStm
 	}
 
 	return s
+}
+
+// ModifyU returns modified(inv, pow) U
+func (e *Evaluator) ModifyU(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
+	// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
+	for _, m := range mod {
+		switch m.Kind {
+		case lexer.INV:
+			u = u.Dagger()
+		case lexer.POW:
+			u = matrix.ApplyN(u, int(ast.Must(e.eval(m.Index.List.List[0], env)).(*object.Int).Value))
+		}
+	}
+
+	return u
 }
