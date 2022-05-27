@@ -183,7 +183,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		return e.Call(n, env)
 
 	case *ast.BlockStmt:
-		return e.EvalBolck(e.ModifyStmt(n, env), env)
+		return e.Block(e.ModifyStmt(n, env), env)
 
 	case *ast.MeasureExpr:
 		return e.Measure(n, env)
@@ -244,7 +244,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 	return &object.Nil{}, nil
 }
 
-func (e *Evaluator) EvalBolck(s *ast.BlockStmt, env *env.Environ) (object.Object, error) {
+func (e *Evaluator) Block(s *ast.BlockStmt, env *env.Environ) (object.Object, error) {
 	for _, b := range s.List {
 		v, err := e.eval(b, env)
 		if err != nil {
