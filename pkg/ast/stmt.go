@@ -269,7 +269,7 @@ func (s *BlockStmt) Pow(y int) *BlockStmt {
 	return &out
 }
 
-func (s *BlockStmt) Add(m Modifier) *BlockStmt {
+func (s *BlockStmt) Add(m Modifier, qargs ...Expr) *BlockStmt {
 	var out BlockStmt
 	for _, b := range s.List {
 		switch s := b.(type) {
@@ -279,7 +279,9 @@ func (s *BlockStmt) Add(m Modifier) *BlockStmt {
 				Modifier: append(s.Modifier, m),
 				Name:     s.Name,
 				Params:   s.Params,
-				QArgs:    s.QArgs,
+				QArgs: ExprList{
+					List: append(qargs, s.QArgs.List...),
+				},
 			})
 		case *ExprStmt:
 			switch X := s.X.(type) {
@@ -289,7 +291,9 @@ func (s *BlockStmt) Add(m Modifier) *BlockStmt {
 						Name:     X.Name,
 						Modifier: append(X.Modifier, m),
 						Params:   X.Params,
-						QArgs:    X.QArgs,
+						QArgs: ExprList{
+							List: append(qargs, X.QArgs.List...),
+						},
 					},
 				})
 			default:
