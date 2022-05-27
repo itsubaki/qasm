@@ -41,7 +41,7 @@ func (e *Environ) NewEnclosed(decl ast.Decl, mod []ast.Modifier) *Environ {
 		Const:    e.Const,
 		Bit:      NewBit(),
 		Qubit:    NewQubit(),
-		Modifier: append(e.Modifier, mod...),
+		Modifier: mod,
 		Decl:     append(e.Decl, decl),
 		Outer:    e,
 	}

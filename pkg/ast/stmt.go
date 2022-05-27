@@ -193,8 +193,8 @@ func (s *PrintStmt) String() string {
 
 type ApplyStmt struct {
 	Kind     lexer.Token // lexer.X, lexer.CX, ...
-	Modifier []Modifier  // lexer.CTRL, lexer.NEGCTRL, lexer.INV, lexer.POW
 	Name     string
+	Modifier []Modifier // lexer.CTRL, lexer.NEGCTRL, lexer.INV, lexer.POW
 	Params   ParenExpr
 	QArgs    ExprList
 }
@@ -276,8 +276,8 @@ func (s *BlockStmt) Add(m Modifier, qargs ...Expr) *BlockStmt {
 		case *ApplyStmt:
 			out.List = append(out.List, &ApplyStmt{
 				Kind:     s.Kind,
-				Modifier: append(s.Modifier, m),
 				Name:     s.Name,
+				Modifier: append(s.Modifier, m),
 				Params:   s.Params,
 				QArgs: ExprList{
 					List: append(qargs, s.QArgs.List...),

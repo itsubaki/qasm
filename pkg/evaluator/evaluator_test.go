@@ -1034,6 +1034,37 @@ print;
 	// [1 1][  1   1]( 0.7071 0.0000i): 0.5000
 }
 
+func Example_ctrl_ctrl_x() {
+	qasm := `
+OPENQASM 3.0;
+
+gate h q { U(pi/2.0, 0, pi) q; }
+gate x q { U(pi, 0, pi) q; }
+gate cx p, q { ctrl @ x p, q; }
+
+qubit[2] c;
+qubit t;
+
+h c[0];
+x c[1];
+print;
+
+ctrl @ cx c[0], c[1], t;
+print;
+`
+
+	if err := eval(qasm); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// [01 0][  1   0]( 0.7071 0.0000i): 0.5000
+	// [11 0][  3   0]( 0.7071 0.0000i): 0.5000
+	// [01 0][  1   0]( 0.7071 0.0000i): 0.5000
+	// [11 1][  3   1]( 0.7071 0.0000i): 0.5000
+}
+
 func Example_ctrl_x_index() {
 	qasm := `
 OPENQASM 3.0;
