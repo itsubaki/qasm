@@ -49,20 +49,6 @@ func equals(cs, cv []state) bool {
 	return true
 }
 
-func equalsQ(qs, qv []qubit.State) bool {
-	if len(qs) != len(qv) {
-		return false
-	}
-
-	for i := range qs {
-		if !qs[i].Equals(qv[i]) {
-			return false
-		}
-	}
-
-	return true
-}
-
 func eval(qasm string, verbose ...bool) ([]qubit.State, []state, error) {
 	l := lexer.New(strings.NewReader(qasm))
 	p := parser.New(l)
@@ -651,7 +637,7 @@ func TestEvaluator_Eval(t *testing.T) {
 			continue
 		}
 
-		if !equalsQ(qs, c.qstate) {
+		if !qubit.Equals(qs, c.qstate) {
 			t.Errorf("got=%v, want=%v", qs, c.qstate)
 			continue
 		}

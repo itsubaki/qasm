@@ -8,6 +8,8 @@ github.com/itsubaki/q v1.1.7-0.20220528083324-9bf1fd3b780c h1:oKdA+Htr7jt+s6f59+
 github.com/itsubaki/q v1.1.7-0.20220528083324-9bf1fd3b780c/go.mod h1:p37X1D0ObvLcJ+26P1wRBbEBkIw3jZA/2q85LniQ6Ic=
 github.com/itsubaki/q v1.1.7-0.20220528102035-1cb7e1daf0bb h1:UUm3JG4Uow13YUCCmwmDSlM8UEghfqzAiNoGY7D5RlE=
 github.com/itsubaki/q v1.1.7-0.20220528102035-1cb7e1daf0bb/go.mod h1:p37X1D0ObvLcJ+26P1wRBbEBkIw3jZA/2q85LniQ6Ic=
+github.com/itsubaki/q v1.1.7-0.20220528102915-67040605e590 h1:rpemHHKBZWXFrdGFG90h4HtemijIGO79u8Livhu//qo=
+github.com/itsubaki/q v1.1.7-0.20220528102915-67040605e590/go.mod h1:p37X1D0ObvLcJ+26P1wRBbEBkIw3jZA/2q85LniQ6Ic=
 github.com/russross/blackfriday/v2 v2.1.0 h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf35Ld67mk=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/urfave/cli/v2 v2.8.0 h1:EZsAB20oRW4nHcB99TTL6PrXpBGIEujMEKdjwruY9KQ=
