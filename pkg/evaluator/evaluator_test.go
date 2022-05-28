@@ -541,6 +541,102 @@ func TestEvaluator_Eval(t *testing.T) {
 			[]state{},
 			false,
 		},
+		{
+			`
+			qubit[2] q;
+			qubit t;
+			
+			U(pi, 0, pi) q[0];
+			ctrl @ ctrl @ U(pi, 0, pi) q, t;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{2, 0},
+					BinaryString: []string{"10", "0"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit[2] q;
+			qubit t;
+			
+			U(pi, 0, pi) q;
+			ctrl @ ctrl @ U(pi, 0, pi) q, t;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{3, 1},
+					BinaryString: []string{"11", "1"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit[2] q;
+			qubit[2] p;
+			qubit t;
+			
+			U(pi, 0, pi) q;
+			U(pi, 0, pi) p;
+
+			ctrl(3) @ ctrl(1) @ U(pi, 0, pi) q, p, t;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{3, 3, 1},
+					BinaryString: []string{"11", "11", "1"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit[2] q;
+			qubit[2] p;
+			qubit t;
+			
+			U(pi, 0, pi) q;
+			U(pi, 0, pi) p;
+
+			ctrl(1) @ ctrl(3) @ U(pi, 0, pi) q, p, t;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{3, 3, 1},
+					BinaryString: []string{"11", "11", "1"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit[2] q;
+			qubit t;
+			
+			U(pi, 0, pi) q[0];
+			ctrl @ negctrl @ U(pi, 0, pi) q, t;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{2, 1},
+					BinaryString: []string{"10", "1"},
+				},
+			},
+			[]state{},
+			false,
+		},
 	}
 
 	for _, c := range cases {
@@ -560,83 +656,6 @@ func TestEvaluator_Eval(t *testing.T) {
 			continue
 		}
 	}
-}
-
-func Example_u_ctrlctrl() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit[2] q;
-qubit t;
-
-U(pi, 0, pi) q[0];
-ctrl @ ctrl @ U(pi, 0, pi) q, t;
-print;
-
-U(pi, 0, pi) q[1];
-ctrl @ ctrl @ U(pi, 0, pi) q, t;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [10 0][  2   0]( 1.0000 0.0000i): 1.0000
-	// [11 1][  3   1]( 1.0000 0.0000i): 1.0000
-}
-
-func Example_u_ctrl3ctrl1() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit[2] q;
-qubit[2] p;
-qubit t;
-
-U(pi, 0, pi) q;
-U(pi, 0, pi) p;
-print;
-
-ctrl(3) @ ctrl(1) @ U(pi, 0, pi) q, p, t;
-print;
-
-ctrl(1) @ ctrl(3) @ U(pi, 0, pi) q, p, t;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [11 11 0][  3   3   0]( 1.0000 0.0000i): 1.0000
-	// [11 11 1][  3   3   1]( 1.0000 0.0000i): 1.0000
-	// [11 11 0][  3   3   0]( 1.0000 0.0000i): 1.0000
-}
-
-func Example_u_negctrl() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit[2] q;
-qubit t;
-
-U(pi, 0, pi) q[0];
-ctrl @ negctrl @ U(pi, 0, pi) q, t;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [10 1][  2   1]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_u_ctrl_inv() {
