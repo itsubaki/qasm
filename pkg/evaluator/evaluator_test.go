@@ -295,24 +295,6 @@ func TestEvaluator_Eval(t *testing.T) {
 		{
 			`
 			qubit[2] q;
-			qubit[2] p;
-			
-			U(pi, 0, pi) q, p;
-			measure q;
-			`,
-			[]qubit.State{
-				{
-					Amplitude:    complex(1, 0),
-					Int:          []int64{3, 3},
-					BinaryString: []string{"11", "11"},
-				},
-			},
-			[]state{},
-			false,
-		},
-		{
-			`
-			qubit[2] q;
 			bit[2] c;
 			bit[2] b;
 			
