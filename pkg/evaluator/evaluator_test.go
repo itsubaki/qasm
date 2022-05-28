@@ -95,6 +95,8 @@ func Example_print() {
 	qasm := `
 OPENQASM 3.0;
 
+print;
+
 qubit[2] q;
 U(pi, 0, pi) q[0];
 
@@ -149,12 +151,15 @@ func Example_shor() {
 	qasm := `
 OPENQASM 3.0;
 
+const N = 3 * 5;
+const a = 7;
+
 qubit[3] r0;
 qubit[4] r1;
 
 X r1[-1];
 H r0;
-CMODEXP2(7, 15) r0, r1;
+CMODEXP2(a, N) r0, r1;
 IQFT r0;
 
 print;
