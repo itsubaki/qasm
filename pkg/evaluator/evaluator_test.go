@@ -3,8 +3,11 @@ package evaluator_test
 import (
 	"fmt"
 	"strings"
+	"testing"
 
+	"github.com/itsubaki/q"
 	"github.com/itsubaki/q/pkg/quantum/qubit"
+	"github.com/itsubaki/qasm/pkg/ast"
 	"github.com/itsubaki/qasm/pkg/evaluator"
 	"github.com/itsubaki/qasm/pkg/lexer"
 	"github.com/itsubaki/qasm/pkg/parser"
@@ -13,6 +16,51 @@ import (
 type state struct {
 	Name  string
 	Value []int64
+}
+
+func (s state) Equals(v state) bool {
+	if s.Name != v.Name {
+		return false
+	}
+
+	if len(s.Value) != len(v.Value) {
+		return false
+	}
+
+	for i := range s.Value {
+		if s.Value[i] != v.Value[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func equals(cs, cv []state) bool {
+	if len(cs) != len(cv) {
+		return false
+	}
+	for i := range cs {
+		if !cs[i].Equals(cv[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func equalsQ(qs, qv []qubit.State) bool {
+	if len(qs) != len(qv) {
+		return false
+	}
+
+	for i := range qs {
+		if !qs[i].Equals(qv[i]) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func eval(qasm string, verbose ...bool) ([]qubit.State, []state, error) {
@@ -48,7 +96,13 @@ func eval(qasm string, verbose ...bool) ([]qubit.State, []state, error) {
 		return []qubit.State{}, s, nil
 	}
 
-	return e.Q.State(), s, nil
+	var index [][]int
+	for _, n := range e.Env.Qubit.Name {
+		qb, _ := e.Env.Qubit.Get(&ast.IdentExpr{Name: n})
+		index = append(index, q.Index(qb...))
+	}
+
+	return e.Q.Raw().State(index...), s, nil
 }
 
 func Example_include() {
@@ -91,94 +145,6 @@ include "../../testdata/stdgates.qasm";
 	// .  .  .  .  *ast.GateDecl(gate swap q, p { cx q, p; cx p, q; cx q, p; })
 }
 
-func Example_measure() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit[2] q;
-qubit[2] p;
-
-U(pi, 0, pi) q, p;
-measure q;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [11 11][  3   3]( 1.0000 0.0000i): 1.0000
-}
-
-func Example_measure_assign() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit[2] q;
-bit[2] c;
-bit[2] b;
-
-U(pi, 0, pi) q;
-c = measure q;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [11][  3]( 1.0000 0.0000i): 1.0000
-	// c: [1 1]
-	// b: [0 0]
-}
-
-func Example_measure_arrow() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit[2] q;
-bit[2] c;
-
-U(pi, 0, pi) q;
-
-measure q -> c;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [11][  3]( 1.0000 0.0000i): 1.0000
-	// c: [1 1]
-}
-
-func Example_reset() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit[2] q;
-
-U(pi/2.0, 0, pi) q;
-reset q;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [00][  0]( 1.0000 0.0000i): 1.0000
-}
-
 func Example_print() {
 	qasm := `
 OPENQASM 3.0;
@@ -187,9 +153,8 @@ qubit[2] q;
 
 U(pi, 0, pi) q[0];
 
-print q[0];
-print q[0], q[1];
 print q;
+print q[0], q[1];
 `
 
 	if _, _, err := eval(qasm); err != nil {
@@ -198,9 +163,8 @@ print q;
 	}
 
 	// Output:
-	// [1][  1]( 1.0000 0.0000i): 1.0000
-	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
 	// [10][  2]( 1.0000 0.0000i): 1.0000
+	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_qFT() {
@@ -292,176 +256,310 @@ print;
 	// [110 1101][  6  13]( 0.0000-0.2500i): 0.0625
 }
 
-func Example_u() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit q;
-
-U(pi/2.0, 0, pi) q;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
+func TestEvaluator_Eval(t *testing.T) {
+	var cases = []struct {
+		in     string
+		qstate []qubit.State
+		cstate []state
+		hasErr bool
+	}{
+		{
+			`
+			qubit[2] q;
+			qubit[2] p;
+			
+			U(pi, 0, pi) q, p;
+			measure q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{3, 3},
+					BinaryString: []string{"11", "11"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit[2] q;
+			bit[2] c;
+			bit[2] b;
+			
+			U(pi, 0, pi) q;
+			c = measure q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{3},
+					BinaryString: []string{"11"},
+				},
+			},
+			[]state{
+				{
+					Name:  "c",
+					Value: []int64{1, 1},
+				},
+				{
+					Name:  "b",
+					Value: []int64{0, 0},
+				},
+			},
+			false,
+		},
+		{
+			`
+			qubit[2] q;
+			bit[2] c;
+			
+			U(pi, 0, pi) q;
+			measure q -> c;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{3},
+					BinaryString: []string{"11"},
+				},
+			},
+			[]state{
+				{
+					Name:  "c",
+					Value: []int64{1, 1},
+				},
+			},
+			false,
+		},
+		{
+			`
+			qubit[2] q;			
+			U(pi/2.0, 0, pi) q;
+			reset q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{0},
+					BinaryString: []string{"00"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit q;
+			U(pi/2.0, 0, pi) q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(0.7071067811865475, 0),
+					Int:          []int64{0},
+					BinaryString: []string{"0"},
+				},
+				{
+					Amplitude:    complex(0.7071067811865475, 0),
+					Int:          []int64{1},
+					BinaryString: []string{"1"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit[2] q;
+			U(pi/2.0, 0, pi) q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(0.5, 0),
+					Int:          []int64{0},
+					BinaryString: []string{"00"},
+				},
+				{
+					Amplitude:    complex(0.5, 0),
+					Int:          []int64{1},
+					BinaryString: []string{"01"},
+				},
+				{
+					Amplitude:    complex(0.5, 0),
+					Int:          []int64{2},
+					BinaryString: []string{"10"},
+				},
+				{
+					Amplitude:    complex(0.5, 0),
+					Int:          []int64{3},
+					BinaryString: []string{"11"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit[2] q;
+			U(pi/2.0, 0, pi) q[0];
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(0.7071067811865475, 0),
+					Int:          []int64{0},
+					BinaryString: []string{"00"},
+				},
+				{
+					Amplitude:    complex(0.7071067811865475, 0),
+					Int:          []int64{2},
+					BinaryString: []string{"10"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit q;			
+			U(1.0, 2.0, 3.0) q;
+			inv @ U(1.0, 2.0, 3.0) q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{0},
+					BinaryString: []string{"0"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit q;			
+			inv @ U(1.0, 2.0, 3.0) q;
+			inv @ inv @ U(1.0, 2.0, 3.0) q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{0},
+					BinaryString: []string{"0"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit q;			
+			pow(2) @ U(pi/2.0, 0, pi) q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{0},
+					BinaryString: []string{"0"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit q;			
+			pow(3) @ pow(2) @ pow(2) @ U(pi/2.0, 0, pi) q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{0},
+					BinaryString: []string{"0"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit q;			
+			pow(3) @ U(pi/2.0, 0, pi) q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(0.7071067811865475, 0),
+					Int:          []int64{0},
+					BinaryString: []string{"0"},
+				},
+				{
+					Amplitude:    complex(0.7071067811865475, 0),
+					Int:          []int64{1},
+					BinaryString: []string{"1"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit q;
+			qubit t;
+			
+			U(pi/2.0, 0, pi) q;
+			ctrl @ U(pi, 0, pi) q, t;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(0.7071067811865475, 0),
+					Int:          []int64{0, 0},
+					BinaryString: []string{"0", "0"},
+				},
+				{
+					Amplitude:    complex(0.7071067811865475, 0),
+					Int:          []int64{1, 1},
+					BinaryString: []string{"1", "1"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit[2] q;
+			qubit t;
+			
+			U(pi, 0, pi) q;
+			ctrl(2) @ U(pi, 0, pi) q, t;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{3, 1},
+					BinaryString: []string{"11", "1"},
+				},
+			},
+			[]state{},
+			false,
+		},
 	}
 
-	// Output:
-	// [0][  0]( 0.7071 0.0000i): 0.5000
-	// [1][  1]( 0.7071 0.0000i): 0.5000
-}
+	for _, c := range cases {
+		qs, cs, err := eval(c.in)
+		if (err != nil) != c.hasErr {
+			t.Errorf("err: %v", err)
+			continue
+		}
 
-func Example_u_register() {
-	qasm := `
-OPENQASM 3.0;
+		if !equals(cs, c.cstate) {
+			t.Errorf("got=%v, want=%v", cs, c.cstate)
+			continue
+		}
 
-qubit[2] q;
-
-U(pi/2.0, 0, pi) q;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
+		if !equalsQ(qs, c.qstate) {
+			t.Errorf("got=%v, want=%v", qs, c.qstate)
+			continue
+		}
 	}
-
-	// Output:
-	// [00][  0]( 0.5000 0.0000i): 0.2500
-	// [01][  1]( 0.5000 0.0000i): 0.2500
-	// [10][  2]( 0.5000 0.0000i): 0.2500
-	// [11][  3]( 0.5000 0.0000i): 0.2500
-}
-
-func Example_u_index() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit[2] q;
-
-U(pi/2.0, 0, pi) q[0];
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [00][  0]( 0.7071 0.0000i): 0.5000
-	// [10][  2]( 0.7071 0.0000i): 0.5000
-}
-
-func Example_u_inv() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit q;
-
-U(1.0, 2.0, 3.0) q;
-print;
-
-inv @ U(1.0, 2.0, 3.0) q;
-print;
-
-inv @ inv @ U(1.0, 2.0, 3.0) q;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [0][  0]( 0.8776 0.0000i): 0.7702
-	// [1][  1](-0.1995 0.4359i): 0.2298
-	// [0][  0]( 1.0000 0.0000i): 1.0000
-	// [0][  0]( 0.8776 0.0000i): 0.7702
-	// [1][  1](-0.1995 0.4359i): 0.2298
-}
-
-func Example_u_pow() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit q;
-
-U(pi/2.0, 0, pi) q;
-U(pi/2.0, 0, pi) q;
-print;
-
-pow(2) @ U(pi/2.0, 0, pi) q;
-print;
-reset q;
-
-pow(3) @ pow(2) @ pow(2) @ U(pi/2.0, 0, pi) q;
-print;
-reset q;
-
-pow(3) @ U(pi/2.0, 0, pi) q;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [0][  0]( 1.0000 0.0000i): 1.0000
-	// [0][  0]( 1.0000 0.0000i): 1.0000
-	// [0][  0]( 1.0000 0.0000i): 1.0000
-	// [0][  0]( 0.7071 0.0000i): 0.5000
-	// [1][  1]( 0.7071 0.0000i): 0.5000
-}
-
-func Example_u_ctrl() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit q;
-qubit t;
-
-U(pi/2.0, 0, pi) q;
-ctrl @ U(pi, 0, pi) q, t;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [0 0][  0   0]( 0.7071 0.0000i): 0.5000
-	// [1 1][  1   1]( 0.7071 0.0000i): 0.5000
-}
-
-func Example_u_ctrl2() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit[2] q;
-qubit t;
-
-U(pi, 0, pi) q;
-print;
-
-ctrl(2) @ U(pi, 0, pi) q, t;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [11 0][  3   0]( 1.0000 0.0000i): 1.0000
-	// [11 1][  3   1]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_u_ctrlctrl() {
