@@ -4,18 +4,24 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/itsubaki/q/pkg/quantum/qubit"
 	"github.com/itsubaki/qasm/pkg/evaluator"
 	"github.com/itsubaki/qasm/pkg/lexer"
 	"github.com/itsubaki/qasm/pkg/parser"
 )
 
-func eval(qasm string, verbose ...bool) error {
+type state struct {
+	Name  string
+	Value []int64
+}
+
+func eval(qasm string, verbose ...bool) ([]qubit.State, []state, error) {
 	l := lexer.New(strings.NewReader(qasm))
 	p := parser.New(l)
 
 	a := p.Parse()
 	if errs := p.Errors(); len(errs) != 0 {
-		return fmt.Errorf("parse: %v\n", errs)
+		return nil, nil, fmt.Errorf("parse: %v\n", errs)
 	}
 
 	opts := evaluator.Opts{
@@ -27,10 +33,22 @@ func eval(qasm string, verbose ...bool) error {
 
 	e := evaluator.Default(opts)
 	if err := e.Eval(a); err != nil {
-		return fmt.Errorf("eval: %v\n", err)
+		return nil, nil, fmt.Errorf("eval: %v\n", err)
 	}
 
-	return nil
+	s := make([]state, 0)
+	for _, n := range e.Env.Bit.Name {
+		s = append(s, state{
+			Name:  n,
+			Value: e.Env.Bit.Value[n],
+		})
+	}
+
+	if len(e.Env.Qubit.Name) == 0 {
+		return []qubit.State{}, s, nil
+	}
+
+	return e.Q.State(), s, nil
 }
 
 func Example_include() {
@@ -39,7 +57,7 @@ OPENQASM 3.0;
 include "../../testdata/stdgates.qasm";
 `
 
-	if err := eval(qasm, true); err != nil {
+	if _, _, err := eval(qasm, true); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -85,7 +103,7 @@ measure q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -107,7 +125,7 @@ c = measure q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -131,7 +149,7 @@ measure q -> c;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -152,7 +170,7 @@ reset q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -174,7 +192,7 @@ print q[0], q[1];
 print q;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -197,7 +215,7 @@ QFT q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -226,7 +244,7 @@ IQFT q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -250,7 +268,7 @@ IQFT r0;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -284,7 +302,7 @@ U(pi/2.0, 0, pi) q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -304,7 +322,7 @@ U(pi/2.0, 0, pi) q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -326,7 +344,7 @@ U(pi/2.0, 0, pi) q[0];
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -352,7 +370,7 @@ inv @ inv @ U(1.0, 2.0, 3.0) q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -387,7 +405,7 @@ pow(3) @ U(pi/2.0, 0, pi) q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -412,7 +430,7 @@ ctrl @ U(pi, 0, pi) q, t;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -436,7 +454,7 @@ ctrl(2) @ U(pi, 0, pi) q, t;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -462,7 +480,7 @@ ctrl @ ctrl @ U(pi, 0, pi) q, t;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -491,7 +509,7 @@ ctrl(1) @ ctrl(3) @ U(pi, 0, pi) q, p, t;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -514,7 +532,7 @@ ctrl @ negctrl @ U(pi, 0, pi) q, t;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -547,7 +565,7 @@ ctrl @ U(1.0, 2.0, 3.0) q, p;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -574,7 +592,7 @@ u(pi, 0, pi) q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -598,7 +616,7 @@ invu(1, 2, 3) q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -640,7 +658,7 @@ print;
 reset q;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -668,7 +686,7 @@ qubit[2] q;
 u(pi, 0, pi) q;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -701,7 +719,7 @@ invu(pi/2.0, 0, pi) q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -732,7 +750,7 @@ pow23(pi/2.0, 0, pi) q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -761,7 +779,7 @@ cx q, p;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -789,7 +807,7 @@ cx q, p;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -817,7 +835,7 @@ cx q, p;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -845,7 +863,7 @@ cx q, p;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -874,7 +892,7 @@ inv @ u(pi/2.0, 0, pi) q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -914,7 +932,7 @@ pow(3) @ u(pi/2.0, pi, pi) q;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -948,7 +966,7 @@ inv @ cu(1, 2, 3) q, p;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -989,7 +1007,7 @@ pow(3) @ cu(pi/2.0, 0, pi) q, p;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -1022,7 +1040,7 @@ ctrl @ x c, t;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -1053,7 +1071,7 @@ ctrl @ cx c[0], c[1], t;
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
@@ -1081,7 +1099,7 @@ ctrl @ x q[0], q[1];
 print;
 `
 
-	if err := eval(qasm); err != nil {
+	if _, _, err := eval(qasm); err != nil {
 		fmt.Printf("eval: %v\n", err)
 		return
 	}
