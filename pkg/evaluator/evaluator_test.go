@@ -623,6 +623,46 @@ func TestEvaluator_Eval(t *testing.T) {
 			[]state{},
 			false,
 		},
+		{
+			`
+			qubit q;
+			qubit p;
+			
+			U(pi, 0, pi) q;
+			ctrl @ U(1.0, 2.0, 3.0) q, p;
+			ctrl @ inv @ U(1.0, 2.0, 3.0) q, p;
+			U(pi, 0, pi) q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{0, 0},
+					BinaryString: []string{"0", "0"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit q;
+			qubit p;
+			
+			U(pi, 0, pi) q;
+			ctrl @ U(1.0, 2.0, 3.0) q, p;
+			inv @ ctrl @ U(1.0, 2.0, 3.0) q, p;
+			U(pi, 0, pi) q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{0, 0},
+					BinaryString: []string{"0", "0"},
+				},
+			},
+			[]state{},
+			false,
+		},
 	}
 
 	for _, c := range cases {
@@ -642,46 +682,6 @@ func TestEvaluator_Eval(t *testing.T) {
 			continue
 		}
 	}
-}
-
-func Example_u_ctrl_inv() {
-	qasm := `
-OPENQASM 3.0;
-
-qubit q;
-qubit p;
-print;
-
-U(pi, 0, pi) q;
-print;
-
-ctrl @ inv @ U(1.0, 2.0, 3.0) q, p;
-print;
-
-ctrl @ U(1.0, 2.0, 3.0) q, p;
-print;
-
-inv @ ctrl @ U(1.0, 2.0, 3.0) q, p;
-print;
-
-ctrl @ U(1.0, 2.0, 3.0) q, p;
-print;
-`
-
-	if _, _, err := eval(qasm); err != nil {
-		fmt.Printf("eval: %v\n", err)
-		return
-	}
-
-	// Output:
-	// [0 0][  0   0]( 1.0000 0.0000i): 1.0000
-	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
-	// [1 0][  1   0]( 0.8776 0.0000i): 0.7702
-	// [1 1][  1   1]( 0.4746 0.0677i): 0.2298
-	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
-	// [1 0][  1   0]( 0.8776 0.0000i): 0.7702
-	// [1 1][  1   1]( 0.4746 0.0677i): 0.2298
-	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
 }
 
 func Example_gate() {
