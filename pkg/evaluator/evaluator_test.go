@@ -95,8 +95,9 @@ func Example_print() {
 	qasm := `
 OPENQASM 3.0;
 
-qubit[2] q;
+print;
 
+qubit[2] q;
 U(pi, 0, pi) q[0];
 
 print q;
@@ -178,6 +179,102 @@ print;
 	// [110 0100][  6   4](-0.2500 0.0000i): 0.0625
 	// [110 0111][  6   7]( 0.0000 0.2500i): 0.0625
 	// [110 1101][  6  13]( 0.0000-0.2500i): 0.0625
+}
+
+func Example_verbose() {
+	qasm := `
+	OPENQASM 3.0;
+	include "../../testdata/stdgates.qasm";
+
+	qubit[2] c;
+	qubit t;
+	
+	h c[0];
+	x c[1];
+	ctrl @ cx c[0], c[1], t;
+	print;
+	`
+
+	if _, _, err := eval(qasm, true); err != nil {
+		fmt.Printf("eval: %v\n", err)
+		return
+	}
+
+	// Output:
+	// *ast.OpenQASM
+	// .  *ast.DeclStmt(OPENQASM 3.0;)
+	// .  []ast.Stmt
+	// .  .  *ast.InclStmt(include "../../testdata/stdgates.qasm";)
+	// .  .  .  *ast.DeclStmt(gate i q { U(0, 0, 0) q; })
+	// .  .  .  .  *ast.GateDecl(gate i q { U(0, 0, 0) q; })
+	// .  .  .  *ast.DeclStmt(gate h q { U(pi / 2.0, 0, pi) q; })
+	// .  .  .  .  *ast.GateDecl(gate h q { U(pi / 2.0, 0, pi) q; })
+	// .  .  .  *ast.DeclStmt(gate x q { U(pi, 0, pi) q; })
+	// .  .  .  .  *ast.GateDecl(gate x q { U(pi, 0, pi) q; })
+	// .  .  .  *ast.DeclStmt(gate y q { U(pi, pi / 2.0, pi / 2.0) q; })
+	// .  .  .  .  *ast.GateDecl(gate y q { U(pi, pi / 2.0, pi / 2.0) q; })
+	// .  .  .  *ast.DeclStmt(gate z q { Z q; })
+	// .  .  .  .  *ast.GateDecl(gate z q { Z q; })
+	// .  .  .  *ast.DeclStmt(gate cx c, t { ctrl @ x c, t; })
+	// .  .  .  .  *ast.GateDecl(gate cx c, t { ctrl @ x c, t; })
+	// .  .  .  *ast.DeclStmt(gate cy c, t { ctrl @ y c, t; })
+	// .  .  .  .  *ast.GateDecl(gate cy c, t { ctrl @ y c, t; })
+	// .  .  .  *ast.DeclStmt(gate cz c, t { ctrl @ z c, t; })
+	// .  .  .  .  *ast.GateDecl(gate cz c, t { ctrl @ z c, t; })
+	// .  .  .  *ast.DeclStmt(gate ch c, t { ctrl @ h c, t; })
+	// .  .  .  .  *ast.GateDecl(gate ch c, t { ctrl @ h c, t; })
+	// .  .  .  *ast.DeclStmt(gate ccx c0, c1, t { ctrl @ ctrl @ x c0, c1, t; })
+	// .  .  .  .  *ast.GateDecl(gate ccx c0, c1, t { ctrl @ ctrl @ x c0, c1, t; })
+	// .  .  .  *ast.DeclStmt(gate swap q, p { cx q, p; cx p, q; cx q, p; })
+	// .  .  .  .  *ast.GateDecl(gate swap q, p { cx q, p; cx p, q; cx q, p; })
+	// .  .  *ast.DeclStmt(qubit[2] c;)
+	// .  .  .  *ast.GenDecl(qubit[2] c)
+	// .  .  *ast.DeclStmt(qubit t;)
+	// .  .  .  *ast.GenDecl(qubit t)
+	// .  .  *ast.ExprStmt(h c[0];)
+	// .  .  .  *ast.CallExpr(h c[0])
+	// .  .  .  *ast.GateDecl(gate h q { U(pi / 2.0, 0, pi) q; })
+	// .  .  .  .  *ast.BlockStmt({ U(pi / 2.0, 0, pi) q; })
+	// .  .  .  .  .  *ast.ApplyStmt(U(pi / 2.0, 0, pi) q;)
+	// .  .  .  .  .  .  *ast.InfixExpr(pi / 2.0)
+	// .  .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  .  .  .  .  .  *ast.BasicLit(2.0)
+	// .  .  .  .  .  .  .  .  return *object.Float(2)
+	// .  .  .  .  .  .  .  return *object.Float(1.5707963267948966)
+	// .  .  .  .  .  .  *ast.BasicLit(0)
+	// .  .  .  .  .  .  .  return *object.Int(0)
+	// .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  *ast.ExprStmt(x c[1];)
+	// .  .  .  *ast.CallExpr(x c[1])
+	// .  .  .  *ast.GateDecl(gate x q { U(pi, 0, pi) q; })
+	// .  .  .  .  *ast.BlockStmt({ U(pi, 0, pi) q; })
+	// .  .  .  .  .  *ast.ApplyStmt(U(pi, 0, pi) q;)
+	// .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  .  .  .  .  *ast.BasicLit(0)
+	// .  .  .  .  .  .  .  return *object.Int(0)
+	// .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  *ast.ExprStmt(ctrl @ cx c[0], c[1], t;)
+	// .  .  .  *ast.CallExpr(ctrl @ cx c[0], c[1], t)
+	// .  .  .  *ast.GateDecl(gate cx c, t { ctrl @ x c, t; })
+	// .  .  .  .  *ast.BlockStmt({ ctrl @ x c, t; })
+	// .  .  .  .  .  *ast.ExprStmt(ctrl @ ctrl @ x _v0[0], c, t;)
+	// .  .  .  .  .  .  *ast.CallExpr(ctrl @ ctrl @ x _v0[0], c, t)
+	// .  .  .  .  .  .  *ast.GateDecl(gate x q { U(pi, 0, pi) q; })
+	// .  .  .  .  .  .  .  *ast.BlockStmt({ U(pi, 0, pi) q; })
+	// .  .  .  .  .  .  .  .  *ast.ApplyStmt(ctrl @ ctrl @ U(pi, 0, pi) _v1, _v0[0], q;)
+	// .  .  .  .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  .  .  .  .  .  .  .  *ast.BasicLit(0)
+	// .  .  .  .  .  .  .  .  .  .  return *object.Int(0)
+	// .  .  .  .  .  .  .  .  .  *ast.BasicLit(pi)
+	// .  .  .  .  .  .  .  .  .  .  return *object.Float(3.141592653589793)
+	// .  .  *ast.PrintStmt(print;)
+	// [01 0][  1   0]( 0.7071 0.0000i): 0.5000
+	// [11 1][  3   1]( 0.7071 0.0000i): 0.5000
 }
 
 func TestEvaluator_Eval(t *testing.T) {
@@ -345,8 +442,8 @@ func TestEvaluator_Eval(t *testing.T) {
 		{
 			`
 			qubit q;			
-			U(1.0, 2.0, 3.0) q;
-			inv @ U(1.0, 2.0, 3.0) q;
+			U(pi, tau, euler) q;
+			inv @ U(pi, tau, euler) q;
 			`,
 			[]qubit.State{
 				{
