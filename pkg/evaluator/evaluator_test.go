@@ -294,73 +294,6 @@ func TestEvaluator_Eval(t *testing.T) {
 	}{
 		{
 			`
-			qubit[2] q;
-			bit[2] c;
-			bit[2] b;
-			
-			U(pi, 0, pi) q;
-			c = measure q;
-			`,
-			[]qubit.State{
-				{
-					Amplitude:    complex(1, 0),
-					Int:          []int64{3},
-					BinaryString: []string{"11"},
-				},
-			},
-			[]state{
-				{
-					Name:  "c",
-					Value: []int64{1, 1},
-				},
-				{
-					Name:  "b",
-					Value: []int64{0, 0},
-				},
-			},
-			false,
-		},
-		{
-			`
-			qubit[2] q;
-			bit[2] c;
-			
-			U(pi, 0, pi) q;
-			measure q -> c;
-			`,
-			[]qubit.State{
-				{
-					Amplitude:    complex(1, 0),
-					Int:          []int64{3},
-					BinaryString: []string{"11"},
-				},
-			},
-			[]state{
-				{
-					Name:  "c",
-					Value: []int64{1, 1},
-				},
-			},
-			false,
-		},
-		{
-			`
-			qubit[2] q;			
-			U(pi/2.0, 0, pi) q;
-			reset q;
-			`,
-			[]qubit.State{
-				{
-					Amplitude:    complex(1, 0),
-					Int:          []int64{0},
-					BinaryString: []string{"00"},
-				},
-			},
-			[]state{},
-			false,
-		},
-		{
-			`
 			qubit q;
 			U(pi/2.0, 0, pi) q;
 			`,
@@ -424,6 +357,68 @@ func TestEvaluator_Eval(t *testing.T) {
 					Amplitude:    complex(0.7071067811865475, 0),
 					Int:          []int64{2},
 					BinaryString: []string{"10"},
+				},
+			},
+			[]state{},
+			false,
+		},
+		{
+			`
+			qubit[2] q;
+			bit[2] c;
+			
+			U(pi, 0, pi) q;
+			c = measure q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{3},
+					BinaryString: []string{"11"},
+				},
+			},
+			[]state{
+				{
+					Name:  "c",
+					Value: []int64{1, 1},
+				},
+			},
+			false,
+		},
+		{
+			`
+			qubit[2] q;
+			bit[2] c;
+			
+			U(pi, 0, pi) q;
+			measure q -> c;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{3},
+					BinaryString: []string{"11"},
+				},
+			},
+			[]state{
+				{
+					Name:  "c",
+					Value: []int64{1, 1},
+				},
+			},
+			false,
+		},
+		{
+			`
+			qubit[2] q;			
+			U(pi/2.0, 0, pi) q;
+			reset q;
+			`,
+			[]qubit.State{
+				{
+					Amplitude:    complex(1, 0),
+					Int:          []int64{0},
+					BinaryString: []string{"00"},
 				},
 			},
 			[]state{},
