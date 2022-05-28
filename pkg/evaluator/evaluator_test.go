@@ -95,13 +95,14 @@ func Example_print() {
 	qasm := `
 OPENQASM 3.0;
 
-print;
-
 qubit[2] q;
 U(pi, 0, pi) q[0];
 
-print q;
 print q[0], q[1];
+print q;
+
+bit[2] c;
+print;
 `
 
 	if _, _, err := eval(qasm); err != nil {
@@ -110,8 +111,10 @@ print q[0], q[1];
 	}
 
 	// Output:
-	// [10][  2]( 1.0000 0.0000i): 1.0000
 	// [1 0][  1   0]( 1.0000 0.0000i): 1.0000
+	// [10][  2]( 1.0000 0.0000i): 1.0000
+	// [10][  2]( 1.0000 0.0000i): 1.0000
+	// c: [0 0]
 }
 
 func Example_qFT() {
