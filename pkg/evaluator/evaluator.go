@@ -168,7 +168,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 			return &object.Float{Value: math.E}, nil
 		}
 
-		return nil, fmt.Errorf("basic literal=%v not found", n)
+		return nil, fmt.Errorf("unsupported type=%v", n)
 	}
 
 	return nil, fmt.Errorf("unsupported type=%v", n)
