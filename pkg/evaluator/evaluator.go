@@ -114,35 +114,19 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		}
 
 	case *ast.InclStmt:
-		path := strings.Trim(n.Path.Value, "\"")
-		f, err := os.ReadFile(path)
-		if err != nil {
-			return nil, fmt.Errorf("include: read file=%s: %v", path, err)
-		}
-
-		l := lexer.New(strings.NewReader(string(f)))
-		p := parser.New(l)
-
-		a := p.Parse()
-		if errs := p.Errors(); len(errs) != 0 {
-			return nil, fmt.Errorf("include: parse: %v", errs)
-		}
-
-		for _, s := range a.Stmts {
-			if _, err := e.eval(s, e.Env); err != nil {
-				return nil, fmt.Errorf("include: eval(stmt=%v): %v", s, err)
-			}
+		if err := e.Include(n, env); err != nil {
+			return nil, fmt.Errorf("include(%v): %v", n, err)
 		}
 
 	case *ast.AssignStmt:
 		rhs, err := e.eval(n.Right, env)
 		if err != nil {
-			return nil, fmt.Errorf("assign: eval(right=%v): %v", n.Right, err)
+			return nil, fmt.Errorf("eval(%v): %v", n.Right, err)
 		}
 
 		c, ok := env.Bit.Get(n.Left)
 		if !ok {
-			return nil, fmt.Errorf("assign: bit=%v not found", n.Left)
+			return nil, fmt.Errorf("bit=%v not found", n.Left)
 		}
 
 		e := rhs.(*object.Array).Elm
@@ -153,7 +137,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 	case *ast.ReturnStmt:
 		v, err := e.eval(n.Result, env)
 		if err != nil {
-			return nil, fmt.Errorf("return: %v", err)
+			return nil, fmt.Errorf("eval(%v): %v", n.Result, err)
 		}
 
 		return &object.ReturnValue{Value: v}, nil
@@ -161,7 +145,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 	case *ast.GenConst:
 		v, err := e.eval(n.Value, env)
 		if err != nil {
-			return nil, fmt.Errorf("gen const: eval(%v): %v", n, err)
+			return nil, fmt.Errorf("eval(%v): %v", n.Value, err)
 		}
 		env.Const[ast.Must(ast.Ident(n))] = v
 
@@ -191,7 +175,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 	case *ast.UnaryExpr:
 		v, err := e.eval(n.Value, env)
 		if err != nil {
-			return nil, fmt.Errorf("unary: eval(%v): %v", n.Value, err)
+			return nil, fmt.Errorf("eval(%v): %v", n.Value, err)
 		}
 
 		switch n.Kind {
@@ -209,12 +193,12 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 	case *ast.InfixExpr:
 		lhs, err := e.eval(n.Left, env)
 		if err != nil {
-			return nil, fmt.Errorf("infix: eval(left=%v): %v", n.Left, err)
+			return nil, fmt.Errorf("eval(%v): %v", n.Left, err)
 		}
 
 		rhs, err := e.eval(n.Right, env)
 		if err != nil {
-			return nil, fmt.Errorf("infix: eval(left=%v): %v", n.Right, err)
+			return nil, fmt.Errorf("eval(%v): %v", n.Right, err)
 		}
 
 		return e.Infix(n.Kind, lhs, rhs)
@@ -242,6 +226,30 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 	}
 
 	return &object.Nil{}, nil
+}
+
+func (e *Evaluator) Include(n *ast.InclStmt, env *env.Environ) error {
+	path := strings.Trim(n.Path.Value, "\"")
+	f, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read file=%s: %v", path, err)
+	}
+
+	l := lexer.New(strings.NewReader(string(f)))
+	p := parser.New(l)
+
+	a := p.Parse()
+	if errs := p.Errors(); len(errs) != 0 {
+		return fmt.Errorf("parse: %v", errs)
+	}
+
+	for _, s := range a.Stmts {
+		if _, err := e.eval(s, e.Env); err != nil {
+			return fmt.Errorf("eval(%v): %v", s, err)
+		}
+	}
+
+	return nil
 }
 
 func (e *Evaluator) Block(s *ast.BlockStmt, env *env.Environ) (object.Object, error) {
@@ -301,7 +309,7 @@ func (e *Evaluator) Infix(kind lexer.Token, lhs, rhs object.Object) (object.Obje
 
 	}
 
-	return nil, fmt.Errorf("unsupported(%v)", kind)
+	return nil, fmt.Errorf("unsupported type=%v", kind)
 }
 
 func (e *Evaluator) Print(s *ast.PrintStmt, env *env.Environ) error {
@@ -546,7 +554,7 @@ func (e *Evaluator) Params(s *ast.ApplyStmt, env *env.Environ) ([]float64, error
 	for _, p := range s.Params.List.List {
 		v, err := e.eval(p, env)
 		if err != nil {
-			return nil, fmt.Errorf("params: eval(%v): %v", p, err)
+			return nil, fmt.Errorf("params=%v: %v", p, err)
 		}
 
 		switch o := v.(type) {
@@ -555,7 +563,7 @@ func (e *Evaluator) Params(s *ast.ApplyStmt, env *env.Environ) ([]float64, error
 		case *object.Int:
 			params = append(params, float64(o.Value))
 		default:
-			return nil, fmt.Errorf("unsupported(%v)", o)
+			return nil, fmt.Errorf("unsupported type=%v", o)
 		}
 	}
 
@@ -592,7 +600,7 @@ func (e *Evaluator) Call(x *ast.CallExpr, outer *env.Environ) (object.Object, er
 		return e.eval(&decl.Body, e.Enclosed(x, decl, outer))
 	}
 
-	return nil, fmt.Errorf("unsupported decl=%v", f)
+	return nil, fmt.Errorf("unsupported type=%v", f)
 }
 
 func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *env.Environ) *env.Environ {
