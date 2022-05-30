@@ -98,115 +98,59 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 	case *ast.ArrowStmt:
 		return e.eval(&ast.AssignStmt{Left: n.Right, Right: n.Left}, env)
 
-	case *ast.ResetStmt:
-		if err := e.Reset(n, env); err != nil {
-			return nil, fmt.Errorf("reset(%v): %v", n, err)
-		}
-
-	case *ast.ApplyStmt:
-		if err := e.Apply(n, env); err != nil {
-			return nil, fmt.Errorf("apply(%v): %v", n, err)
-		}
-
-	case *ast.PrintStmt:
-		if err := e.Print(n, env); err != nil {
-			return nil, fmt.Errorf("print(%v): %v", n, err)
-		}
-
-	case *ast.InclStmt:
-		if err := e.Include(n, env); err != nil {
-			return nil, fmt.Errorf("include(%v): %v", n, err)
-		}
-
-	case *ast.AssignStmt:
-		rhs, err := e.eval(n.Right, env)
-		if err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", n.Right, err)
-		}
-
-		c, ok := env.Bit.Get(n.Left)
-		if !ok {
-			return nil, fmt.Errorf("bit=%v not found", n.Left)
-		}
-
-		e := rhs.(*object.Array).Elm
-		for i := range e {
-			c[i] = e[i].(*object.Int).Value
-		}
-
-	case *ast.ReturnStmt:
-		v, err := e.eval(n.Result, env)
-		if err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", n.Result, err)
-		}
-
-		return &object.ReturnValue{Value: v}, nil
-
-	case *ast.GenConst:
-		v, err := e.eval(n.Value, env)
-		if err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", n.Value, err)
-		}
-		env.Const[ast.Must(ast.Ident(n))] = v
-
-	case *ast.GenDecl:
-		switch n.Kind {
-		case lexer.BIT:
-			env.Bit.Add(n, make([]int64, n.Size()))
-		case lexer.QUBIT:
-			env.Qubit.Add(n, e.Q.ZeroWith(n.Size()))
-		}
-
-	case *ast.GateDecl:
-		env.Func[ast.Must(ast.Ident(n))] = n
-
-	case *ast.FuncDecl:
-		env.Func[ast.Must(ast.Ident(n))] = n
-
 	case *ast.CallExpr:
 		return e.Call(n, env)
 
 	case *ast.BlockStmt:
 		return e.Block(e.ModifyStmt(n, env), env)
 
+	case *ast.ReturnStmt:
+		return e.Return(n, env)
+
 	case *ast.MeasureExpr:
 		return e.Measure(n, env)
 
 	case *ast.UnaryExpr:
-		v, err := e.eval(n.Value, env)
-		if err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", n.Value, err)
-		}
-
-		switch n.Kind {
-		case lexer.PLUS:
-			return v, nil
-		case lexer.MINUS:
-			switch v := v.(type) {
-			case *object.Int:
-				return &object.Int{Value: -1 * v.Value}, nil
-			case *object.Float:
-				return &object.Float{Value: -1 * v.Value}, nil
-			}
-		}
+		return e.Unary(n, env)
 
 	case *ast.InfixExpr:
-		lhs, err := e.eval(n.Left, env)
-		if err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", n.Left, err)
-		}
+		return e.Infix(n, env)
 
-		rhs, err := e.eval(n.Right, env)
-		if err != nil {
-			return nil, fmt.Errorf("eval(%v): %v", n.Right, err)
-		}
+	case *ast.InclStmt:
+		return &object.Nil{}, e.Include(n, env)
 
-		return e.Infix(n.Kind, lhs, rhs)
+	case *ast.AssignStmt:
+		return &object.Nil{}, e.Assign(n, env)
+
+	case *ast.ResetStmt:
+		return &object.Nil{}, e.Reset(n, env)
+
+	case *ast.PrintStmt:
+		return &object.Nil{}, e.Print(n, env)
+
+	case *ast.ApplyStmt:
+		return &object.Nil{}, e.Apply(n, env)
+
+	case *ast.GenConst:
+		return &object.Nil{}, e.GenConst(n, env)
+
+	case *ast.GenDecl:
+		return &object.Nil{}, e.GenDel(n, env)
+
+	case *ast.GateDecl:
+		env.Func[ast.Must(ast.Ident(n))] = n
+		return &object.Nil{}, nil
+
+	case *ast.FuncDecl:
+		env.Func[ast.Must(ast.Ident(n))] = n
+		return &object.Nil{}, nil
 
 	case *ast.IdentExpr:
 		if v, ok := env.Const[ast.Must(ast.Ident(n))]; ok {
 			return v, nil
 		}
+
+		return &object.Nil{}, nil
 
 	case *ast.BasicLit:
 		switch n.Kind {
@@ -223,13 +167,15 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		case lexer.EULER:
 			return &object.Float{Value: math.E}, nil
 		}
+
+		return &object.Nil{}, nil
 	}
 
 	return &object.Nil{}, nil
 }
 
-func (e *Evaluator) Include(n *ast.InclStmt, env *env.Environ) error {
-	path := strings.Trim(n.Path.Value, "\"")
+func (e *Evaluator) Include(s *ast.InclStmt, env *env.Environ) error {
+	path := strings.Trim(s.Path.Value, "\"")
 	f, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("read file=%s: %v", path, err)
@@ -252,11 +198,107 @@ func (e *Evaluator) Include(n *ast.InclStmt, env *env.Environ) error {
 	return nil
 }
 
+func (e *Evaluator) Assign(s *ast.AssignStmt, env *env.Environ) error {
+	rhs, err := e.eval(s.Right, env)
+	if err != nil {
+		return fmt.Errorf("eval(%v): %v", s.Right, err)
+	}
+
+	c, ok := env.Bit.Get(s.Left)
+	if !ok {
+		return fmt.Errorf("bit=%v not found", s.Left)
+	}
+
+	elm := rhs.(*object.Array).Elm
+	for i := range elm {
+		c[i] = elm[i].(*object.Int).Value
+	}
+
+	return nil
+}
+
+func (e *Evaluator) Reset(s *ast.ResetStmt, env *env.Environ) error {
+	for _, a := range s.QArgs.List {
+		qb, ok := env.Qubit.Get(a)
+		if !ok {
+			return fmt.Errorf("qubit=%v not found", a)
+		}
+
+		e.Q.Reset(qb...)
+	}
+
+	return nil
+}
+
+func (e *Evaluator) Print(s *ast.PrintStmt, env *env.Environ) error {
+	if len(env.Qubit.Name) == 0 {
+		return nil
+	}
+
+	qargs := s.QArgs.List
+	if len(qargs) == 0 {
+		for _, n := range env.Qubit.Name {
+			qargs = append(qargs, &ast.IdentExpr{Name: n})
+		}
+	}
+
+	var index [][]int
+	for _, a := range qargs {
+		qb, ok := env.Qubit.Get(a)
+		if !ok {
+			return fmt.Errorf("qubit=%v not found", a)
+		}
+
+		index = append(index, q.Index(qb...))
+	}
+
+	for _, s := range e.Q.Raw().State(index...) {
+		fmt.Println(s)
+	}
+
+	for _, n := range e.Env.Bit.Name {
+		fmt.Printf("%v: ", n)
+		c, _ := e.Env.Bit.Get(&ast.IdentExpr{Name: n})
+		fmt.Println(c)
+	}
+
+	return nil
+}
+
+func (e *Evaluator) Println() error {
+	if _, err := e.eval(&ast.PrintStmt{}, e.Env); err != nil {
+		return fmt.Errorf("eval(%v): %v", &ast.PrintStmt{}, err)
+	}
+
+	return nil
+}
+
+func (e *Evaluator) GenConst(s *ast.GenConst, env *env.Environ) error {
+	v, err := e.eval(s.Value, env)
+	if err != nil {
+		return fmt.Errorf("eval(%v): %v", s.Value, err)
+	}
+
+	env.Const[ast.Must(ast.Ident(s))] = v
+	return nil
+}
+
+func (e *Evaluator) GenDel(s *ast.GenDecl, env *env.Environ) error {
+	switch s.Kind {
+	case lexer.BIT:
+		env.Bit.Add(s, make([]int64, s.Size()))
+	case lexer.QUBIT:
+		env.Qubit.Add(s, e.Q.ZeroWith(s.Size()))
+	}
+
+	return nil
+}
+
 func (e *Evaluator) Block(s *ast.BlockStmt, env *env.Environ) (object.Object, error) {
 	for _, b := range s.List {
 		v, err := e.eval(b, env)
 		if err != nil {
-			return nil, fmt.Errorf("block=%v: %v", b, err)
+			return nil, fmt.Errorf("eval(%v): %v", b, err)
 		}
 
 		if v != nil && v.Type() == object.RETURN_VALUE {
@@ -267,8 +309,74 @@ func (e *Evaluator) Block(s *ast.BlockStmt, env *env.Environ) (object.Object, er
 	return nil, nil
 }
 
-func (e *Evaluator) Infix(kind lexer.Token, lhs, rhs object.Object) (object.Object, error) {
-	switch kind {
+func (e *Evaluator) Return(s *ast.ReturnStmt, env *env.Environ) (object.Object, error) {
+	v, err := e.eval(s.Result, env)
+	if err != nil {
+		return nil, fmt.Errorf("eval(%v): %v", s.Result, err)
+	}
+
+	return &object.ReturnValue{Value: v}, nil
+}
+
+func (e *Evaluator) Measure(x *ast.MeasureExpr, env *env.Environ) (object.Object, error) {
+	qargs := x.QArgs.List
+	if len(qargs) == 0 {
+		return nil, fmt.Errorf("qargs is empty")
+	}
+
+	var m []q.Qubit
+	for _, a := range qargs {
+		qb, ok := env.Qubit.Get(a)
+		if !ok {
+			return nil, fmt.Errorf("qubit=%v not found", a)
+		}
+
+		m = append(m, qb...)
+	}
+
+	e.Q.Measure(m...)
+
+	var bit []object.Object
+	for _, q := range m {
+		bit = append(bit, &object.Int{Value: int64(e.Q.State(q)[0].Int[0])})
+	}
+
+	return &object.Array{Elm: bit}, nil
+}
+
+func (e *Evaluator) Unary(s *ast.UnaryExpr, env *env.Environ) (object.Object, error) {
+	v, err := e.eval(s.Value, env)
+	if err != nil {
+		return nil, fmt.Errorf("eval(%v): %v", s.Value, err)
+	}
+
+	switch s.Kind {
+	case lexer.PLUS:
+		return v, nil
+	case lexer.MINUS:
+		switch v := v.(type) {
+		case *object.Int:
+			return &object.Int{Value: -1 * v.Value}, nil
+		case *object.Float:
+			return &object.Float{Value: -1 * v.Value}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("unsupported type=%v", s.Kind)
+}
+
+func (e *Evaluator) Infix(s *ast.InfixExpr, env *env.Environ) (object.Object, error) {
+	lhs, err := e.eval(s.Left, env)
+	if err != nil {
+		return nil, fmt.Errorf("eval(%v): %v", s.Left, err)
+	}
+
+	rhs, err := e.eval(s.Right, env)
+	if err != nil {
+		return nil, fmt.Errorf("eval(%v): %v", s.Right, err)
+	}
+
+	switch s.Kind {
 	case lexer.PLUS:
 		switch lhs := lhs.(type) {
 		case *object.Int:
@@ -309,89 +417,7 @@ func (e *Evaluator) Infix(kind lexer.Token, lhs, rhs object.Object) (object.Obje
 
 	}
 
-	return nil, fmt.Errorf("unsupported type=%v", kind)
-}
-
-func (e *Evaluator) Print(s *ast.PrintStmt, env *env.Environ) error {
-	if len(env.Qubit.Name) == 0 {
-		return nil
-	}
-
-	qargs := s.QArgs.List
-	if len(qargs) == 0 {
-		for _, n := range env.Qubit.Name {
-			qargs = append(qargs, &ast.IdentExpr{Name: n})
-		}
-	}
-
-	var index [][]int
-	for _, a := range qargs {
-		qb, ok := env.Qubit.Get(a)
-		if !ok {
-			return fmt.Errorf("qubit=%v not found", a)
-		}
-
-		index = append(index, q.Index(qb...))
-	}
-
-	for _, s := range e.Q.Raw().State(index...) {
-		fmt.Println(s)
-	}
-
-	for _, n := range e.Env.Bit.Name {
-		fmt.Printf("%v: ", n)
-		c, _ := e.Env.Bit.Get(&ast.IdentExpr{Name: n})
-		fmt.Println(c)
-	}
-
-	return nil
-}
-
-func (e *Evaluator) Println() error {
-	if _, err := e.eval(&ast.PrintStmt{}, e.Env); err != nil {
-		return fmt.Errorf("print: %v", err)
-	}
-
-	return nil
-}
-
-func (e *Evaluator) Reset(s *ast.ResetStmt, env *env.Environ) error {
-	for _, a := range s.QArgs.List {
-		qb, ok := env.Qubit.Get(a)
-		if !ok {
-			return fmt.Errorf("qubit=%v not found", a)
-		}
-
-		e.Q.Reset(qb...)
-	}
-
-	return nil
-}
-
-func (e *Evaluator) Measure(x *ast.MeasureExpr, env *env.Environ) (object.Object, error) {
-	qargs := x.QArgs.List
-	if len(qargs) == 0 {
-		return nil, fmt.Errorf("qargs is empty")
-	}
-
-	var m []q.Qubit
-	for _, a := range qargs {
-		qb, ok := env.Qubit.Get(a)
-		if !ok {
-			return nil, fmt.Errorf("qubit=%v not found", a)
-		}
-
-		m = append(m, qb...)
-	}
-
-	e.Q.Measure(m...)
-
-	var bit []object.Object
-	for _, q := range m {
-		bit = append(bit, &object.Int{Value: int64(e.Q.State(q)[0].Int[0])})
-	}
-
-	return &object.Array{Elm: bit}, nil
+	return nil, fmt.Errorf("unsupported type=%v", s.Kind)
 }
 
 func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
