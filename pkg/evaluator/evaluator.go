@@ -135,7 +135,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		return &object.Nil{}, e.GenConst(n, env)
 
 	case *ast.GenDecl:
-		return &object.Nil{}, e.GenDel(n, env)
+		return &object.Nil{}, e.GenDecl(n, env)
 
 	case *ast.GateDecl:
 		env.Func[ast.Must(ast.Ident(n))] = n
@@ -150,7 +150,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 			return v, nil
 		}
 
-		return &object.Nil{}, nil
+		return nil, fmt.Errorf("const=%v not found", n)
 
 	case *ast.BasicLit:
 		switch n.Kind {
@@ -168,10 +168,10 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 			return &object.Float{Value: math.E}, nil
 		}
 
-		return &object.Nil{}, nil
+		return nil, fmt.Errorf("basic literal=%v not found", n)
 	}
 
-	return &object.Nil{}, nil
+	return nil, fmt.Errorf("unsupported type=%v", n)
 }
 
 func (e *Evaluator) Include(s *ast.InclStmt, env *env.Environ) error {
@@ -283,7 +283,7 @@ func (e *Evaluator) GenConst(s *ast.GenConst, env *env.Environ) error {
 	return nil
 }
 
-func (e *Evaluator) GenDel(s *ast.GenDecl, env *env.Environ) error {
+func (e *Evaluator) GenDecl(s *ast.GenDecl, env *env.Environ) error {
 	switch s.Kind {
 	case lexer.BIT:
 		env.Bit.Add(s, make([]int64, s.Size()))
