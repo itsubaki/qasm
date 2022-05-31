@@ -204,14 +204,14 @@ func (e *Evaluator) Assign(s *ast.AssignStmt, env *env.Environ) error {
 		return fmt.Errorf("eval(%v): %v", s.Right, err)
 	}
 
-	c, ok := env.Bit.Get(s.Left)
+	left, ok := env.Bit.Get(s.Left)
 	if !ok {
 		return fmt.Errorf("bit=%v not found", s.Left)
 	}
 
 	elm := rhs.(*object.Array).Elm
 	for i := range elm {
-		c[i] = elm[i].(*object.Int).Value
+		left[i] = elm[i].(*object.Int).Value
 	}
 
 	return nil
@@ -257,9 +257,8 @@ func (e *Evaluator) Print(s *ast.PrintStmt, env *env.Environ) error {
 	}
 
 	for _, n := range e.Env.Bit.Name {
-		fmt.Printf("%v: ", n)
-		c, _ := e.Env.Bit.Get(&ast.IdentExpr{Name: n})
-		fmt.Println(c)
+		v, _ := e.Env.Bit.Get(&ast.IdentExpr{Name: n})
+		fmt.Printf("%v: %v\n", n, v)
 	}
 
 	return nil
@@ -336,12 +335,12 @@ func (e *Evaluator) Measure(x *ast.MeasureExpr, env *env.Environ) (object.Object
 
 	e.Q.Measure(m...)
 
-	var bit []object.Object
+	var res []object.Object
 	for _, q := range m {
-		bit = append(bit, &object.Int{Value: int64(e.Q.State(q)[0].Int[0])})
+		res = append(res, &object.Int{Value: int64(e.Q.State(q)[0].Int[0])})
 	}
 
-	return &object.Array{Elm: bit}, nil
+	return &object.Array{Elm: res}, nil
 }
 
 func (e *Evaluator) Unary(s *ast.UnaryExpr, env *env.Environ) (object.Object, error) {
