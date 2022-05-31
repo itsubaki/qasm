@@ -9,6 +9,7 @@ import (
 	"github.com/itsubaki/q/pkg/quantum/qubit"
 	"github.com/itsubaki/qasm/pkg/ast"
 	"github.com/itsubaki/qasm/pkg/evaluator"
+	"github.com/itsubaki/qasm/pkg/evaluator/object"
 	"github.com/itsubaki/qasm/pkg/lexer"
 	"github.com/itsubaki/qasm/pkg/parser"
 )
@@ -1193,6 +1194,248 @@ func TestEvaluator_Assign(t *testing.T) {
 		}
 
 		if err := e.Assign(c.s, e.Env); (err != nil) != c.hasErr {
+			t.Errorf("err: %v", err)
+			continue
+		}
+	}
+}
+
+func TestEvaluator_Reset(t *testing.T) {
+	var cases = []struct {
+		p      *ast.OpenQASM
+		s      *ast.ResetStmt
+		hasErr bool
+	}{
+		{
+			&ast.OpenQASM{
+				Stmts: []ast.Stmt{},
+			},
+			&ast.ResetStmt{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Name: "q",
+						},
+					},
+				},
+			},
+			true,
+		},
+	}
+
+	for _, c := range cases {
+		e := evaluator.Default()
+		if err := e.Eval(c.p); err != nil {
+			t.Errorf("err: %v", err)
+			continue
+		}
+
+		if err := e.Reset(c.s, e.Env); (err != nil) != c.hasErr {
+			t.Errorf("err: %v", err)
+			continue
+		}
+	}
+}
+
+func TestEvaluator_Print(t *testing.T) {
+	var cases = []struct {
+		p      *ast.OpenQASM
+		s      *ast.PrintStmt
+		hasErr bool
+	}{
+		{
+			&ast.OpenQASM{
+				Stmts: []ast.Stmt{
+					&ast.DeclStmt{
+						Decl: &ast.GenDecl{
+							Kind: lexer.QUBIT,
+							Name: "q",
+							Type: &ast.IdentExpr{
+								Name: "qubit",
+							},
+						},
+					},
+				},
+			},
+			&ast.PrintStmt{
+				QArgs: ast.ExprList{
+					List: []ast.Expr{
+						&ast.IdentExpr{
+							Name: "p",
+						},
+					},
+				},
+			},
+			true,
+		},
+	}
+
+	for _, c := range cases {
+		e := evaluator.Default()
+		if err := e.Eval(c.p); err != nil {
+			t.Errorf("err: %v", err)
+			continue
+		}
+
+		if err := e.Print(c.s, e.Env); (err != nil) != c.hasErr {
+			t.Errorf("err: %v", err)
+			continue
+		}
+	}
+}
+
+func TestEvaluator_Println(t *testing.T) {
+	var cases = []struct {
+		p      *ast.OpenQASM
+		hasErr bool
+	}{
+		{
+			&ast.OpenQASM{
+				Stmts: []ast.Stmt{},
+			},
+			false,
+		},
+	}
+
+	for _, c := range cases {
+		e := evaluator.Default()
+		if err := e.Eval(c.p); err != nil {
+			t.Errorf("err: %v", err)
+			continue
+		}
+
+		if err := e.Println(); (err != nil) != c.hasErr {
+			t.Errorf("err: %v", err)
+			continue
+		}
+	}
+}
+
+func TestEvaluator_Block(t *testing.T) {
+	var cases = []struct {
+		p      *ast.OpenQASM
+		s      *ast.BlockStmt
+		want   object.Object
+		hasErr bool
+	}{
+		{
+			&ast.OpenQASM{
+				Stmts: []ast.Stmt{},
+			},
+			&ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{
+						Result: &ast.BasicLit{
+							Kind:  lexer.INT,
+							Value: "123",
+						},
+					},
+				},
+			},
+			&object.Int{Value: 123},
+			false,
+		},
+	}
+
+	for _, c := range cases {
+		e := evaluator.Default()
+		if err := e.Eval(c.p); err != nil {
+			t.Errorf("err: %v", err)
+			continue
+		}
+
+		ret, err := e.Block(c.s, e.Env)
+		if (err != nil) != c.hasErr {
+			t.Errorf("err: %v", err)
+			continue
+		}
+
+		got := ret.(*object.ReturnValue).Value
+		if got.Type() != c.want.Type() {
+			t.Errorf("got=%T, want=%T", got, c.want)
+			continue
+		}
+
+		if got.String() != c.want.String() {
+			t.Errorf("got=%v, want=%v", got, c.want)
+			continue
+		}
+	}
+}
+
+func TestEvaluator_GenConst(t *testing.T) {
+	var cases = []struct {
+		p      *ast.OpenQASM
+		s      *ast.GenConst
+		hasErr bool
+	}{
+		{
+			&ast.OpenQASM{
+				Stmts: []ast.Stmt{},
+			},
+			&ast.GenConst{
+				Name: "foo",
+				Value: &ast.BasicLit{
+					Kind:  lexer.EOF,
+					Value: "1.2",
+				},
+			},
+			true,
+		},
+	}
+
+	for _, c := range cases {
+		e := evaluator.Default()
+		if err := e.Eval(c.p); err != nil {
+			t.Errorf("err: %v", err)
+			continue
+		}
+
+		if err := e.GenConst(c.s, e.Env); (err != nil) != c.hasErr {
+			t.Errorf("err: %v", err)
+			continue
+		}
+	}
+}
+
+func TestEvaluator_Return(t *testing.T) {
+	var cases = []struct {
+		p      *ast.OpenQASM
+		s      *ast.ReturnStmt
+		hasErr bool
+	}{
+		{
+			&ast.OpenQASM{
+				Stmts: []ast.Stmt{},
+			},
+			&ast.ReturnStmt{
+				Result: &ast.BasicLit{
+					Kind: lexer.PI,
+				},
+			},
+			false,
+		},
+		{
+			&ast.OpenQASM{
+				Stmts: []ast.Stmt{},
+			},
+			&ast.ReturnStmt{
+				Result: &ast.IdentExpr{
+					Name: "foo",
+				},
+			},
+			true,
+		},
+	}
+
+	for _, c := range cases {
+		e := evaluator.Default()
+		if err := e.Eval(c.p); err != nil {
+			t.Errorf("err: %v", err)
+			continue
+		}
+
+		if _, err := e.Return(c.s, e.Env); (err != nil) != c.hasErr {
 			t.Errorf("err: %v", err)
 			continue
 		}
