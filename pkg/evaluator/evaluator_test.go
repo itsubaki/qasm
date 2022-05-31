@@ -1065,3 +1065,136 @@ func TestEvaluator_Eval(t *testing.T) {
 		}
 	}
 }
+
+func TestEvaluator_Assign(t *testing.T) {
+	var cases = []struct {
+		p      *ast.OpenQASM
+		s      *ast.AssignStmt
+		hasErr bool
+	}{
+		{
+			&ast.OpenQASM{
+				Stmts: []ast.Stmt{},
+			},
+			&ast.AssignStmt{
+				Right: &ast.MeasureExpr{
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{Name: "q"},
+						},
+					},
+				},
+				Left: &ast.IdentExpr{
+					Name: "c",
+				},
+			},
+			true,
+		},
+		{
+			&ast.OpenQASM{
+				Stmts: []ast.Stmt{
+					&ast.DeclStmt{
+						Decl: &ast.GenDecl{
+							Kind: lexer.BIT,
+							Name: "c",
+							Type: &ast.IdentExpr{
+								Name: "bit",
+							},
+						},
+					},
+				},
+			},
+			&ast.AssignStmt{
+				Right: &ast.MeasureExpr{
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{Name: "q"},
+						},
+					},
+				},
+				Left: &ast.IdentExpr{
+					Name: "c",
+				},
+			},
+			true,
+		},
+		{
+			&ast.OpenQASM{
+				Stmts: []ast.Stmt{
+					&ast.DeclStmt{
+						Decl: &ast.GenDecl{
+							Kind: lexer.QUBIT,
+							Name: "q",
+							Type: &ast.IdentExpr{
+								Name: "qubit",
+							},
+						},
+					},
+				},
+			},
+			&ast.AssignStmt{
+				Right: &ast.MeasureExpr{
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{Name: "q"},
+						},
+					},
+				},
+				Left: &ast.IdentExpr{
+					Name: "c",
+				},
+			},
+			true,
+		},
+		{
+			&ast.OpenQASM{
+				Stmts: []ast.Stmt{
+					&ast.DeclStmt{
+						Decl: &ast.GenDecl{
+							Kind: lexer.QUBIT,
+							Name: "q",
+							Type: &ast.IdentExpr{
+								Name: "qubit",
+							},
+						},
+					},
+					&ast.DeclStmt{
+						Decl: &ast.GenDecl{
+							Kind: lexer.BIT,
+							Name: "c",
+							Type: &ast.IdentExpr{
+								Name: "bit",
+							},
+						},
+					},
+				},
+			},
+			&ast.AssignStmt{
+				Right: &ast.MeasureExpr{
+					QArgs: ast.ExprList{
+						List: []ast.Expr{
+							&ast.IdentExpr{Name: "q"},
+						},
+					},
+				},
+				Left: &ast.IdentExpr{
+					Name: "c",
+				},
+			},
+			false,
+		},
+	}
+
+	for _, c := range cases {
+		e := evaluator.Default()
+		if err := e.Eval(c.p); err != nil {
+			t.Errorf("err: %v", err)
+			continue
+		}
+
+		if err := e.Assign(c.s, e.Env); (err != nil) != c.hasErr {
+			t.Errorf("err: %v", err)
+			continue
+		}
+	}
+}
