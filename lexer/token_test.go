@@ -3,7 +3,7 @@ package lexer_test
 import (
 	"testing"
 
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 func TestIsModifiler(t *testing.T) {

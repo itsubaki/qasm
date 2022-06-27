@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/lexer"
 	"github.com/urfave/cli/v2"
 )
 

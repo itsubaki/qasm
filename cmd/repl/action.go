@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/itsubaki/qasm/pkg/repl"
+	"github.com/itsubaki/qasm/repl"
 	"github.com/urfave/cli/v2"
 )
 

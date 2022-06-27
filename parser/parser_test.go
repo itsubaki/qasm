@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/itsubaki/qasm/pkg/lexer"
-	"github.com/itsubaki/qasm/pkg/parser"
+	"github.com/itsubaki/qasm/lexer"
+	"github.com/itsubaki/qasm/parser"
 )
 
 func ExampleParser() {

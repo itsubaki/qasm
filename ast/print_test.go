@@ -1,8 +1,8 @@
 package ast_test
 
 import (
-	"github.com/itsubaki/qasm/pkg/ast"
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/ast"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 func Example() {

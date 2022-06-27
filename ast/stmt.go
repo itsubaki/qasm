@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 type BadStmt struct{}

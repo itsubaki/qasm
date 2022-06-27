@@ -7,13 +7,13 @@ import (
 	"strings"
 
 	"github.com/itsubaki/q"
-	"github.com/itsubaki/q/pkg/math/matrix"
-	"github.com/itsubaki/q/pkg/quantum/gate"
-	"github.com/itsubaki/qasm/pkg/ast"
-	"github.com/itsubaki/qasm/pkg/evaluator/env"
-	"github.com/itsubaki/qasm/pkg/evaluator/object"
-	"github.com/itsubaki/qasm/pkg/lexer"
-	"github.com/itsubaki/qasm/pkg/parser"
+	"github.com/itsubaki/q/math/matrix"
+	"github.com/itsubaki/q/quantum/gate"
+	"github.com/itsubaki/qasm/ast"
+	"github.com/itsubaki/qasm/evaluator/env"
+	"github.com/itsubaki/qasm/evaluator/object"
+	"github.com/itsubaki/qasm/lexer"
+	"github.com/itsubaki/qasm/parser"
 )
 
 const indent = ".  "

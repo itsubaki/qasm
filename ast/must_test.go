@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/itsubaki/qasm/pkg/ast"
+	"github.com/itsubaki/qasm/ast"
 )
 
 func TestMustPanic(t *testing.T) {

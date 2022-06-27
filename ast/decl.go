@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 type BadDecl struct{}

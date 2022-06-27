@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 type BadExpr struct{}

@@ -3,10 +3,10 @@ package evaluator_test
 import (
 	"testing"
 
-	"github.com/itsubaki/qasm/pkg/ast"
-	"github.com/itsubaki/qasm/pkg/evaluator"
-	"github.com/itsubaki/qasm/pkg/evaluator/object"
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/ast"
+	"github.com/itsubaki/qasm/evaluator"
+	"github.com/itsubaki/qasm/evaluator/object"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 func TestEvalExpr(t *testing.T) {

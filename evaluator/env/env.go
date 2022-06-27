@@ -3,8 +3,8 @@ package env
 import (
 	"fmt"
 
-	"github.com/itsubaki/qasm/pkg/ast"
-	"github.com/itsubaki/qasm/pkg/evaluator/object"
+	"github.com/itsubaki/qasm/ast"
+	"github.com/itsubaki/qasm/evaluator/object"
 )
 
 type Func map[string]ast.Decl

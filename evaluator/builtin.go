@@ -2,9 +2,9 @@ package evaluator
 
 import (
 	"github.com/itsubaki/q"
-	"github.com/itsubaki/q/pkg/math/matrix"
-	"github.com/itsubaki/q/pkg/quantum/gate"
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/q/math/matrix"
+	"github.com/itsubaki/q/quantum/gate"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 func Builtin(g lexer.Token, p []float64) (matrix.Matrix, bool) {

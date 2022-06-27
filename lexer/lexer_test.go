@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 func TestLexer(t *testing.T) {

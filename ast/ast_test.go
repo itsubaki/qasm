@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/itsubaki/qasm/pkg/ast"
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/ast"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 func ExampleOpenQASM_String() {

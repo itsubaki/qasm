@@ -3,7 +3,7 @@ package env
 import (
 	"fmt"
 
-	"github.com/itsubaki/qasm/pkg/ast"
+	"github.com/itsubaki/qasm/ast"
 )
 
 type Bit struct {

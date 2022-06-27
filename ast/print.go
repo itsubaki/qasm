@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 const indent = ".  "

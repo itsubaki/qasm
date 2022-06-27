@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/itsubaki/q"
-	"github.com/itsubaki/qasm/pkg/ast"
+	"github.com/itsubaki/qasm/ast"
 )
 
 type Qubit struct {

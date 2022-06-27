@@ -3,8 +3,8 @@ package evaluator_test
 import (
 	"testing"
 
-	"github.com/itsubaki/qasm/pkg/evaluator"
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/evaluator"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 func TestBuildin(t *testing.T) {

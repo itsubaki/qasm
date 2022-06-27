@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/itsubaki/qasm/pkg/ast"
-	"github.com/itsubaki/qasm/pkg/lexer"
+	"github.com/itsubaki/qasm/ast"
+	"github.com/itsubaki/qasm/lexer"
 )
 
 type Cursor struct {
