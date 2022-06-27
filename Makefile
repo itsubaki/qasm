@@ -8,17 +8,16 @@ repl:
 	go run main.go repl
 
 lex:
-	go run main.go lex -f testdata/bell.qasm
-	go run main.go lex -f testdata/shor_def.qasm
+	go run main.go lex -f _testdata/bell.qasm
+	go run main.go lex -f _testdata/shor_def.qasm
 
 parse:
-	go run main.go parse -f testdata/bell.qasm
-	go run main.go parse -f testdata/shor_def.qasm
+	go run main.go parse -f _testdata/bell.qasm
+	go run main.go parse -f _testdata/shor_def.qasm
 
-.PHONY: testdata
 testdata:
-	go run main.go -verbose -f testdata/bell.qasm
-	go run main.go -verbose -f testdata/shor.qasm
+	go run main.go -verbose -f _testdata/bell.qasm
+	go run main.go -verbose -f _testdata/shor.qasm
 
 install:
 	-rm ${GOPATH}/bin/qasm

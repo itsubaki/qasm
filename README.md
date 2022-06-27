@@ -16,17 +16,19 @@ go install github.com/itsubaki/qasm@latest
 ## Example
 
 ```shell
-$ cat testdata/bell.qasm
+$ cat _testdata/bell.qasm
 OPENQASM 3.0;
-include "testdata/stdgates.qasm";
+include "_testdata/stdgates.qasm";
 
 qubit[2] q;
 reset q;
 
 h q[0];
 cx q[0], q[1];
+```
 
-$ qasm -f testdata/bell.qasm
+```shell
+$ qasm -f _testdata/bell.qasm
 [00][  0]( 0.7071 0.0000i): 0.5000
 [11][  3]( 0.7071 0.0000i): 0.5000
 ```

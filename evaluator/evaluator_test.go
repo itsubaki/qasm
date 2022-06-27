@@ -193,7 +193,7 @@ print;
 func Example_verbose() {
 	qasm := `
 	OPENQASM 3.0;
-	include "../testdata/stdgates.qasm";
+	include "../_testdata/stdgates.qasm";
 
 	qubit[2] c;
 	qubit t;
@@ -213,7 +213,7 @@ func Example_verbose() {
 	// *ast.OpenQASM
 	// .  *ast.DeclStmt(OPENQASM 3.0;)
 	// .  []ast.Stmt
-	// .  .  *ast.InclStmt(include "../testdata/stdgates.qasm";)
+	// .  .  *ast.InclStmt(include "../_testdata/stdgates.qasm";)
 	// .  .  .  *ast.DeclStmt(gate i q { U(0, 0, 0) q; })
 	// .  .  .  .  *ast.GateDecl(gate i q { U(0, 0, 0) q; })
 	// .  .  .  *ast.DeclStmt(gate h q { U(pi / 2.0, 0, pi) q; })
@@ -783,7 +783,7 @@ func TestEvaluator_Eval(t *testing.T) {
 		},
 		{
 			`
-			include "../testdata/stdgates.qasm";
+			include "../_testdata/stdgates.qasm";
 
 			qubit q;
 			qubit p;
@@ -803,7 +803,7 @@ func TestEvaluator_Eval(t *testing.T) {
 		},
 		{
 			`
-			include "../testdata/stdgates.qasm";
+			include "../_testdata/stdgates.qasm";
 
 			qubit[2] q;
 			qubit[2] p;
@@ -823,7 +823,7 @@ func TestEvaluator_Eval(t *testing.T) {
 		},
 		{
 			`
-			include "../testdata/stdgates.qasm";
+			include "../_testdata/stdgates.qasm";
 
 			qubit[2] q;
 			qubit p;
@@ -843,7 +843,7 @@ func TestEvaluator_Eval(t *testing.T) {
 		},
 		{
 			`
-			include "../testdata/stdgates.qasm";
+			include "../_testdata/stdgates.qasm";
 
 			qubit q;
 			qubit[2] p;
@@ -973,7 +973,7 @@ func TestEvaluator_Eval(t *testing.T) {
 		},
 		{
 			`
-			include "../testdata/stdgates.qasm";
+			include "../_testdata/stdgates.qasm";
 
 			qubit c;
 			qubit t;
@@ -998,7 +998,7 @@ func TestEvaluator_Eval(t *testing.T) {
 		},
 		{
 			`
-			include "../testdata/stdgates.qasm";
+			include "../_testdata/stdgates.qasm";
 
 			qubit[2] q;
 
@@ -1022,7 +1022,7 @@ func TestEvaluator_Eval(t *testing.T) {
 		},
 		{
 			`
-			include "../testdata/stdgates.qasm";
+			include "../_testdata/stdgates.qasm";
 
 			qubit[2] c;
 			qubit t;
