@@ -19,7 +19,7 @@ func Example() {
 			&ast.InclStmt{
 				Path: ast.BasicLit{
 					Kind:  lexer.STRING,
-					Value: "\"_testdata/stdgates.qasm\"",
+					Value: "\"testdata/stdgates.qasm\"",
 				},
 			},
 			&ast.DeclStmt{
@@ -60,7 +60,7 @@ func Example() {
 	// .  .  0: *ast.InclStmt {
 	// .  .  .  Path: ast.BasicLit {
 	// .  .  .  .  Kind: STRING
-	// .  .  .  .  Value: "_testdata/stdgates.qasm"
+	// .  .  .  .  Value: "testdata/stdgates.qasm"
 	// .  .  .  }
 	// .  .  }
 	// .  .  1: *ast.DeclStmt {

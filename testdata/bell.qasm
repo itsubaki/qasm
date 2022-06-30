@@ -1,5 +1,5 @@
 OPENQASM 3.0;
-include "_testdata/stdgates.qasm";
+include "testdata/stdgates.qasm";
 
 qubit[2] q;
 reset q;
