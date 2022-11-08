@@ -138,11 +138,11 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 		return &object.Nil{}, e.GenDecl(n, env)
 
 	case *ast.GateDecl:
-		env.Func[ast.Must(ast.Ident(n))] = n
+		env.GateDef[ast.Must(ast.Ident(n))] = n
 		return &object.Nil{}, nil
 
 	case *ast.FuncDecl:
-		env.Func[ast.Must(ast.Ident(n))] = n
+		env.GateDef[ast.Must(ast.Ident(n))] = n
 		return &object.Nil{}, nil
 
 	case *ast.IdentExpr:
@@ -609,75 +609,6 @@ func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *env.Environ) ([][]q.Qubit, erro
 	return qargs, nil
 }
 
-func (e *Evaluator) Call(x *ast.CallExpr, outer *env.Environ) (object.Object, error) {
-	f, ok := outer.Func[x.Name]
-	if !ok {
-		return nil, fmt.Errorf("decl=%v not found", x.Name)
-	}
-
-	if e.Opts.Verbose {
-		fmt.Printf("%v", strings.Repeat(indent, e.indent))
-		fmt.Printf("%T(%v)\n", f, f)
-	}
-
-	switch decl := f.(type) {
-	case *ast.GateDecl:
-		return e.eval(&decl.Body, e.Enclosed(x, decl, outer))
-	}
-
-	return nil, fmt.Errorf("unsupported type=%v", f)
-}
-
-func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *env.Environ) *env.Environ {
-	env := outer.NewEnclosed(decl, x.Modifier)
-	e.SetConst(env, outer, decl.Params.List.List, x.Params.List.List)
-	e.SetQArgs(env, outer, decl.QArgs.List, x.QArgs.List)
-	return env
-}
-
-func (e *Evaluator) SetConst(env, outer *env.Environ, decl, args []ast.Expr) {
-	for i, d := range decl {
-		n := ast.Must(ast.Ident(d))
-		v := ast.Must(e.eval(args[i], outer))
-		env.Const[n] = v
-	}
-}
-
-func (e *Evaluator) SetQArgs(env, outer *env.Environ, decl, args []ast.Expr) {
-	if len(ast.ModCtrl(env.Modifier)) == 0 {
-		for i := range decl {
-			if qb, ok := outer.Qubit.Get(args[i]); ok {
-				env.Qubit.Add(decl[i], qb)
-			}
-		}
-
-		return
-	}
-
-	ctrl := make([]ast.Expr, 0)
-	for i := range ast.ModCtrl(env.Modifier) {
-		switch x := args[i].(type) {
-		case *ast.IdentExpr:
-			ctrl = append(ctrl, &ast.IdentExpr{Name: fmt.Sprintf("_v%d", i)})
-		case *ast.IndexExpr:
-			ctrl = append(ctrl, &ast.IndexExpr{Name: fmt.Sprintf("_v%d", i), Value: x.Value})
-		}
-	}
-	env.CtrlQArgs = ctrl
-
-	cdecl := append(make([]ast.Expr, 0), ctrl...)
-	for i := range decl {
-		cdecl = append(cdecl, decl[i])
-	}
-
-	for i := range cdecl {
-		if qb, ok := outer.Qubit.Get(args[i]); ok {
-			env.Qubit.Add(cdecl[i], qb)
-			continue
-		}
-	}
-}
-
 // ModifyStmt returns modified BlockStmt
 func (e *Evaluator) ModifyStmt(s *ast.BlockStmt, env *env.Environ) *ast.BlockStmt {
 	// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
@@ -738,4 +669,79 @@ func (e *Evaluator) ModifyU(mod []ast.Modifier, u matrix.Matrix, env *env.Enviro
 	}
 
 	return u
+}
+
+func (e *Evaluator) Call(x *ast.CallExpr, outer *env.Environ) (object.Object, error) {
+	f, ok := outer.GateDef[x.Name]
+	if !ok {
+		return nil, fmt.Errorf("decl=%v not found", x.Name)
+	}
+
+	if e.Opts.Verbose {
+		fmt.Printf("%v", strings.Repeat(indent, e.indent))
+		fmt.Printf("%T(%v)\n", f, f)
+	}
+
+	switch decl := f.(type) {
+	case *ast.GateDecl:
+		return e.eval(&decl.Body, e.Enclosed(x, decl, outer))
+	case *ast.FuncDecl:
+		return nil, fmt.Errorf("not implemented=%v", f)
+	}
+
+	return nil, fmt.Errorf("unsupported type=%v", f)
+}
+
+func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *env.Environ) *env.Environ {
+	enclosed := outer.NewEnclosed(decl, x.Modifier)
+
+	// set const
+	func(decl, args []ast.Expr) {
+		for i, d := range decl {
+			n := ast.Must(ast.Ident(d))
+			v := ast.Must(e.eval(args[i], outer))
+			enclosed.Const[n] = v
+		}
+
+	}(decl.Params.List.List, x.Params.List.List)
+
+	// set qargs
+	func(decl, args []ast.Expr) {
+		if len(ast.ModCtrl(enclosed.Modifier)) == 0 {
+			// no ctrl
+			for i := range decl {
+				if qb, ok := outer.Qubit.Get(args[i]); ok {
+					enclosed.Qubit.Add(decl[i], qb)
+				}
+			}
+
+			return
+		}
+
+		// rename
+		for i := range ast.ModCtrl(enclosed.Modifier) {
+			switch x := args[i].(type) {
+			case *ast.IdentExpr:
+				enclosed.CtrlQArgs = append(enclosed.CtrlQArgs, &ast.IdentExpr{Name: fmt.Sprintf("_v%d", i)})
+			case *ast.IndexExpr:
+				enclosed.CtrlQArgs = append(enclosed.CtrlQArgs, &ast.IndexExpr{Name: fmt.Sprintf("_v%d", i), Value: x.Value})
+			}
+		}
+
+		//
+		cdecl := append(make([]ast.Expr, 0), enclosed.CtrlQArgs...)
+		for i := range decl {
+			cdecl = append(cdecl, decl[i])
+		}
+
+		for i := range cdecl {
+			if qb, ok := outer.Qubit.Get(args[i]); ok {
+				enclosed.Qubit.Add(cdecl[i], qb)
+				continue
+			}
+		}
+
+	}(decl.QArgs.List, x.QArgs.List)
+
+	return enclosed
 }
