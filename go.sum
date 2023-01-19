@@ -2,6 +2,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.2 h1:p1EgwI/C7NhT0JmVkwCD2ZBK8j4aeHQX2pMHH
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/itsubaki/q v1.1.9 h1:jZ42Vf2Ubf6fEtmG0mRYDqGwkLhdSUWnmd+4MVVhsPs=
 github.com/itsubaki/q v1.1.9/go.mod h1:6vV2liKqlHeYSzHAq3ktjODu4AZWFz77zQAZjk7wkCg=
+github.com/itsubaki/q v1.1.11-0.20230117115706-91bd7709fa4a h1:AO5HWKDe7tAjeON1IkRPoEAmRrHFBVDGVX9bsXQs8xc=
+github.com/itsubaki/q v1.1.11-0.20230117115706-91bd7709fa4a/go.mod h1:6vV2liKqlHeYSzHAq3ktjODu4AZWFz77zQAZjk7wkCg=
 github.com/russross/blackfriday/v2 v2.1.0 h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf35Ld67mk=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/urfave/cli/v2 v2.14.0 h1:sFRL29Dm9JhXSMYb96raDeo/Q/JRyPXPs8u+4CkMlI8=
