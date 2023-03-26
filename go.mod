@@ -1,10 +1,10 @@
 module github.com/itsubaki/qasm
 
-go 1.19
+go 1.20
 
 require (
-	github.com/itsubaki/q v0.0.0-20230117115706-91bd7709fa4a
-	github.com/urfave/cli/v2 v2.14.0
+	github.com/itsubaki/q v0.0.2-0.20230326124321-e31e25e705d7
+	github.com/urfave/cli/v2 v2.25.0
 )
 
 require (
