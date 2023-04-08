@@ -70,12 +70,16 @@ func (b *Bit) Get(a ast.Expr) ([]int64, bool) {
 		return out, ok
 	case *ast.IndexExpr:
 		out, ok := b.Value[x.Name]
+		if !ok {
+			return nil, false
+		}
+
 		idx, err := index(x.Int(), len(out))
 		if err != nil {
 			return nil, false
 		}
 
-		return []int64{out[idx]}, ok
+		return []int64{out[idx]}, true
 	}
 
 	return nil, false
@@ -103,12 +107,16 @@ func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 		return out, ok
 	case *ast.IndexExpr:
 		out, ok := qb.Value[x.Name]
+		if !ok {
+			return nil, false
+		}
+
 		idx, err := index(x.Int(), len(out))
 		if err != nil {
 			return nil, false
 		}
 
-		return []q.Qubit{out[idx]}, ok
+		return []q.Qubit{out[idx]}, true
 	}
 
 	return nil, false
