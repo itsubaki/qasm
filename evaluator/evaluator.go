@@ -10,7 +10,6 @@ import (
 	"github.com/itsubaki/q/math/matrix"
 	"github.com/itsubaki/q/quantum/gate"
 	"github.com/itsubaki/qasm/ast"
-	"github.com/itsubaki/qasm/evaluator/env"
 	"github.com/itsubaki/qasm/evaluator/object"
 	"github.com/itsubaki/qasm/lexer"
 	"github.com/itsubaki/qasm/parser"
@@ -20,7 +19,7 @@ const indent = ".  "
 
 type Evaluator struct {
 	Q      *q.Q
-	Env    *env.Environ
+	Env    *Environ
 	Opts   Opts
 	indent int
 }
@@ -29,7 +28,7 @@ type Opts struct {
 	Verbose bool
 }
 
-func New(qsim *q.Q, env *env.Environ, opts ...Opts) *Evaluator {
+func New(qsim *q.Q, env *Environ, opts ...Opts) *Evaluator {
 	e := &Evaluator{
 		Q:   qsim,
 		Env: env,
@@ -43,11 +42,11 @@ func New(qsim *q.Q, env *env.Environ, opts ...Opts) *Evaluator {
 }
 
 func Default(opts ...Opts) *Evaluator {
-	return New(q.New(), env.New(), opts...)
+	return New(q.New(), NewEnviron(), opts...)
 }
 
 func Eval(n ast.Node) (object.Object, error) {
-	return Default().eval(n, env.New())
+	return Default().eval(n, NewEnviron())
 }
 
 func (e *Evaluator) Eval(p *ast.OpenQASM) error {
@@ -72,7 +71,7 @@ func (e *Evaluator) Eval(p *ast.OpenQASM) error {
 	return nil
 }
 
-func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err error) {
+func (e *Evaluator) eval(n ast.Node, env *Environ) (obj object.Object, err error) {
 	if e.Opts.Verbose {
 		defer func() {
 			if obj != nil && obj.Type() != object.NIL {
@@ -174,7 +173,7 @@ func (e *Evaluator) eval(n ast.Node, env *env.Environ) (obj object.Object, err e
 	return nil, fmt.Errorf("unsupported type=%v", n)
 }
 
-func (e *Evaluator) Include(s *ast.InclStmt, env *env.Environ) error {
+func (e *Evaluator) Include(s *ast.InclStmt, env *Environ) error {
 	path := strings.Trim(s.Path.Value, "\"")
 	f, err := os.ReadFile(path)
 	if err != nil {
@@ -198,7 +197,7 @@ func (e *Evaluator) Include(s *ast.InclStmt, env *env.Environ) error {
 	return nil
 }
 
-func (e *Evaluator) Assign(s *ast.AssignStmt, env *env.Environ) error {
+func (e *Evaluator) Assign(s *ast.AssignStmt, env *Environ) error {
 	rhs, err := e.eval(s.Right, env)
 	if err != nil {
 		return fmt.Errorf("eval(%v): %v", s.Right, err)
@@ -217,7 +216,7 @@ func (e *Evaluator) Assign(s *ast.AssignStmt, env *env.Environ) error {
 	return nil
 }
 
-func (e *Evaluator) Reset(s *ast.ResetStmt, env *env.Environ) error {
+func (e *Evaluator) Reset(s *ast.ResetStmt, env *Environ) error {
 	for _, a := range s.QArgs.List {
 		qb, ok := env.Qubit.Get(a)
 		if !ok {
@@ -230,7 +229,7 @@ func (e *Evaluator) Reset(s *ast.ResetStmt, env *env.Environ) error {
 	return nil
 }
 
-func (e *Evaluator) Print(s *ast.PrintStmt, env *env.Environ) error {
+func (e *Evaluator) Print(s *ast.PrintStmt, env *Environ) error {
 	if len(env.Qubit.Name) == 0 {
 		return nil
 	}
@@ -272,7 +271,7 @@ func (e *Evaluator) Println() error {
 	return nil
 }
 
-func (e *Evaluator) GenConst(s *ast.GenConst, env *env.Environ) error {
+func (e *Evaluator) GenConst(s *ast.GenConst, env *Environ) error {
 	v, err := e.eval(s.Value, env)
 	if err != nil {
 		return fmt.Errorf("eval(%v): %v", s.Value, err)
@@ -282,7 +281,7 @@ func (e *Evaluator) GenConst(s *ast.GenConst, env *env.Environ) error {
 	return nil
 }
 
-func (e *Evaluator) GenDecl(s *ast.GenDecl, env *env.Environ) error {
+func (e *Evaluator) GenDecl(s *ast.GenDecl, env *Environ) error {
 	switch s.Kind {
 	case lexer.BIT:
 		env.Bit.Add(s, make([]int64, s.Size()))
@@ -293,7 +292,7 @@ func (e *Evaluator) GenDecl(s *ast.GenDecl, env *env.Environ) error {
 	return nil
 }
 
-func (e *Evaluator) Block(s *ast.BlockStmt, env *env.Environ) (object.Object, error) {
+func (e *Evaluator) Block(s *ast.BlockStmt, env *Environ) (object.Object, error) {
 	for _, b := range s.List {
 		v, err := e.eval(b, env)
 		if err != nil {
@@ -308,7 +307,7 @@ func (e *Evaluator) Block(s *ast.BlockStmt, env *env.Environ) (object.Object, er
 	return nil, nil
 }
 
-func (e *Evaluator) Return(s *ast.ReturnStmt, env *env.Environ) (object.Object, error) {
+func (e *Evaluator) Return(s *ast.ReturnStmt, env *Environ) (object.Object, error) {
 	v, err := e.eval(s.Result, env)
 	if err != nil {
 		return nil, fmt.Errorf("eval(%v): %v", s.Result, err)
@@ -317,7 +316,7 @@ func (e *Evaluator) Return(s *ast.ReturnStmt, env *env.Environ) (object.Object, 
 	return &object.ReturnValue{Value: v}, nil
 }
 
-func (e *Evaluator) Measure(x *ast.MeasureExpr, env *env.Environ) (object.Object, error) {
+func (e *Evaluator) Measure(x *ast.MeasureExpr, env *Environ) (object.Object, error) {
 	qargs := x.QArgs.List
 	if len(qargs) == 0 {
 		return nil, fmt.Errorf("qargs is empty")
@@ -343,7 +342,7 @@ func (e *Evaluator) Measure(x *ast.MeasureExpr, env *env.Environ) (object.Object
 	return &object.Array{Elm: res}, nil
 }
 
-func (e *Evaluator) Unary(s *ast.UnaryExpr, env *env.Environ) (object.Object, error) {
+func (e *Evaluator) Unary(s *ast.UnaryExpr, env *Environ) (object.Object, error) {
 	v, err := e.eval(s.Value, env)
 	if err != nil {
 		return nil, fmt.Errorf("eval(%v): %v", s.Value, err)
@@ -364,7 +363,7 @@ func (e *Evaluator) Unary(s *ast.UnaryExpr, env *env.Environ) (object.Object, er
 	return nil, fmt.Errorf("unsupported type=%v", s.Kind)
 }
 
-func (e *Evaluator) Infix(s *ast.InfixExpr, env *env.Environ) (object.Object, error) {
+func (e *Evaluator) Infix(s *ast.InfixExpr, env *Environ) (object.Object, error) {
 	lhs, err := e.eval(s.Left, env)
 	if err != nil {
 		return nil, fmt.Errorf("eval(%v): %v", s.Left, err)
@@ -419,7 +418,7 @@ func (e *Evaluator) Infix(s *ast.InfixExpr, env *env.Environ) (object.Object, er
 	return nil, fmt.Errorf("unsupported type=%v", s.Kind)
 }
 
-func (e *Evaluator) Apply(s *ast.ApplyStmt, env *env.Environ) error {
+func (e *Evaluator) Apply(s *ast.ApplyStmt, env *Environ) error {
 	params, err := e.Params(s, env)
 	if err != nil {
 		return fmt.Errorf("params: %v", err)
@@ -469,7 +468,7 @@ func (e *Evaluator) ApplyBuiltin(g lexer.Token, p []float64, qargs [][]q.Qubit) 
 	return false
 }
 
-func (e *Evaluator) ApplyUParallel(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) error {
+func (e *Evaluator) ApplyUParallel(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *Environ) error {
 	size := 0
 	for i := range qargs {
 		if len(qargs[i]) > size {
@@ -495,7 +494,7 @@ func (e *Evaluator) ApplyUParallel(mod []ast.Modifier, u matrix.Matrix, qargs []
 	return nil
 }
 
-func (e *Evaluator) ApplyUAt(i int, mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) {
+func (e *Evaluator) ApplyUAt(i int, mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *Environ) {
 	cqargs := make([][]q.Qubit, 0)
 	for j := range qargs {
 		if len(qargs[j]) == 1 {
@@ -509,7 +508,7 @@ func (e *Evaluator) ApplyUAt(i int, mod []ast.Modifier, u matrix.Matrix, qargs [
 	e.ApplyU(mod, u, cqargs, env)
 }
 
-func (e *Evaluator) ApplyU(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) error {
+func (e *Evaluator) ApplyU(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *Environ) error {
 	// Modify inv, pow
 	u = e.ModifyU(mod, u, env)
 
@@ -530,7 +529,7 @@ func (e *Evaluator) ApplyU(mod []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubi
 }
 
 // Ctrl returns ctrl @ U
-func (e *Evaluator) Ctrl(modctrl []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *env.Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
+func (e *Evaluator) Ctrl(modctrl []ast.Modifier, u matrix.Matrix, qargs [][]q.Qubit, env *Environ) (matrix.Matrix, []q.Qubit, []q.Qubit) {
 	var ctrl, negc []q.Qubit
 	if len(modctrl) == 0 {
 		return u, ctrl, negc
@@ -574,7 +573,7 @@ func (e *Evaluator) X(target []q.Qubit, f func()) {
 	}
 }
 
-func (e *Evaluator) Params(s *ast.ApplyStmt, env *env.Environ) ([]float64, error) {
+func (e *Evaluator) Params(s *ast.ApplyStmt, env *Environ) ([]float64, error) {
 	var params []float64
 	for _, p := range s.Params.List.List {
 		v, err := e.eval(p, env)
@@ -595,7 +594,7 @@ func (e *Evaluator) Params(s *ast.ApplyStmt, env *env.Environ) ([]float64, error
 	return params, nil
 }
 
-func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *env.Environ) ([][]q.Qubit, error) {
+func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *Environ) ([][]q.Qubit, error) {
 	var qargs [][]q.Qubit
 	for _, a := range s.QArgs.List {
 		qb, ok := env.Qubit.Get(a)
@@ -610,7 +609,7 @@ func (e *Evaluator) QArgs(s *ast.ApplyStmt, env *env.Environ) ([][]q.Qubit, erro
 }
 
 // ModifyStmt returns modified BlockStmt
-func (e *Evaluator) ModifyStmt(s *ast.BlockStmt, env *env.Environ) *ast.BlockStmt {
+func (e *Evaluator) ModifyStmt(s *ast.BlockStmt, env *Environ) *ast.BlockStmt {
 	// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
 	//
 	// gate inv(a, b, c) q { inv @ U(a, b, c) q; inv @ U(c, b, a) q;}
@@ -657,7 +656,7 @@ func (e *Evaluator) ModifyStmt(s *ast.BlockStmt, env *env.Environ) *ast.BlockStm
 }
 
 // ModifyU returns modified(inv, pow) U
-func (e *Evaluator) ModifyU(mod []ast.Modifier, u matrix.Matrix, env *env.Environ) matrix.Matrix {
+func (e *Evaluator) ModifyU(mod []ast.Modifier, u matrix.Matrix, env *Environ) matrix.Matrix {
 	// NOTE: pow(2) @ inv @ u is not equal to inv @ pow(2) @ u
 	for _, m := range mod {
 		switch m.Kind {
@@ -671,7 +670,7 @@ func (e *Evaluator) ModifyU(mod []ast.Modifier, u matrix.Matrix, env *env.Enviro
 	return u
 }
 
-func (e *Evaluator) Call(x *ast.CallExpr, outer *env.Environ) (object.Object, error) {
+func (e *Evaluator) Call(x *ast.CallExpr, outer *Environ) (object.Object, error) {
 	f, ok := outer.GateDef[x.Name]
 	if !ok {
 		return nil, fmt.Errorf("decl=%v not found", x.Name)
@@ -692,7 +691,7 @@ func (e *Evaluator) Call(x *ast.CallExpr, outer *env.Environ) (object.Object, er
 	return nil, fmt.Errorf("unsupported type=%v", f)
 }
 
-func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *env.Environ) *env.Environ {
+func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *Environ) *Environ {
 	enclosed := outer.NewEnclosed(decl, x.Modifier)
 
 	// set const
@@ -728,11 +727,9 @@ func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *env.Env
 			}
 		}
 
-		//
+		// ctrl qargs
 		cdecl := append(make([]ast.Expr, 0), enclosed.CtrlQArgs...)
-		for i := range decl {
-			cdecl = append(cdecl, decl[i])
-		}
+		cdecl = append(cdecl, decl...)
 
 		for i := range cdecl {
 			if qb, ok := outer.Qubit.Get(args[i]); ok {

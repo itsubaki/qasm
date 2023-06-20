@@ -1,4 +1,4 @@
-package env
+package evaluator
 
 import (
 	"fmt"
@@ -19,11 +19,12 @@ type Environ struct {
 	CtrlQArgs []ast.Expr
 }
 
-func New() *Environ {
+// NewEnviron returns a new environment.
+func NewEnviron() *Environ {
 	return &Environ{
 		Outer:     nil,
-		Bit:       &Bit{Name: make([]string, 0), Value: make(map[string][]int64)},
-		Qubit:     &Qubit{Name: make([]string, 0), Value: make(map[string][]q.Qubit)},
+		Bit:       NewBit(),
+		Qubit:     NewQubit(),
 		GateDef:   make(map[string]ast.Decl),
 		Const:     make(map[string]object.Object),
 		Modifier:  make([]ast.Modifier, 0),
@@ -32,11 +33,12 @@ func New() *Environ {
 	}
 }
 
+// NewEnclosed returns a new environment that encloses the outer environment.
 func (e *Environ) NewEnclosed(decl ast.Decl, mod []ast.Modifier) *Environ {
 	return &Environ{
 		Outer:    e,
-		Bit:      &Bit{Name: make([]string, 0), Value: make(map[string][]int64)},
-		Qubit:    &Qubit{Name: make([]string, 0), Value: make(map[string][]q.Qubit)},
+		Bit:      NewBit(),
+		Qubit:    NewQubit(),
 		GateDef:  e.GateDef,
 		Const:    e.Const,
 		Modifier: mod,
@@ -57,12 +59,22 @@ type Bit struct {
 	Value map[string][]int64
 }
 
+func NewBit() *Bit {
+	return &Bit{
+		Name:  make([]string, 0),
+		Value: make(map[string][]int64),
+	}
+}
+
 func (b *Bit) Add(n ast.Node, value []int64) {
 	name := ast.Must(ast.Ident(n))
 	b.Name = append(b.Name, name)
 	b.Value[name] = value
 }
 
+// Get returns a value of bit.
+// if a is ident, return all values.
+// if a is index, return a value of index.
 func (b *Bit) Get(a ast.Expr) ([]int64, bool) {
 	switch x := a.(type) {
 	case *ast.IdentExpr:
@@ -94,12 +106,22 @@ type Qubit struct {
 	Value map[string][]q.Qubit
 }
 
+func NewQubit() *Qubit {
+	return &Qubit{
+		Name:  make([]string, 0),
+		Value: make(map[string][]q.Qubit),
+	}
+}
+
 func (qb *Qubit) Add(n ast.Node, value []q.Qubit) {
 	name := ast.Must(ast.Ident(n))
 	qb.Name = append(qb.Name, name)
 	qb.Value[name] = value
 }
 
+// Get returns a value of qubit.
+// if a is ident, return all values.
+// if a is index, return a value of index.
 func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 	switch x := a.(type) {
 	case *ast.IdentExpr:
@@ -120,6 +142,17 @@ func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 	}
 
 	return nil, false
+}
+
+// All returns all values of qubit.
+func (qb *Qubit) All() []q.Qubit {
+	out := make([]q.Qubit, 0)
+	for _, n := range qb.Name {
+		qb, _ := qb.Get(&ast.IdentExpr{Name: n}) // no error
+		out = append(out, qb...)
+	}
+
+	return out
 }
 
 func (qb *Qubit) String() string {
