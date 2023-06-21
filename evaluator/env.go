@@ -145,14 +145,18 @@ func (qb *Qubit) Get(a ast.Expr) ([]q.Qubit, bool) {
 }
 
 // All returns all values of qubit.
-func (qb *Qubit) All() []q.Qubit {
+func (qb *Qubit) All() ([]q.Qubit, error) {
 	out := make([]q.Qubit, 0)
 	for _, n := range qb.Name {
-		qb, _ := qb.Get(&ast.IdentExpr{Name: n}) // no error
+		qb, ok := qb.Get(&ast.IdentExpr{Name: n})
+		if !ok {
+			return nil, fmt.Errorf("qubit %v not found", n)
+		}
+
 		out = append(out, qb...)
 	}
 
-	return out
+	return out, nil
 }
 
 func (qb *Qubit) String() string {
