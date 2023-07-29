@@ -137,11 +137,11 @@ func (e *Evaluator) eval(n ast.Node, env *Environ) (obj object.Object, err error
 		return &object.Nil{}, e.GenDecl(n, env)
 
 	case *ast.GateDecl:
-		env.GateDef[ast.Must(ast.Ident(n))] = n
+		env.Gate[ast.Must(ast.Ident(n))] = n
 		return &object.Nil{}, nil
 
 	case *ast.FuncDecl:
-		env.GateDef[ast.Must(ast.Ident(n))] = n
+		env.Gate[ast.Must(ast.Ident(n))] = n
 		return &object.Nil{}, nil
 
 	case *ast.IdentExpr:
@@ -671,7 +671,7 @@ func (e *Evaluator) ModifyU(mod []ast.Modifier, u matrix.Matrix, env *Environ) m
 }
 
 func (e *Evaluator) Call(x *ast.CallExpr, outer *Environ) (object.Object, error) {
-	f, ok := outer.GateDef[x.Name]
+	f, ok := outer.Gate[x.Name]
 	if !ok {
 		return nil, fmt.Errorf("decl=%v not found", x.Name)
 	}

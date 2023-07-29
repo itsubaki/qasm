@@ -13,7 +13,7 @@ type Environ struct {
 	Bit       *Bit
 	Qubit     *Qubit
 	Const     Const
-	GateDef   GateDef
+	Gate      Gate
 	Modifier  []ast.Modifier
 	Decl      []ast.Decl
 	CtrlQArgs []ast.Expr
@@ -25,7 +25,7 @@ func NewEnviron() *Environ {
 		Outer:     nil,
 		Bit:       NewBit(),
 		Qubit:     NewQubit(),
-		GateDef:   make(map[string]ast.Decl),
+		Gate:      make(map[string]ast.Decl),
 		Const:     make(map[string]object.Object),
 		Modifier:  make([]ast.Modifier, 0),
 		Decl:      make([]ast.Decl, 0),
@@ -39,7 +39,7 @@ func (e *Environ) NewEnclosed(decl ast.Decl, mod []ast.Modifier) *Environ {
 		Outer:    e,
 		Bit:      NewBit(),
 		Qubit:    NewQubit(),
-		GateDef:  e.GateDef,
+		Gate:     e.Gate,
 		Const:    e.Const,
 		Modifier: mod,
 		Decl:     append(e.Decl, decl),
@@ -47,10 +47,10 @@ func (e *Environ) NewEnclosed(decl ast.Decl, mod []ast.Modifier) *Environ {
 }
 
 func (e *Environ) String() string {
-	return fmt.Sprintf("gatedef: %v, const: %v, bit: %v, qubit: %v, modifier: %v, decl: %v", e.GateDef, e.Const, e.Bit, e.Qubit, e.Modifier, e.Decl)
+	return fmt.Sprintf("gate: %v, const: %v, bit: %v, qubit: %v, modifier: %v, decl: %v", e.Gate, e.Const, e.Bit, e.Qubit, e.Modifier, e.Decl)
 }
 
-type GateDef map[string]ast.Decl
+type Gate map[string]ast.Decl
 
 type Const map[string]object.Object
 
