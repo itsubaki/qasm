@@ -375,7 +375,7 @@ func (p *Parser) parseFunc() ast.Decl {
 	p.expect(lexer.IDENT)
 
 	// def shor
-	decl := ast.FuncDecl{
+	decl := ast.SubroutineDecl{
 		Name: ident.Literal,
 		Body: ast.BlockStmt{},
 	}

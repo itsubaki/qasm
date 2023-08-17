@@ -9,27 +9,29 @@ import (
 )
 
 type Environ struct {
-	Outer     *Environ
-	Bit       *Bit
-	Qubit     *Qubit
-	Const     Const
-	Gate      Gate
-	Modifier  []ast.Modifier
-	Decl      []ast.Decl
-	CtrlQArgs []ast.Expr
+	Outer      *Environ
+	Bit        *Bit
+	Qubit      *Qubit
+	Const      Const
+	Gate       Gate
+	Subroutine Subroutine
+	Modifier   []ast.Modifier
+	Decl       []ast.Decl
+	CtrlQArgs  []ast.Expr
 }
 
 // NewEnviron returns a new environment.
 func NewEnviron() *Environ {
 	return &Environ{
-		Outer:     nil,
-		Bit:       NewBit(),
-		Qubit:     NewQubit(),
-		Gate:      make(map[string]ast.Decl),
-		Const:     make(map[string]object.Object),
-		Modifier:  make([]ast.Modifier, 0),
-		Decl:      make([]ast.Decl, 0),
-		CtrlQArgs: nil,
+		Outer:      nil,
+		Bit:        NewBit(),
+		Qubit:      NewQubit(),
+		Const:      make(map[string]object.Object),
+		Gate:       make(map[string]ast.Decl),
+		Subroutine: make(map[string]ast.Decl),
+		Modifier:   make([]ast.Modifier, 0),
+		Decl:       make([]ast.Decl, 0),
+		CtrlQArgs:  nil,
 	}
 }
 
@@ -47,10 +49,15 @@ func (e *Environ) NewEnclosed(decl ast.Decl, mod []ast.Modifier) *Environ {
 }
 
 func (e *Environ) String() string {
-	return fmt.Sprintf("gate: %v, const: %v, bit: %v, qubit: %v, modifier: %v, decl: %v", e.Gate, e.Const, e.Bit, e.Qubit, e.Modifier, e.Decl)
+	return fmt.Sprintf(
+		"bit: %v, qubit: %v, const: %v, gate: %v, subroutine: %v, modifier: %v, decl: %v",
+		e.Bit, e.Qubit, e.Const, e.Gate, e.Subroutine, e.Modifier, e.Decl,
+	)
 }
 
 type Gate map[string]ast.Decl
+
+type Subroutine map[string]ast.Decl
 
 type Const map[string]object.Object
 
