@@ -145,7 +145,7 @@ func TestDecl(t *testing.T) {
 			"(int[32] a, int[32] N)",
 		},
 		{
-			&ast.FuncDecl{
+			&ast.SubroutineDecl{
 				Name: "shor",
 				Params: ast.ParenDecl{
 					List: ast.DeclList{

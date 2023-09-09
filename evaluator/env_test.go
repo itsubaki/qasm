@@ -67,5 +67,5 @@ func ExampleEnviron() {
 	fmt.Println(env)
 
 	// Output:
-	// gate: map[], const: map[], bit: [], map[], qubit: [], map[], modifier: [], decl: []
+	// bit: [], map[], qubit: [], map[], const: map[], gate: map[], subroutine: map[], modifier: [], decl: []
 }

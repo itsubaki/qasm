@@ -140,8 +140,8 @@ func (e *Evaluator) eval(n ast.Node, env *Environ) (obj object.Object, err error
 		env.Gate[ast.Must(ast.Ident(n))] = n
 		return &object.Nil{}, nil
 
-	case *ast.FuncDecl:
-		env.Gate[ast.Must(ast.Ident(n))] = n
+	case *ast.SubroutineDecl:
+		env.Subroutine[ast.Must(ast.Ident(n))] = n
 		return &object.Nil{}, nil
 
 	case *ast.IdentExpr:
@@ -684,7 +684,7 @@ func (e *Evaluator) Call(x *ast.CallExpr, outer *Environ) (object.Object, error)
 	switch decl := f.(type) {
 	case *ast.GateDecl:
 		return e.eval(&decl.Body, e.Enclosed(x, decl, outer))
-	case *ast.FuncDecl:
+	case *ast.SubroutineDecl:
 		return nil, fmt.Errorf("not implemented=%v", f)
 	}
 

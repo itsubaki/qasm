@@ -66,7 +66,7 @@ func TestIdent(t *testing.T) {
 		{&ast.GenDecl{Name: "gendecl"}, "gendecl", false},
 		{&ast.GenConst{Name: "genconst"}, "genconst", false},
 		{&ast.GateDecl{Name: "gatedecl"}, "gatedecl", false},
-		{&ast.FuncDecl{Name: "funcdecl"}, "funcdecl", false},
+		{&ast.SubroutineDecl{Name: "subroutinedecl"}, "subroutinedecl", false},
 		{&ast.BasicLit{Value: "basic"}, "basic", false},
 		{"foobar", "", true},
 	}

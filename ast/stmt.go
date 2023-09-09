@@ -45,7 +45,7 @@ func (s *DeclStmt) Literal() string {
 
 func (s *DeclStmt) String() string {
 	switch d := s.Decl.(type) {
-	case *GateDecl, *FuncDecl:
+	case *GateDecl, *SubroutineDecl:
 		return d.String()
 	}
 

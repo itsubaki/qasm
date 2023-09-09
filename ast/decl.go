@@ -140,7 +140,7 @@ func (d *GateDecl) String() string {
 	return buf.String()
 }
 
-type FuncDecl struct {
+type SubroutineDecl struct {
 	Name   string
 	Params ParenDecl
 	QArgs  DeclList
@@ -148,13 +148,13 @@ type FuncDecl struct {
 	Result Expr
 }
 
-func (d *FuncDecl) declNode() {}
+func (d *SubroutineDecl) declNode() {}
 
-func (d *FuncDecl) Literal() string {
+func (d *SubroutineDecl) Literal() string {
 	return lexer.Tokens[lexer.DEF]
 }
 
-func (d *FuncDecl) String() string {
+func (d *SubroutineDecl) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString(d.Literal())

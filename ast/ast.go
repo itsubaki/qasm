@@ -56,7 +56,7 @@ func Ident(x interface{}) (string, error) {
 		return x.Name, nil // const N = 15
 	case *GateDecl:
 		return x.Name, nil // gate X {}
-	case *FuncDecl:
+	case *SubroutineDecl:
 		return x.Name, nil // def shor(){}
 	case *BasicLit:
 		return x.Value, nil
