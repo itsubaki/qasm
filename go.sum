@@ -4,6 +4,8 @@ github.com/itsubaki/q v0.0.2-0.20230326124321-e31e25e705d7 h1:9dtDsWBE+CEIkRMFbF
 github.com/itsubaki/q v0.0.2-0.20230326124321-e31e25e705d7/go.mod h1:rFAVpm4Mn5+RIb5U/TYq5dDx1jPeTI5NLOtCqLsxf6I=
 github.com/itsubaki/q v0.0.3-0.20230605133313-1dd51522be4e h1:T1MX2UCLxxsNPHGn8cLxKXrYjhEyjxzWuCkumuqy2Ao=
 github.com/itsubaki/q v0.0.3-0.20230605133313-1dd51522be4e/go.mod h1:rFAVpm4Mn5+RIb5U/TYq5dDx1jPeTI5NLOtCqLsxf6I=
+github.com/itsubaki/q v0.0.3 h1:UHeV86tR/9Vzjg3P96iKkHZT/xqL7zUt9j4bzBGaNOA=
+github.com/itsubaki/q v0.0.3/go.mod h1:Qz8D58XaNb6N/9cvXPopM2Q1ae1muGD+bFftuApj8Fg=
 github.com/russross/blackfriday/v2 v2.1.0 h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf35Ld67mk=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/urfave/cli/v2 v2.25.1 h1:zw8dSP7ghX0Gmm8vugrs6q9Ku0wzweqPyshy+syu9Gw=
