@@ -1,6 +1,6 @@
 module github.com/itsubaki/qasm
 
-go 1.21
+go 1.22
 
 require (
 	github.com/itsubaki/q v0.0.3
