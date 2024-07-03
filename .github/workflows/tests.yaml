@@ -1,0 +1,45 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest]
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Unit Tests
+        run: |
+          make test
+
+      - name: Lex
+        run: |
+          make lex
+
+      - name: Parse
+        run: |
+          make parse
+
+      - name: Run testdata
+        run: |
+          make testdata
+
+      - name: Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
