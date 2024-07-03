@@ -697,11 +697,10 @@ func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *Environ
 	// set const
 	func(decl, args []ast.Expr) {
 		for i, d := range decl {
-			n := ast.Must(ast.Ident(d))
+			k := ast.Must(ast.Ident(d))
 			v := ast.Must(e.eval(args[i], outer))
-			enclosed.Const[n] = v
+			enclosed.Const[k] = v
 		}
-
 	}(decl.Params.List.List, x.Params.List.List)
 
 	// set qargs
@@ -713,7 +712,6 @@ func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *Environ
 					enclosed.Qubit.Add(decl[i], qb)
 				}
 			}
-
 			return
 		}
 
@@ -728,17 +726,16 @@ func (e *Evaluator) Enclosed(x *ast.CallExpr, decl *ast.GateDecl, outer *Environ
 		}
 
 		// ctrl qargs
-		cdecl := append(make([]ast.Expr, 0), enclosed.CtrlQArgs...)
-		cdecl = append(cdecl, decl...)
-
-		for i := range cdecl {
+		ctrldecl := append(enclosed.CtrlQArgs, decl...)
+		for i := range ctrldecl {
 			if qb, ok := outer.Qubit.Get(args[i]); ok {
-				enclosed.Qubit.Add(cdecl[i], qb)
+				enclosed.Qubit.Add(ctrldecl[i], qb)
 				continue
 			}
 		}
 
 	}(decl.QArgs.List, x.QArgs.List)
 
+	// response
 	return enclosed
 }
