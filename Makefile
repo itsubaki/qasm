@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 test:
-	go test -v -cover $(shell go list ./... | grep -v /vendor/ | grep -v /build/) -v -coverprofile=coverage.txt -covermode=atomic
+	go test -v -cover $(shell go list ./... | grep -v /cmd | grep -v /repl | grep -v -E "qasm$$") -v -coverprofile=coverage.txt -covermode=atomic
 
 .PHONY: repl
 repl:
