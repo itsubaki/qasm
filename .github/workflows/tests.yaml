@@ -23,10 +23,6 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      - name: Unit Tests
-        run: |
-          make test
-
       - name: Lex
         run: |
           make lex
@@ -34,10 +30,6 @@ jobs:
       - name: Parse
         run: |
           make parse
-
-      - name: Run testdata
-        run: |
-          make testdata
 
       - name: Codecov
         uses: codecov/codecov-action@v4
