@@ -6,7 +6,7 @@ import (
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/qasm/cmd"
-	"github.com/itsubaki/qasm/parser"
+	"github.com/itsubaki/qasm/gen/parser"
 )
 
 func main() {

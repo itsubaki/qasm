@@ -3,7 +3,7 @@ package visitor
 import (
 	"fmt"
 
-	"github.com/itsubaki/qasm/parser"
+	"github.com/itsubaki/qasm/gen/parser"
 )
 
 func New() *Visitor {

@@ -6,7 +6,8 @@ import (
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/qasm/cmd"
-	"github.com/itsubaki/qasm/parser"
+	"github.com/itsubaki/qasm/gen/parser"
+	"github.com/itsubaki/qasm/listener"
 	"github.com/itsubaki/qasm/visitor"
 )
 
@@ -15,11 +16,14 @@ func main() {
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+	p.AddParseListener(listener.New())
 	p.AddErrorListener(antlr.NewDiagnosticErrorListener(true))
 	p.BuildParseTrees = true
 
 	tree := p.Program()
+	fmt.Println()
 	fmt.Println(tree.ToStringTree(nil, p))
+	fmt.Println()
 
 	tree.Accept(visitor.New())
 }
