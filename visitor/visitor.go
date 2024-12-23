@@ -3,16 +3,21 @@ package visitor
 import (
 	"fmt"
 
+	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/gen/parser"
 )
 
-func New() *Visitor {
+func New(qsim *q.Q) *Visitor {
 	return &Visitor{
+		qsim,
+		NewEnviron(),
 		&parser.Baseqasm3ParserVisitor{},
 	}
 }
 
 type Visitor struct {
+	qsim    *q.Q
+	Environ *Environ
 	*parser.Baseqasm3ParserVisitor
 }
 
@@ -134,6 +139,7 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 }
 
 func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclarationStatementContext) interface{} {
+	v.Environ.Qubit[ctx.Identifier().GetText()] = v.qsim.Zero()
 	return v.VisitChildren(ctx)
 }
 

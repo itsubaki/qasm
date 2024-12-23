@@ -10,3 +10,6 @@ lex:
 
 parse:
 	go run cmd/parse/main.go < _testdata/bell.qasm
+
+test:
+	go test -v -cover $(shell go list ./... | grep -v /cmd ) -v -coverprofile=coverage.txt -covermode=atomic

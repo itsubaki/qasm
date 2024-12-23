@@ -17,9 +17,9 @@ func New() *Listener {
 }
 
 func (l *Listener) EnterProgram(ctx *parser.ProgramContext) {
-	fmt.Println("EnterProgram")
+	fmt.Println("[DEBUG] EnterProgram")
 }
 
 func (l *Listener) ExitProgram(ctx *parser.ProgramContext) {
-	fmt.Println("ExitProgram")
+	fmt.Println("[DEBUG] ExitProgram")
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/antlr4-go/antlr/v4"
+	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/cmd"
 	"github.com/itsubaki/qasm/gen/parser"
 	"github.com/itsubaki/qasm/listener"
@@ -21,9 +22,9 @@ func main() {
 	p.BuildParseTrees = true
 
 	tree := p.Program()
-	fmt.Println()
 	fmt.Println(tree.ToStringTree(nil, p))
 	fmt.Println()
 
-	tree.Accept(visitor.New())
+	qsim := q.New()
+	tree.Accept(visitor.New(qsim))
 }

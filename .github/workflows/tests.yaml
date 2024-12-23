@@ -23,6 +23,10 @@ jobs:
           go-version-file: go.mod
           cache: false
 
+      - name: Unit Tests
+        run: |
+          make test
+
       - name: Lex
         run: |
           make lex
