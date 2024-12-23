@@ -32,8 +32,8 @@ func (v *Visitor) VisitErrorNode(_ antlr.ErrorNode) interface{} {
 
 func (v *Visitor) VisitChildren(node antlr.RuleNode) interface{} {
 	var result interface{}
-	for i := 0; i < node.GetChildCount(); i++ {
-		tree, ok := node.GetChild(i).(antlr.ParseTree)
+	for _, n := range node.GetChildren() {
+		tree, ok := n.(antlr.ParseTree)
 		if !ok {
 			continue
 		}
