@@ -1,6 +1,7 @@
 package visitor
 
 import (
+	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/gen/parser"
 )
@@ -9,14 +10,41 @@ func New(qsim *q.Q) *Visitor {
 	return &Visitor{
 		qsim,
 		NewEnviron(),
-		&parser.Baseqasm3ParserVisitor{},
 	}
 }
 
 type Visitor struct {
 	qsim    *q.Q
 	Environ *Environ
-	*parser.Baseqasm3ParserVisitor
+}
+
+func (v *Visitor) Visit(tree antlr.ParseTree) interface{} {
+	return tree.Accept(v)
+}
+
+func (v *Visitor) VisitTerminal(_ antlr.TerminalNode) interface{} {
+	return nil
+}
+
+func (v *Visitor) VisitErrorNode(_ antlr.ErrorNode) interface{} {
+	return nil
+}
+
+func (v *Visitor) VisitChildren(node antlr.RuleNode) interface{} {
+	var result interface{}
+	for i := 0; i < node.GetChildCount(); i++ {
+		tree, ok := node.GetChild(i).(antlr.ParseTree)
+		if !ok {
+			continue
+		}
+
+		if res := tree.Accept(v); res != nil {
+			result = res
+			break
+		}
+	}
+
+	return result
 }
 
 func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) interface{} {

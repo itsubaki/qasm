@@ -23,7 +23,6 @@ func main() {
 
 	tree := p.Program()
 	fmt.Println(tree.ToStringTree(nil, p))
-	fmt.Println()
 
 	qsim := q.New()
 	tree.Accept(visitor.New(qsim))
