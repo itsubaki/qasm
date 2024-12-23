@@ -19,12 +19,15 @@ func ExampleVisitor_VisitQuantumDeclarationStatement() {
 	fmt.Println(tree.ToStringTree(nil, p))
 
 	qsim := q.New()
-	tree.Accept(visitor.New(qsim))
+	v := visitor.New(qsim)
+	tree.Accept(v)
 	fmt.Println(qsim.NumberOfBit())
 	fmt.Println(qsim.M().IsZero())
+	fmt.Println(v.Environ.Qubit)
 
 	// Output:
 	// (quantumDeclarationStatement (qubitType qubit) q ;)
 	// 1
 	// true
+	// map[q:0]
 }

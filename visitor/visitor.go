@@ -1,8 +1,6 @@
 package visitor
 
 import (
-	"fmt"
-
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/gen/parser"
 )
@@ -22,7 +20,6 @@ type Visitor struct {
 }
 
 func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) interface{} {
-	fmt.Println(ctx.GetText())
 	return v.VisitChildren(ctx)
 }
 
