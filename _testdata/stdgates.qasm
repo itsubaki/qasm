@@ -10,5 +10,4 @@ gate cz c, t { ctrl @ z c, t; }
 gate ch c, t { ctrl @ h c, t; }
 
 gate ccx c0, c1, t { ctrl @ ctrl @ x c0, c1, t; }
-
 gate swap q, p { cx q, p; cx p, q; cx q, p; }
