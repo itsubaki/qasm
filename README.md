@@ -6,6 +6,7 @@
 [![codecov](https://codecov.io/gh/itsubaki/qasm/branch/main/graph/badge.svg?token=94KAQTK9KT)](https://codecov.io/gh/itsubaki/qasm)
 
 - Run Quantum Computation Simulator with [OpenQASM 3.0](https://openqasm.com)
+- Currently rewriting using ANTLR4 [WIP](https://github.com/itsubaki/qasm/tree/antlr)
 
 ## Install
 
