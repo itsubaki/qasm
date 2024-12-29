@@ -23,8 +23,9 @@ func main() {
 	env := visitor.NewEnviron()
 	v := visitor.New(qsim, env)
 
-	if err := tree.Accept(v); err != nil {
-		fmt.Println(err)
+	switch ret := v.Visit(tree).(type) {
+	case error:
+		panic(ret)
 	}
 
 	for _, s := range qsim.State() {

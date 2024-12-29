@@ -3,8 +3,8 @@ package visitor
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
-	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
@@ -14,10 +14,13 @@ import (
 )
 
 var (
-	ErrAlreadyDeclared = errors.New("already declared")
-	ErrQubitNotFound   = errors.New("qubit not found")
-	ErrGateNotFound    = errors.New("gate not found")
-	ErrUnexpectedType  = errors.New("unexpected type")
+	ErrAlreadyDeclared      = errors.New("already declared")
+	ErrQubitNotFound        = errors.New("qubit not found")
+	ErrClassicalBitNotFound = errors.New("classical bit not found")
+	ErrGateNotFound         = errors.New("gate not found")
+	ErrConstNotFound        = errors.New("const not found")
+	ErrUnexpected           = errors.New("unexpected")
+	ErrNotImplemented       = errors.New("not implemented")
 )
 
 func New(qsim *q.Q, env *Environ) *Visitor {
@@ -36,23 +39,26 @@ func (v *Visitor) Visit(tree antlr.ParseTree) interface{} {
 	return tree.Accept(v)
 }
 
-func (v *Visitor) VisitTerminal(_ antlr.TerminalNode) interface{} {
-	return nil
+func (v *Visitor) VisitTerminal(node antlr.TerminalNode) interface{} {
+	return node.GetText()
 }
 
-func (v *Visitor) VisitErrorNode(_ antlr.ErrorNode) interface{} {
-	return nil
+func (v *Visitor) VisitErrorNode(node antlr.ErrorNode) interface{} {
+	return node.GetText()
 }
 
 func (v *Visitor) VisitChildren(node antlr.RuleNode) interface{} {
-	var result interface{}
-	for _, n := range node.GetChildren() {
-		tree, ok := n.(antlr.ParseTree)
-		if !ok {
-			continue
-		}
+	return fmt.Errorf("VisitChildren: %w", ErrNotImplemented)
+}
 
-		if res := v.Visit(tree); res != nil {
+func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) interface{} {
+	if ctx.Version() != nil {
+		v.Environ.Version = v.Visit(ctx.Version()).(string)
+	}
+
+	var result interface{}
+	for _, s := range ctx.AllStatementOrScope() {
+		if res := v.Visit(s); res != nil {
 			result = res
 			break
 		}
@@ -61,20 +67,61 @@ func (v *Visitor) VisitChildren(node antlr.RuleNode) interface{} {
 	return result
 }
 
-func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
 func (v *Visitor) VisitVersion(ctx *parser.VersionContext) interface{} {
-	return v.VisitChildren(ctx)
+	return v.Visit(ctx.VersionSpecifier())
 }
 
-func (v *Visitor) VisitStatement(ctx *parser.StatementContext) interface{} {
-	return v.VisitChildren(ctx)
+func (v *Visitor) VisitPragma(ctx *parser.PragmaContext) interface{} {
+	return v.Visit(ctx.RemainingLineContent())
 }
 
 func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitAnnotation: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitStatement(ctx *parser.StatementContext) interface{} {
+	statements := []antlr.ParseTree{
+		ctx.Pragma(),
+		ctx.AliasDeclarationStatement(),
+		ctx.AssignmentStatement(),
+		ctx.BarrierStatement(),
+		ctx.BoxStatement(),
+		ctx.BreakStatement(),
+		ctx.CalStatement(),
+		ctx.CalibrationGrammarStatement(),
+		ctx.ClassicalDeclarationStatement(),
+		ctx.ConstDeclarationStatement(),
+		ctx.ContinueStatement(),
+		ctx.DefStatement(),
+		ctx.DefcalStatement(),
+		ctx.DelayStatement(),
+		ctx.EndStatement(),
+		ctx.ExpressionStatement(),
+		ctx.ExternStatement(),
+		ctx.ForStatement(),
+		ctx.GateCallStatement(),
+		ctx.GateStatement(),
+		ctx.IfStatement(),
+		ctx.IncludeStatement(),
+		ctx.IoDeclarationStatement(),
+		ctx.MeasureArrowAssignmentStatement(),
+		ctx.OldStyleDeclarationStatement(),
+		ctx.QuantumDeclarationStatement(),
+		ctx.ResetStatement(),
+		ctx.ReturnStatement(),
+		ctx.SwitchStatement(),
+		ctx.WhileStatement(),
+	}
+
+	for _, s := range statements {
+		if s == nil {
+			continue
+		}
+
+		return v.Visit(s)
+	}
+
+	return fmt.Errorf("statement=%s: %w", ctx.GetText(), ErrUnexpected)
 }
 
 func (v *Visitor) VisitScope(ctx *parser.ScopeContext) interface{} {
@@ -86,10 +133,6 @@ func (v *Visitor) VisitScope(ctx *parser.ScopeContext) interface{} {
 	return list
 }
 
-func (v *Visitor) VisitPragma(ctx *parser.PragmaContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
 func (v *Visitor) VisitStatementOrScope(ctx *parser.StatementOrScopeContext) interface{} {
 	if ctx.Statement() != nil {
 		return v.Visit(ctx.Statement())
@@ -98,189 +141,64 @@ func (v *Visitor) VisitStatementOrScope(ctx *parser.StatementOrScopeContext) int
 	return v.Visit(ctx.Scope())
 }
 
-func (v *Visitor) VisitCalibrationGrammarStatement(ctx *parser.CalibrationGrammarStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
 func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitBreakStatement(ctx *parser.BreakStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitContinueStatement(ctx *parser.ContinueStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitEndStatement(ctx *parser.EndStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitIncludeStatement: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitIfStatement: %w", ErrNotImplemented)
 }
 
-func (v *Visitor) VisitReturnStatement(ctx *parser.ReturnStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) interface{} {
+	return fmt.Errorf("VisitForStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitBreakStatement(ctx *parser.BreakStatementContext) interface{} {
+	return fmt.Errorf("VisitBreakStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitContinueStatement(ctx *parser.ContinueStatementContext) interface{} {
+	return fmt.Errorf("VisitContinueStatement: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitWhileStatement(ctx *parser.WhileStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitWhileStatement: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitSwitchStatement: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitSwitchCaseItem(ctx *parser.SwitchCaseItemContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitSwitchCaseItem: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitEndStatement(ctx *parser.EndStatementContext) interface{} {
+	return fmt.Errorf("VisitEndStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitCalibrationGrammarStatement(ctx *parser.CalibrationGrammarStatementContext) interface{} {
+	return fmt.Errorf("VisitCalibrationGrammarStatement: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitBarrierStatement(ctx *parser.BarrierStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitBarrierStatement: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitBoxStatement(ctx *parser.BoxStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitBoxStatement: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDelayStatement(ctx *parser.DelayStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitDelayStatement: %w", ErrNotImplemented)
 }
 
-func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) interface{} {
-	var params []float64
-	for _, e := range v.Visit(ctx.ExpressionList()).([]interface{}) {
-		switch val := e.(type) {
-		case float64:
-			params = append(params, val)
-		case int64:
-			params = append(params, float64(val))
-		default:
-			return fmt.Errorf("param=%v: %w", e, ErrUnexpectedType)
-		}
+func (v *Visitor) VisitReturnStatement(ctx *parser.ReturnStatementContext) interface{} {
+	if ctx.MeasureExpression() != nil {
+		return v.Visit(ctx.MeasureExpression())
 	}
 
-	var qb []q.Qubit
-	for _, o := range v.Visit(ctx.GateOperandList()).([]interface{}) {
-		if q, ok := v.Environ.Qubit[o.(string)]; ok {
-			qb = append(qb, q...)
-			continue
-		}
-
-		return fmt.Errorf("operand=%s: %w", o, ErrQubitNotFound)
-	}
-
-	id := ctx.Identifier().GetText()
-	switch id {
-	case "U":
-		u := gate.U(params[0], params[1], params[2])
-
-		var ctrl bool
-		for _, mod := range ctx.AllGateModifier() {
-			m := v.Visit(mod).(string)
-			switch m {
-			case "ctrl@":
-				n := v.qsim.NumberOfBit()
-				index := q.Index(qb...)
-				u = gate.C(u, n, index[0], index[1])
-				ctrl = true
-			case "negctrl@":
-				// TODO: implement
-				ctrl = true
-			case "inv@":
-				u = u.Inverse()
-			default:
-				if !strings.HasPrefix(m, "pow") {
-					return fmt.Errorf("modifier=%s: %w", m, ErrUnexpectedType)
-				}
-
-				x := mod.Expression()
-				p, ok := v.Visit(x).(int64)
-				if !ok {
-					return fmt.Errorf("pow=%v: %w", x.GetText(), ErrUnexpectedType)
-				}
-
-				u = matrix.ApplyN(u, int(p))
-			}
-		}
-
-		if ctrl {
-			v.qsim.Apply(u)
-			return nil
-		}
-
-		v.qsim.Apply(u, qb...)
-		return nil
-	default:
-		return fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
-	}
-}
-
-func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitResetStatement(ctx *parser.ResetStatementContext) interface{} {
-	operand := v.Visit(ctx.GateOperand()).(string)
-	q, ok := v.Environ.Qubit[operand]
-	if !ok {
-		return fmt.Errorf("operand=%s: %w", operand, ErrQubitNotFound)
-	}
-
-	v.qsim.Reset(q...)
-	return nil
-}
-
-func (v *Visitor) VisitAliasDeclarationStatement(ctx *parser.AliasDeclarationStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclarationStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitConstDeclarationStatement(ctx *parser.ConstDeclarationStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitIoDeclarationStatement(ctx *parser.IoDeclarationStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarationStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclarationStatementContext) interface{} {
-	id := ctx.Identifier().GetText()
-	if _, ok := v.Environ.Qubit[id]; ok {
-		return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
-	}
-
-	designator := ctx.QubitType().Designator()
-	if designator == nil {
-		v.Environ.Qubit[id] = []q.Qubit{v.qsim.Zero()}
-		return nil
-	}
-
-	size := v.Visit(designator).(int64)
-	v.Environ.Qubit[id] = v.qsim.ZeroWith(int(size))
-	return nil
-}
-
-func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitExternStatement(ctx *parser.ExternStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+	return v.Visit(ctx.Expression())
 }
 
 func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) interface{} {
@@ -288,24 +206,230 @@ func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) interface
 	return nil
 }
 
-func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, error) {
+	var params []float64
+	for _, e := range v.Visit(xlist).([]interface{}) {
+		switch val := e.(type) {
+		case float64:
+			params = append(params, val)
+		case int64:
+			params = append(params, float64(val))
+		default:
+			return nil, fmt.Errorf("param=%v: %w", val, ErrUnexpected)
+		}
+	}
+
+	return params, nil
 }
 
-func (v *Visitor) VisitExpressionStatement(ctx *parser.ExpressionStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+func (v *Visitor) Modify(u matrix.Matrix, qargs []q.Qubit, modifier []parser.IGateModifierContext) (matrix.Matrix, error) {
+	var ctrl, negctrl []q.Qubit
+	for i, mod := range modifier {
+		// https://openqasm.com/language/gates.html#inverse-modifier
+		// The inverse of a controlled operation is defined by inverting the control unitary. That is, inv @ ctrl @ U = ctrl @ inv @ U.
+		switch {
+		case mod.CTRL() != nil:
+			ctrl = append(ctrl, qargs[i])
+		case mod.NEGCTRL() != nil:
+			ctrl, negctrl = append(ctrl, qargs[i]), append(negctrl, qargs[i])
+		case mod.INV() != nil:
+			u = u.Dagger()
+		case mod.POW() != nil:
+			x := v.Visit(mod).(int64)
+			u = matrix.ApplyN(u, int(x))
+		default:
+			return nil, fmt.Errorf("modifier=%s: %w", mod.GetText(), ErrUnexpected)
+		}
+	}
+
+	switch len(ctrl) {
+	case 0:
+		n := v.qsim.NumberOfBit()
+		u = gate.TensorProduct(u, n, q.Index(qargs...))
+	default:
+		n := v.qsim.NumberOfBit()
+		u = gate.Controlled(u, n, q.Index(ctrl...), qargs[len(qargs)-1].Index())
+
+		if len(negctrl) > 0 {
+			x := gate.TensorProduct(gate.X(), n, q.Index(negctrl...))
+			u = matrix.Apply(x, u, x)
+		}
+	}
+
+	return u, nil
+}
+
+func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) interface{} {
+	id := v.Visit(ctx.Identifier())
+	switch id {
+	case "U":
+		params, err := v.Params(ctx.ExpressionList())
+		if err != nil {
+			return fmt.Errorf("params: %w", err)
+		}
+		u := gate.U(params[0], params[1], params[2])
+
+		qargs := v.Visit(ctx.GateOperandList()).([]q.Qubit)
+		u, err = v.Modify(u, qargs, ctx.AllGateModifier())
+		if err != nil {
+			return fmt.Errorf("modify: %w", err)
+		}
+
+		v.qsim.Apply(u)
+		return nil
+	default:
+		return fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
+	}
+}
+
+func (v *Visitor) MeasureAssignment(measure parser.IMeasureExpressionContext, identifier parser.IIndexedIdentifierContext) error {
+	measured := v.Visit(measure)
+	if identifier == nil {
+		return nil
+	}
+
+	operand := v.Visit(identifier.Identifier()).(string)
+	index := v.Visit(identifier).([]int64)
+	bits, ok := v.Environ.GetClassicalBit(operand)
+	if !ok {
+		return fmt.Errorf("operand=%s: %w", operand, ErrClassicalBitNotFound)
+	}
+
+	if len(index) == 0 {
+		copy(bits, measured.([]int64))
+		return nil
+	}
+
+	for i, m := range measured.([]int64) {
+		bits[index[i]] = m
+	}
+
+	return nil
+}
+
+func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) interface{} {
+	return v.MeasureAssignment(ctx.MeasureExpression(), ctx.IndexedIdentifier())
+}
+
+func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContext) interface{} {
+	if ctx.MeasureExpression() != nil {
+		return v.MeasureAssignment(ctx.MeasureExpression(), ctx.IndexedIdentifier())
+	}
+
+	// TODO: v.Visit(ctx.Expression())
+	return fmt.Errorf("statement=%s: %w", ctx.GetText(), ErrUnexpected)
+}
+
+func (v *Visitor) VisitResetStatement(ctx *parser.ResetStatementContext) interface{} {
+	qargs := v.Visit(ctx.GateOperand()).([]q.Qubit)
+	v.qsim.Reset(qargs...)
+	return nil
+}
+
+func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclarationStatementContext) interface{} {
+	id := v.Visit(ctx.Identifier()).(string)
+	if _, ok := v.Environ.GetQubit(id); ok {
+		return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+	}
+
+	size := v.Visit(ctx.QubitType()).(int64)
+	v.Environ.Qubit[id] = v.qsim.ZeroWith(int(size))
+	return nil
+}
+
+func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclarationStatementContext) interface{} {
+	switch {
+	case ctx.ScalarType().BIT() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.Environ.GetClassicalBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		size := v.Visit(ctx.ScalarType()).(int64)
+		v.Environ.ClassicalBit[id] = make([]int64, int(size))
+		return nil
+	default:
+		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
+	}
+}
+
+func (v *Visitor) VisitConstDeclarationStatement(ctx *parser.ConstDeclarationStatementContext) interface{} {
+	return fmt.Errorf("VisitConstDeclarationStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitAliasDeclarationStatement(ctx *parser.AliasDeclarationStatementContext) interface{} {
+	return fmt.Errorf("VisitAliasDeclarationStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitIoDeclarationStatement(ctx *parser.IoDeclarationStatementContext) interface{} {
+	return fmt.Errorf("VisitIoDeclarationStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarationStatementContext) interface{} {
+	return fmt.Errorf("VisitOldStyleDeclarationStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{} {
+	return fmt.Errorf("VisitDefStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitExternStatement(ctx *parser.ExternStatementContext) interface{} {
+	return fmt.Errorf("VisitExternStatement: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitCalStatement(ctx *parser.CalStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitCalStatement: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalStatement(ctx *parser.DefcalStatementContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitDefcalStatement: %w", ErrNotImplemented)
 }
 
-func (v *Visitor) VisitBitwiseXorExpression(ctx *parser.BitwiseXorExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
+func (v *Visitor) VisitParenthesisExpression(ctx *parser.ParenthesisExpressionContext) interface{} {
+	return v.Visit(ctx.Expression())
+}
+
+func (v *Visitor) VisitExpressionStatement(ctx *parser.ExpressionStatementContext) interface{} {
+	return v.Visit(ctx.Expression())
+}
+
+func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) interface{} {
+	switch {
+	case ctx.Identifier() != nil:
+		x := v.Visit(ctx.Identifier()).(string)
+		lit, ok := BuiltinConst[x]
+		if !ok {
+			return fmt.Errorf("identifier=%s: %w", x, ErrConstNotFound)
+		}
+
+		return lit
+	case ctx.DecimalIntegerLiteral() != nil:
+		x := v.Visit(ctx.DecimalIntegerLiteral()).(string)
+		lit, err := strconv.ParseInt(x, 10, 64)
+		if err != nil {
+			return fmt.Errorf("parse int: x=%s: %w", x, err)
+		}
+
+		return lit
+	case ctx.FloatLiteral() != nil:
+		x := v.Visit(ctx.FloatLiteral()).(string)
+		lit, err := strconv.ParseFloat(x, 64)
+		if err != nil {
+			return fmt.Errorf("parse float: x=%s: %w", x, err)
+		}
+
+		return lit
+	case ctx.BooleanLiteral() != nil:
+		x := v.Visit(ctx.BooleanLiteral()).(string)
+		lit, err := strconv.ParseBool(x)
+		if err != nil {
+			return fmt.Errorf("parse bool: x=%s: %w", x, err)
+		}
+
+		return lit
+	default:
+		return fmt.Errorf("x=%s: %w", ctx.GetText(), ErrUnexpected)
+	}
 }
 
 func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext) interface{} {
@@ -317,31 +441,18 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 		case int64:
 			operand = append(operand, float64(val))
 		default:
-			return fmt.Errorf("operand=%v: %w", val, ErrUnexpectedType)
+			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
 		}
 	}
 
-	op := ctx.GetOp().GetText()
-	switch op {
-	case "+":
+	switch {
+	case ctx.PLUS() != nil:
 		return operand[0] + operand[1]
-	case "-":
+	case ctx.MINUS() != nil:
 		return operand[0] - operand[1]
 	default:
-		return fmt.Errorf("operator=%s: %w", op, ErrUnexpectedType)
+		return fmt.Errorf("operator=%s: %w", ctx.GetOp().GetText(), ErrUnexpected)
 	}
-}
-
-func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitParenthesisExpression(ctx *parser.ParenthesisExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
 }
 
 func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpressionContext) interface{} {
@@ -353,114 +464,207 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 		case int64:
 			operand = append(operand, float64(val))
 		default:
-			return fmt.Errorf("operand=%v: %w", val, ErrUnexpectedType)
+			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
 		}
 	}
 
-	op := ctx.GetOp().GetText()
-	switch op {
-	case "*":
+	switch {
+	case ctx.ASTERISK() != nil:
 		return operand[0] * operand[1]
-	case "/":
+	case ctx.SLASH() != nil:
 		return operand[0] / operand[1]
+	case ctx.PERCENT() != nil:
+		return float64(int64(operand[0]) % int64(operand[1]))
 	default:
-		return fmt.Errorf("operator=%s: %w", op, ErrUnexpectedType)
+		return fmt.Errorf("operator=%s: %w", ctx.GetOp().GetText(), ErrUnexpected)
 	}
-}
-
-func (v *Visitor) VisitLogicalOrExpression(ctx *parser.LogicalOrExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitBitwiseOrExpression(ctx *parser.BitwiseOrExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitBitwiseAndExpression(ctx *parser.BitwiseAndExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
 }
 
 func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
+	var operand []float64
+	for _, x := range ctx.AllExpression() {
+		switch val := v.Visit(x).(type) {
+		case float64:
+			operand = append(operand, val)
+		case int64:
+			operand = append(operand, float64(val))
+		case bool:
+			var o float64
+			if val {
+				o = 1
+			}
+
+			operand = append(operand, o)
+		default:
+			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+		}
+	}
+
+	op := v.Visit(ctx.EqualityOperator()).(string)
+	switch op {
+	case "==":
+		return operand[0] == operand[1]
+	case "!=":
+		return operand[0] != operand[1]
+	default:
+		return fmt.Errorf("operator=%s: %w", op, ErrUnexpected)
+	}
 }
 
 func (v *Visitor) VisitLogicalAndExpression(ctx *parser.LogicalAndExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
+	result := true
+	for _, x := range ctx.AllExpression() {
+		if result = result && v.Visit(x).(bool); !result {
+			return false
+		}
+	}
+
+	return true
 }
 
-func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
+func (v *Visitor) VisitLogicalOrExpression(ctx *parser.LogicalOrExpressionContext) interface{} {
+	var result bool
+	for _, x := range ctx.AllExpression() {
+		if result = result || v.Visit(x).(bool); result {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (v *Visitor) VisitBitwiseAndExpression(ctx *parser.BitwiseAndExpressionContext) interface{} {
+	return fmt.Errorf("VisitBitwiseAndExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitBitwiseOrExpression(ctx *parser.BitwiseOrExpressionContext) interface{} {
+	return fmt.Errorf("VisitBitwiseOrExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitBitwiseXorExpression(ctx *parser.BitwiseXorExpressionContext) interface{} {
+	return fmt.Errorf("VisitBitwiseXorExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext) interface{} {
+	return fmt.Errorf("VisitBitshiftExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionContext) interface{} {
+	return fmt.Errorf("VisitDurationofExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionContext) interface{} {
+	var operand []float64
+	for _, x := range ctx.AllExpression() {
+		switch val := v.Visit(x).(type) {
+		case float64:
+			operand = append(operand, val)
+		case int64:
+			operand = append(operand, float64(val))
+		default:
+			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+		}
+	}
+
+	op := v.Visit(ctx.ComparisonOperator()).(string)
+	switch op {
+	case "<":
+		return operand[0] < operand[1]
+	case "<=":
+		return operand[0] <= operand[1]
+	case ">":
+		return operand[0] > operand[1]
+	case ">=":
+		return operand[0] >= operand[1]
+	default:
+		return fmt.Errorf("operator=%s: %w", op, ErrUnexpected)
+	}
+}
+
+func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
+	return fmt.Errorf("VisitCastExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) interface{} {
+	var operand []float64
+	for _, x := range ctx.AllExpression() {
+		switch val := v.Visit(x).(type) {
+		case float64:
+			operand = append(operand, val)
+		case int64:
+			operand = append(operand, float64(val))
+		default:
+			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+		}
+	}
+
+	return math.Pow(operand[0], operand[1])
+}
+
+func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) interface{} {
+	return fmt.Errorf("VisitCallExpression: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) interface{} {
-	x := ctx.GetText()
-	if lit, ok := BultinConst[x]; ok {
-		return lit
-	}
-
-	if ctx.FloatLiteral() != nil {
-		lit, err := strconv.ParseFloat(x, 64)
-		if err != nil {
-			return fmt.Errorf("parse float: x=%s: %w", x, err)
+	operand := v.Visit(ctx.Expression())
+	switch {
+	case ctx.MINUS() != nil:
+		switch val := operand.(type) {
+		case float64:
+			return -1 * val
+		case int64:
+			return -1 * val
+		default:
+			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
 		}
-
-		return lit
-	}
-
-	if ctx.DecimalIntegerLiteral() != nil {
-		lit, err := strconv.ParseInt(x, 10, 64)
-		if err != nil {
-			return fmt.Errorf("parse int: x=%s: %w", x, err)
+	case ctx.EXCLAMATION_POINT() != nil:
+		switch val := operand.(type) {
+		case bool:
+			return !val
+		default:
+			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
 		}
-
-		return lit
+	case ctx.TILDE() != nil:
+		return fmt.Errorf("VisitUnaryExpression: %w", ErrNotImplemented)
+	default:
+		return fmt.Errorf("operator=%s: %w", ctx.GetOp().GetText(), ErrUnexpected)
 	}
-
-	return fmt.Errorf("x=%s: %w", x, ErrUnexpectedType)
 }
 
 func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitAliasExpression: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDeclarationExpression(ctx *parser.DeclarationExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitDeclarationExpression: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitRangeExpression: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitSetExpression(ctx *parser.SetExpressionContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitSetExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) interface{} {
+	return v.Visit(ctx.Expression())
+}
+
+func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) interface{} {
+	qargs := v.Visit(ctx.GateOperand()).([]q.Qubit)
+	v.qsim.Measure(qargs...)
+
+	var bit []int64
+	for _, q := range qargs {
+		bit = append(bit, v.qsim.State(q)[0].Int(0))
+	}
+
+	return bit
 }
 
 func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitArrayLiteral: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) interface{} {
@@ -473,35 +677,50 @@ func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) interface
 }
 
 func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) interface{} {
+	var index []int64
 	for _, op := range ctx.AllIndexOperator() {
-		fmt.Println(v.Visit(op))
+		for _, v := range v.Visit(op).([]interface{}) {
+			index = append(index, v.(int64))
+		}
 	}
 
-	return ctx.Identifier().GetText()
-}
-
-func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) interface{} {
-	return v.VisitChildren(ctx)
+	return index
 }
 
 func (v *Visitor) VisitGateModifier(ctx *parser.GateModifierContext) interface{} {
-	return ctx.GetText()
+	if ctx.Expression() != nil {
+		return v.Visit(ctx.Expression()).(int64)
+	}
+
+	return int64(1)
+}
+
+func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) interface{} {
+	return fmt.Errorf("VisitReturnSignature: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitScalarType(ctx *parser.ScalarTypeContext) interface{} {
-	return v.VisitChildren(ctx)
+	if ctx.Designator() != nil {
+		return v.Visit(ctx.Designator()).(int64)
+	}
+
+	return int64(1)
 }
 
 func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) interface{} {
-	return ctx.QUBIT()
+	if ctx.Designator() != nil {
+		return v.Visit(ctx.Designator()).(int64)
+	}
+
+	return int64(1)
 }
 
 func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitArrayType: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitArrayReferenceType: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) interface{} {
@@ -509,39 +728,72 @@ func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) interface{} {
 }
 
 func (v *Visitor) VisitDefcalTarget(ctx *parser.DefcalTargetContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitDefcalTarget: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalArgumentDefinition(ctx *parser.DefcalArgumentDefinitionContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitDefcalArgumentDefinition: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalOperand(ctx *parser.DefcalOperandContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitDefcalOperand: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) interface{} {
-	return v.Visit(ctx.IndexedIdentifier())
+	indexID := ctx.IndexedIdentifier()
+	operand := v.Visit(indexID.Identifier()).(string)
+	index := v.Visit(indexID).([]int64)
+
+	qb, ok := v.Environ.GetQubit(operand)
+	if !ok {
+		return fmt.Errorf("operand=%s: %w", operand, ErrQubitNotFound)
+	}
+
+	if len(index) == 0 {
+		return qb
+	}
+
+	var list []q.Qubit
+	for _, idx := range index {
+		list = append(list, qb[idx])
+	}
+
+	return list
 }
 
 func (v *Visitor) VisitExternArgument(ctx *parser.ExternArgumentContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitExternArgument: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitArgumentDefinition(ctx *parser.ArgumentDefinitionContext) interface{} {
-	return v.VisitChildren(ctx)
+	return fmt.Errorf("VisitArgumentDefinition: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitArgumentDefinitionList(ctx *parser.ArgumentDefinitionListContext) interface{} {
-	return v.VisitChildren(ctx)
+	var list []interface{}
+	for _, def := range ctx.AllArgumentDefinition() {
+		list = append(list, v.Visit(def))
+	}
+
+	return list
 }
 
 func (v *Visitor) VisitDefcalArgumentDefinitionList(ctx *parser.DefcalArgumentDefinitionListContext) interface{} {
-	return v.VisitChildren(ctx)
+	var list []interface{}
+	for _, def := range ctx.AllDefcalArgumentDefinition() {
+		list = append(list, v.Visit(def))
+	}
+
+	return list
 }
 
 func (v *Visitor) VisitDefcalOperandList(ctx *parser.DefcalOperandListContext) interface{} {
-	return v.VisitChildren(ctx)
+	var list []interface{}
+	for _, o := range ctx.AllDefcalOperand() {
+		list = append(list, v.Visit(o))
+	}
+
+	return list
 }
 
 func (v *Visitor) VisitExpressionList(ctx *parser.ExpressionListContext) interface{} {
@@ -554,23 +806,28 @@ func (v *Visitor) VisitExpressionList(ctx *parser.ExpressionListContext) interfa
 }
 
 func (v *Visitor) VisitIdentifierList(ctx *parser.IdentifierListContext) interface{} {
-	var list []interface{}
+	var list []string
 	for _, id := range ctx.AllIdentifier() {
-		list = append(list, id.GetText())
+		list = append(list, v.Visit(id).(string))
 	}
 
 	return list
 }
 
 func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) interface{} {
-	var list []interface{}
+	var list []q.Qubit
 	for _, o := range ctx.AllGateOperand() {
-		list = append(list, v.Visit(o))
+		list = append(list, v.Visit(o).([]q.Qubit)...)
 	}
 
 	return list
 }
 
 func (v *Visitor) VisitExternArgumentList(ctx *parser.ExternArgumentListContext) interface{} {
-	return v.VisitChildren(ctx)
+	var list []interface{}
+	for _, arg := range ctx.AllExternArgument() {
+		list = append(list, v.Visit(arg))
+	}
+
+	return list
 }
