@@ -319,6 +319,37 @@ func ExampleVisitor_VisitMeasureExpression() {
 	// true (1+0i) (1+0i)
 }
 
+func ExampleVisitor_VisitDeclarationExpression_measure() {
+	text := `
+	qubit q;
+	U(pi, 0, pi) q;
+	bit c = measure q;
+	`
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	tree := p.Program()
+	fmt.Println(tree.ToStringTree(nil, p))
+
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	switch ret := v.Visit(tree).(type) {
+	case error:
+		fmt.Println(ret)
+	default:
+		fmt.Println(qsim.State(q.Qubit(0)))
+		fmt.Println(env.ClassicalBit["c"])
+	}
+
+	// Output:
+	// (program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q)))) ;))) <EOF>)
+	// [[1][  1]( 1.0000 0.0000i): 1.0000]
+	// [1]
+}
+
 func ExampleVisitor_VisitAssignmentStatement_measure() {
 	text := `
 	qubit[2] q;
