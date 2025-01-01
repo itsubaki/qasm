@@ -692,6 +692,11 @@ func TestVisitor_VisitUnaryExpression(t *testing.T) {
 			tree: "(program (statementOrScope (statement (expressionStatement (expression ! (expression ( (expression (expression - (expression 1.0)) != (expression 1.0)) ))) ;))) <EOF>)",
 			want: false,
 		},
+		{
+			text: "~5 == -6;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression ~ (expression 5)) == (expression - (expression 6))) ;))) <EOF>)",
+			want: true,
+		},
 	}
 
 	for _, c := range cases {

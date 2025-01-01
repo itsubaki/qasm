@@ -644,7 +644,12 @@ func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) inter
 			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
 		}
 	case ctx.TILDE() != nil:
-		return fmt.Errorf("VisitUnaryExpression: %w", ErrNotImplemented)
+		switch val := operand.(type) {
+		case int64:
+			return ^val
+		default:
+			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+		}
 	default:
 		return fmt.Errorf("operator=%s: %w", ctx.GetOp().GetText(), ErrUnexpected)
 	}
