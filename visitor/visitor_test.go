@@ -56,108 +56,6 @@ func ExampleVisitor_VisitPragma() {
 	// qiskit.simulator noise model "qpu1.noise";
 }
 
-func ExampleVisitor_VisitQuantumDeclarationStatement() {
-	text := `
-	qubit q;
-	qubit[2] q2;
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-	tree := p.Program()
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	if err := v.Visit(tree); err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println(env.Qubit)
-
-	// Output:
-	// map[q:[0] q2:[1 2]]
-}
-
-func ExampleVisitor_VisitQuantumDeclarationStatement_errAlreadyDeclared() {
-	text := `
-	qubit q;
-	qubit q;
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-	tree := p.Program()
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	fmt.Println(tree.Accept(v))
-
-	// Output:
-	// identifier=q: already declared
-}
-
-func ExampleVisitor_VisitClassicalDeclarationStatement_bit() {
-	text := `
-	bit c;
-	bit[8] a = "10001111";
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	tree := p.Program()
-	fmt.Println(tree.ToStringTree(nil, p))
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	if err := v.Visit(tree); err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println(env.ClassicalBit)
-
-	// Output:
-	// (program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 8) ])) a = (declarationExpression (expression "10001111")) ;))) <EOF>)
-	// map[a:[1 0 0 0 1 1 1 1] c:[0]]
-}
-
-func ExampleVisitor_VisitDeclarationExpression_measure() {
-	text := `
-	qubit q;
-	U(pi, 0, pi) q;
-	bit c = measure q;
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	tree := p.Program()
-	fmt.Println(tree.ToStringTree(nil, p))
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	switch ret := v.Visit(tree).(type) {
-	case error:
-		fmt.Println(ret)
-	default:
-		fmt.Println(qsim.State(q.Qubit(0)))
-		fmt.Println(env.ClassicalBit["c"])
-	}
-
-	// Output:
-	// (program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q)))) ;))) <EOF>)
-	// [[1][  1]( 1.0000 0.0000i): 1.0000]
-	// [1]
-}
-
 func ExampleVisitor_VisitResetStatement() {
 	text := `
 	qubit q;
@@ -186,6 +84,113 @@ func ExampleVisitor_VisitResetStatement() {
 	// Output:
 	// (program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (resetStatement reset (gateOperand (indexedIdentifier q)) ;))) <EOF>)
 	// [0][  0]( 1.0000 0.0000i): 1.0000
+}
+
+func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
+	cases := []struct {
+		text string
+		tree string
+		want string
+	}{
+		{
+			text: "bit c;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) <EOF>)",
+			want: "map[c:[0]]",
+		},
+		{
+			text: "bit[4] c;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 4) ])) c ;))) <EOF>)",
+			want: "map[c:[0 0 0 0]]",
+		},
+		{
+			text: `bit[8] a = "10001111";`,
+			tree: `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 8) ])) a = (declarationExpression (expression "10001111")) ;))) <EOF>)`,
+			want: "map[a:[1 0 0 0 1 1 1 1]]",
+		},
+		{
+			text: `bit[8] a = "10001111";`,
+			tree: `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 8) ])) a = (declarationExpression (expression "10001111")) ;))) <EOF>)`,
+			want: "map[a:[1 0 0 0 1 1 1 1]]",
+		},
+		{
+			text: `qubit q; U(pi, 0, pi) q; bit c = measure q;`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q)))) ;))) <EOF>)",
+			want: "map[c:[1]]",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			panic(ret)
+		}
+
+		if fmt.Sprintf("%v", env.ClassicalBit) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClassicalBit, c.want)
+		}
+	}
+}
+
+func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
+	cases := []struct {
+		text   string
+		tree   string
+		want   string
+		errMsg string
+	}{
+		{
+			text: "qubit q;",
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) <EOF>)",
+			want: "map[q:[0]]",
+		},
+		{
+			text: "qubit[2] q;",
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) <EOF>)",
+			want: "map[q:[0 1]]",
+		},
+		{
+			text: "qubit q0; qubit[2] q1; qubit[3] q3; qubit q4;",
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q0 ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q1 ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q3 ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q4 ;))) <EOF>)",
+			want: "map[q0:[0] q1:[1 2] q3:[3 4 5] q4:[6]]",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+			}
+		default:
+			if fmt.Sprintf("%v", env.Qubit) != c.want {
+				t.Errorf("got=%v, want=%v", env.Qubit, c.want)
+			}
+		}
+	}
 }
 
 func TestVisitor_VisitAssignmentStatement(t *testing.T) {
@@ -324,6 +329,24 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 				{
 					"map[c:[0 0]]",
 					"map[c:[1 1]]",
+				},
+				{
+					"[[00][  0]( 1.0000 0.0000i): 1.0000]",
+					"[[11][  3]( 1.0000 0.0000i): 1.0000]",
+				},
+			},
+		},
+		{
+			text: `
+				qubit[2] q;
+				U(pi/2.0, 0, pi) q[0];
+				ctrl @ U(pi, 0, pi) q[0], q[1];
+				measure q;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (measureArrowAssignmentStatement (measureExpression measure (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: [][]string{
+				{
+					"map[]",
 				},
 				{
 					"[[00][  0]( 1.0000 0.0000i): 1.0000]",

@@ -229,6 +229,8 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs []q.Qubit, modifier []parser.IGa
 	for i, mod := range modifier {
 		// https://openqasm.com/language/gates.html#inverse-modifier
 		// The inverse of a controlled operation is defined by inverting the control unitary. That is, inv @ ctrl @ U = ctrl @ inv @ U.
+
+		n := v.Visit(mod).(int64)
 		switch {
 		case mod.CTRL() != nil:
 			ctrl = append(ctrl, qargs[i])
@@ -237,8 +239,7 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs []q.Qubit, modifier []parser.IGa
 		case mod.INV() != nil:
 			u = u.Dagger()
 		case mod.POW() != nil:
-			x := v.Visit(mod).(int64)
-			u = matrix.ApplyN(u, int(x))
+			u = matrix.ApplyN(u, int(n))
 		default:
 			return nil, fmt.Errorf("modifier=%s: %w", mod.GetText(), ErrUnexpected)
 		}
