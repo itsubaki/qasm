@@ -162,129 +162,6 @@ func ExampleVisitor_VisitResetStatement() {
 	// [0][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func ExampleVisitor_VisitGateModifier_ctrl() {
-	text := `
-	qubit q0;
-	qubit q1;
-	U(pi/2.0, 0, pi) q0;
-	ctrl @ U(pi, 0, pi) q0, q1;
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	tree := p.Program()
-	fmt.Println(tree.ToStringTree(nil, p))
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	if err := v.Visit(tree); err != nil {
-		fmt.Println(err)
-	}
-
-	for _, s := range qsim.State() {
-		fmt.Println(s)
-	}
-
-	// Output:
-	// (program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q0 ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q1 ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) <EOF>)
-	// [00][  0]( 0.7071 0.0000i): 0.5000
-	// [11][  3]( 0.7071 0.0000i): 0.5000
-}
-
-func ExampleVisitor_VisitGateModifier_negctrl() {
-	text := `
-	qubit q0;
-	qubit q1;
-	U(pi/2.0, 0, pi) q0;
-	negctrl @ U(pi, 0, pi) q0, q1;
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	tree := p.Program()
-	fmt.Println(tree.ToStringTree(nil, p))
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	if err := v.Visit(tree); err != nil {
-		fmt.Println(err)
-	}
-
-	for _, s := range qsim.State() {
-		fmt.Println(s)
-	}
-
-	// Output:
-	// (program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q0 ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q1 ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier negctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) <EOF>)
-	// [01][  1]( 0.7071 0.0000i): 0.5000
-	// [10][  2]( 0.7071 0.0000i): 0.5000
-}
-
-func ExampleVisitor_VisitGateModifier_inv() {
-	text := `
-	qubit q;
-	U(pi, tau, euler) q;
-	inv @ U(pi, tau, euler) q;
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	tree := p.Program()
-	fmt.Println(tree.ToStringTree(nil, p))
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	if err := v.Visit(tree); err != nil {
-		fmt.Println(err)
-	}
-
-	for _, s := range qsim.State() {
-		fmt.Println(s)
-	}
-
-	// Output:
-	// (program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression tau) , (expression euler)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier inv @) U ( (expressionList (expression pi) , (expression tau) , (expression euler)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)
-	// [0][  0]( 1.0000 0.0000i): 1.0000
-}
-
-func ExampleVisitor_VisitGateModifier_pow() {
-	text := `
-	qubit q;
-	pow(2) @ U(pi, tau, euler) q;
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	tree := p.Program()
-	fmt.Println(tree.ToStringTree(nil, p))
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	if err := v.Visit(tree); err != nil {
-		fmt.Println(err)
-	}
-
-	for _, s := range qsim.State() {
-		fmt.Println(s)
-	}
-
-	// Output:
-	// (program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression 2) ) @) U ( (expressionList (expression pi) , (expression tau) , (expression euler)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)
-	// [0][  0]( 0.9117-0.4108i): 1.0000
-}
-
 func ExampleVisitor_VisitMeasureExpression() {
 	text := `
 	qubit[2] q;
@@ -889,6 +766,101 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement gphase ( (expressionList (expression (expression - (expression π)) / (expression 2))) ) ;))) <EOF>)",
 			want: []string{
 				"[0][  0]( 0.0000-1.0000i): 1.0000",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+		if err := v.Visit(tree); err != nil {
+			panic(err)
+		}
+
+		for i, s := range qsim.State() {
+			if s.String() == c.want[i] {
+				continue
+			}
+
+			t.Errorf("got=%v, want=%v", s.String(), c.want[i])
+		}
+	}
+}
+
+func TestVisitor_VisitGateModifier(t *testing.T) {
+	cases := []struct {
+		text string
+		tree string
+		want []string
+	}{
+		{
+			text: `
+				qubit q0;
+				qubit q1;
+				U(pi/2.0, 0, pi) q0;
+				ctrl @ U(pi, 0, pi) q0, q1;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q0 ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q1 ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) <EOF>)",
+			want: []string{
+				"[00][  0]( 0.7071 0.0000i): 0.5000",
+				"[11][  3]( 0.7071 0.0000i): 0.5000",
+			},
+		},
+		{
+			text: `
+				qubit[3] q;
+				U(pi/2.0, 0, pi) q[0], q[1];
+				ctrl @ ctrl @ U(pi, 0, pi) q[0], q[1], q[2];
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 2) ])))) ;))) <EOF>)",
+			want: []string{
+				"[000][  0]( 0.5000 0.0000i): 0.2500",
+				"[010][  2]( 0.5000 0.0000i): 0.2500",
+				"[100][  4]( 0.5000 0.0000i): 0.2500",
+				"[111][  7]( 0.5000 0.0000i): 0.2500",
+			},
+		},
+		{
+			text: `
+				qubit q0;
+				qubit q1;
+				U(pi/2.0, 0, pi) q0;
+				negctrl @ U(pi, 0, pi) q0, q1;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q0 ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q1 ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier negctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) <EOF>)",
+			want: []string{
+				"[01][  1]( 0.7071 0.0000i): 0.5000",
+				"[10][  2]( 0.7071 0.0000i): 0.5000",
+			},
+		},
+		{
+			text: `
+				qubit q;
+				U(pi, tau, euler) q;
+				inv @ U(pi, tau, euler) q;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression tau) , (expression euler)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier inv @) U ( (expressionList (expression pi) , (expression tau) , (expression euler)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[0][  0]( 1.0000 0.0000i): 1.0000",
+			},
+		},
+		{
+			text: `
+				qubit q;
+				pow(2) @ U(pi/2, 0, pi) q;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression 2) ) @) U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[0][  0]( 1.0000 0.0000i): 1.0000",
 			},
 		},
 	}
