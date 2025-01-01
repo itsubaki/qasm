@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
@@ -282,19 +283,19 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) i
 	}
 }
 
-func (v *Visitor) MeasureAssignment(measure parser.IMeasureExpressionContext, identifier parser.IIndexedIdentifierContext) error {
+func (v *Visitor) MeasureAssignment(identifier parser.IIndexedIdentifierContext, measure parser.IMeasureExpressionContext) error {
 	measured := v.Visit(measure)
 	if identifier == nil {
 		return nil
 	}
 
 	operand := v.Visit(identifier.Identifier()).(string)
-	index := v.Visit(identifier).([]int64)
 	bits, ok := v.Environ.GetClassicalBit(operand)
 	if !ok {
 		return fmt.Errorf("operand=%s: %w", operand, ErrClassicalBitNotFound)
 	}
 
+	index := v.Visit(identifier).([]int64)
 	if len(index) == 0 {
 		copy(bits, measured.([]int64))
 		return nil
@@ -308,16 +309,16 @@ func (v *Visitor) MeasureAssignment(measure parser.IMeasureExpressionContext, id
 }
 
 func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) interface{} {
-	return v.MeasureAssignment(ctx.MeasureExpression(), ctx.IndexedIdentifier())
+	return v.MeasureAssignment(ctx.IndexedIdentifier(), ctx.MeasureExpression())
 }
 
 func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContext) interface{} {
 	if ctx.MeasureExpression() != nil {
-		return v.MeasureAssignment(ctx.MeasureExpression(), ctx.IndexedIdentifier())
+		return v.MeasureAssignment(ctx.IndexedIdentifier(), ctx.MeasureExpression())
 	}
 
 	// TODO: v.Visit(ctx.Expression())
-	return fmt.Errorf("statement=%s: %w", ctx.GetText(), ErrUnexpected)
+	return fmt.Errorf("statement=%s: %w", ctx.GetText(), ErrNotImplemented)
 }
 
 func (v *Visitor) VisitResetStatement(ctx *parser.ResetStatementContext) interface{} {
@@ -343,6 +344,12 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.Environ.GetClassicalBit(id); ok {
 			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if ctx.DeclarationExpression() != nil {
+			bits := v.Visit(ctx.DeclarationExpression()).([]int64)
+			v.Environ.ClassicalBit[id] = bits
+			return nil
 		}
 
 		size := v.Visit(ctx.ScalarType()).(int64)
@@ -424,6 +431,16 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) i
 		lit, err := strconv.ParseBool(x)
 		if err != nil {
 			return fmt.Errorf("parse bool: x=%s: %w", x, err)
+		}
+
+		return lit
+	case ctx.BitstringLiteral() != nil:
+		x := v.Visit(ctx.BitstringLiteral()).(string)
+		bistring := strings.Trim(x, "\"")
+
+		lit := make([]int64, len(bistring))
+		for i, b := range bistring {
+			lit[i] = int64(b - '0')
 		}
 
 		return lit
@@ -636,7 +653,11 @@ func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) inter
 }
 
 func (v *Visitor) VisitDeclarationExpression(ctx *parser.DeclarationExpressionContext) interface{} {
-	return fmt.Errorf("VisitDeclarationExpression: %w", ErrNotImplemented)
+	if ctx.MeasureExpression() != nil {
+		return v.Visit(ctx.MeasureExpression())
+	}
+
+	return v.Visit(ctx.Expression())
 }
 
 func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) interface{} {
@@ -655,12 +676,12 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) i
 	qargs := v.Visit(ctx.GateOperand()).([]q.Qubit)
 	v.qsim.Measure(qargs...)
 
-	var bit []int64
+	var bits []int64
 	for _, q := range qargs {
-		bit = append(bit, v.qsim.State(q)[0].Int(0))
+		bits = append(bits, v.qsim.State(q)[0].Int(0))
 	}
 
-	return bit
+	return bits
 }
 
 func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) interface{} {
@@ -741,14 +762,14 @@ func (v *Visitor) VisitDefcalOperand(ctx *parser.DefcalOperandContext) interface
 
 func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) interface{} {
 	indexID := ctx.IndexedIdentifier()
-	operand := v.Visit(indexID.Identifier()).(string)
-	index := v.Visit(indexID).([]int64)
 
+	operand := v.Visit(indexID.Identifier()).(string)
 	qb, ok := v.Environ.GetQubit(operand)
 	if !ok {
 		return fmt.Errorf("operand=%s: %w", operand, ErrQubitNotFound)
 	}
 
+	index := v.Visit(indexID).([]int64)
 	if len(index) == 0 {
 		return qb
 	}
