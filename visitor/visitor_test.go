@@ -884,6 +884,13 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				"[1][  1]( 0.7071 0.0000i): 0.5000",
 			},
 		},
+		{
+			text: "qubit q; gphase(-π/2);",
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement gphase ( (expressionList (expression (expression - (expression π)) / (expression 2))) ) ;))) <EOF>)",
+			want: []string{
+				"[0][  0]( 0.0000-1.0000i): 1.0000",
+			},
+		},
 	}
 
 	for _, c := range cases {

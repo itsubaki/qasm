@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/cmplx"
 	"strconv"
 	"strings"
 
@@ -261,6 +262,18 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs []q.Qubit, modifier []parser.IGa
 }
 
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) interface{} {
+	if ctx.GPHASE() != nil {
+		params, err := v.Params(ctx.ExpressionList())
+		if err != nil {
+			return fmt.Errorf("params: %w", err)
+		}
+
+		n := v.qsim.NumberOfBit()
+		u := gate.I(n).Mul(cmplx.Exp(complex(0, params[0])))
+		v.qsim.Apply(u)
+		return nil
+	}
+
 	id := v.Visit(ctx.Identifier())
 	switch id {
 	case "U":
