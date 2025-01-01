@@ -566,10 +566,6 @@ func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext)
 	return fmt.Errorf("VisitBitshiftExpression: %w", ErrNotImplemented)
 }
 
-func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionContext) interface{} {
-	return fmt.Errorf("VisitDurationofExpression: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionContext) interface{} {
 	var operand []float64
 	for _, x := range ctx.AllExpression() {
@@ -598,10 +594,6 @@ func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionCont
 	}
 }
 
-func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
-	return fmt.Errorf("VisitCastExpression: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) interface{} {
 	var operand []float64
 	for _, x := range ctx.AllExpression() {
@@ -616,10 +608,6 @@ func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) inter
 	}
 
 	return math.Pow(operand[0], operand[1])
-}
-
-func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) interface{} {
-	return fmt.Errorf("VisitCallExpression: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) interface{} {
@@ -648,16 +636,28 @@ func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) inter
 	}
 }
 
-func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) interface{} {
-	return fmt.Errorf("VisitAliasExpression: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitDeclarationExpression(ctx *parser.DeclarationExpressionContext) interface{} {
 	if ctx.MeasureExpression() != nil {
 		return v.Visit(ctx.MeasureExpression())
 	}
 
 	return v.Visit(ctx.Expression())
+}
+
+func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) interface{} {
+	return fmt.Errorf("VisitCallExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
+	return fmt.Errorf("VisitCastExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionContext) interface{} {
+	return fmt.Errorf("VisitDurationofExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) interface{} {
+	return fmt.Errorf("VisitAliasExpression: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) interface{} {
@@ -669,7 +669,7 @@ func (v *Visitor) VisitSetExpression(ctx *parser.SetExpressionContext) interface
 }
 
 func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) interface{} {
-	return v.Visit(ctx.Expression())
+	return fmt.Errorf("VisitIndexExpression: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) interface{} {
@@ -684,8 +684,8 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) i
 	return bits
 }
 
-func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) interface{} {
-	return fmt.Errorf("VisitArrayLiteral: %w", ErrNotImplemented)
+func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) interface{} {
+	return v.Visit(ctx.Expression())
 }
 
 func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) interface{} {
@@ -716,10 +716,6 @@ func (v *Visitor) VisitGateModifier(ctx *parser.GateModifierContext) interface{}
 	return int64(1)
 }
 
-func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) interface{} {
-	return fmt.Errorf("VisitReturnSignature: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitScalarType(ctx *parser.ScalarTypeContext) interface{} {
 	if ctx.Designator() != nil {
 		return v.Visit(ctx.Designator()).(int64)
@@ -744,16 +740,20 @@ func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext)
 	return fmt.Errorf("VisitArrayReferenceType: %w", ErrNotImplemented)
 }
 
-func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) interface{} {
-	return v.Visit(ctx.Expression())
-}
-
 func (v *Visitor) VisitDefcalTarget(ctx *parser.DefcalTargetContext) interface{} {
 	return fmt.Errorf("VisitDefcalTarget: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalArgumentDefinition(ctx *parser.DefcalArgumentDefinitionContext) interface{} {
 	return fmt.Errorf("VisitDefcalArgumentDefinition: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) interface{} {
+	return fmt.Errorf("VisitArrayLiteral: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) interface{} {
+	return fmt.Errorf("VisitReturnSignature: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalOperand(ctx *parser.DefcalOperandContext) interface{} {
