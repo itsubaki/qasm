@@ -403,40 +403,40 @@ func (v *Visitor) VisitExpressionStatement(ctx *parser.ExpressionStatementContex
 func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) interface{} {
 	switch {
 	case ctx.Identifier() != nil:
-		x := v.Visit(ctx.Identifier()).(string)
-		lit, ok := BuiltinConst[x]
+		s := v.Visit(ctx.Identifier()).(string)
+		lit, ok := BuiltinConst[s]
 		if !ok {
-			return fmt.Errorf("identifier=%s: %w", x, ErrConstNotFound)
+			return fmt.Errorf("identifier=%s: %w", s, ErrConstNotFound)
 		}
 
 		return lit
 	case ctx.DecimalIntegerLiteral() != nil:
-		x := v.Visit(ctx.DecimalIntegerLiteral()).(string)
-		lit, err := strconv.ParseInt(x, 10, 64)
+		s := v.Visit(ctx.DecimalIntegerLiteral()).(string)
+		lit, err := strconv.ParseInt(s, 10, 64)
 		if err != nil {
-			return fmt.Errorf("parse int: x=%s: %w", x, err)
+			return fmt.Errorf("parse int: s=%s: %w", s, err)
 		}
 
 		return lit
 	case ctx.FloatLiteral() != nil:
-		x := v.Visit(ctx.FloatLiteral()).(string)
-		lit, err := strconv.ParseFloat(x, 64)
+		s := v.Visit(ctx.FloatLiteral()).(string)
+		lit, err := strconv.ParseFloat(s, 64)
 		if err != nil {
-			return fmt.Errorf("parse float: x=%s: %w", x, err)
+			return fmt.Errorf("parse float: s=%s: %w", s, err)
 		}
 
 		return lit
 	case ctx.BooleanLiteral() != nil:
-		x := v.Visit(ctx.BooleanLiteral()).(string)
-		lit, err := strconv.ParseBool(x)
+		s := v.Visit(ctx.BooleanLiteral()).(string)
+		lit, err := strconv.ParseBool(s)
 		if err != nil {
-			return fmt.Errorf("parse bool: x=%s: %w", x, err)
+			return fmt.Errorf("parse bool: s=%s: %w", s, err)
 		}
 
 		return lit
 	case ctx.BitstringLiteral() != nil:
-		x := v.Visit(ctx.BitstringLiteral()).(string)
-		bistring := strings.Trim(x, "\"")
+		s := v.Visit(ctx.BitstringLiteral()).(string)
+		bistring := strings.Trim(s, "\"")
 
 		lit := make([]int64, len(bistring))
 		for i, b := range bistring {
