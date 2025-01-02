@@ -191,6 +191,16 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) ans = (declarationExpression (expression 42)) ;))) <EOF>)",
 			want: "map[ans:42]",
 		},
+		{
+			text: "float zero;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) zero ;))) <EOF>)",
+			want: "map[zero:0]",
+		},
+		{
+			text: "int zero;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) zero ;))) <EOF>)",
+			want: "map[zero:0]",
+		},
 	}
 
 	for _, c := range cases {
@@ -242,6 +252,11 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 			text: "qubit q0; qubit[2] q1; qubit[3] q3; qubit q4;",
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q0 ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q1 ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q3 ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q4 ;))) <EOF>)",
 			want: "map[q0:[0] q1:[1 2] q3:[3 4 5] q4:[6]]",
+		},
+		{
+			text:   "qubit q; qubit q;",
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) <EOF>)",
+			errMsg: "identifier=q: already declared",
 		},
 	}
 
