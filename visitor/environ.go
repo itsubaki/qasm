@@ -2,6 +2,7 @@ package visitor
 
 import (
 	"github.com/itsubaki/q"
+	"github.com/itsubaki/qasm/gen/parser"
 	"github.com/oklog/ulid/v2"
 )
 
@@ -10,6 +11,7 @@ type Environ struct {
 	Version      string
 	Qubit        map[string][]q.Qubit
 	ClassicalBit map[string][]int64
+	Gate         map[string]Gate
 	Outer        *Environ
 }
 
@@ -18,6 +20,7 @@ func NewEnviron() *Environ {
 		ID:           ulid.Make().String(),
 		Qubit:        make(map[string][]q.Qubit),
 		ClassicalBit: make(map[string][]int64),
+		Gate:         make(map[string]Gate),
 	}
 }
 
@@ -49,4 +52,23 @@ func (e *Environ) GetClassicalBit(name string) ([]int64, bool) {
 	}
 
 	return nil, false
+}
+
+func (e *Environ) GetGate(name string) (Gate, bool) {
+	if g, ok := e.Gate[name]; ok {
+		return g, true
+	}
+
+	if e.Outer != nil {
+		return e.Outer.GetGate(name)
+	}
+
+	return Gate{}, false
+}
+
+type Gate struct {
+	Name   string
+	Params []string
+	QArgs  []string
+	Body   []parser.IGateCallStatementContext
 }

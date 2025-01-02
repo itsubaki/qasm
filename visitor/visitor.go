@@ -204,7 +204,30 @@ func (v *Visitor) VisitReturnStatement(ctx *parser.ReturnStatementContext) inter
 }
 
 func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) interface{} {
-	fmt.Println(ctx.GetText())
+	var params, qargs []string
+	switch len(ctx.AllIdentifierList()) {
+	case 1:
+		qargs = v.Visit(ctx.IdentifierList(0)).([]string)
+	case 2:
+		params = v.Visit(ctx.IdentifierList(0)).([]string)
+		qargs = v.Visit(ctx.IdentifierList(1)).([]string)
+	default:
+		return fmt.Errorf("len(identifier list)=%d: %w", len(ctx.AllIdentifierList()), ErrUnexpected)
+	}
+
+	var body []parser.IGateCallStatementContext
+	for _, s := range ctx.Scope().AllStatementOrScope() {
+		body = append(body, s.Statement().GateCallStatement())
+	}
+
+	name := v.Visit(ctx.Identifier()).(string)
+	v.Environ.Gate[name] = Gate{
+		Name:   name,
+		Params: params,
+		QArgs:  qargs,
+		Body:   body,
+	}
+
 	return nil
 }
 
@@ -275,7 +298,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) i
 		return nil
 	}
 
-	id := v.Visit(ctx.Identifier())
+	id := v.Visit(ctx.Identifier()).(string)
 	switch id {
 	case "U":
 		params, err := v.Params(ctx.ExpressionList())
@@ -293,7 +316,19 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) i
 		v.qsim.Apply(u)
 		return nil
 	default:
-		return fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
+		g, ok := v.Environ.GetGate(id)
+		if !ok {
+			return fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
+		}
+
+		// TODO: params/qargs mappings
+		// TODO: modifier mappings
+		// TODO: reversed body when inv@
+		for _, s := range g.Body {
+			v.Visit(s)
+		}
+
+		return nil
 	}
 }
 

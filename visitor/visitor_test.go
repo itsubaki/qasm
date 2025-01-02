@@ -86,6 +86,72 @@ func ExampleVisitor_VisitResetStatement() {
 	// [0][  0]( 1.0000 0.0000i): 1.0000
 }
 
+func ExampleVisitor_VisitGateStatement() {
+	text := `
+	gate x q { U(pi, 0, pi) q; }
+	`
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	tree := p.Program()
+	fmt.Println(tree.ToStringTree(nil, p))
+
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	switch ret := v.Visit(tree).(type) {
+	case error:
+		panic(ret)
+	}
+
+	g := env.Gate["x"]
+	fmt.Print(g.Name, g.Params, g.QArgs, " > ")
+	for _, s := range g.Body {
+		fmt.Print(s.GetText())
+	}
+
+	// Output:
+	// (program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) <EOF>)
+	// x[] [q] > U(pi,0,pi)q;
+}
+
+func ExampleVisitor_VisitGateCallStatement() {
+	text := `
+	gate x q {
+		U(pi/2, -pi/2, pi/2) q;
+		U(pi/2, -pi/2, pi/2) q;
+		gphase (pi/2);
+	}
+	qubit q;
+	x q;
+	`
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	tree := p.Program()
+	fmt.Println(tree.ToStringTree(nil, p))
+
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	switch ret := v.Visit(tree).(type) {
+	case error:
+		panic(ret)
+	}
+
+	for _, s := range qsim.State() {
+		fmt.Println(s)
+	}
+
+	// Output:
+	// (program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression (expression - (expression pi)) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression (expression - (expression pi)) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement gphase ( (expressionList (expression (expression pi) / (expression 2))) ) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)
+	// [1][  1]( 1.0000 0.0000i): 1.0000
+}
+
 func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 	cases := []struct {
 		text string
