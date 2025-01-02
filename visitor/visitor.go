@@ -418,7 +418,7 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 			return nil
 		}
 
-		v.Environ.Variable[id] = 0.0
+		v.Environ.Variable[id] = float64(0)
 		return nil
 	case ctx.ScalarType().INT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
@@ -431,7 +431,20 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 			return nil
 		}
 
-		v.Environ.Variable[id] = 0
+		v.Environ.Variable[id] = int(0)
+		return nil
+	case ctx.ScalarType().UINT() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.Environ.GetVariable(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if ctx.DeclarationExpression() != nil {
+			v.Environ.Variable[id] = v.Visit(ctx.DeclarationExpression())
+			return nil
+		}
+
+		v.Environ.Variable[id] = uint(0)
 		return nil
 	default:
 		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)

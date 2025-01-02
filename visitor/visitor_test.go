@@ -192,6 +192,11 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			want: "map[ans:42]",
 		},
 		{
+			text: "uint ans = 42;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType uint) ans = (declarationExpression (expression 42)) ;))) <EOF>)",
+			want: "map[ans:42]",
+		},
+		{
 			text: "float zero;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) zero ;))) <EOF>)",
 			want: "map[zero:0]",
