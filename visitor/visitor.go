@@ -17,10 +17,11 @@ import (
 
 var (
 	ErrAlreadyDeclared      = errors.New("already declared")
+	ErrIdentifierNotFound   = errors.New("identifier not found")
 	ErrQubitNotFound        = errors.New("qubit not found")
 	ErrClassicalBitNotFound = errors.New("classical bit not found")
+	ErrVariableNotFound     = errors.New("variable not found")
 	ErrGateNotFound         = errors.New("gate not found")
-	ErrConstNotFound        = errors.New("const not found")
 	ErrUnexpected           = errors.New("unexpected")
 	ErrNotImplemented       = errors.New("not implemented")
 )
@@ -323,9 +324,9 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) i
 
 		// TODO: params/qargs mappings
 		// TODO: modifier mappings
-		// TODO: reversed body when inv@
-		for _, s := range g.Body {
-			v.Visit(s)
+		// NOTE: reversed order when inv@
+		for _, c := range g.Body {
+			v.Visit(c)
 		}
 
 		return nil
@@ -366,8 +367,10 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 		return v.MeasureAssignment(ctx.IndexedIdentifier(), ctx.MeasureExpression())
 	}
 
-	// TODO: v.Visit(ctx.Expression())
-	return fmt.Errorf("statement=%s: %w", ctx.GetText(), ErrNotImplemented)
+	indexID := ctx.IndexedIdentifier()
+	operand := v.Visit(indexID.Identifier()).(string)
+	v.Environ.Variable[operand] = v.Visit(ctx.Expression())
+	return nil
 }
 
 func (v *Visitor) VisitResetStatement(ctx *parser.ResetStatementContext) interface{} {
@@ -403,6 +406,32 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 
 		size := v.Visit(ctx.ScalarType()).(int64)
 		v.Environ.ClassicalBit[id] = make([]int64, int(size))
+		return nil
+	case ctx.ScalarType().FLOAT() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.Environ.GetVariable(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if ctx.DeclarationExpression() != nil {
+			v.Environ.Variable[id] = v.Visit(ctx.DeclarationExpression())
+			return nil
+		}
+
+		v.Environ.Variable[id] = 0.0
+		return nil
+	case ctx.ScalarType().INT() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.Environ.GetVariable(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if ctx.DeclarationExpression() != nil {
+			v.Environ.Variable[id] = v.Visit(ctx.DeclarationExpression())
+			return nil
+		}
+
+		v.Environ.Variable[id] = 0
 		return nil
 	default:
 		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
@@ -453,12 +482,15 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) i
 	switch {
 	case ctx.Identifier() != nil:
 		s := v.Visit(ctx.Identifier()).(string)
-		lit, ok := BuiltinConst[s]
-		if !ok {
-			return fmt.Errorf("identifier=%s: %w", s, ErrConstNotFound)
+		if lit, ok := Const[s]; ok {
+			return lit
 		}
 
-		return lit
+		if v, ok := v.Environ.GetVariable(s); ok {
+			return v
+		}
+
+		return fmt.Errorf("identifier=%s: %w", s, ErrIdentifierNotFound)
 	case ctx.DecimalIntegerLiteral() != nil:
 		s := v.Visit(ctx.DecimalIntegerLiteral()).(string)
 		lit, err := strconv.ParseInt(s, 10, 64)

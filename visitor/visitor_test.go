@@ -181,6 +181,16 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q)))) ;))) <EOF>)",
 			want: "map[c:[1]]",
 		},
+		{
+			text: "float ratio = 22 / 7;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) ratio = (declarationExpression (expression (expression 22) / (expression 7))) ;))) <EOF>)",
+			want: "map[ratio:3.142857142857143]",
+		},
+		{
+			text: "int ans = 42;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) ans = (declarationExpression (expression 42)) ;))) <EOF>)",
+			want: "map[ans:42]",
+		},
 	}
 
 	for _, c := range cases {
@@ -201,8 +211,12 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			panic(ret)
 		}
 
-		if fmt.Sprintf("%v", env.ClassicalBit) != c.want {
+		if len(env.ClassicalBit) > 0 && fmt.Sprintf("%v", env.ClassicalBit) != c.want {
 			t.Errorf("got=%v, want=%v", env.ClassicalBit, c.want)
+		}
+
+		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
 }
@@ -258,10 +272,16 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 }
 
 func TestVisitor_VisitAssignmentStatement(t *testing.T) {
+	type Want struct {
+		classicalBit []string
+		qubit        []string
+		variable     []string
+	}
+
 	cases := []struct {
 		text string
 		tree string
-		want [][]string
+		want Want
 	}{
 		{
 			text: `
@@ -272,12 +292,12 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 				c = measure q;
 			`,
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 2) ])) c ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (measureExpression measure (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			want: [][]string{
-				{
+			want: Want{
+				classicalBit: []string{
 					"map[c:[0 0]]",
 					"map[c:[1 1]]",
 				},
-				{
+				qubit: []string{
 					"[[00][  0]( 1.0000 0.0000i): 1.0000]",
 					"[[11][  3]( 1.0000 0.0000i): 1.0000]",
 				},
@@ -293,14 +313,26 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 				c[1] = measure q[1];
 			`,
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 2) ])) c ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c (indexOperator [ (expression 0) ])) = (measureExpression measure (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c (indexOperator [ (expression 1) ])) = (measureExpression measure (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) <EOF>)",
-			want: [][]string{
-				{
+			want: Want{
+				classicalBit: []string{
 					"map[c:[0 0]]",
 					"map[c:[1 1]]",
 				},
-				{
+				qubit: []string{
 					"[[00][  0]( 1.0000 0.0000i): 1.0000]",
 					"[[11][  3]( 1.0000 0.0000i): 1.0000]",
+				},
+			},
+		},
+		{
+			text: `
+				int ans = 42;
+				ans = ans * 2;
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) ans = (declarationExpression (expression 42)) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier ans) = (expression (expression ans) * (expression 2)) ;))) <EOF>)",
+			want: Want{
+				variable: []string{
+					"map[ans:84]",
 				},
 			},
 		},
@@ -324,32 +356,44 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 			panic(ret)
 		}
 
-		{
+		if len(c.want.classicalBit) != 0 {
 			var found bool
-			for _, w := range c.want[0] {
+			for _, w := range c.want.classicalBit {
 				if fmt.Sprintf("%v", env.ClassicalBit) == w {
 					found = true
 				}
 			}
 
 			if !found {
-				t.Errorf("got=%v, want=%v", env.ClassicalBit, c.want[0])
+				t.Errorf("got=%v, want=%v", env.ClassicalBit, c.want.classicalBit)
 			}
 		}
 
-		{
+		if len(c.want.qubit) != 0 {
 			var found bool
-			for _, w := range c.want[1] {
+			for _, w := range c.want.qubit {
 				if fmt.Sprintf("%v", qsim.State()) == w {
 					found = true
 				}
 			}
 
 			if !found {
-				t.Errorf("got=%v, want=%v", qsim.State(), c.want[1])
+				t.Errorf("got=%v, want=%v", qsim.State(), c.want.qubit)
 			}
 		}
 
+		if len(c.want.variable) != 0 {
+			var found bool
+			for _, w := range c.want.variable {
+				if fmt.Sprintf("%v", env.Variable) == w {
+					found = true
+				}
+			}
+
+			if !found {
+				t.Errorf("got=%v, want=%v", env.Variable, c.want.variable)
+			}
+		}
 	}
 }
 

@@ -2,7 +2,7 @@ package visitor
 
 import "math"
 
-var BuiltinConst = map[string]float64{
+var Const = map[string]float64{
 	"pi":    math.Pi,
 	"tau":   2 * math.Pi,
 	"euler": math.E,

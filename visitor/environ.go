@@ -11,6 +11,7 @@ type Environ struct {
 	Version      string
 	Qubit        map[string][]q.Qubit
 	ClassicalBit map[string][]int64
+	Variable     map[string]interface{}
 	Gate         map[string]Gate
 	Outer        *Environ
 }
@@ -20,6 +21,7 @@ func NewEnviron() *Environ {
 		ID:           ulid.Make().String(),
 		Qubit:        make(map[string][]q.Qubit),
 		ClassicalBit: make(map[string][]int64),
+		Variable:     make(map[string]interface{}),
 		Gate:         make(map[string]Gate),
 	}
 }
@@ -49,6 +51,18 @@ func (e *Environ) GetClassicalBit(name string) ([]int64, bool) {
 
 	if e.Outer != nil {
 		return e.Outer.GetClassicalBit(name)
+	}
+
+	return nil, false
+}
+
+func (e *Environ) GetVariable(name string) (interface{}, bool) {
+	if v, ok := e.Variable[name]; ok {
+		return v, true
+	}
+
+	if e.Outer != nil {
+		return e.Outer.GetVariable(name)
 	}
 
 	return nil, false
