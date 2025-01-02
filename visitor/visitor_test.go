@@ -108,11 +108,6 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			want: "map[a:[1 0 0 0 1 1 1 1]]",
 		},
 		{
-			text: `bit[8] a = "10001111";`,
-			tree: `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 8) ])) a = (declarationExpression (expression "10001111")) ;))) <EOF>)`,
-			want: "map[a:[1 0 0 0 1 1 1 1]]",
-		},
-		{
 			text: `qubit q; U(pi, 0, pi) q; bit c = measure q;`,
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q)))) ;))) <EOF>)",
 			want: "map[c:[1]]",
