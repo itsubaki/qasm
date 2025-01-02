@@ -119,13 +119,13 @@ func ExampleVisitor_VisitGateStatement() {
 
 func ExampleVisitor_VisitGateCallStatement() {
 	text := `
-	gate x q {
-		U(pi/2, -pi/2, pi/2) q;
-		U(pi/2, -pi/2, pi/2) q;
-		gphase (pi/2);
-	}
-	qubit q;
-	x q;
+	gate h q0 { U(pi/2, 0, pi) q0; }
+	gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
+
+	qubit q0;
+	qubit q1;
+	h q0;
+	cx q0, q1;
 	`
 
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
@@ -148,8 +148,9 @@ func ExampleVisitor_VisitGateCallStatement() {
 	}
 
 	// Output:
-	// (program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression (expression - (expression pi)) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression (expression - (expression pi)) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement gphase ( (expressionList (expression (expression pi) / (expression 2))) ) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)
-	// [1][  1]( 1.0000 0.0000i): 1.0000
+	// (program (statementOrScope (statement (gateStatement gate h (identifierList q0) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) })))) (statementOrScope (statement (gateStatement gate cx (identifierList q0 , q1) (scope { (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q0 ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q1 ;))) (statementOrScope (statement (gateCallStatement h (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) (statementOrScope (statement (gateCallStatement cx (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) <EOF>)
+	// [00][  0]( 0.7071 0.0000i): 0.5000
+	// [11][  3]( 0.7071 0.0000i): 0.5000
 }
 
 func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
