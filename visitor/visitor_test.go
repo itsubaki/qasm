@@ -88,7 +88,7 @@ func ExampleVisitor_VisitResetStatement() {
 
 func ExampleVisitor_VisitGateStatement() {
 	text := `
-	gate x q { U(pi, 0, pi) q; }
+	gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
 	`
 
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
@@ -106,15 +106,17 @@ func ExampleVisitor_VisitGateStatement() {
 		panic(ret)
 	}
 
-	g := env.Gate["x"]
-	fmt.Print(g.Name, g.Params, g.QArgs, " > ")
-	for _, s := range g.Body {
-		fmt.Print(s.GetText())
+	for _, g := range env.Gate {
+		fmt.Print(g.Name, g.Params, g.QArgs, " > ")
+		for _, s := range g.Body {
+			fmt.Print(s.GetText())
+		}
+		fmt.Println()
 	}
 
 	// Output:
-	// (program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) <EOF>)
-	// x[] [q] > U(pi,0,pi)q;
+	// (program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) <EOF>)
+	// u[p0 p1 p2] [q] > U(p0,p1,p2)q;
 }
 
 func ExampleVisitor_VisitGateCallStatement() {
