@@ -22,6 +22,7 @@ var (
 	ErrClassicalBitNotFound = errors.New("classical bit not found")
 	ErrVariableNotFound     = errors.New("variable not found")
 	ErrGateNotFound         = errors.New("gate not found")
+	ErrFunctionNotFound     = errors.New("function not found")
 	ErrUnexpected           = errors.New("unexpected")
 	ErrNotImplemented       = errors.New("not implemented")
 )
@@ -82,6 +83,14 @@ func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) interface{} {
 	return fmt.Errorf("VisitAnnotation: %w", ErrNotImplemented)
 }
 
+func (v *Visitor) VisitStatementOrScope(ctx *parser.StatementOrScopeContext) interface{} {
+	if ctx.Statement() != nil {
+		return v.Visit(ctx.Statement())
+	}
+
+	return v.Visit(ctx.Scope())
+}
+
 func (v *Visitor) VisitStatement(ctx *parser.StatementContext) interface{} {
 	statements := []antlr.ParseTree{
 		ctx.Pragma(),
@@ -134,14 +143,6 @@ func (v *Visitor) VisitScope(ctx *parser.ScopeContext) interface{} {
 	}
 
 	return list
-}
-
-func (v *Visitor) VisitStatementOrScope(ctx *parser.StatementOrScopeContext) interface{} {
-	if ctx.Statement() != nil {
-		return v.Visit(ctx.Statement())
-	}
-
-	return v.Visit(ctx.Scope())
 }
 
 func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) interface{} {
@@ -467,10 +468,6 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 	return fmt.Errorf("VisitOldStyleDeclarationStatement: %w", ErrNotImplemented)
 }
 
-func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{} {
-	return fmt.Errorf("VisitDefStatement: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitExternStatement(ctx *parser.ExternStatementContext) interface{} {
 	return fmt.Errorf("VisitExternStatement: %w", ErrNotImplemented)
 }
@@ -481,6 +478,11 @@ func (v *Visitor) VisitCalStatement(ctx *parser.CalStatementContext) interface{}
 
 func (v *Visitor) VisitDefcalStatement(ctx *parser.DefcalStatementContext) interface{} {
 	return fmt.Errorf("VisitDefcalStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{} {
+	fmt.Println(ctx.GetText())
+	return nil
 }
 
 func (v *Visitor) VisitParenthesisExpression(ctx *parser.ParenthesisExpressionContext) interface{} {
@@ -744,7 +746,37 @@ func (v *Visitor) VisitDeclarationExpression(ctx *parser.DeclarationExpressionCo
 }
 
 func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) interface{} {
-	return fmt.Errorf("VisitCallExpression: %w", ErrNotImplemented)
+	params := v.Visit(ctx.ExpressionList()).([]interface{})
+
+	id := v.Visit(ctx.Identifier()).(string)
+	switch id {
+	case "sin":
+		return math.Sin(params[0].(float64))
+	case "cos":
+		return math.Cos(params[0].(float64))
+	case "tan":
+		return math.Tan(params[0].(float64))
+	case "arcsin":
+		return math.Asin(params[0].(float64))
+	case "arccos":
+		return math.Acos(params[0].(float64))
+	case "arctan":
+		return math.Atan(params[0].(float64))
+	case "ceiling":
+		return math.Ceil(params[0].(float64))
+	case "floor":
+		return math.Floor(params[0].(float64))
+	case "sqrt":
+		return math.Sqrt(params[0].(float64))
+	case "exp":
+		return math.Exp(params[0].(float64))
+	case "log":
+		return math.Log(params[0].(float64))
+	case "mod":
+		return math.Mod(params[0].(float64), params[1].(float64))
+	default:
+		return fmt.Errorf("identifier=%s: %w", id, ErrFunctionNotFound)
+	}
 }
 
 func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
@@ -839,24 +871,32 @@ func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext)
 	return fmt.Errorf("VisitArrayReferenceType: %w", ErrNotImplemented)
 }
 
-func (v *Visitor) VisitDefcalTarget(ctx *parser.DefcalTargetContext) interface{} {
-	return fmt.Errorf("VisitDefcalTarget: %w", ErrNotImplemented)
+func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) interface{} {
+	return fmt.Errorf("VisitArrayLiteral: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalArgumentDefinition(ctx *parser.DefcalArgumentDefinitionContext) interface{} {
 	return fmt.Errorf("VisitDefcalArgumentDefinition: %w", ErrNotImplemented)
 }
 
-func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) interface{} {
-	return fmt.Errorf("VisitArrayLiteral: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) interface{} {
-	return fmt.Errorf("VisitReturnSignature: %w", ErrNotImplemented)
+func (v *Visitor) VisitDefcalTarget(ctx *parser.DefcalTargetContext) interface{} {
+	return fmt.Errorf("VisitDefcalTarget: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalOperand(ctx *parser.DefcalOperandContext) interface{} {
 	return fmt.Errorf("VisitDefcalOperand: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitExternArgument(ctx *parser.ExternArgumentContext) interface{} {
+	return fmt.Errorf("VisitExternArgument: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitArgumentDefinition(ctx *parser.ArgumentDefinitionContext) interface{} {
+	return fmt.Errorf("VisitArgumentDefinition: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) interface{} {
+	return fmt.Errorf("VisitReturnSignature: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) interface{} {
@@ -879,14 +919,6 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) interface{} {
 	}
 
 	return list
-}
-
-func (v *Visitor) VisitExternArgument(ctx *parser.ExternArgumentContext) interface{} {
-	return fmt.Errorf("VisitExternArgument: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitArgumentDefinition(ctx *parser.ArgumentDefinitionContext) interface{} {
-	return fmt.Errorf("VisitArgumentDefinition: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitArgumentDefinitionList(ctx *parser.ArgumentDefinitionListContext) interface{} {

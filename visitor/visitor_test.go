@@ -650,6 +650,136 @@ func TestVisitor_VisitParenthesisExpression(t *testing.T) {
 	}
 }
 
+func TestVisitor_VisitCallExpression(t *testing.T) {
+	cases := []struct {
+		text string
+		tree string
+		want string
+	}{
+		{
+			text: "sin(1.0);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression sin ( (expressionList (expression 1.0)) )) ;))) <EOF>)",
+			want: "0.8414709848078965",
+		},
+		{
+			text: "cos(1.0);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression cos ( (expressionList (expression 1.0)) )) ;))) <EOF>)",
+			want: "0.5403023058681398",
+		},
+		{
+			text: "tan(1.0);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression tan ( (expressionList (expression 1.0)) )) ;))) <EOF>)",
+			want: "1.557407724654902",
+		},
+		{
+			text: "arcsin(0.5);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression arcsin ( (expressionList (expression 0.5)) )) ;))) <EOF>)",
+			want: "0.5235987755982989",
+		},
+		{
+			text: "arccos(0.5);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression arccos ( (expressionList (expression 0.5)) )) ;))) <EOF>)",
+			want: "1.0471975511965976",
+		},
+		{
+			text: "arctan(1.0);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression arctan ( (expressionList (expression 1.0)) )) ;))) <EOF>)",
+			want: "0.7853981633974483",
+		},
+		{
+			text: "ceiling(1.1);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression ceiling ( (expressionList (expression 1.1)) )) ;))) <EOF>)",
+			want: "2",
+		},
+		{
+			text: "floor(1.1);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression floor ( (expressionList (expression 1.1)) )) ;))) <EOF>)",
+			want: "1",
+		},
+		{
+			text: "sqrt(2.0);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression sqrt ( (expressionList (expression 2.0)) )) ;))) <EOF>)",
+			want: "1.4142135623730951",
+		},
+		{
+			text: "exp(1.0);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression exp ( (expressionList (expression 1.0)) )) ;))) <EOF>)",
+			want: "2.718281828459045",
+		},
+		{
+			text: "log(2.0);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression log ( (expressionList (expression 2.0)) )) ;))) <EOF>)",
+			want: "0.6931471805599453",
+		},
+		{
+			text: "mod(10.0, 3.0);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression mod ( (expressionList (expression 10.0) , (expression 3.0)) )) ;))) <EOF>)",
+			want: "1",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			panic(ret)
+		default:
+			if fmt.Sprintf("%v", ret) != c.want {
+				t.Errorf("got=%v, want=%v", ret, c.want)
+			}
+		}
+	}
+}
+
+func TestVisitor_VisitPowerExpression(t *testing.T) {
+	cases := []struct {
+		text string
+		tree string
+		want string
+	}{
+		{
+			text: "2**3;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 2) ** (expression 3)) ;))) <EOF>)",
+			want: "8",
+		},
+		{
+			text: "2**0.5;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 2) ** (expression 0.5)) ;))) <EOF>)",
+			want: "1.4142135623730951",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		result := v.Visit(tree)
+		if fmt.Sprintf("%v", result) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
 func TestVisitor_VisitLogicalOrExpression(t *testing.T) {
 	cases := []struct {
 		text string
@@ -842,44 +972,6 @@ func TestVisitor_VisitUnaryExpression(t *testing.T) {
 
 		result := v.Visit(tree)
 		if result.(bool) != c.want {
-			t.Errorf("got=%v, want=%v", result, c.want)
-		}
-	}
-}
-
-func TestVisitor_VisitPowerExpression(t *testing.T) {
-	cases := []struct {
-		text string
-		tree string
-		want string
-	}{
-		{
-			text: "2**3;",
-			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 2) ** (expression 3)) ;))) <EOF>)",
-			want: "8",
-		},
-		{
-			text: "2**0.5;",
-			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 2) ** (expression 0.5)) ;))) <EOF>)",
-			want: "1.4142135623730951",
-		},
-	}
-
-	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		tree := p.Program()
-		if tree.ToStringTree(nil, p) != c.tree {
-			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
-		}
-
-		qsim := q.New()
-		env := visitor.NewEnviron()
-		v := visitor.New(qsim, env)
-
-		result := v.Visit(tree)
-		if fmt.Sprintf("%v", result) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
 	}
