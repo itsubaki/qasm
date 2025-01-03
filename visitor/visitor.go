@@ -321,6 +321,38 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 	}
 }
 
+func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, error) {
+	id := v.Visit(ctx.Identifier()).(string)
+	g, ok := v.Environ.GetGate(id)
+	if !ok {
+		return nil, fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
+	}
+
+	var list []matrix.Matrix
+	for _, c := range g.Body {
+		// TODO: params/qargs mappings
+		u, ok, err := v.Builtin(c)
+		if err != nil {
+			return nil, fmt.Errorf("builtin: %w", err)
+		}
+
+		if ok {
+			list = append(list, u)
+			continue
+		}
+
+		u, err = v.Defined(c)
+		if err != nil {
+			return nil, fmt.Errorf("defined: %w", err)
+		}
+
+		list = append(list, u)
+	}
+
+	slices.Reverse(list)
+	return matrix.Apply(list...), nil
+}
+
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) interface{} {
 	u, ok, err := v.Builtin(ctx)
 	if err != nil {
@@ -332,31 +364,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) i
 		return nil
 	}
 
-	id := v.Visit(ctx.Identifier()).(string)
-	g, ok := v.Environ.GetGate(id)
-	if !ok {
-		return fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
+	defined, err := v.Defined(ctx)
+	if err != nil {
+		return fmt.Errorf("defined gate: %w", err)
 	}
 
-	var list []matrix.Matrix
-	for _, c := range g.Body {
-		// TODO: params/qargs mappings
-		u, ok, err := v.Builtin(c)
-		if err != nil {
-			return fmt.Errorf("builtin: %w", err)
-		}
-
-		if !ok {
-			// TODO: recursive call
-			return fmt.Errorf("builtin: %w", ErrUnexpected)
-		}
-
-		list = append(list, u)
-	}
-
-	slices.Reverse(list)
-	u = matrix.Apply(list...)
-	v.qsim.Apply(u)
+	v.qsim.Apply(defined)
 	return nil
 }
 
