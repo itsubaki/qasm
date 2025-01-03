@@ -1,4 +1,5 @@
 OPENQASM 3.0;
+include "_testdata/stdgates.qasm";
 
 qubit q0;
 qubit q1;

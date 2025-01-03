@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/cmplx"
+	"os"
 	"strconv"
 	"strings"
 
@@ -146,7 +147,21 @@ func (v *Visitor) VisitScope(ctx *parser.ScopeContext) interface{} {
 }
 
 func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) interface{} {
-	return fmt.Errorf("VisitIncludeStatement: %w", ErrNotImplemented)
+	path := strings.Trim(v.Visit(ctx.StringLiteral()).(string), "\"")
+	text, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read file=%s: %v", path, err)
+	}
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(string(text)))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	switch ret := v.Visit(p.Program()).(type) {
+	case error:
+		return fmt.Errorf("include: %w", ret)
+	}
+
+	return nil
 }
 
 func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) interface{} {

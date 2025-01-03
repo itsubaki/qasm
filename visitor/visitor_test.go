@@ -2,6 +2,8 @@ package visitor_test
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"testing"
 
 	"github.com/antlr4-go/antlr/v4"
@@ -86,9 +88,9 @@ func ExampleVisitor_VisitResetStatement() {
 	// [0][  0]( 1.0000 0.0000i): 1.0000
 }
 
-func ExampleVisitor_VisitGateStatement() {
+func ExampleVisitor_VisitIncludeStatement() {
 	text := `
-	gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
+	include "../_testdata/stdgates.qasm";
 	`
 
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
@@ -101,22 +103,17 @@ func ExampleVisitor_VisitGateStatement() {
 	env := visitor.NewEnviron()
 	v := visitor.New(qsim, env)
 
-	switch ret := v.Visit(tree).(type) {
-	case error:
-		panic(ret)
+	if err := v.Visit(tree); err != nil {
+		fmt.Println(err)
 	}
 
-	for _, g := range env.Gate {
-		fmt.Print(g.Name, g.Params, g.QArgs, " > ")
-		for _, s := range g.Body {
-			fmt.Print(s.GetText())
-		}
-		fmt.Println()
+	for _, name := range slices.Sorted(maps.Keys(env.Gate)) {
+		fmt.Print(name, " ")
 	}
 
 	// Output:
-	// (program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) <EOF>)
-	// u[p0 p1 p2] [q] > U(p0,p1,p2)q;
+	// (program (statementOrScope (statement (includeStatement include "../_testdata/stdgates.qasm" ;))) <EOF>)
+	// h i x y z
 }
 
 func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
