@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/cmplx"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -353,6 +354,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) i
 		list = append(list, u)
 	}
 
+	slices.Reverse(list)
 	u = matrix.Apply(list...)
 	v.qsim.Apply(u)
 	return nil
