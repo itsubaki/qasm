@@ -155,6 +155,40 @@ func ExampleVisitor_VisitGateCallStatement() {
 	// [11][  3]( 0.7071 0.0000i): 0.5000
 }
 
+func ExampleVisitor_VisitGateCallStatement_xy() {
+	text := `
+	gate x q { U(pi, 0, pi) q; }
+	gate y q { U(pi, pi/2, pi/2) q; }
+	gate xy q { x q; y q; }
+
+	qubit q;
+	xy q;
+	`
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	tree := p.Program()
+	fmt.Println(tree.ToStringTree(nil, p))
+
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	switch ret := v.Visit(tree).(type) {
+	case error:
+		panic(ret)
+	}
+
+	for _, s := range qsim.State() {
+		fmt.Println(s)
+	}
+
+	// Output:
+	// (program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (gateStatement gate y (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression (expression pi) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (gateStatement gate xy (identifierList q) (scope { (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement y (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement xy (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)
+	// [0][  0]( 0.0000-1.0000i): 1.0000
+}
+
 func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 	cases := []struct {
 		text string

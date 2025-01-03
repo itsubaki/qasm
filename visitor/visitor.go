@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"math/cmplx"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -336,20 +335,16 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 			return nil, fmt.Errorf("builtin: %w", err)
 		}
 
-		if ok {
-			list = append(list, u)
-			continue
-		}
-
-		u, err = v.Defined(c)
-		if err != nil {
-			return nil, fmt.Errorf("defined: %w", err)
+		if !ok {
+			u, err = v.Defined(c)
+			if err != nil {
+				return nil, fmt.Errorf("defined: %w", err)
+			}
 		}
 
 		list = append(list, u)
 	}
 
-	slices.Reverse(list)
 	return matrix.Apply(list...), nil
 }
 
@@ -359,17 +354,14 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) i
 		return fmt.Errorf("builtin: %w", err)
 	}
 
-	if ok {
-		v.qsim.Apply(u)
-		return nil
+	if !ok {
+		u, err = v.Defined(ctx)
+		if err != nil {
+			return fmt.Errorf("defined: %w", err)
+		}
 	}
 
-	defined, err := v.Defined(ctx)
-	if err != nil {
-		return fmt.Errorf("defined gate: %w", err)
-	}
-
-	v.qsim.Apply(defined)
+	v.qsim.Apply(u)
 	return nil
 }
 
