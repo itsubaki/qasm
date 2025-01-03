@@ -84,5 +84,5 @@ type Gate struct {
 	Name   string
 	Params []string
 	QArgs  []string
-	Body   []parser.IGateCallStatementContext
+	Body   []*parser.GateCallStatementContext
 }

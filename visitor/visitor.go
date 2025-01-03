@@ -217,9 +217,9 @@ func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) interface
 		return fmt.Errorf("len(identifier list)=%d: %w", len(ctx.AllIdentifierList()), ErrUnexpected)
 	}
 
-	var body []parser.IGateCallStatementContext
+	var body []*parser.GateCallStatementContext
 	for _, s := range ctx.Scope().AllStatementOrScope() {
-		body = append(body, s.Statement().GateCallStatement())
+		body = append(body, s.Statement().GateCallStatement().(*parser.GateCallStatementContext))
 	}
 
 	name := v.Visit(ctx.Identifier()).(string)
@@ -287,17 +287,16 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs []q.Qubit, modifier []parser.IGa
 	return u, nil
 }
 
-func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) interface{} {
+func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (matrix.Matrix, bool, error) {
 	if ctx.GPHASE() != nil {
 		params, err := v.Params(ctx.ExpressionList())
 		if err != nil {
-			return fmt.Errorf("params: %w", err)
+			return nil, false, fmt.Errorf("params: %w", err)
 		}
 
 		n := v.qsim.NumberOfBit()
 		u := gate.I(n).Mul(cmplx.Exp(complex(0, params[0])))
-		v.qsim.Apply(u)
-		return nil
+		return u, true, nil
 	}
 
 	id := v.Visit(ctx.Identifier()).(string)
@@ -305,33 +304,58 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) i
 	case "U":
 		params, err := v.Params(ctx.ExpressionList())
 		if err != nil {
-			return fmt.Errorf("params: %w", err)
+			return nil, false, fmt.Errorf("params: %w", err)
 		}
 		u := gate.U(params[0], params[1], params[2])
 
 		qargs := v.Visit(ctx.GateOperandList()).([]q.Qubit)
 		u, err = v.Modify(u, qargs, ctx.AllGateModifier())
 		if err != nil {
-			return fmt.Errorf("modify: %w", err)
+			return nil, false, fmt.Errorf("modify: %w", err)
 		}
 
+		return u, true, nil
+	default:
+		return nil, false, nil
+	}
+}
+
+func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) interface{} {
+	u, ok, err := v.Builtin(ctx)
+	if err != nil {
+		return fmt.Errorf("builtin: %w", err)
+	}
+
+	if ok {
 		v.qsim.Apply(u)
 		return nil
-	default:
-		g, ok := v.Environ.GetGate(id)
-		if !ok {
-			return fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
-		}
-
-		// TODO: params/qargs mappings
-		// TODO: modifier mappings
-		// NOTE: reversed order when inv@
-		for _, c := range g.Body {
-			v.Visit(c)
-		}
-
-		return nil
 	}
+
+	id := v.Visit(ctx.Identifier()).(string)
+	g, ok := v.Environ.GetGate(id)
+	if !ok {
+		return fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
+	}
+
+	var list []matrix.Matrix
+	for _, c := range g.Body {
+		// TODO: params/qargs mappings
+		u, ok, err := v.Builtin(c)
+		if err != nil {
+			return fmt.Errorf("builtin: %w", err)
+		}
+
+		if !ok {
+			// TODO: recursive call
+			return fmt.Errorf("builtin: %w", ErrUnexpected)
+		}
+
+		list = append(list, u)
+	}
+
+	u = matrix.Apply(list...)
+	v.qsim.Apply(u)
+	return nil
 }
 
 func (v *Visitor) MeasureAssignment(identifier parser.IIndexedIdentifierContext, measure parser.IMeasureExpressionContext) error {
