@@ -104,3 +104,12 @@ type Gate struct {
 type Subroutine struct {
 	Name string
 }
+
+func flatten(qargs [][]q.Qubit) []q.Qubit {
+	var flat []q.Qubit
+	for _, q := range qargs {
+		flat = append(flat, q...)
+	}
+
+	return flat
+}

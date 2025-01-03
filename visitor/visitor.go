@@ -40,6 +40,10 @@ type Visitor struct {
 	Environ *Environ
 }
 
+func (v *Visitor) Enclosed() *Visitor {
+	return New(v.qsim, v.Environ.NewEnclosed())
+}
+
 func (v *Visitor) Visit(tree antlr.ParseTree) interface{} {
 	return tree.Accept(v)
 }
@@ -323,8 +327,8 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 		}
 		u := gate.U(params[0], params[1], params[2])
 
-		qargs := v.Visit(ctx.GateOperandList()).([]q.Qubit)
-		u, err = v.Modify(u, qargs, ctx.AllGateModifier())
+		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		u, err = v.Modify(u, flatten(qargs), ctx.AllGateModifier())
 		if err != nil {
 			return nil, false, fmt.Errorf("modify: %w", err)
 		}
@@ -342,16 +346,34 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 		return nil, fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
 	}
 
+	enclosed := v.Enclosed()
+	if ctx.ExpressionList() != nil {
+		params, err := v.Params(ctx.ExpressionList())
+		if err != nil {
+			return nil, fmt.Errorf("params: %w", err)
+		}
+
+		for i, p := range g.Params {
+			enclosed.Environ.Variable[p] = params[i]
+		}
+	}
+
+	if ctx.GateOperandList() != nil {
+		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		for i, id := range g.QArgs {
+			enclosed.Environ.Qubit[id] = qargs[i]
+		}
+	}
+
 	var list []matrix.Matrix
 	for _, c := range g.Body {
-		// TODO: params/qargs mappings
-		u, ok, err := v.Builtin(c)
+		u, ok, err := enclosed.Builtin(c)
 		if err != nil {
 			return nil, fmt.Errorf("builtin: %w", err)
 		}
 
 		if !ok {
-			u, err = v.Defined(c)
+			u, err = enclosed.Defined(c)
 			if err != nil {
 				return nil, fmt.Errorf("defined: %w", err)
 			}
@@ -360,6 +382,7 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 		list = append(list, u)
 	}
 
+	// matrix.Apply(A, B, C, ...) is ...CBA|q>
 	return matrix.Apply(list...), nil
 }
 
@@ -1028,9 +1051,9 @@ func (v *Visitor) VisitIdentifierList(ctx *parser.IdentifierListContext) interfa
 }
 
 func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) interface{} {
-	var list []q.Qubit
+	var list [][]q.Qubit
 	for _, o := range ctx.AllGateOperand() {
-		list = append(list, v.Visit(o).([]q.Qubit)...)
+		list = append(list, v.Visit(o).([]q.Qubit))
 	}
 
 	return list
