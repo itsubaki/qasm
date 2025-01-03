@@ -13,6 +13,7 @@ type Environ struct {
 	ClassicalBit map[string][]int64
 	Variable     map[string]interface{}
 	Gate         map[string]Gate
+	Subroutine   map[string]Subroutine
 	Outer        *Environ
 }
 
@@ -23,6 +24,7 @@ func NewEnviron() *Environ {
 		ClassicalBit: make(map[string][]int64),
 		Variable:     make(map[string]interface{}),
 		Gate:         make(map[string]Gate),
+		Subroutine:   make(map[string]Subroutine),
 	}
 }
 
@@ -80,9 +82,25 @@ func (e *Environ) GetGate(name string) (Gate, bool) {
 	return Gate{}, false
 }
 
+func (e *Environ) GetSubroutine(name string) (Subroutine, bool) {
+	if s, ok := e.Subroutine[name]; ok {
+		return s, true
+	}
+
+	if e.Outer != nil {
+		return e.Outer.GetSubroutine(name)
+	}
+
+	return Subroutine{}, false
+}
+
 type Gate struct {
 	Name   string
 	Params []string
 	QArgs  []string
 	Body   []*parser.GateCallStatementContext
+}
+
+type Subroutine struct {
+	Name string
 }

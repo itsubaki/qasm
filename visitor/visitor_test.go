@@ -91,6 +91,8 @@ func ExampleVisitor_VisitResetStatement() {
 func ExampleVisitor_VisitIncludeStatement() {
 	text := `
 	include "../_testdata/stdgates.qasm";
+	qubit q;
+	h q;
 	`
 
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
@@ -107,13 +109,42 @@ func ExampleVisitor_VisitIncludeStatement() {
 		fmt.Println(err)
 	}
 
-	for _, name := range slices.Sorted(maps.Keys(env.Gate)) {
-		fmt.Print(name, " ")
+	fmt.Println(slices.Sorted(maps.Keys(env.Gate)))
+	for _, s := range qsim.State() {
+		fmt.Println(s)
 	}
 
 	// Output:
-	// (program (statementOrScope (statement (includeStatement include "../_testdata/stdgates.qasm" ;))) <EOF>)
-	// h i x y z
+	// (program (statementOrScope (statement (includeStatement include "../_testdata/stdgates.qasm" ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement h (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)
+	// [h i x y z]
+	// [0][  0]( 0.7071 0.0000i): 0.5000
+	// [1][  1]( 0.7071 0.0000i): 0.5000
+}
+
+func ExampleVisitor_VisitDefStatement() {
+	text := `
+	def xmeasure(qubit q) -> bit { h q; return measure q; }
+	qubit q;
+	xmeasure(q);
+	`
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	tree := p.Program()
+	fmt.Println(tree.ToStringTree(nil, p))
+
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	if err := v.Visit(tree); err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// (program (statementOrScope (statement (defStatement def xmeasure ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q)) ) (returnSignature -> (scalarType bit)) (scope { (statementOrScope (statement (gateCallStatement h (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (returnStatement return (measureExpression measure (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (expressionStatement (expression xmeasure ( (expressionList (expression q)) )) ;))) <EOF>)
+	// subroutine=xmeasure: not implemented
 }
 
 func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {

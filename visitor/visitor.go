@@ -52,6 +52,14 @@ func (v *Visitor) VisitErrorNode(node antlr.ErrorNode) interface{} {
 	return node.GetText()
 }
 
+func (v *Visitor) VisitPragma(ctx *parser.PragmaContext) interface{} {
+	return v.Visit(ctx.RemainingLineContent())
+}
+
+func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) interface{} {
+	return fmt.Errorf("VisitAnnotation: %w", ErrNotImplemented)
+}
+
 func (v *Visitor) VisitChildren(node antlr.RuleNode) interface{} {
 	return fmt.Errorf("VisitChildren: %w", ErrNotImplemented)
 }
@@ -74,14 +82,6 @@ func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) interface{} {
 
 func (v *Visitor) VisitVersion(ctx *parser.VersionContext) interface{} {
 	return v.Visit(ctx.VersionSpecifier())
-}
-
-func (v *Visitor) VisitPragma(ctx *parser.PragmaContext) interface{} {
-	return v.Visit(ctx.RemainingLineContent())
-}
-
-func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) interface{} {
-	return fmt.Errorf("VisitAnnotation: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitStatementOrScope(ctx *parser.StatementOrScopeContext) interface{} {
@@ -527,7 +527,16 @@ func (v *Visitor) VisitDefcalStatement(ctx *parser.DefcalStatementContext) inter
 }
 
 func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{} {
-	fmt.Println(ctx.GetText())
+	name := v.Visit(ctx.Identifier()).(string)
+	if _, ok := v.Environ.GetSubroutine(name); ok {
+		return fmt.Errorf("identifier=%s: %w", name, ErrAlreadyDeclared)
+	}
+
+	// TODO: subroutine definition
+	v.Environ.Subroutine[name] = Subroutine{
+		Name: name,
+	}
+
 	return nil
 }
 
@@ -821,7 +830,13 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) interfa
 	case "mod":
 		return math.Mod(params[0].(float64), params[1].(float64))
 	default:
-		return fmt.Errorf("identifier=%s: %w", id, ErrFunctionNotFound)
+		sub, ok := v.Environ.GetSubroutine(id)
+		if !ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrFunctionNotFound)
+		}
+
+		// TODO: new enclosed environment
+		return fmt.Errorf("subroutine=%s: %w", sub.Name, ErrNotImplemented)
 	}
 }
 
