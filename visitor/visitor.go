@@ -169,7 +169,15 @@ func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) int
 }
 
 func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) interface{} {
-	return fmt.Errorf("VisitIfStatement: %w", ErrNotImplemented)
+	if v.Visit(ctx.Expression()).(bool) {
+		return v.Visit(ctx.GetIf_body())
+	}
+
+	if ctx.GetElse_body() != nil {
+		return v.Visit(ctx.GetElse_body())
+	}
+
+	return nil
 }
 
 func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) interface{} {
