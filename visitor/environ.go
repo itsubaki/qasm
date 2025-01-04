@@ -60,6 +60,28 @@ func (e *Environ) GetVariable(name string) (interface{}, bool) {
 	return nil, false
 }
 
+func (e *Environ) SetVariable(name string, value interface{}) {
+	if _, ok := e.Variable[name]; ok {
+		e.Variable[name] = value
+		return
+	}
+
+	outer := e.Outer
+	for {
+		if outer == nil {
+			e.Variable[name] = value
+			return
+		}
+
+		if _, ok := outer.Variable[name]; ok {
+			outer.Variable[name] = value
+			return
+		}
+
+		outer = outer.Outer
+	}
+}
+
 func (e *Environ) GetQubit(name string) ([]q.Qubit, bool) {
 	if q, ok := e.Qubit[name]; ok {
 		return q, true

@@ -181,7 +181,18 @@ func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) interface{} {
 }
 
 func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) interface{} {
-	return fmt.Errorf("VisitForStatement: %w", ErrNotImplemented)
+	id := v.Visit(ctx.Identifier()).(string)
+	rx := v.Visit(ctx.RangeExpression()).([]int64)
+
+	enclosed := v.Enclosed()
+	enclosed.Environ.Variable[id] = rx[0]
+
+	for i := rx[0]; i < rx[1]; i++ {
+		enclosed.Environ.Variable[id] = i
+		enclosed.Visit(ctx.StatementOrScope())
+	}
+
+	return nil
 }
 
 func (v *Visitor) VisitBreakStatement(ctx *parser.BreakStatementContext) interface{} {
@@ -465,9 +476,8 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 		return v.MeasureAssignment(ctx.IndexedIdentifier(), ctx.MeasureExpression())
 	}
 
-	indexID := ctx.IndexedIdentifier()
-	operand := v.Visit(indexID.Identifier()).(string)
-	v.Environ.Variable[operand] = v.Visit(ctx.Expression())
+	id := v.Visit(ctx.IndexedIdentifier().Identifier()).(string)
+	v.Environ.SetVariable(id, v.Visit(ctx.Expression()))
 	return nil
 }
 
@@ -961,7 +971,12 @@ func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) inter
 }
 
 func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) interface{} {
-	return fmt.Errorf("VisitRangeExpression: %w", ErrNotImplemented)
+	var list []int64
+	for _, x := range ctx.AllExpression() {
+		list = append(list, v.Visit(x).(int64))
+	}
+
+	return list
 }
 
 func (v *Visitor) VisitSetExpression(ctx *parser.SetExpressionContext) interface{} {
