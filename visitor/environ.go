@@ -119,7 +119,7 @@ type Subroutine struct {
 	Name            string
 	QArgs           []string
 	Body            *parser.ScopeContext
-	ReturnSignature *parser.ScalarTypeContext
+	ReturnSignature *parser.ReturnSignatureContext
 }
 
 func flatten(qargs [][]q.Qubit) []q.Qubit {

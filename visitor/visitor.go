@@ -469,6 +469,16 @@ func (v *Visitor) VisitResetStatement(ctx *parser.ResetStatementContext) interfa
 	return nil
 }
 
+func (v *Visitor) VisitConstDeclarationStatement(ctx *parser.ConstDeclarationStatementContext) interface{} {
+	id := v.Visit(ctx.Identifier()).(string)
+	if _, ok := v.Environ.GetConst(id); ok {
+		return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+	}
+
+	v.Environ.Const[id] = v.Visit(ctx.DeclarationExpression())
+	return nil
+}
+
 func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclarationStatementContext) interface{} {
 	id := v.Visit(ctx.Identifier()).(string)
 	if _, ok := v.Environ.GetQubit(id); ok {
@@ -541,16 +551,6 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 	}
 }
 
-func (v *Visitor) VisitConstDeclarationStatement(ctx *parser.ConstDeclarationStatementContext) interface{} {
-	id := v.Visit(ctx.Identifier()).(string)
-	if _, ok := v.Environ.GetConst(id); ok {
-		return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
-	}
-
-	v.Environ.Const[id] = v.Visit(ctx.DeclarationExpression())
-	return nil
-}
-
 func (v *Visitor) VisitAliasDeclarationStatement(ctx *parser.AliasDeclarationStatementContext) interface{} {
 	return fmt.Errorf("VisitAliasDeclarationStatement: %w", ErrNotImplemented)
 }
@@ -591,7 +591,7 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{}
 		Name:            name,
 		QArgs:           qargs,
 		Body:            ctx.Scope().(*parser.ScopeContext),
-		ReturnSignature: v.Visit(ctx.ReturnSignature()).(*parser.ScalarTypeContext),
+		ReturnSignature: ctx.ReturnSignature().(*parser.ReturnSignatureContext),
 	}
 
 	return nil
@@ -935,6 +935,8 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) interfa
 			enclosed.Environ.Qubit[p] = args[i].([]q.Qubit)
 		}
 
+		v.Visit(sub.ReturnSignature)
+
 		result := enclosed.Visit(sub.Body).([]interface{})
 		return result[len(result)-1]
 	}
@@ -1036,6 +1038,10 @@ func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) interface{}
 	return fmt.Errorf("VisitArrayLiteral: %w", ErrNotImplemented)
 }
 
+func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) interface{} {
+	return fmt.Errorf("VisitReturnSignature: %w", ErrNotImplemented)
+}
+
 func (v *Visitor) VisitDefcalArgumentDefinition(ctx *parser.DefcalArgumentDefinitionContext) interface{} {
 	return fmt.Errorf("VisitDefcalArgumentDefinition: %w", ErrNotImplemented)
 }
@@ -1054,10 +1060,6 @@ func (v *Visitor) VisitExternArgument(ctx *parser.ExternArgumentContext) interfa
 
 func (v *Visitor) VisitArgumentDefinition(ctx *parser.ArgumentDefinitionContext) interface{} {
 	return v.Visit(ctx.Identifier())
-}
-
-func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) interface{} {
-	return ctx.ScalarType()
 }
 
 func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) interface{} {
@@ -1091,24 +1093,6 @@ func (v *Visitor) VisitArgumentDefinitionList(ctx *parser.ArgumentDefinitionList
 	return list
 }
 
-func (v *Visitor) VisitDefcalArgumentDefinitionList(ctx *parser.DefcalArgumentDefinitionListContext) interface{} {
-	var list []interface{}
-	for _, def := range ctx.AllDefcalArgumentDefinition() {
-		list = append(list, v.Visit(def))
-	}
-
-	return list
-}
-
-func (v *Visitor) VisitDefcalOperandList(ctx *parser.DefcalOperandListContext) interface{} {
-	var list []interface{}
-	for _, o := range ctx.AllDefcalOperand() {
-		list = append(list, v.Visit(o))
-	}
-
-	return list
-}
-
 func (v *Visitor) VisitExpressionList(ctx *parser.ExpressionListContext) interface{} {
 	var list []interface{}
 	for _, x := range ctx.AllExpression() {
@@ -1131,6 +1115,24 @@ func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) inter
 	var list [][]q.Qubit
 	for _, o := range ctx.AllGateOperand() {
 		list = append(list, v.Visit(o).([]q.Qubit))
+	}
+
+	return list
+}
+
+func (v *Visitor) VisitDefcalArgumentDefinitionList(ctx *parser.DefcalArgumentDefinitionListContext) interface{} {
+	var list []interface{}
+	for _, def := range ctx.AllDefcalArgumentDefinition() {
+		list = append(list, v.Visit(def))
+	}
+
+	return list
+}
+
+func (v *Visitor) VisitDefcalOperandList(ctx *parser.DefcalOperandListContext) interface{} {
+	var list []interface{}
+	for _, o := range ctx.AllDefcalOperand() {
+		list = append(list, v.Visit(o))
 	}
 
 	return list
