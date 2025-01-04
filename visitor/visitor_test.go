@@ -842,6 +842,143 @@ func TestVisitor_VisitLogicalAndExpression(t *testing.T) {
 	}
 }
 
+func TestVisitor_VisitBitwiseAndExpression(t *testing.T) {
+	cases := []struct {
+		text string
+		tree string
+		want int64
+	}{
+		{
+			text: "10 & 12;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 10) & (expression 12)) ;))) <EOF>)",
+			want: 8,
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		result := v.Visit(tree)
+		if result.(int64) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
+func TestVisitor_VisitBitwiseOrExpression(t *testing.T) {
+	cases := []struct {
+		text string
+		tree string
+		want int64
+	}{
+		{
+			text: "10 | 12;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 10) | (expression 12)) ;))) <EOF>)",
+			want: 14,
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		result := v.Visit(tree)
+		if result.(int64) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
+func TestVisitor_VisitBitwiseXorExpression(t *testing.T) {
+	cases := []struct {
+		text string
+		tree string
+		want int64
+	}{
+		{
+			text: "10 ^ 12;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 10) ^ (expression 12)) ;))) <EOF>)",
+			want: 6,
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		result := v.Visit(tree)
+		if result.(int64) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
+func TestVisitor_VisitBitshiftExpression(t *testing.T) {
+	cases := []struct {
+		text string
+		tree string
+		want int64
+	}{
+		{
+			text: "11 << 2;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 11) << (expression 2)) ;))) <EOF>)",
+			want: 44,
+		},
+		{
+			text: "11 >> 1;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 11) >> (expression 1)) ;))) <EOF>)",
+			want: 5,
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		result := v.Visit(tree)
+		if result.(int64) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
 func TestVisitor_VisitEqualityExpression(t *testing.T) {
 	cases := []struct {
 		text string

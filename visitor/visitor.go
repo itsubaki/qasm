@@ -757,19 +757,45 @@ func (v *Visitor) VisitLogicalOrExpression(ctx *parser.LogicalOrExpressionContex
 }
 
 func (v *Visitor) VisitBitwiseAndExpression(ctx *parser.BitwiseAndExpressionContext) interface{} {
-	return fmt.Errorf("VisitBitwiseAndExpression: %w", ErrNotImplemented)
+	result := v.Visit(ctx.AllExpression()[0]).(int64)
+	for _, x := range ctx.AllExpression()[1:] {
+		result = result & v.Visit(x).(int64)
+	}
+
+	return result
 }
 
 func (v *Visitor) VisitBitwiseOrExpression(ctx *parser.BitwiseOrExpressionContext) interface{} {
-	return fmt.Errorf("VisitBitwiseOrExpression: %w", ErrNotImplemented)
+	result := v.Visit(ctx.AllExpression()[0]).(int64)
+	for _, x := range ctx.AllExpression()[1:] {
+		result = result | v.Visit(x).(int64)
+	}
+
+	return result
 }
 
 func (v *Visitor) VisitBitwiseXorExpression(ctx *parser.BitwiseXorExpressionContext) interface{} {
-	return fmt.Errorf("VisitBitwiseXorExpression: %w", ErrNotImplemented)
+	result := v.Visit(ctx.AllExpression()[0]).(int64)
+	for _, x := range ctx.AllExpression()[1:] {
+		result = result ^ v.Visit(x).(int64)
+	}
+
+	return result
 }
 
 func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext) interface{} {
-	return fmt.Errorf("VisitBitshiftExpression: %w", ErrNotImplemented)
+	op := v.Visit(ctx.BitshiftOperator()).(string)
+	result := v.Visit(ctx.AllExpression()[0]).(int64)
+	for _, x := range ctx.AllExpression()[1:] {
+		switch op {
+		case "<<":
+			result = result << v.Visit(x).(int64)
+		case ">>":
+			result = result >> v.Visit(x).(int64)
+		}
+	}
+
+	return result
 }
 
 func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionContext) interface{} {
