@@ -957,6 +957,11 @@ func TestVisitor_VisitBitshiftExpression(t *testing.T) {
 			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 11) >> (expression 1)) ;))) <EOF>)",
 			want: 5,
 		},
+		{
+			text: "11 >> 1 << 1;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (expression 11) >> (expression 1)) << (expression 1)) ;))) <EOF>)",
+			want: 10,
+		},
 	}
 
 	for _, c := range cases {
