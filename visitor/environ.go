@@ -9,9 +9,9 @@ import (
 type Environ struct {
 	ID           string
 	Version      string
+	Variable     map[string]interface{}
 	Qubit        map[string][]q.Qubit
 	ClassicalBit map[string][]int64
-	Variable     map[string]interface{}
 	Gate         map[string]Gate
 	Subroutine   map[string]Subroutine
 	Outer        *Environ
@@ -20,9 +20,9 @@ type Environ struct {
 func NewEnviron() *Environ {
 	return &Environ{
 		ID:           ulid.Make().String(),
+		Variable:     make(map[string]interface{}),
 		Qubit:        make(map[string][]q.Qubit),
 		ClassicalBit: make(map[string][]int64),
-		Variable:     make(map[string]interface{}),
 		Gate:         make(map[string]Gate),
 		Subroutine:   make(map[string]Subroutine),
 	}
@@ -32,6 +32,18 @@ func (e *Environ) NewEnclosed() *Environ {
 	env := NewEnviron()
 	env.Outer = e
 	return env
+}
+
+func (e *Environ) GetVariable(name string) (interface{}, bool) {
+	if v, ok := e.Variable[name]; ok {
+		return v, true
+	}
+
+	if e.Outer != nil {
+		return e.Outer.GetVariable(name)
+	}
+
+	return nil, false
 }
 
 func (e *Environ) GetQubit(name string) ([]q.Qubit, bool) {
@@ -53,18 +65,6 @@ func (e *Environ) GetClassicalBit(name string) ([]int64, bool) {
 
 	if e.Outer != nil {
 		return e.Outer.GetClassicalBit(name)
-	}
-
-	return nil, false
-}
-
-func (e *Environ) GetVariable(name string) (interface{}, bool) {
-	if v, ok := e.Variable[name]; ok {
-		return v, true
-	}
-
-	if e.Outer != nil {
-		return e.Outer.GetVariable(name)
 	}
 
 	return nil, false
