@@ -205,14 +205,14 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			want: "map[ans:42]",
 		},
 		{
-			text: "float zero;",
-			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) zero ;))) <EOF>)",
-			want: "map[zero:0]",
+			text: "float z;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) z ;))) <EOF>)",
+			want: "map[z:0]",
 		},
 		{
-			text: "int zero;",
-			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) zero ;))) <EOF>)",
-			want: "map[zero:0]",
+			text: "int z;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) z ;))) <EOF>)",
+			want: "map[z:0]",
 		},
 	}
 
