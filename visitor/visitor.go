@@ -615,6 +615,10 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) i
 			return lit
 		}
 
+		if lit, ok := v.Environ.GetClassicalBit(s); ok {
+			return lit
+		}
+
 		return fmt.Errorf("identifier=%s: %w", s, ErrIdentifierNotFound)
 	case ctx.DecimalIntegerLiteral() != nil:
 		s := v.Visit(ctx.DecimalIntegerLiteral()).(string)
