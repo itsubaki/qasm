@@ -169,12 +169,13 @@ func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) int
 }
 
 func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) interface{} {
+	enclosed := v.Enclosed()
 	if v.Visit(ctx.Expression()).(bool) {
-		return v.Visit(ctx.GetIf_body())
+		return enclosed.Visit(ctx.GetIf_body())
 	}
 
 	if ctx.GetElse_body() != nil {
-		return v.Visit(ctx.GetElse_body())
+		return enclosed.Visit(ctx.GetElse_body())
 	}
 
 	return nil
