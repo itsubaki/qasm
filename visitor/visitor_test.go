@@ -1513,6 +1513,16 @@ func TestVisitor_VisitForStatement(t *testing.T) {
 			text: `
 				int a = 0;
 				for int i in [0:10] {
+					a = a + 1;
+				}
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (forStatement for (scalarType int) i in [ (rangeExpression (expression 0) : (expression 10)) ] (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 1)) ;))) }))))) <EOF>)",
+			want: "map[a:10]",
+		},
+		{
+			text: `
+				int a = 0;
+				for int i in [0:10] {
 					a = a + i;
 				}
 			`,
