@@ -382,8 +382,27 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 		list = append(list, u)
 	}
 
-	// matrix.Apply(A, B, C, ...) is ...CBA|q>
-	return matrix.Apply(list...), nil
+	// matrix.Apply(A, B, C, ...) is ...CBA
+	u := matrix.Apply(list...)
+
+	// modify
+	for _, mod := range ctx.AllGateModifier() {
+		n := v.Visit(mod).(int64)
+		switch {
+		case mod.CTRL() != nil:
+			return nil, fmt.Errorf("ctrl: %w", ErrNotImplemented)
+		case mod.NEGCTRL() != nil:
+			return nil, fmt.Errorf("negctrl: %w", ErrNotImplemented)
+		case mod.INV() != nil:
+			u = u.Dagger()
+		case mod.POW() != nil:
+			u = matrix.ApplyN(u, int(n))
+		default:
+			return nil, fmt.Errorf("modifier=%s: %w", mod.GetText(), ErrUnexpected)
+		}
+	}
+
+	return u, nil
 }
 
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) interface{} {
