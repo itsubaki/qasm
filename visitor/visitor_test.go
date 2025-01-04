@@ -1111,6 +1111,19 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				"[0][  0]( 1.0000 0.0000i): 1.0000",
 			},
 		},
+		{
+			text: `
+				gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
+				gate invu(p0, p1, p2) q { inv @ u(p0, p1, p2) q; }
+				qubit q;
+				u(1, 2, 3) q;
+				invu(1, 2, 3) q;
+			`,
+			tree: "(program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (gateStatement gate invu ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement (gateModifier inv @) u ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement u ( (expressionList (expression 1) , (expression 2) , (expression 3)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement invu ( (expressionList (expression 1) , (expression 2) , (expression 3)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[0][  0]( 1.0000 0.0000i): 1.0000",
+			},
+		},
 	}
 
 	for _, c := range cases {
