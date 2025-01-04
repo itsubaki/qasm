@@ -121,6 +121,48 @@ func ExampleVisitor_VisitIncludeStatement() {
 	// [1][  1]( 0.7071 0.0000i): 0.5000
 }
 
+func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
+	cases := []struct {
+		text string
+		tree string
+		want string
+	}{
+		{
+			text: "const int a = 42;",
+			tree: "(program (statementOrScope (statement (constDeclarationStatement const (scalarType int) a = (declarationExpression (expression 42)) ;))) <EOF>)",
+			want: "map[a:42]",
+		},
+		{
+			text: "const uint N = 3 * 5;",
+			tree: "(program (statementOrScope (statement (constDeclarationStatement const (scalarType uint) N = (declarationExpression (expression (expression 3) * (expression 5))) ;))) <EOF>)",
+			want: "map[N:15]",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			panic(ret)
+		}
+
+		if len(env.Const) > 0 && fmt.Sprintf("%v", env.Const) != c.want {
+			t.Errorf("got=%v, want=%v", env.Const, c.want)
+		}
+	}
+}
+
 func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 	cases := []struct {
 		text string

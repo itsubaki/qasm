@@ -542,7 +542,13 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 }
 
 func (v *Visitor) VisitConstDeclarationStatement(ctx *parser.ConstDeclarationStatementContext) interface{} {
-	return fmt.Errorf("VisitConstDeclarationStatement: %w", ErrNotImplemented)
+	id := v.Visit(ctx.Identifier()).(string)
+	if _, ok := v.Environ.GetConst(id); ok {
+		return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+	}
+
+	v.Environ.Const[id] = v.Visit(ctx.DeclarationExpression())
+	return nil
 }
 
 func (v *Visitor) VisitAliasDeclarationStatement(ctx *parser.AliasDeclarationStatementContext) interface{} {
@@ -604,6 +610,10 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) i
 	case ctx.Identifier() != nil:
 		s := v.Visit(ctx.Identifier()).(string)
 		if lit, ok := Const[s]; ok {
+			return lit
+		}
+
+		if lit, ok := v.Environ.GetConst(s); ok {
 			return lit
 		}
 

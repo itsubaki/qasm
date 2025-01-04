@@ -9,6 +9,7 @@ import (
 type Environ struct {
 	ID           string
 	Version      string
+	Const        map[string]interface{}
 	Variable     map[string]interface{}
 	Qubit        map[string][]q.Qubit
 	ClassicalBit map[string][]int64
@@ -20,6 +21,7 @@ type Environ struct {
 func NewEnviron() *Environ {
 	return &Environ{
 		ID:           ulid.Make().String(),
+		Const:        make(map[string]interface{}),
 		Variable:     make(map[string]interface{}),
 		Qubit:        make(map[string][]q.Qubit),
 		ClassicalBit: make(map[string][]int64),
@@ -32,6 +34,18 @@ func (e *Environ) NewEnclosed() *Environ {
 	env := NewEnviron()
 	env.Outer = e
 	return env
+}
+
+func (e *Environ) GetConst(name string) (interface{}, bool) {
+	if c, ok := e.Const[name]; ok {
+		return c, true
+	}
+
+	if e.Outer != nil {
+		return e.Outer.GetConst(name)
+	}
+
+	return nil, false
 }
 
 func (e *Environ) GetVariable(name string) (interface{}, bool) {
