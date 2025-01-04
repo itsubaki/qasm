@@ -943,8 +943,6 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) interfa
 			enclosed.Environ.Qubit[p] = args[i].([]q.Qubit)
 		}
 
-		v.Visit(sub.ReturnSignature)
-
 		result := enclosed.Visit(sub.Body).([]interface{})
 		return result[len(result)-1]
 	}
