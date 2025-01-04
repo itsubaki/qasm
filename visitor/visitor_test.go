@@ -123,9 +123,10 @@ func ExampleVisitor_VisitIncludeStatement() {
 
 func ExampleVisitor_VisitDefStatement() {
 	text := `
-	def xmeasure(qubit q) -> bit { h q; return measure q; }
+	gate x q0 { U(pi, 0, pi) q0; }
+	def defx(qubit q1) -> bit { x q1; return measure q1; }
 	qubit q;
-	xmeasure(q);
+	bit c = defx(q);
 	`
 
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
@@ -142,9 +143,11 @@ func ExampleVisitor_VisitDefStatement() {
 		fmt.Println(err)
 	}
 
+	fmt.Println(env.ClassicalBit)
+
 	// Output:
-	// (program (statementOrScope (statement (defStatement def xmeasure ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q)) ) (returnSignature -> (scalarType bit)) (scope { (statementOrScope (statement (gateCallStatement h (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (returnStatement return (measureExpression measure (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (expressionStatement (expression xmeasure ( (expressionList (expression q)) )) ;))) <EOF>)
-	// subroutine=xmeasure: not implemented
+	// (program (statementOrScope (statement (gateStatement gate x (identifierList q0) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) })))) (statementOrScope (statement (defStatement def defx ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q1)) ) (returnSignature -> (scalarType bit)) (scope { (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q1))) ;))) (statementOrScope (statement (returnStatement return (measureExpression measure (gateOperand (indexedIdentifier q1))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (expression defx ( (expressionList (expression q)) ))) ;))) <EOF>)
+	// map[c:[1]]
 }
 
 func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {

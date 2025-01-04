@@ -386,6 +386,7 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 	u := matrix.Apply(list...)
 
 	// modify
+	// TODO: ctrl, negctrl
 	for _, mod := range ctx.AllGateModifier() {
 		n := v.Visit(mod).(int64)
 		switch {
@@ -574,9 +575,22 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{}
 		return fmt.Errorf("identifier=%s: %w", name, ErrAlreadyDeclared)
 	}
 
-	// TODO: subroutine definition
+	var body []*parser.StatementContext
+	for _, s := range ctx.Scope().AllStatementOrScope() {
+		body = append(body, s.Statement().(*parser.StatementContext))
+	}
+
+	args := v.Visit(ctx.ArgumentDefinitionList()).([]interface{})
+	var qargs []string
+	for _, a := range args {
+		qargs = append(qargs, a.(string))
+	}
+
 	v.Environ.Subroutine[name] = Subroutine{
-		Name: name,
+		Name:            name,
+		QArgs:           qargs,
+		Body:            body,
+		ReturnSignature: v.Visit(ctx.ReturnSignature()).(*parser.ScalarTypeContext),
 	}
 
 	return nil
@@ -598,8 +612,12 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) i
 			return lit
 		}
 
-		if v, ok := v.Environ.GetVariable(s); ok {
-			return v
+		if lit, ok := v.Environ.GetVariable(s); ok {
+			return lit
+		}
+
+		if lit, ok := v.Environ.GetQubit(s); ok {
+			return lit
 		}
 
 		return fmt.Errorf("identifier=%s: %w", s, ErrIdentifierNotFound)
@@ -843,42 +861,59 @@ func (v *Visitor) VisitDeclarationExpression(ctx *parser.DeclarationExpressionCo
 }
 
 func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) interface{} {
-	params := v.Visit(ctx.ExpressionList()).([]interface{})
+	args := v.Visit(ctx.ExpressionList()).([]interface{})
 
 	id := v.Visit(ctx.Identifier()).(string)
 	switch id {
 	case "sin":
-		return math.Sin(params[0].(float64))
+		return math.Sin(args[0].(float64))
 	case "cos":
-		return math.Cos(params[0].(float64))
+		return math.Cos(args[0].(float64))
 	case "tan":
-		return math.Tan(params[0].(float64))
+		return math.Tan(args[0].(float64))
 	case "arcsin":
-		return math.Asin(params[0].(float64))
+		return math.Asin(args[0].(float64))
 	case "arccos":
-		return math.Acos(params[0].(float64))
+		return math.Acos(args[0].(float64))
 	case "arctan":
-		return math.Atan(params[0].(float64))
+		return math.Atan(args[0].(float64))
 	case "ceiling":
-		return math.Ceil(params[0].(float64))
+		return math.Ceil(args[0].(float64))
 	case "floor":
-		return math.Floor(params[0].(float64))
+		return math.Floor(args[0].(float64))
 	case "sqrt":
-		return math.Sqrt(params[0].(float64))
+		return math.Sqrt(args[0].(float64))
 	case "exp":
-		return math.Exp(params[0].(float64))
+		return math.Exp(args[0].(float64))
 	case "log":
-		return math.Log(params[0].(float64))
+		return math.Log(args[0].(float64))
 	case "mod":
-		return math.Mod(params[0].(float64), params[1].(float64))
+		return math.Mod(args[0].(float64), args[1].(float64))
 	default:
 		sub, ok := v.Environ.GetSubroutine(id)
 		if !ok {
 			return fmt.Errorf("identifier=%s: %w", id, ErrFunctionNotFound)
 		}
 
-		// TODO: new enclosed environment
-		return fmt.Errorf("subroutine=%s: %w", sub.Name, ErrNotImplemented)
+		enclosed := v.Enclosed()
+		for i, p := range sub.QArgs {
+			enclosed.Environ.Qubit[p] = args[i].([]q.Qubit)
+		}
+
+		for _, s := range sub.Body {
+			switch ret := enclosed.Visit(s).(type) {
+			case error:
+				return fmt.Errorf("visit: %w", ret)
+			default:
+				if s.ReturnStatement() == nil {
+					continue
+				}
+
+				return ret
+			}
+		}
+
+		return nil
 	}
 }
 
@@ -995,11 +1030,11 @@ func (v *Visitor) VisitExternArgument(ctx *parser.ExternArgumentContext) interfa
 }
 
 func (v *Visitor) VisitArgumentDefinition(ctx *parser.ArgumentDefinitionContext) interface{} {
-	return fmt.Errorf("VisitArgumentDefinition: %w", ErrNotImplemented)
+	return v.Visit(ctx.Identifier())
 }
 
 func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) interface{} {
-	return fmt.Errorf("VisitReturnSignature: %w", ErrNotImplemented)
+	return ctx.ScalarType()
 }
 
 func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) interface{} {
