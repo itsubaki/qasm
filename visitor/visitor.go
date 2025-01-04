@@ -575,11 +575,6 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{}
 		return fmt.Errorf("identifier=%s: %w", name, ErrAlreadyDeclared)
 	}
 
-	var body []*parser.StatementContext
-	for _, s := range ctx.Scope().AllStatementOrScope() {
-		body = append(body, s.Statement().(*parser.StatementContext))
-	}
-
 	args := v.Visit(ctx.ArgumentDefinitionList()).([]interface{})
 	var qargs []string
 	for _, a := range args {
@@ -589,7 +584,7 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{}
 	v.Environ.Subroutine[name] = Subroutine{
 		Name:            name,
 		QArgs:           qargs,
-		Body:            body,
+		Body:            ctx.Scope().(*parser.ScopeContext),
 		ReturnSignature: v.Visit(ctx.ReturnSignature()).(*parser.ScalarTypeContext),
 	}
 
@@ -900,20 +895,8 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) interfa
 			enclosed.Environ.Qubit[p] = args[i].([]q.Qubit)
 		}
 
-		for _, s := range sub.Body {
-			switch ret := enclosed.Visit(s).(type) {
-			case error:
-				return fmt.Errorf("visit: %w", ret)
-			default:
-				if s.ReturnStatement() == nil {
-					continue
-				}
-
-				return ret
-			}
-		}
-
-		return nil
+		result := enclosed.Visit(sub.Body).([]interface{})
+		return result[len(result)-1]
 	}
 }
 

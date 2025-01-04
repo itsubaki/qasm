@@ -104,7 +104,7 @@ type Gate struct {
 type Subroutine struct {
 	Name            string
 	QArgs           []string
-	Body            []*parser.StatementContext
+	Body            *parser.ScopeContext
 	ReturnSignature *parser.ScalarTypeContext
 }
 
