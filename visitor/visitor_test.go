@@ -214,6 +214,11 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) z ;))) <EOF>)",
 			want: "map[z:0]",
 		},
+		{
+			text: "uint z;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType uint) z ;))) <EOF>)",
+			want: "map[z:0]",
+		},
 	}
 
 	for _, c := range cases {
@@ -1279,6 +1284,18 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				"[0][  0]( 1.0000 0.0000i): 1.0000",
 			},
 		},
+		{
+			text: `
+				gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
+				const int n = 3;
+				qubit q;
+				pow(n) @ u(pi, 0, pi) q;
+			`,
+			tree: "(program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (constDeclarationStatement const (scalarType int) n = (declarationExpression (expression 3)) ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression n) ) @) u ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[1][  1]( 1.0000 0.0000i): 1.0000",
+			},
+		},
 	}
 
 	for _, c := range cases {
@@ -1371,6 +1388,17 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				pow(2) @ U(pi/2, -pi/2, pi/2) q;
 			`,
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression 2) ) @) U ( (expressionList (expression (expression pi) / (expression 2)) , (expression (expression - (expression pi)) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[1][  1]( 0.0000-1.0000i): 1.0000",
+			},
+		},
+		{
+			text: `
+				const float half = pi / 2;
+				qubit q;
+				pow(2) @ U(half, -half, half) q;
+			`,
+			tree: "(program (statementOrScope (statement (constDeclarationStatement const (scalarType float) half = (declarationExpression (expression (expression pi) / (expression 2))) ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression 2) ) @) U ( (expressionList (expression half) , (expression - (expression half)) , (expression half)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
 			want: []string{
 				"[1][  1]( 0.0000-1.0000i): 1.0000",
 			},

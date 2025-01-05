@@ -966,6 +966,15 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) interfa
 	}
 }
 
+func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) interface{} {
+	var list []int64
+	for _, x := range ctx.AllExpression() {
+		list = append(list, v.Visit(x).(int64))
+	}
+
+	return list
+}
+
 func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
 	return fmt.Errorf("VisitCastExpression: %w", ErrNotImplemented)
 }
@@ -976,15 +985,6 @@ func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionCont
 
 func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) interface{} {
 	return fmt.Errorf("VisitAliasExpression: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) interface{} {
-	var list []int64
-	for _, x := range ctx.AllExpression() {
-		list = append(list, v.Visit(x).(int64))
-	}
-
-	return list
 }
 
 func (v *Visitor) VisitSetExpression(ctx *parser.SetExpressionContext) interface{} {
