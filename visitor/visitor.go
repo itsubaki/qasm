@@ -255,22 +255,6 @@ func (v *Visitor) VisitSwitchCaseItem(ctx *parser.SwitchCaseItemContext) interfa
 	return v.Visit(ctx.Scope())
 }
 
-func (v *Visitor) VisitCalibrationGrammarStatement(ctx *parser.CalibrationGrammarStatementContext) interface{} {
-	return fmt.Errorf("VisitCalibrationGrammarStatement: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitBarrierStatement(ctx *parser.BarrierStatementContext) interface{} {
-	return fmt.Errorf("VisitBarrierStatement: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitBoxStatement(ctx *parser.BoxStatementContext) interface{} {
-	return fmt.Errorf("VisitBoxStatement: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitDelayStatement(ctx *parser.DelayStatementContext) interface{} {
-	return fmt.Errorf("VisitDelayStatement: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitReturnStatement(ctx *parser.ReturnStatementContext) interface{} {
 	if ctx.MeasureExpression() != nil {
 		return v.Visit(ctx.MeasureExpression())
@@ -605,6 +589,28 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 	}
 }
 
+func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{} {
+	name := v.Visit(ctx.Identifier()).(string)
+	if _, ok := v.Environ.GetSubroutine(name); ok {
+		return fmt.Errorf("identifier=%s: %w", name, ErrAlreadyDeclared)
+	}
+
+	args := v.Visit(ctx.ArgumentDefinitionList()).([]interface{})
+	var qargs []string
+	for _, a := range args {
+		qargs = append(qargs, a.(string))
+	}
+
+	v.Environ.Subroutine[name] = Subroutine{
+		Name:            name,
+		QArgs:           qargs,
+		Body:            ctx.Scope().(*parser.ScopeContext),
+		ReturnSignature: ctx.ReturnSignature().(*parser.ReturnSignatureContext),
+	}
+
+	return nil
+}
+
 func (v *Visitor) VisitAliasDeclarationStatement(ctx *parser.AliasDeclarationStatementContext) interface{} {
 	return fmt.Errorf("VisitAliasDeclarationStatement: %w", ErrNotImplemented)
 }
@@ -629,26 +635,20 @@ func (v *Visitor) VisitDefcalStatement(ctx *parser.DefcalStatementContext) inter
 	return fmt.Errorf("VisitDefcalStatement: %w", ErrNotImplemented)
 }
 
-func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{} {
-	name := v.Visit(ctx.Identifier()).(string)
-	if _, ok := v.Environ.GetSubroutine(name); ok {
-		return fmt.Errorf("identifier=%s: %w", name, ErrAlreadyDeclared)
-	}
+func (v *Visitor) VisitCalibrationGrammarStatement(ctx *parser.CalibrationGrammarStatementContext) interface{} {
+	return fmt.Errorf("VisitCalibrationGrammarStatement: %w", ErrNotImplemented)
+}
 
-	args := v.Visit(ctx.ArgumentDefinitionList()).([]interface{})
-	var qargs []string
-	for _, a := range args {
-		qargs = append(qargs, a.(string))
-	}
+func (v *Visitor) VisitBarrierStatement(ctx *parser.BarrierStatementContext) interface{} {
+	return fmt.Errorf("VisitBarrierStatement: %w", ErrNotImplemented)
+}
 
-	v.Environ.Subroutine[name] = Subroutine{
-		Name:            name,
-		QArgs:           qargs,
-		Body:            ctx.Scope().(*parser.ScopeContext),
-		ReturnSignature: ctx.ReturnSignature().(*parser.ReturnSignatureContext),
-	}
+func (v *Visitor) VisitBoxStatement(ctx *parser.BoxStatementContext) interface{} {
+	return fmt.Errorf("VisitBoxStatement: %w", ErrNotImplemented)
+}
 
-	return nil
+func (v *Visitor) VisitDelayStatement(ctx *parser.DelayStatementContext) interface{} {
+	return fmt.Errorf("VisitDelayStatement: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitParenthesisExpression(ctx *parser.ParenthesisExpressionContext) interface{} {
@@ -1003,16 +1003,16 @@ func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) inter
 	return list
 }
 
+func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) interface{} {
+	return fmt.Errorf("VisitAliasExpression: %w", ErrNotImplemented)
+}
+
 func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
 	return fmt.Errorf("VisitCastExpression: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionContext) interface{} {
 	return fmt.Errorf("VisitDurationofExpression: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) interface{} {
-	return fmt.Errorf("VisitAliasExpression: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitSetExpression(ctx *parser.SetExpressionContext) interface{} {
