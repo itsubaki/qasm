@@ -147,7 +147,7 @@ func (v *Visitor) VisitScope(ctx *parser.ScopeContext) interface{} {
 		result := v.Visit(s)
 		list = append(list, result)
 
-		if contains(result, "break;", "continue;") {
+		if contains(result, Break, Continue) {
 			break
 		}
 	}
@@ -173,6 +173,14 @@ func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) int
 	return nil
 }
 
+func (v *Visitor) VisitBreakStatement(ctx *parser.BreakStatementContext) interface{} {
+	return ctx.GetText()
+}
+
+func (v *Visitor) VisitContinueStatement(ctx *parser.ContinueStatementContext) interface{} {
+	return ctx.GetText()
+}
+
 func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) interface{} {
 	enclosed := v.Enclosed()
 	if v.Visit(ctx.Expression()).(bool) {
@@ -195,7 +203,7 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) interface{}
 		enclosed.Environ.Variable[id] = i
 		result := enclosed.Visit(ctx.StatementOrScope())
 
-		if contains(result, "break;") {
+		if contains(result, Break) {
 			break
 		}
 	}
@@ -203,16 +211,20 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) interface{}
 	return nil
 }
 
-func (v *Visitor) VisitBreakStatement(ctx *parser.BreakStatementContext) interface{} {
-	return ctx.GetText()
-}
-
-func (v *Visitor) VisitContinueStatement(ctx *parser.ContinueStatementContext) interface{} {
-	return ctx.GetText()
-}
-
 func (v *Visitor) VisitWhileStatement(ctx *parser.WhileStatementContext) interface{} {
-	return fmt.Errorf("VisitWhileStatement: %w", ErrNotImplemented)
+	enclosed := v.Enclosed()
+	for {
+		if !v.Visit(ctx.Expression()).(bool) {
+			break
+		}
+
+		result := enclosed.Visit(ctx.GetBody())
+		if contains(result, Break) {
+			break
+		}
+	}
+
+	return nil
 }
 
 func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) interface{} {

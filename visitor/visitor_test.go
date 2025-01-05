@@ -1674,3 +1674,73 @@ func TestVisitor_VisitContinueStatement(t *testing.T) {
 		}
 	}
 }
+
+func TestVisitor_VisitWhileStatement(t *testing.T) {
+	cases := []struct {
+		text string
+		tree string
+		want string
+	}{
+		{
+			text: `
+				int a = 0;
+				while (a < 10) {
+					a = a + 1;
+				}
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (whileStatement while ( (expression (expression a) < (expression 10)) ) (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 1)) ;))) }))))) <EOF>)",
+			want: "map[a:10]",
+		},
+		{
+			text: `
+				int a = 0;
+				while (a < 100) {
+					a = a + 1;
+					if ( a > 10 ) {
+						break;
+					}
+					a = a + 10;
+				}
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (whileStatement while ( (expression (expression a) < (expression 100)) ) (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 1)) ;))) (statementOrScope (statement (ifStatement if ( (expression (expression a) > (expression 10)) ) (statementOrScope (scope { (statementOrScope (statement (breakStatement break ;))) }))))) (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 10)) ;))) }))))) <EOF>)",
+			want: "map[a:12]",
+		},
+		{
+			text: `
+				int a = 0;
+				while (a < 100) {
+					a = a + 1;
+					if ( a < 10 ) {
+						continue;
+					}
+					a = a + 10;
+				}
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (whileStatement while ( (expression (expression a) < (expression 100)) ) (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 1)) ;))) (statementOrScope (statement (ifStatement if ( (expression (expression a) < (expression 10)) ) (statementOrScope (scope { (statementOrScope (statement (continueStatement continue ;))) }))))) (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 10)) ;))) }))))) <EOF>)",
+			want: "map[a:108]",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			panic(ret)
+		}
+
+		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+			t.Errorf("got=%v, want=%v", env.Variable, c.want)
+		}
+	}
+}

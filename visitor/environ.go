@@ -142,6 +142,11 @@ func flatten(qargs [][]q.Qubit) []q.Qubit {
 	return flat
 }
 
+const (
+	Break    = "break;"
+	Continue = "continue;"
+)
+
 func contains(result interface{}, s ...string) bool {
 	switch v := result.(type) {
 	case string:
