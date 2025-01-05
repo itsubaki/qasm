@@ -61,25 +61,14 @@ func (e *Environ) GetVariable(name string) (interface{}, bool) {
 }
 
 func (e *Environ) SetVariable(name string, value interface{}) {
-	if _, ok := e.Variable[name]; ok {
-		e.Variable[name] = value
-		return
-	}
-
-	outer := e.Outer
-	for {
-		if outer == nil {
-			e.Variable[name] = value
+	for env := e; env != nil; env = env.Outer {
+		if _, ok := env.Variable[name]; ok {
+			env.Variable[name] = value
 			return
 		}
-
-		if _, ok := outer.Variable[name]; ok {
-			outer.Variable[name] = value
-			return
-		}
-
-		outer = outer.Outer
 	}
+
+	e.Variable[name] = value
 }
 
 func (e *Environ) GetQubit(name string) ([]q.Qubit, bool) {
@@ -151,4 +140,23 @@ func flatten(qargs [][]q.Qubit) []q.Qubit {
 	}
 
 	return flat
+}
+
+func contains(result interface{}, s ...string) bool {
+	switch v := result.(type) {
+	case string:
+		for _, e := range s {
+			if v == e {
+				return true
+			}
+		}
+	case []interface{}:
+		for _, e := range v {
+			if contains(e, s...) {
+				return true
+			}
+		}
+	}
+
+	return false
 }

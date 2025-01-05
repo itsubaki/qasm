@@ -144,7 +144,12 @@ func (v *Visitor) VisitStatement(ctx *parser.StatementContext) interface{} {
 func (v *Visitor) VisitScope(ctx *parser.ScopeContext) interface{} {
 	var list []interface{}
 	for _, s := range ctx.AllStatementOrScope() {
-		list = append(list, v.Visit(s))
+		result := v.Visit(s)
+		list = append(list, result)
+
+		if contains(result, "break;", "continue;") {
+			break
+		}
 	}
 
 	return list
@@ -186,22 +191,24 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) interface{}
 	rx := v.Visit(ctx.RangeExpression()).([]int64)
 
 	enclosed := v.Enclosed()
-	enclosed.Environ.Variable[id] = rx[0]
-
 	for i := rx[0]; i < rx[1]; i++ {
 		enclosed.Environ.Variable[id] = i
-		enclosed.Visit(ctx.StatementOrScope())
+
+		result := enclosed.Visit(ctx.StatementOrScope())
+		if contains(result, "break;") {
+			break
+		}
 	}
 
 	return nil
 }
 
 func (v *Visitor) VisitBreakStatement(ctx *parser.BreakStatementContext) interface{} {
-	return fmt.Errorf("VisitBreakStatement: %w", ErrNotImplemented)
+	return ctx.GetText()
 }
 
 func (v *Visitor) VisitContinueStatement(ctx *parser.ContinueStatementContext) interface{} {
-	return fmt.Errorf("VisitContinueStatement: %w", ErrNotImplemented)
+	return ctx.GetText()
 }
 
 func (v *Visitor) VisitWhileStatement(ctx *parser.WhileStatementContext) interface{} {
