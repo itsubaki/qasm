@@ -304,6 +304,49 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 	}
 }
 
+func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
+	cases := []struct {
+		text   string
+		tree   string
+		want   string
+		errMsg string
+	}{
+		{
+			text: `
+				qubit[5] q;
+				let myreg = q[1:4];
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 5) ])) q ;))) (statementOrScope (statement (aliasDeclarationStatement let myreg = (aliasExpression (expression (expression q) (indexOperator [ (rangeExpression (expression 1) : (expression 4)) ]))) ;))) <EOF>)",
+			want: "map[myreg:[1 2 3] q:[0 1 2 3 4]]",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+			}
+		default:
+			if fmt.Sprintf("%v", env.Qubit) != c.want {
+				t.Errorf("got=%v, want=%v", env.Qubit, c.want)
+			}
+		}
+	}
+}
+
 func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 	type Want struct {
 		classicalBit []string

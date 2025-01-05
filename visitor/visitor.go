@@ -612,7 +612,14 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) interface{}
 }
 
 func (v *Visitor) VisitAliasDeclarationStatement(ctx *parser.AliasDeclarationStatementContext) interface{} {
-	return fmt.Errorf("VisitAliasDeclarationStatement: %w", ErrNotImplemented)
+	id := v.Visit(ctx.Identifier()).(string)
+	if _, ok := v.Environ.GetQubit(id); ok {
+		return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+	}
+
+	alias := v.Visit(ctx.AliasExpression()).([]q.Qubit)
+	v.Environ.Qubit[id] = alias
+	return nil
 }
 
 func (v *Visitor) VisitIoDeclarationStatement(ctx *parser.IoDeclarationStatementContext) interface{} {
@@ -1004,7 +1011,24 @@ func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) inter
 }
 
 func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) interface{} {
-	return fmt.Errorf("VisitAliasExpression: %w", ErrNotImplemented)
+	var result []q.Qubit
+	for _, x := range ctx.AllExpression() {
+		result = append(result, v.Visit(x).([]q.Qubit)...)
+	}
+
+	return result
+}
+
+func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) interface{} {
+	qubit := v.Visit(ctx.Expression()).([]q.Qubit)
+
+	var result []q.Qubit
+	for _, x := range ctx.IndexOperator().AllRangeExpression() {
+		index := v.Visit(x).([]int64)
+		result = append(result, qubit[index[0]:index[1]]...)
+	}
+
+	return result
 }
 
 func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
@@ -1017,10 +1041,6 @@ func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionCont
 
 func (v *Visitor) VisitSetExpression(ctx *parser.SetExpressionContext) interface{} {
 	return fmt.Errorf("VisitSetExpression: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) interface{} {
-	return fmt.Errorf("VisitIndexExpression: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) interface{} {
