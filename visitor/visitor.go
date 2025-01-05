@@ -193,8 +193,8 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) interface{}
 	enclosed := v.Enclosed()
 	for i := rx[0]; i < rx[1]; i++ {
 		enclosed.Environ.Variable[id] = i
-
 		result := enclosed.Visit(ctx.StatementOrScope())
+
 		if contains(result, "break;") {
 			break
 		}
