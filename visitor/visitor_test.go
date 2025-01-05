@@ -1500,9 +1500,9 @@ func TestVisitor_VisitIfStatement(t *testing.T) {
 		{
 			text: `
 				int a = 10;
-				if (a == 20) { } else { a = 30; }
+				if (a == 20) { a = 100; } else { a = 30; }
 			`,
-			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 10)) ;))) (statementOrScope (statement (ifStatement if ( (expression (expression a) == (expression 20)) ) (statementOrScope (scope { })) else (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression 30) ;))) }))))) <EOF>)",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 10)) ;))) (statementOrScope (statement (ifStatement if ( (expression (expression a) == (expression 20)) ) (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression 100) ;))) })) else (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression 30) ;))) }))))) <EOF>), want=(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 10)) ;))) (statementOrScope (statement (ifStatement if ( (expression (expression a) == (expression 20)) ) (statementOrScope (scope { })) else (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression 30) ;))) }))))) <EOF>)",
 			want: "map[a:30]",
 		},
 	}

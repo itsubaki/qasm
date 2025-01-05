@@ -232,16 +232,18 @@ func (v *Visitor) VisitWhileStatement(ctx *parser.WhileStatementContext) interfa
 }
 
 func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) interface{} {
+	enclosed := v.Enclosed()
+
 	x := v.Visit(ctx.Expression())
 	for _, item := range ctx.AllSwitchCaseItem() {
 		if item.DEFAULT() != nil {
-			v.Visit(item)
+			enclosed.Visit(item)
 			break
 		}
 
 		result := v.Visit(item.ExpressionList()).([]interface{})
 		if result[len(result)-1] == x {
-			v.Visit(item)
+			enclosed.Visit(item)
 			break
 		}
 	}
@@ -250,7 +252,7 @@ func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) inter
 }
 
 func (v *Visitor) VisitSwitchCaseItem(ctx *parser.SwitchCaseItemContext) interface{} {
-	return v.Enclosed().Visit(ctx.Scope())
+	return v.Visit(ctx.Scope())
 }
 
 func (v *Visitor) VisitCalibrationGrammarStatement(ctx *parser.CalibrationGrammarStatementContext) interface{} {
