@@ -181,6 +181,10 @@ func (v *Visitor) VisitContinueStatement(ctx *parser.ContinueStatementContext) i
 	return ctx.GetText()
 }
 
+func (v *Visitor) VisitEndStatement(ctx *parser.EndStatementContext) interface{} {
+	return ctx.GetText()
+}
+
 func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) interface{} {
 	enclosed := v.Enclosed()
 	if v.Visit(ctx.Expression()).(bool) {
@@ -228,15 +232,25 @@ func (v *Visitor) VisitWhileStatement(ctx *parser.WhileStatementContext) interfa
 }
 
 func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) interface{} {
-	return fmt.Errorf("VisitSwitchStatement: %w", ErrNotImplemented)
+	x := v.Visit(ctx.Expression())
+	for _, item := range ctx.AllSwitchCaseItem() {
+		if item.DEFAULT() != nil {
+			v.Visit(item)
+			break
+		}
+
+		result := v.Visit(item.ExpressionList()).([]interface{})
+		if result[len(result)-1] == x {
+			v.Visit(item)
+			break
+		}
+	}
+
+	return nil
 }
 
 func (v *Visitor) VisitSwitchCaseItem(ctx *parser.SwitchCaseItemContext) interface{} {
-	return fmt.Errorf("VisitSwitchCaseItem: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitEndStatement(ctx *parser.EndStatementContext) interface{} {
-	return fmt.Errorf("VisitEndStatement: %w", ErrNotImplemented)
+	return v.Enclosed().Visit(ctx.Scope())
 }
 
 func (v *Visitor) VisitCalibrationGrammarStatement(ctx *parser.CalibrationGrammarStatementContext) interface{} {

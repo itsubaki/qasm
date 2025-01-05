@@ -1744,3 +1744,67 @@ func TestVisitor_VisitWhileStatement(t *testing.T) {
 		}
 	}
 }
+
+func TestVisitor_VisitSwitchStatement(t *testing.T) {
+	cases := []struct {
+		text string
+		tree string
+		want string
+	}{
+		{
+			text: `
+				int a = 15;
+				int b = 0;
+				switch (a) {
+					case 15 {
+						b = 15;
+					}
+					default {
+						b = -1;
+					}
+				}
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 15)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) b = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (switchStatement switch ( (expression a) ) { (switchCaseItem case (expressionList (expression 15)) (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier b) = (expression 15) ;))) })) (switchCaseItem default (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier b) = (expression - (expression 1)) ;))) })) }))) <EOF>)",
+			want: "map[a:15 b:15]",
+		},
+		{
+			text: `
+				int a = 20;
+				int b = 0;
+				switch (a) {
+					case 15 {
+						b = 15;
+					}
+					default {
+						b = -1;
+					}
+				}
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 20)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) b = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (switchStatement switch ( (expression a) ) { (switchCaseItem case (expressionList (expression 15)) (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier b) = (expression 15) ;))) })) (switchCaseItem default (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier b) = (expression - (expression 1)) ;))) })) }))) <EOF>)",
+			want: "map[a:20 b:-1]",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			panic(ret)
+		}
+
+		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+			t.Errorf("got=%v, want=%v", env.Variable, c.want)
+		}
+	}
+}
