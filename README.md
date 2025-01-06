@@ -10,14 +10,36 @@
 ## Example
 
 ```shell
-$ cat _testdata/bell.qasm
-OPENQASM 3.0;
-include "_testdata/stdgates.qasm";
+% go run cmd/repl/main.go                       
+>> OPENQASM 3.0;
+>> include "_testdata/stdgates.qasm";
+>> 
+>> qubit[2] q;
+[00][  0]( 1.0000 0.0000i): 1.0000
+>> h q[0];
+[00][  0]( 0.7071 0.0000i): 0.5000
+[10][  2]( 0.7071 0.0000i): 0.5000
+>> cx q[0], q[1];
+[00][  0]( 0.7071 0.0000i): 0.5000
+[11][  3]( 0.7071 0.0000i): 0.5000
+```
 
-qubit[2] q;
-
-h q[0];
-cx q[0], q[1];
+```shell
+% go run cmd/repl/main.go
+>> OPENQASM 3.0;
+>> 
+>> const float ratio = pi;
+>> 
+>> int n = 2;
+>> if (n > 0) { n = n*ratio; }
+>>
+>> print
+const     : map[ratio:3.141592653589793]
+variable  : map[n:6.283185307179586]
+bit       : map[]
+qubit     : map[]
+gate      : []
+subroutine: []
 ```
 
 ```shell
@@ -56,39 +78,4 @@ cx q[0], q[1];
 ```shell
 go run cmd/parse/main.go < _testdata/bell.qasm
 (program (version OPENQASM 3.0 ;) (statementOrScope (statement (includeStatement include "_testdata/stdgates.qasm" ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement h (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement cx (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) <EOF>)
-```
-
-## REPL
-
-```shell
-% go run cmd/repl/main.go                       
->> OPENQASM 3.0;
->> include "_testdata/stdgates.qasm";
->> 
->> qubit[2] q;
-[00][  0]( 1.0000 0.0000i): 1.0000
->> h q[0];
-[00][  0]( 0.7071 0.0000i): 0.5000
-[10][  2]( 0.7071 0.0000i): 0.5000
->> cx q[0], q[1];
-[00][  0]( 0.7071 0.0000i): 0.5000
-[11][  3]( 0.7071 0.0000i): 0.5000
-```
-
-```shell
-% go run cmd/repl/main.go
->> OPENQASM 3.0;
->> 
->> const float ratio = pi;
->> 
->> int n = 2;
->> if (n > 0) { n = n*ratio; }
->>
->> print
-const     : map[ratio:3.141592653589793]
-variable  : map[n:6.283185307179586]
-bit       : map[]
-qubit     : map[]
-gate      : []
-subroutine: []
 ```
