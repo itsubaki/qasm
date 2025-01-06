@@ -116,7 +116,7 @@ func ExampleVisitor_VisitIncludeStatement() {
 
 	// Output:
 	// (program (statementOrScope (statement (includeStatement include "../_testdata/stdgates.qasm" ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement h (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)
-	// [h i x y z]
+	// [cx h i x y z]
 	// [0][  0]( 0.7071 0.0000i): 0.5000
 	// [1][  1]( 0.7071 0.0000i): 0.5000
 }
