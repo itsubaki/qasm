@@ -6,16 +6,17 @@ import (
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
-	"github.com/itsubaki/qasm/cmd"
 	"github.com/itsubaki/qasm/gen/parser"
+	"github.com/itsubaki/qasm/io"
 	"github.com/itsubaki/qasm/visitor"
 )
 
 func main() {
-	text := cmd.MustScan(os.Stdin)
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	text := io.MustScan(os.Stdin)
 
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
 	tree := p.Program()
 	fmt.Println(tree.ToStringTree(nil, p))
 
@@ -26,9 +27,5 @@ func main() {
 	switch ret := v.Visit(tree).(type) {
 	case error:
 		panic(ret)
-	}
-
-	for _, s := range qsim.State() {
-		fmt.Println(s)
 	}
 }

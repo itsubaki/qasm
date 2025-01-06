@@ -1,8 +1,7 @@
 OPENQASM 3.0;
 include "_testdata/stdgates.qasm";
 
-qubit q0;
-qubit q1;
+qubit[2] q;
 
-U(pi/2.0, 0, pi) q0;
-ctrl @ U(pi, 0, pi) q0, q1;
+h q[0];
+cx q[0], q[1];

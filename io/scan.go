@@ -1,4 +1,4 @@
-package cmd
+package io
 
 import (
 	"bufio"
