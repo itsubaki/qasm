@@ -77,5 +77,30 @@ subroutine: []
 
 ```shell
 go run cmd/parse/main.go < _testdata/bell.qasm
-(program (version OPENQASM 3.0 ;) (statementOrScope (statement (includeStatement include "_testdata/stdgates.qasm" ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement h (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement cx (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) <EOF>)
+(program
+  (version OPENQASM 3.0 ;)
+  (statementOrScope
+    (statement
+      (includeStatement include "_testdata/stdgates.qasm" ;)))
+  (statementOrScope
+    (statement
+      (quantumDeclarationStatement
+        (qubitType qubit (designator [ (expression 2) ])) q ;)))
+  (statementOrScope
+    (statement
+      (gateCallStatement h
+        (gateOperandList
+          (gateOperand
+            (indexedIdentifier q (indexOperator [ (expression 0) ])))
+        ;))))
+  (statementOrScope
+    (statement
+      (gateCallStatement cx
+        (gateOperandList
+          (gateOperand
+            (indexedIdentifier q (indexOperator [ (expression 0) ]))),
+          (gateOperand
+            (indexedIdentifier q (indexOperator [ (expression 1) ])))
+        ;))))
+  <EOF>)
 ```
