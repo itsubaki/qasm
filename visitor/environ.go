@@ -3,11 +3,9 @@ package visitor
 import (
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/gen/parser"
-	"github.com/oklog/ulid/v2"
 )
 
 type Environ struct {
-	ID           string
 	Version      string
 	Const        map[string]interface{}
 	Variable     map[string]interface{}
@@ -20,7 +18,6 @@ type Environ struct {
 
 func NewEnviron() *Environ {
 	return &Environ{
-		ID:           ulid.Make().String(),
 		Const:        make(map[string]interface{}),
 		Variable:     make(map[string]interface{}),
 		Qubit:        make(map[string][]q.Qubit),
