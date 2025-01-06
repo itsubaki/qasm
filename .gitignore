@@ -24,3 +24,6 @@ coverage.txt
 # codespaces
 oryxBuildBinary
 .vscode
+
+# https://marketplace.visualstudio.com/items?itemName=mike-lischke.vscode-antlr4
+.antlr

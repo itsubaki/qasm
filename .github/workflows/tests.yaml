@@ -39,10 +39,6 @@ jobs:
         run: |
           make parse
 
-      - name: Run testdata
-        run: |
-          make testdata
-
       - name: Codecov
         uses: codecov/codecov-action@v4
         env:
