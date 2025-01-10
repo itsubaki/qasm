@@ -13,7 +13,11 @@ import (
 )
 
 func ExampleVisitor_VisitVersion() {
-	text := "OPENQASM 3.0;"
+	text := `
+	// this is a comment
+	/* this is a comment block */
+	OPENQASM 3.0;
+	`
 
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
@@ -169,6 +173,12 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		tree string
 		want string
 	}{
+
+		{
+			text: "bool b = ((1 + 3) * 4 == 16);",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) b = (declarationExpression (expression ( (expression (expression (expression ( (expression (expression 1) + (expression 3)) )) * (expression 4)) == (expression 16)) ))) ;))) <EOF>)",
+			want: "map[b:true]",
+		},
 		{
 			text: "bit c;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) <EOF>)",
@@ -218,6 +228,16 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			text: "uint z;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType uint) z ;))) <EOF>)",
 			want: "map[z:0]",
+		},
+		{
+			text: "int hex = 0xffff;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) hex = (declarationExpression (expression 0xffff)) ;))) <EOF>)",
+			want: "map[hex:65535]",
+		},
+		{
+			text: "int hex = 0XBEEF;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) hex = (declarationExpression (expression 0XBEEF)) ;))) <EOF>)",
+			want: "map[hex:48879]",
 		},
 	}
 

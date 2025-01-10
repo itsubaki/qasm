@@ -584,6 +584,19 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 
 		v.Environ.Variable[id] = uint(0)
 		return nil
+	case ctx.ScalarType().BOOL() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.Environ.GetVariable(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if ctx.DeclarationExpression() != nil {
+			v.Environ.Variable[id] = v.Visit(ctx.DeclarationExpression())
+			return nil
+		}
+
+		v.Environ.Variable[id] = false
+		return nil
 	default:
 		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
 	}
@@ -694,6 +707,14 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) i
 	case ctx.DecimalIntegerLiteral() != nil:
 		s := v.Visit(ctx.DecimalIntegerLiteral()).(string)
 		lit, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return fmt.Errorf("parse int: s=%s: %w", s, err)
+		}
+
+		return lit
+	case ctx.HexIntegerLiteral() != nil:
+		s := v.Visit(ctx.HexIntegerLiteral()).(string)
+		lit, err := strconv.ParseInt(s, 0, 64)
 		if err != nil {
 			return fmt.Errorf("parse int: s=%s: %w", s, err)
 		}
