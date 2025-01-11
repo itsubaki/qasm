@@ -12,10 +12,36 @@ import (
 	"github.com/itsubaki/qasm/visitor"
 )
 
-func ExampleVisitor_VisitVersion() {
+func ExampleVisitor_comment() {
 	text := `
 	// this is a comment
 	/* this is a comment block */
+	end;
+	`
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	tree := p.Program()
+	fmt.Println(tree.ToStringTree(nil, p))
+
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	if err := v.Visit(tree); err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(env.Version)
+
+	// Output:
+	// (program (statementOrScope (statement (endStatement end ;))) <EOF>)
+	// end;
+}
+
+func ExampleVisitor_VisitVersion() {
+	text := `
 	OPENQASM 3.0;
 	`
 
@@ -127,9 +153,10 @@ func ExampleVisitor_VisitIncludeStatement() {
 
 func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 	cases := []struct {
-		text string
-		tree string
-		want string
+		text   string
+		tree   string
+		want   string
+		errMsg string
 	}{
 		{
 			text: "const int a = 42;",
@@ -140,6 +167,11 @@ func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 			text: "const uint N = 3 * 5;",
 			tree: "(program (statementOrScope (statement (constDeclarationStatement const (scalarType uint) N = (declarationExpression (expression (expression 3) * (expression 5))) ;))) <EOF>)",
 			want: "map[N:15]",
+		},
+		{
+			text:   "const int a = 42; const int a = 43;",
+			tree:   "(program (statementOrScope (statement (constDeclarationStatement const (scalarType int) a = (declarationExpression (expression 42)) ;))) (statementOrScope (statement (constDeclarationStatement const (scalarType int) a = (declarationExpression (expression 43)) ;))) <EOF>)",
+			errMsg: "identifier=a: already declared",
 		},
 	}
 
@@ -158,7 +190,11 @@ func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 
 		switch ret := v.Visit(tree).(type) {
 		case error:
-			panic(ret)
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+			}
+
+			continue
 		}
 
 		if len(env.Const) > 0 && fmt.Sprintf("%v", env.Const) != c.want {
@@ -169,11 +205,16 @@ func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 
 func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 	cases := []struct {
-		text string
-		tree string
-		want string
+		text   string
+		tree   string
+		want   string
+		errMsg string
 	}{
-
+		{
+			text: "bool b;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) b ;))) <EOF>)",
+			want: "map[b:false]",
+		},
 		{
 			text: "bool b = ((1 + 3) * 4 == 16);",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) b = (declarationExpression (expression ( (expression (expression (expression ( (expression (expression 1) + (expression 3)) )) * (expression 4)) == (expression 16)) ))) ;))) <EOF>)",
@@ -239,6 +280,26 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) hex = (declarationExpression (expression 0XBEEF)) ;))) <EOF>)",
 			want: "map[hex:48879]",
 		},
+		{
+			text:   "float a = 1; float a = 0;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType float) a = (declarationExpression (expression 0)) ;))) <EOF>)",
+			errMsg: "identifier=a: already declared",
+		},
+		{
+			text:   "int a = 1; int a = 0;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) <EOF>)",
+			errMsg: "identifier=a: already declared",
+		},
+		{
+			text:   "uint a = 1; uint a = 0;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType uint) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType uint) a = (declarationExpression (expression 0)) ;))) <EOF>)",
+			errMsg: "identifier=a: already declared",
+		},
+		{
+			text:   "bool a = true; bool a = false;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a = (declarationExpression (expression true)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a = (declarationExpression (expression false)) ;))) <EOF>)",
+			errMsg: "identifier=a: already declared",
+		},
 	}
 
 	for _, c := range cases {
@@ -256,7 +317,11 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 
 		switch ret := v.Visit(tree).(type) {
 		case error:
-			panic(ret)
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+			}
+
+			continue
 		}
 
 		if len(env.ClassicalBit) > 0 && fmt.Sprintf("%v", env.ClassicalBit) != c.want {
@@ -348,6 +413,14 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) one ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 10) ])) two ;))) (statementOrScope (statement (aliasDeclarationStatement let concatenated = (aliasExpression (expression one) ++ (expression two)) ;))) <EOF>)",
 			want: "map[concatenated:[0 1 2 3 4 5 6 7 8 9 10 11] one:[0 1] two:[2 3 4 5 6 7 8 9 10 11]]",
 		},
+		{
+			text: `
+				qubit[5] q;
+				let q = q[1:4];
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 5) ])) q ;))) (statementOrScope (statement (aliasDeclarationStatement let q = (aliasExpression (expression (expression q) (indexOperator [ (rangeExpression (expression 1) : (expression 4)) ]))) ;))) <EOF>)",
+			errMsg: "identifier=q: already declared",
+		},
 	}
 
 	for _, c := range cases {
@@ -368,10 +441,12 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 			if ret.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", ret, c.errMsg)
 			}
-		default:
-			if fmt.Sprintf("%v", env.Qubit) != c.want {
-				t.Errorf("got=%v, want=%v", env.Qubit, c.want)
-			}
+
+			continue
+		}
+
+		if fmt.Sprintf("%v", env.Qubit) != c.want {
+			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
 		}
 	}
 }
@@ -666,9 +741,10 @@ func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
 
 func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 	cases := []struct {
-		text string
-		tree string
-		want string
+		text   string
+		tree   string
+		want   string
+		errMsg string
 	}{
 		{
 			text: "1 + 3;",
@@ -696,6 +772,15 @@ func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
+		switch ret := result.(type) {
+		case error:
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+			}
+
+			continue
+		}
+
 		if fmt.Sprintf("%v", result) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1254,9 +1339,10 @@ func TestVisitor_VisitComparisonExpression(t *testing.T) {
 
 func TestVisitor_VisitGateCallStatement(t *testing.T) {
 	cases := []struct {
-		text string
-		tree string
-		want []string
+		text   string
+		tree   string
+		want   []string
+		errMsg string
 	}{
 		{
 			text: "qubit q; U(pi, 0, pi) q;",
@@ -1368,6 +1454,14 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				"[1][  1]( 1.0000 0.0000i): 1.0000",
 			},
 		},
+		{
+			text: `
+				gate u q { }
+				gate u q { }
+			`,
+			tree:   "(program (statementOrScope (statement (gateStatement gate u (identifierList q) (scope { })))) (statementOrScope (statement (gateStatement gate u (identifierList q) (scope { })))) <EOF>)",
+			errMsg: "identifier=u: already declared",
+		},
 	}
 
 	for _, c := range cases {
@@ -1382,8 +1476,14 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		qsim := q.New()
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
-		if err := v.Visit(tree); err != nil {
-			panic(err)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret.Error(), c.errMsg)
+			}
+
+			continue
 		}
 
 		for i, s := range qsim.State() {
@@ -1505,9 +1605,10 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 
 func TestVisitor_VisitDefStatement(t *testing.T) {
 	cases := []struct {
-		text string
-		tree string
-		want string
+		text   string
+		tree   string
+		want   string
+		errMsg string
 	}{
 		{
 			text: `
@@ -1529,6 +1630,11 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 			tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q0) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) })))) (statementOrScope (statement (defStatement def xm ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q1)) ) (returnSignature -> (scalarType bit)) (scope { (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q1))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) m = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q1)))) ;))) (statementOrScope (statement (returnStatement return (expression m) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (expression xm ( (expressionList (expression q)) ))) ;))) <EOF>)",
 			want: "map[c:[1]]",
 		},
+		{
+			text:   "def f(qubit q) -> bit { return 1; } def f(qubit q) -> bit { return 0; }",
+			tree:   "(program (statementOrScope (statement (defStatement def f ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q)) ) (returnSignature -> (scalarType bit)) (scope { (statementOrScope (statement (returnStatement return (expression 1) ;))) })))) (statementOrScope (statement (defStatement def f ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q)) ) (returnSignature -> (scalarType bit)) (scope { (statementOrScope (statement (returnStatement return (expression 0) ;))) })))) <EOF>)",
+			errMsg: "identifier=f: already declared",
+		},
 	}
 
 	for _, c := range cases {
@@ -1546,7 +1652,11 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 
 		switch ret := v.Visit(tree).(type) {
 		case error:
-			panic(ret)
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret.Error(), c.errMsg)
+			}
+
+			continue
 		}
 
 		if len(env.ClassicalBit) > 0 && fmt.Sprintf("%v", env.ClassicalBit) != c.want {

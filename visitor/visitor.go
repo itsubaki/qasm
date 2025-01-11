@@ -264,6 +264,11 @@ func (v *Visitor) VisitReturnStatement(ctx *parser.ReturnStatementContext) inter
 }
 
 func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) interface{} {
+	name := v.Visit(ctx.Identifier()).(string)
+	if _, ok := v.Environ.GetGate(name); ok {
+		return fmt.Errorf("identifier=%s: %w", name, ErrAlreadyDeclared)
+	}
+
 	var params, qargs []string
 	switch len(ctx.AllIdentifierList()) {
 	case 1:
@@ -280,7 +285,6 @@ func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) interface
 		body = append(body, s.Statement().GateCallStatement().(*parser.GateCallStatementContext))
 	}
 
-	name := v.Visit(ctx.Identifier()).(string)
 	v.Environ.Gate[name] = Gate{
 		Name:   name,
 		Params: params,
