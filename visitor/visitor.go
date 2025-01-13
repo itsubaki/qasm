@@ -313,7 +313,6 @@ func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, error)
 
 func (v *Visitor) Modify(u matrix.Matrix, qargs [][]q.Qubit, modifier []parser.IGateModifierContext) (matrix.Matrix, error) {
 	for i, mod := range modifier {
-		n := v.Visit(mod).(int64)
 		switch {
 		case mod.CTRL() != nil:
 			u = AddControlled(u, q.Index(qargs[i]...))
@@ -324,7 +323,17 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs [][]q.Qubit, modifier []parser.I
 		case mod.INV() != nil:
 			u = u.Dagger()
 		case mod.POW() != nil:
-			u = matrix.ApplyN(u, int(n))
+			var p float64
+			switch n := v.Visit(mod).(type) {
+			case float64:
+				p = n
+			case int64:
+				p = float64(n)
+			default:
+				return nil, fmt.Errorf("pow=%v: %w", n, ErrUnexpected)
+			}
+
+			u = Pow(u, p)
 		default:
 			return nil, fmt.Errorf("modifier=%s: %w", mod.GetText(), ErrUnexpected)
 		}
@@ -1126,7 +1135,7 @@ func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) i
 
 func (v *Visitor) VisitGateModifier(ctx *parser.GateModifierContext) interface{} {
 	if ctx.Expression() != nil {
-		return v.Visit(ctx.Expression()).(int64)
+		return v.Visit(ctx.Expression())
 	}
 
 	return int64(1)

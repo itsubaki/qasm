@@ -1639,9 +1639,9 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 			// sx**2 = x
 			text: `
 				qubit q;
-				pow(2) @ U(pi/2, -pi/2, pi/2) q;
+				pow(2.0) @ U(pi/2, -pi/2, pi/2) q;
 			`,
-			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression 2) ) @) U ( (expressionList (expression (expression pi) / (expression 2)) , (expression (expression - (expression pi)) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression 2.0) ) @) U ( (expressionList (expression (expression pi) / (expression 2)) , (expression (expression - (expression pi)) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
 			want: []string{
 				"[1][  1]( 0.0000-1.0000i): 1.0000",
 			},

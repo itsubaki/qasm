@@ -30,3 +30,8 @@ func AddControlled(u matrix.Matrix, c []int) matrix.Matrix {
 
 	return g
 }
+
+func Pow(u matrix.Matrix, p float64) matrix.Matrix {
+	// TODO: support float type
+	return matrix.ApplyN(u, int(p))
+}
