@@ -311,17 +311,22 @@ func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, error)
 	return params, nil
 }
 
-func (v *Visitor) Modify(u matrix.Matrix, qargs []q.Qubit, modifier []parser.IGateModifierContext) (matrix.Matrix, error) {
+func (v *Visitor) Modify(u matrix.Matrix, qargs [][]q.Qubit, modifier []parser.IGateModifierContext) (matrix.Matrix, error) {
 	for i, mod := range modifier {
 		n := v.Visit(mod).(int64)
 		switch {
 		case mod.CTRL() != nil:
-			u = AddControlled(u, qargs[i].Index())
+			for _, a := range qargs[i] {
+				u = AddControlled(u, a.Index())
+			}
 		case mod.NEGCTRL() != nil:
 			n := v.qsim.NumberOfBit()
-			x := gate.TensorProduct(gate.X(), n, q.Index(qargs[i]))
+			x := gate.TensorProduct(gate.X(), n, q.Index(qargs[i]...))
 
-			u = AddControlled(u, qargs[i].Index())
+			for _, a := range qargs[i] {
+				u = AddControlled(u, a.Index())
+			}
+
 			u = matrix.Apply(x, u, x)
 		case mod.INV() != nil:
 			u = u.Dagger()
@@ -363,7 +368,7 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 		u = gate.TensorProduct(u, n, q.Index(flatten(qargs)...))
 
 		// modify
-		u, err = v.Modify(u, flatten(qargs), ctx.AllGateModifier())
+		u, err = v.Modify(u, qargs, ctx.AllGateModifier())
 		if err != nil {
 			return nil, false, fmt.Errorf("modify: %w", err)
 		}
@@ -434,7 +439,7 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 	u := matrix.Apply(list...)
 
 	// modify
-	u, err := v.Modify(u, flatten(qargs), ctx.AllGateModifier())
+	u, err := v.Modify(u, qargs, ctx.AllGateModifier())
 	if err != nil {
 		return nil, fmt.Errorf("modify: %w", err)
 	}
