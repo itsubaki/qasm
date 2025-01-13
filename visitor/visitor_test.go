@@ -2170,6 +2170,31 @@ func TestVisitor_VisitSwitchStatement(t *testing.T) {
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 20)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) b = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (switchStatement switch ( (expression a) ) { (switchCaseItem case (expressionList (expression 15)) (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier b) = (expression 15) ;))) })) (switchCaseItem default (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier b) = (expression - (expression 1)) ;))) })) }))) <EOF>)",
 			want: "map[a:20 b:-1]",
 		},
+		{
+			text: `
+				int a = 20;
+				int b = 0;
+				switch (a) {
+					case 1, 2, 3{
+						b = 15;
+					}
+					case 20 {
+						b = -1;
+					}
+				}
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 20)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) b = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (switchStatement switch ( (expression a) ) { (switchCaseItem case (expressionList (expression 1) , (expression 2) , (expression 3)) (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier b) = (expression 15) ;))) })) (switchCaseItem case (expressionList (expression 20)) (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier b) = (expression - (expression 1)) ;))) })) }))) <EOF>)",
+			want: "map[a:20 b:-1]",
+		},
+		{
+			text: `
+				int a = 20;
+				int b = 0;
+				switch (a) { }
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 20)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) b = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (switchStatement switch ( (expression a) ) { }))) <EOF>)",
+			want: "map[a:20 b:0]",
+		},
 	}
 
 	for _, c := range cases {

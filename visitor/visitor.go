@@ -238,7 +238,11 @@ func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) inter
 		}
 
 		result := v.Visit(item.ExpressionList()).([]interface{})
-		if result[len(result)-1] == x {
+		for _, r := range result {
+			if r != x {
+				continue
+			}
+
 			enclosed.Visit(item)
 			return nil
 		}
@@ -330,8 +334,6 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs [][]q.Qubit, modifier []parser.I
 			}
 
 			u = Pow(u, p)
-		default:
-			return nil, fmt.Errorf("modifier=%s: %w", mod.GetText(), ErrUnexpected)
 		}
 	}
 
