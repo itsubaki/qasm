@@ -312,38 +312,23 @@ func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, error)
 }
 
 func (v *Visitor) Modify(u matrix.Matrix, qargs []q.Qubit, modifier []parser.IGateModifierContext) (matrix.Matrix, error) {
-	var ctrl, negctrl []q.Qubit
 	for i, mod := range modifier {
-		// https://openqasm.com/language/gates.html#inverse-modifier
-		// The inverse of a controlled operation is defined by inverting the control unitary. That is, inv @ ctrl @ U = ctrl @ inv @ U.
-
 		n := v.Visit(mod).(int64)
 		switch {
 		case mod.CTRL() != nil:
-			ctrl = append(ctrl, qargs[i])
+			u = AddControlled(u, i)
 		case mod.NEGCTRL() != nil:
-			ctrl, negctrl = append(ctrl, qargs[i]), append(negctrl, qargs[i])
+			n := v.qsim.NumberOfBit()
+			x := gate.TensorProduct(gate.X(), n, []int{i})
+
+			u = AddControlled(u, i)
+			u = matrix.Apply(x, u, x)
 		case mod.INV() != nil:
 			u = u.Dagger()
 		case mod.POW() != nil:
-			// TODO: ctrl @ pow(0.5) @ U is not equal to pow(0.5) @ ctrl @ U
 			u = matrix.ApplyN(u, int(n))
 		default:
 			return nil, fmt.Errorf("modifier=%s: %w", mod.GetText(), ErrUnexpected)
-		}
-	}
-
-	switch len(ctrl) {
-	case 0:
-		n := v.qsim.NumberOfBit()
-		u = gate.TensorProduct(u, n, q.Index(qargs...))
-	default:
-		n := v.qsim.NumberOfBit()
-		u = gate.Controlled(u, n, q.Index(ctrl...), qargs[len(qargs)-1].Index())
-
-		if len(negctrl) > 0 {
-			x := gate.TensorProduct(gate.X(), n, q.Index(negctrl...))
-			u = matrix.Apply(x, u, x)
 		}
 	}
 
@@ -364,14 +349,17 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 
 	id := v.Visit(ctx.Identifier()).(string)
 	switch id {
-	case "U":
+	case U:
 		params, err := v.Params(ctx.ExpressionList())
 		if err != nil {
 			return nil, false, fmt.Errorf("params: %w", err)
 		}
-		u := gate.U(params[0], params[1], params[2])
-
 		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+
+		n := v.qsim.NumberOfBit()
+		u := gate.U(params[0], params[1], params[2])
+		u = gate.TensorProduct(u, n, q.Index(flatten(qargs)...))
+
 		u, err = v.Modify(u, flatten(qargs), ctx.AllGateModifier())
 		if err != nil {
 			return nil, false, fmt.Errorf("modify: %w", err)
