@@ -1086,18 +1086,6 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) i
 	return bits
 }
 
-func (v *Visitor) VisitParenthesisExpression(ctx *parser.ParenthesisExpressionContext) interface{} {
-	return v.Visit(ctx.Expression())
-}
-
-func (v *Visitor) VisitExpressionStatement(ctx *parser.ExpressionStatementContext) interface{} {
-	return v.Visit(ctx.Expression())
-}
-
-func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) interface{} {
-	return v.Visit(ctx.Expression())
-}
-
 func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
 	val := v.Visit(ctx.Expression())
 	switch {
@@ -1118,6 +1106,18 @@ func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interfa
 	}
 
 	return fmt.Errorf("x=%s: %w", ctx.GetText(), ErrUnexpected)
+}
+
+func (v *Visitor) VisitParenthesisExpression(ctx *parser.ParenthesisExpressionContext) interface{} {
+	return v.Visit(ctx.Expression())
+}
+
+func (v *Visitor) VisitExpressionStatement(ctx *parser.ExpressionStatementContext) interface{} {
+	return v.Visit(ctx.Expression())
+}
+
+func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) interface{} {
+	return v.Visit(ctx.Expression())
 }
 
 func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionContext) interface{} {
