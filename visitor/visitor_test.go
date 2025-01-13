@@ -554,9 +554,10 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 	}
 
 	cases := []struct {
-		text string
-		tree string
-		want Want
+		text   string
+		tree   string
+		want   Want
+		errMsg string
 	}{
 		{
 			text: `
@@ -611,6 +612,15 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 				},
 			},
 		},
+		{
+			text: `
+				qubit q;
+				U(pi/2.0, 0, pi) q;
+				c = measure q;
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (measureExpression measure (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			errMsg: "operand=c: classical bit not found",
+		},
 	}
 
 	for _, c := range cases {
@@ -628,7 +638,11 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 
 		switch ret := v.Visit(tree).(type) {
 		case error:
-			panic(ret)
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+			}
+
+			continue
 		}
 
 		if len(c.want.classicalBit) != 0 {
@@ -1568,6 +1582,22 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				"[11][  3]( 1.0000 0.0000i): 1.0000",
 			},
 		},
+		{
+			text: `
+				qubit[2] q;
+				u(pi, 0, pi) q;
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement u ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			errMsg: "defined: idenfitier=u: gate not found",
+		},
+		{
+			text: `
+				qubit[2] q;
+				U(true, 0, pi) q;
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression true) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			errMsg: "builtin: params: param=true: unexpected",
+		},
 	}
 
 	for _, c := range cases {
@@ -1604,9 +1634,10 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 
 func TestVisitor_VisitGateModifier(t *testing.T) {
 	cases := []struct {
-		text string
-		tree string
-		want []string
+		text   string
+		tree   string
+		want   []string
+		errMsg string
 	}{
 		{
 			text: `
@@ -1780,6 +1811,23 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				"[111][  7]( 1.0000 0.0000i): 1.0000",
 			},
 		},
+		{
+			text: `
+				qubit q;
+				pow(true) @ U(pi, 0, pi) q;
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression true) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			errMsg: "builtin: modify: pow=true: unexpected",
+		},
+		{
+			text: `
+				gate x q { U(pi, 0, pi) q; }
+				qubit q;
+				pow(true) @ x q;
+			`,
+			tree:   "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression true) ) @) x (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			errMsg: "defined: modify: pow=true: unexpected",
+		},
 	}
 
 	for _, c := range cases {
@@ -1794,8 +1842,14 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 		qsim := q.New()
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
-		if err := v.Visit(tree); err != nil {
-			panic(err)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret.Error(), c.errMsg)
+			}
+
+			continue
 		}
 
 		for i, s := range qsim.State() {
@@ -1834,6 +1888,14 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 			`,
 			tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q0) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) })))) (statementOrScope (statement (defStatement def xm ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q1)) ) (returnSignature -> (scalarType bit)) (scope { (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q1))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) m = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q1)))) ;))) (statementOrScope (statement (returnStatement return (expression m) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (expression xm ( (expressionList (expression q)) ))) ;))) <EOF>)",
 			want: "map[c:[1]]",
+		},
+		{
+			text: `
+				qubit q;
+				xm(q);
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (expressionStatement (expression xm ( (expressionList (expression q)) )) ;))) <EOF>)",
+			errMsg: "identifier=xm: function not found",
 		},
 		{
 			text:   "def f(qubit q) -> bit { return 1; } def f(qubit q) -> bit { return 0; }",
