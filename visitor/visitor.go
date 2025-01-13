@@ -316,17 +316,10 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs [][]q.Qubit, modifier []parser.I
 		n := v.Visit(mod).(int64)
 		switch {
 		case mod.CTRL() != nil:
-			for _, a := range qargs[i] {
-				u = AddControlled(u, a.Index())
-			}
+			u = AddControlled(u, q.Index(qargs[i]...))
 		case mod.NEGCTRL() != nil:
-			n := v.qsim.NumberOfBit()
-			x := gate.TensorProduct(gate.X(), n, q.Index(qargs[i]...))
-
-			for _, a := range qargs[i] {
-				u = AddControlled(u, a.Index())
-			}
-
+			x := gate.TensorProduct(gate.X(), v.qsim.NumberOfBit(), q.Index(qargs[i]...))
+			u = AddControlled(u, q.Index(qargs[i]...))
 			u = matrix.Apply(x, u, x)
 		case mod.INV() != nil:
 			u = u.Dagger()

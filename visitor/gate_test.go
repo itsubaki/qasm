@@ -70,7 +70,7 @@ func TestAddControlled(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got := visitor.AddControlled(c.in, c.bit)
+		got := visitor.AddControlled(c.in, []int{c.bit})
 		if !got.Equals(c.want) {
 			t.Fail()
 		}
