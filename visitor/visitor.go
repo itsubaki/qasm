@@ -637,7 +637,36 @@ func (v *Visitor) VisitIoDeclarationStatement(ctx *parser.IoDeclarationStatement
 }
 
 func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarationStatementContext) interface{} {
-	return fmt.Errorf("VisitOldStyleDeclarationStatement: %w", ErrNotImplemented)
+	switch {
+	case ctx.QREG() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.Environ.GetQubit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		var size int64 = 1
+		if ctx.Designator() != nil {
+			size = v.Visit(ctx.Designator()).(int64)
+		}
+
+		v.Environ.Qubit[id] = v.qsim.ZeroWith(int(size))
+		return nil
+	case ctx.CREG() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.Environ.GetClassicalBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		var size int64 = 1
+		if ctx.Designator() != nil {
+			size = v.Visit(ctx.Designator()).(int64)
+		}
+
+		v.Environ.ClassicalBit[id] = make([]int64, int(size))
+		return nil
+	default:
+		return fmt.Errorf("x=%s: %w", ctx.GetText(), ErrUnexpected)
+	}
 }
 
 func (v *Visitor) VisitExternStatement(ctx *parser.ExternStatementContext) interface{} {

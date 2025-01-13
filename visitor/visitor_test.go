@@ -451,6 +451,77 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 	}
 }
 
+func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
+	cases := []struct {
+		text   string
+		tree   string
+		want   string
+		errMsg string
+	}{
+		{
+			text: "qreg q;",
+			tree: "(program (statementOrScope (statement (oldStyleDeclarationStatement qreg q ;))) <EOF>)",
+			want: "map[q:[0]]",
+		},
+		{
+			text: "qreg q[2];",
+			tree: "(program (statementOrScope (statement (oldStyleDeclarationStatement qreg q (designator [ (expression 2) ]) ;))) <EOF>)",
+			want: "map[q:[0 1]]",
+		},
+		{
+			text:   "qreg q; qreg q;",
+			tree:   "(program (statementOrScope (statement (oldStyleDeclarationStatement qreg q ;))) (statementOrScope (statement (oldStyleDeclarationStatement qreg q ;))) <EOF>)",
+			errMsg: "identifier=q: already declared",
+		},
+		{
+			text: "creg c;",
+			tree: "(program (statementOrScope (statement (oldStyleDeclarationStatement creg c ;))) <EOF>)",
+			want: "map[c:[0]]",
+		},
+		{
+			text: "creg c[2];",
+			tree: "(program (statementOrScope (statement (oldStyleDeclarationStatement creg c (designator [ (expression 2) ]) ;))) <EOF>)",
+			want: "map[c:[0 0]]",
+		},
+		{
+			text:   "creg c; creg c;",
+			tree:   "(program (statementOrScope (statement (oldStyleDeclarationStatement creg c ;))) (statementOrScope (statement (oldStyleDeclarationStatement creg c ;))) <EOF>)",
+			errMsg: "identifier=c: already declared",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+			}
+
+			continue
+		}
+
+		if len(env.ClassicalBit) > 0 && fmt.Sprintf("%v", env.ClassicalBit) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClassicalBit, c.want)
+		}
+
+		if len(env.Qubit) > 0 && fmt.Sprintf("%v", env.Qubit) != c.want {
+			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
+		}
+	}
+}
+
 func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 	type Want struct {
 		classicalBit []string
