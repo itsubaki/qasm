@@ -326,6 +326,7 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs []q.Qubit, modifier []parser.IGa
 		case mod.INV() != nil:
 			u = u.Dagger()
 		case mod.POW() != nil:
+			// TODO: ctrl @ pow(0.5) @ U is not equal to pow(0.5) @ ctrl @ U
 			u = matrix.ApplyN(u, int(n))
 		default:
 			return nil, fmt.Errorf("modifier=%s: %w", mod.GetText(), ErrUnexpected)
@@ -401,10 +402,21 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 		}
 	}
 
+	var qargs [][]q.Qubit
 	if ctx.GateOperandList() != nil {
-		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		var shift int
+		for _, mod := range ctx.AllGateModifier() {
+			switch {
+			case
+				mod.CTRL() != nil,
+				mod.NEGCTRL() != nil:
+				shift++
+			}
+		}
+
+		qargs = v.Visit(ctx.GateOperandList()).([][]q.Qubit)
 		for i, id := range g.QArgs {
-			enclosed.Environ.Qubit[id] = qargs[i]
+			enclosed.Environ.Qubit[id] = qargs[i+shift]
 		}
 	}
 
@@ -429,14 +441,17 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 	u := matrix.Apply(list...)
 
 	// modify
-	// TODO: ctrl, negctrl
-	for _, mod := range ctx.AllGateModifier() {
+	for i, mod := range ctx.AllGateModifier() {
 		n := v.Visit(mod).(int64)
 		switch {
 		case mod.CTRL() != nil:
-			return nil, fmt.Errorf("ctrl: %w", ErrNotImplemented)
+			u = AddControlled(u, qargs[i][0].Index())
 		case mod.NEGCTRL() != nil:
-			return nil, fmt.Errorf("negctrl: %w", ErrNotImplemented)
+			n := v.qsim.NumberOfBit()
+			x := gate.TensorProduct(gate.X(), n, q.Index(qargs[i][0]))
+
+			u = AddControlled(u, qargs[i][0].Index())
+			u = matrix.Apply(x, u, x)
 		case mod.INV() != nil:
 			u = u.Dagger()
 		case mod.POW() != nil:
