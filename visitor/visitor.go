@@ -73,15 +73,13 @@ func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) interface{} {
 		v.Environ.Version = v.Visit(ctx.Version()).(string)
 	}
 
-	var result interface{}
 	for _, s := range ctx.AllStatementOrScope() {
 		if res := v.Visit(s); res != nil {
-			result = res
-			break
+			return res
 		}
 	}
 
-	return result
+	return nil
 }
 
 func (v *Visitor) VisitVersion(ctx *parser.VersionContext) interface{} {
@@ -148,7 +146,7 @@ func (v *Visitor) VisitScope(ctx *parser.ScopeContext) interface{} {
 		list = append(list, result)
 
 		if contains(result, Break, Continue) {
-			break
+			return list
 		}
 	}
 
@@ -208,7 +206,7 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) interface{}
 		result := enclosed.Visit(ctx.StatementOrScope())
 
 		if contains(result, Break) {
-			break
+			return nil
 		}
 	}
 
@@ -219,16 +217,14 @@ func (v *Visitor) VisitWhileStatement(ctx *parser.WhileStatementContext) interfa
 	enclosed := v.Enclosed()
 	for {
 		if !v.Visit(ctx.Expression()).(bool) {
-			break
+			return nil
 		}
 
 		result := enclosed.Visit(ctx.GetBody())
 		if contains(result, Break) {
-			break
+			return nil
 		}
 	}
-
-	return nil
 }
 
 func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) interface{} {
@@ -238,13 +234,13 @@ func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) inter
 	for _, item := range ctx.AllSwitchCaseItem() {
 		if item.DEFAULT() != nil {
 			enclosed.Visit(item)
-			break
+			return nil
 		}
 
 		result := v.Visit(item.ExpressionList()).([]interface{})
 		if result[len(result)-1] == x {
 			enclosed.Visit(item)
-			break
+			return nil
 		}
 	}
 
