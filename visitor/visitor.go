@@ -1099,7 +1099,25 @@ func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) interface{} {
 }
 
 func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
-	return fmt.Errorf("VisitCastExpression: %w", ErrNotImplemented)
+	val := v.Visit(ctx.Expression())
+	switch {
+	case ctx.ScalarType().INT() != nil:
+		switch v := val.(type) {
+		case float64:
+			return int(v)
+		case int64:
+			return int(v)
+		}
+	case ctx.ScalarType().UINT() != nil:
+		switch v := val.(type) {
+		case float64:
+			return uint(v)
+		case int64:
+			return uint(v)
+		}
+	}
+
+	return fmt.Errorf("x=%s: %w", ctx.GetText(), ErrUnexpected)
 }
 
 func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionContext) interface{} {

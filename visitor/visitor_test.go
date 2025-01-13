@@ -2287,3 +2287,60 @@ func TestVisitor_VisitSwitchStatement(t *testing.T) {
 		}
 	}
 }
+
+func TestVisitor_VisitCastExpression(t *testing.T) {
+	cases := []struct {
+		text   string
+		tree   string
+		want   string
+		errMsg string
+	}{
+		{
+			text: "int a = int(42);",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression (scalarType int) ( (expression 42) ))) ;))) <EOF>)",
+			want: "map[a:42]",
+		},
+		{
+			text: "int a = int(42.123);",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression (scalarType int) ( (expression 42.123) ))) ;))) <EOF>)",
+			want: "map[a:42]",
+		},
+		{
+			text: "uint a = uint(42);",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType uint) a = (declarationExpression (expression (scalarType uint) ( (expression 42) ))) ;))) <EOF>)",
+			want: "map[a:42]",
+		},
+		{
+			text: "uint a = uint(42.123);",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType uint) a = (declarationExpression (expression (scalarType uint) ( (expression 42.123) ))) ;))) <EOF>)",
+			want: "map[a:42]",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+			}
+
+			continue
+		}
+
+		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+			t.Errorf("got=%v, want=%v", env.Variable, c.want)
+		}
+	}
+}
