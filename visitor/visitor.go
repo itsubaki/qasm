@@ -632,10 +632,6 @@ func (v *Visitor) VisitAliasDeclarationStatement(ctx *parser.AliasDeclarationSta
 	return nil
 }
 
-func (v *Visitor) VisitIoDeclarationStatement(ctx *parser.IoDeclarationStatementContext) interface{} {
-	return fmt.Errorf("VisitIoDeclarationStatement: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarationStatementContext) interface{} {
 	switch {
 	case ctx.QREG() != nil:
@@ -669,6 +665,10 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 	}
 }
 
+func (v *Visitor) VisitIoDeclarationStatement(ctx *parser.IoDeclarationStatementContext) interface{} {
+	return fmt.Errorf("VisitIoDeclarationStatement: %w", ErrNotImplemented)
+}
+
 func (v *Visitor) VisitExternStatement(ctx *parser.ExternStatementContext) interface{} {
 	return fmt.Errorf("VisitExternStatement: %w", ErrNotImplemented)
 }
@@ -695,14 +695,6 @@ func (v *Visitor) VisitBoxStatement(ctx *parser.BoxStatementContext) interface{}
 
 func (v *Visitor) VisitDelayStatement(ctx *parser.DelayStatementContext) interface{} {
 	return fmt.Errorf("VisitDelayStatement: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitParenthesisExpression(ctx *parser.ParenthesisExpressionContext) interface{} {
-	return v.Visit(ctx.Expression())
-}
-
-func (v *Visitor) VisitExpressionStatement(ctx *parser.ExpressionStatementContext) interface{} {
-	return v.Visit(ctx.Expression())
 }
 
 func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) interface{} {
@@ -1078,18 +1070,6 @@ func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) inter
 	return result
 }
 
-func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
-	return fmt.Errorf("VisitCastExpression: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionContext) interface{} {
-	return fmt.Errorf("VisitDurationofExpression: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitSetExpression(ctx *parser.SetExpressionContext) interface{} {
-	return fmt.Errorf("VisitSetExpression: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) interface{} {
 	qargs := v.Visit(ctx.GateOperand()).([]q.Qubit)
 	v.qsim.Measure(qargs...)
@@ -1102,8 +1082,28 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) i
 	return bits
 }
 
+func (v *Visitor) VisitParenthesisExpression(ctx *parser.ParenthesisExpressionContext) interface{} {
+	return v.Visit(ctx.Expression())
+}
+
+func (v *Visitor) VisitExpressionStatement(ctx *parser.ExpressionStatementContext) interface{} {
+	return v.Visit(ctx.Expression())
+}
+
 func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) interface{} {
 	return v.Visit(ctx.Expression())
+}
+
+func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) interface{} {
+	return fmt.Errorf("VisitCastExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionContext) interface{} {
+	return fmt.Errorf("VisitDurationofExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitSetExpression(ctx *parser.SetExpressionContext) interface{} {
+	return fmt.Errorf("VisitSetExpression: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) interface{} {
