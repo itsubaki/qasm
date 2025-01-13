@@ -311,35 +311,6 @@ func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, error)
 	return params, nil
 }
 
-func (v *Visitor) Modify(u matrix.Matrix, qargs [][]q.Qubit, modifier []parser.IGateModifierContext) (matrix.Matrix, error) {
-	for i, mod := range modifier {
-		switch {
-		case mod.CTRL() != nil:
-			u = AddControlled(u, q.Index(qargs[i]...))
-		case mod.NEGCTRL() != nil:
-			x := gate.TensorProduct(gate.X(), v.qsim.NumberOfBit(), q.Index(qargs[i]...))
-			u = AddControlled(u, q.Index(qargs[i]...))
-			u = matrix.Apply(x, u, x)
-		case mod.INV() != nil:
-			u = u.Dagger()
-		case mod.POW() != nil:
-			var p float64
-			switch n := v.Visit(mod).(type) {
-			case float64:
-				p = n
-			case int64:
-				p = float64(n)
-			default:
-				return nil, fmt.Errorf("pow=%v: %w", n, ErrUnexpected)
-			}
-
-			u = Pow(u, p)
-		}
-	}
-
-	return u, nil
-}
-
 func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (matrix.Matrix, bool, error) {
 	if ctx.GPHASE() != nil {
 		params, err := v.Params(ctx.ExpressionList())
@@ -368,7 +339,7 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 		u = gate.TensorProduct(u, n, q.Index(flatten(qargs)...))
 
 		// modify
-		u, err = v.Modify(u, qargs, ctx.AllGateModifier())
+		u, err = v.Modify(u, n, qargs, ctx.AllGateModifier())
 		if err != nil {
 			return nil, false, fmt.Errorf("modify: %w", err)
 		}
@@ -377,6 +348,33 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 	default:
 		return nil, false, nil
 	}
+}
+
+func (v *Visitor) Modify(u matrix.Matrix, n int, qargs [][]q.Qubit, modifier []parser.IGateModifierContext) (matrix.Matrix, error) {
+	for i, mod := range modifier {
+		switch {
+		case mod.CTRL() != nil:
+			u = Controlled(u, q.Index(qargs[i]...))
+		case mod.NEGCTRL() != nil:
+			u = NegControlled(u, n, q.Index(qargs[i]...))
+		case mod.INV() != nil:
+			u = u.Dagger()
+		case mod.POW() != nil:
+			var p float64
+			switch n := v.Visit(mod).(type) {
+			case float64:
+				p = n
+			case int64:
+				p = float64(n)
+			default:
+				return nil, fmt.Errorf("pow=%v: %w", n, ErrUnexpected)
+			}
+
+			u = Pow(u, p)
+		}
+	}
+
+	return u, nil
 }
 
 func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, error) {
@@ -439,7 +437,8 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 	u := matrix.Apply(list...)
 
 	// modify
-	u, err := v.Modify(u, qargs, ctx.AllGateModifier())
+	n := v.qsim.NumberOfBit()
+	u, err := v.Modify(u, n, qargs, ctx.AllGateModifier())
 	if err != nil {
 		return nil, fmt.Errorf("modify: %w", err)
 	}
