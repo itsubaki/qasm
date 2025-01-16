@@ -777,6 +777,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 		case error:
 			panic(ret)
 		}
+
 		if len(c.want.classicalBit) != 0 {
 			var found bool
 			for _, w := range c.want.classicalBit {

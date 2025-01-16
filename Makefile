@@ -16,4 +16,4 @@ parse:
 	go run cmd/parse/main.go < _testdata/bell.qasm
 
 test:
-	go test -v -cover $(shell go list ./... | grep -v /cmd | grep -v /gen) -v -coverprofile=coverage.txt -covermode=atomic
+	go test -v -cover $(shell go list ./... | grep -v /cmd | grep -v /gen | grep -v -E "qasm$$") -v -coverprofile=coverage.txt -covermode=atomic

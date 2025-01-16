@@ -5,10 +5,8 @@ import (
 	"os"
 
 	"github.com/antlr4-go/antlr/v4"
-	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/gen/parser"
 	"github.com/itsubaki/qasm/io"
-	"github.com/itsubaki/qasm/visitor"
 )
 
 func main() {
@@ -19,13 +17,4 @@ func main() {
 
 	tree := p.Program()
 	fmt.Println(tree.ToStringTree(nil, p))
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	switch ret := v.Visit(tree).(type) {
-	case error:
-		panic(ret)
-	}
 }

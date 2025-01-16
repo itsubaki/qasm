@@ -79,9 +79,9 @@ func TestControlled(t *testing.T) {
 
 func TestNegControlled(t *testing.T) {
 	cases := []struct {
-		in     matrix.Matrix
-		want   matrix.Matrix
-		n, bit int
+		in   matrix.Matrix
+		want matrix.Matrix
+		bit  int
 	}{
 		{
 			in: gate.TensorProduct(gate.X(), 2, []int{1}),
@@ -90,7 +90,6 @@ func TestNegControlled(t *testing.T) {
 				gate.ControlledNot(2, []int{0}, 1),
 				gate.TensorProduct(gate.X(), 2, []int{0}),
 			),
-			n:   2,
 			bit: 0,
 		},
 		{
@@ -100,7 +99,6 @@ func TestNegControlled(t *testing.T) {
 				gate.ControlledNot(2, []int{1}, 0),
 				gate.TensorProduct(gate.X(), 2, []int{1}),
 			),
-			n:   2,
 			bit: 1,
 		},
 		{
@@ -110,7 +108,6 @@ func TestNegControlled(t *testing.T) {
 				gate.ControlledNot(3, []int{0, 1}, 2),
 				gate.TensorProduct(gate.X(), 3, []int{1}),
 			),
-			n:   3,
 			bit: 1,
 		},
 		{
@@ -120,13 +117,12 @@ func TestNegControlled(t *testing.T) {
 				gate.ControlledNot(3, []int{0, 2}, 1),
 				gate.TensorProduct(gate.X(), 3, []int{2}),
 			),
-			n:   3,
 			bit: 2,
 		},
 	}
 
 	for _, c := range cases {
-		got := visitor.NegControlled(c.in, c.n, []int{c.bit})
+		got := visitor.NegControlled(c.in, []int{c.bit})
 		if !got.Equals(c.want) {
 			t.Fail()
 		}

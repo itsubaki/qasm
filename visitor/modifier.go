@@ -33,7 +33,9 @@ func Controlled(u matrix.Matrix, c []int) matrix.Matrix {
 
 // NegControlled returns a controlled-u gate with control bit.
 // u is a (2**n x 2**n) unitary matrix and returns a (2**n x 2**n) matrix.
-func NegControlled(u matrix.Matrix, n int, c []int) matrix.Matrix {
+func NegControlled(u matrix.Matrix, c []int) matrix.Matrix {
+	d, _ := u.Dimension()
+	n := number.Log2(d)
 	x := gate.TensorProduct(gate.X(), n, c)
 	cu := Controlled(u, c)
 	return matrix.Apply(x, cu, x)
