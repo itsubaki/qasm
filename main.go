@@ -31,8 +31,8 @@ func main() {
 
 	qsim := q.New()
 	v := visitor.New(qsim, visitor.NewEnviron())
-
-	if err := v.Visit(p.Program()); err != nil {
+	switch err := v.Visit(p.Program()).(type) {
+	case error:
 		panic(err)
 	}
 

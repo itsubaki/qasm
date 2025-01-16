@@ -11,7 +11,6 @@ import (
 
 func main() {
 	text := io.MustScan(os.Stdin)
-
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
