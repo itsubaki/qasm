@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/cmplx"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -356,12 +357,11 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs [][]q.Qubit, modifier []parser.I
 	// FIXME: pow(2) @ ctrl @ U q0, q1; doesn't work
 	// FIXME: ctrl @ pow(2) @ U q0, q1; doesn't work
 
-	for i, mod := range modifier {
+	rev := make([]parser.IGateModifierContext, len(modifier))
+	copy(rev, modifier)
+	slices.Reverse(rev)
+	for _, mod := range rev {
 		switch {
-		case mod.CTRL() != nil:
-			u = Controlled(u, q.Index(qargs[i]...))
-		case mod.NEGCTRL() != nil:
-			u = NegControlled(u, q.Index(qargs[i]...))
 		case mod.INV() != nil:
 			u = u.Dagger()
 		case mod.POW() != nil:
@@ -376,6 +376,16 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs [][]q.Qubit, modifier []parser.I
 			}
 
 			u = Pow(u, p)
+		}
+	}
+
+	var i int
+	for _, mod := range modifier {
+		switch {
+		case mod.CTRL() != nil:
+			u, i = Controlled(u, q.Index(qargs[i]...)), i+1
+		case mod.NEGCTRL() != nil:
+			u, i = NegControlled(u, q.Index(qargs[i]...)), i+1
 		}
 	}
 
