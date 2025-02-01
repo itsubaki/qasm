@@ -352,11 +352,6 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 }
 
 func (v *Visitor) Modify(u matrix.Matrix, qargs [][]q.Qubit, modifier []parser.IGateModifierContext) (matrix.Matrix, error) {
-	// FIXME: That is, inv @ ctrl @ U = ctrl @ inv @ U. (https://openqasm.com/language/gates.html#inverse-modifier)
-	// FIXME: inv @ ctrl @ U q0, q1; doesn't work
-	// FIXME: pow(2) @ ctrl @ U q0, q1; doesn't work
-	// FIXME: ctrl @ pow(2) @ U q0, q1; doesn't work
-
 	rev := make([]parser.IGateModifierContext, len(modifier))
 	copy(rev, modifier)
 	slices.Reverse(rev)

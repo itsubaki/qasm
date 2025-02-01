@@ -1869,6 +1869,18 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				"[1][  1]( 0.0000-0.7071i): 0.5000",
 			},
 		},
+		{
+			text: `
+				qubit[2] q;
+				U(pi/2, 0, pi) q[0];
+				inv @ ctrl @ U(pi, 0, pi) q[0], q[1];
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier inv @) (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) <EOF>)",
+			want: []string{
+				"[00][  0]( 0.7071 0.0000i): 0.5000",
+				"[11][  3]( 0.7071 0.0000i): 0.5000",
+			},
+		},
 	}
 
 	for _, c := range cases {
