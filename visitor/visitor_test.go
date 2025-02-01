@@ -1482,6 +1482,11 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 			},
 		},
 		{
+			text:   "qubit q; gphase(true);",
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement gphase ( (expressionList (expression true)) ) ;))) <EOF>)",
+			errMsg: "builtin: params: param=true(bool): unexpected",
+		},
+		{
 			text: `
 				gate h q0 { U(pi/2, 0, pi) q0; }
 				gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
@@ -1602,7 +1607,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				U(true, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression true) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "builtin: params: param=true: unexpected",
+			errMsg: "builtin: params: param=true(bool): unexpected",
 		},
 	}
 
@@ -1812,7 +1817,7 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				pow(true) @ U(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression true) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "builtin: modify: pow=true: unexpected",
+			errMsg: "builtin: modify: pow=true(bool): unexpected",
 		},
 		{
 			text: `
@@ -1821,7 +1826,7 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				pow(true) @ x q;
 			`,
 			tree:   "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression true) ) @) x (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "defined: modify: pow=true: unexpected",
+			errMsg: "defined: modify: pow=true(bool): unexpected",
 		},
 		{
 			text: `

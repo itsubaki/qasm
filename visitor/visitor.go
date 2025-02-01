@@ -305,7 +305,7 @@ func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, error)
 		case int64:
 			params = append(params, float64(val))
 		default:
-			return nil, fmt.Errorf("param=%v: %w", val, ErrUnexpected)
+			return nil, fmt.Errorf("param=%v(%T): %w", val, e, ErrUnexpected)
 		}
 	}
 
@@ -367,7 +367,7 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs [][]q.Qubit, modifier []parser.I
 			case int64:
 				p = float64(n)
 			default:
-				return nil, fmt.Errorf("pow=%v: %w", n, ErrUnexpected)
+				return nil, fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
 			}
 
 			u = Pow(u, p)
@@ -791,7 +791,7 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 		case int64:
 			operand = append(operand, float64(val))
 		default:
-			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
 		}
 	}
 
@@ -814,7 +814,7 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 		case int64:
 			operand = append(operand, float64(val))
 		default:
-			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
 		}
 	}
 
@@ -846,7 +846,7 @@ func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext)
 
 			operand = append(operand, o)
 		default:
-			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
 		}
 	}
 
@@ -934,7 +934,7 @@ func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionCont
 		case int64:
 			operand = append(operand, float64(val))
 		default:
-			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
 		}
 	}
 
@@ -962,7 +962,7 @@ func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) inter
 		case int64:
 			operand = append(operand, float64(val))
 		default:
-			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
 		}
 	}
 
@@ -979,21 +979,21 @@ func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) inter
 		case int64:
 			return -1 * val
 		default:
-			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
 		}
 	case ctx.EXCLAMATION_POINT() != nil:
 		switch val := operand.(type) {
 		case bool:
 			return !val
 		default:
-			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
 		}
 	case ctx.TILDE() != nil:
 		switch val := operand.(type) {
 		case int64:
 			return ^val
 		default:
-			return fmt.Errorf("operand=%v: %w", val, ErrUnexpected)
+			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
 		}
 	default:
 		return fmt.Errorf("operator=%s: %w", ctx.GetOp().GetText(), ErrUnexpected)
