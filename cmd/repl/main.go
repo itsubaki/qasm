@@ -58,6 +58,13 @@ func main() {
 				continue
 			}
 
+			if text == "clear" {
+				qsim = q.New()
+				env = visitor.NewEnviron()
+				v = visitor.New(qsim, env)
+				continue
+			}
+
 			lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 			p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 			tree := p.Program()

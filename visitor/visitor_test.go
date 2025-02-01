@@ -1697,17 +1697,6 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 			},
 		},
 		{
-			// sx**2 = x
-			text: `
-				qubit q;
-				pow(2.0) @ U(pi/2, -pi/2, pi/2) q;
-			`,
-			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression 2.0) ) @) U ( (expressionList (expression (expression pi) / (expression 2)) , (expression (expression - (expression pi)) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			want: []string{
-				"[1][  1]( 0.0000-1.0000i): 1.0000",
-			},
-		},
-		{
 			text: `
 				const float half = pi / 2;
 				qubit q;
@@ -1856,6 +1845,28 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				"[010][  2]( 0.5000 0.0000i): 0.2500",
 				"[101][  5]( 0.5000 0.0000i): 0.2500",
 				"[110][  6]( 0.5000 0.0000i): 0.2500",
+			},
+		},
+		{
+			// sx**2 = x
+			text: `
+				qubit q;
+				pow(2.0) @ U(pi/2, -pi/2, pi/2) q;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression 2.0) ) @) U ( (expressionList (expression (expression pi) / (expression 2)) , (expression (expression - (expression pi)) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[1][  1]( 0.0000-1.0000i): 1.0000",
+			},
+		},
+		{
+			text: `
+				qubit q;
+				U(pi/2, -pi/2, pi/2) q;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression (expression - (expression pi)) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[0][  0]( 0.7071 0.0000i): 0.5000",
+				"[1][  1]( 0.0000-0.7071i): 0.5000",
 			},
 		},
 	}
