@@ -1834,6 +1834,30 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 			tree:   "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression true) ) @) x (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
 			errMsg: "defined: modify: pow=true: unexpected",
 		},
+		{
+			text: `
+				qubit q;
+				inv @ pow(2) @ U(pi, 0, pi) q;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier inv @) (gateModifier pow ( (expression 2) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[0][  0]( 1.0000 0.0000i): 1.0000",
+			},
+		},
+		{
+			text: `
+				qubit[3] q;
+				U(pi/2.0, 0, pi) q[0], q[1];
+				ctrl @ negctrl @ U(pi, 0, pi) q[0], q[1], q[2];
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) (gateModifier negctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 2) ])))) ;))) <EOF>)",
+			want: []string{
+				"[000][  0]( 0.5000 0.0000i): 0.2500",
+				"[010][  2]( 0.5000 0.0000i): 0.2500",
+				"[101][  5]( 0.5000 0.0000i): 0.2500",
+				"[110][  6]( 0.5000 0.0000i): 0.2500",
+			},
+		},
 	}
 
 	for _, c := range cases {
