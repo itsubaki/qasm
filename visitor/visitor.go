@@ -534,7 +534,7 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 	}
 
 	size := v.Visit(ctx.QubitType()).(int64)
-	v.env.Qubit[id] = v.qsim.ZeroWith(int(size))
+	v.env.Qubit[id] = v.qsim.Zeros(int(size))
 	return nil
 }
 
@@ -658,7 +658,7 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 			size = v.Visit(ctx.Designator()).(int64)
 		}
 
-		v.env.Qubit[id] = v.qsim.ZeroWith(int(size))
+		v.env.Qubit[id] = v.qsim.Zeros(int(size))
 		return nil
 	case ctx.CREG() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
