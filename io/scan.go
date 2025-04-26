@@ -2,6 +2,7 @@ package io
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 )
 
@@ -14,7 +15,7 @@ func Scan(r io.Reader) (string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return "", err
+		return "", fmt.Errorf("scan: %w", err)
 	}
 
 	return text, nil

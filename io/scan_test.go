@@ -8,6 +8,22 @@ import (
 	"github.com/itsubaki/qasm/io"
 )
 
+var ErrSomtingWentWrong = errors.New("something went wrong")
+
+type errorReader struct{}
+
+func (e *errorReader) Read(p []byte) (n int, err error) {
+	return 0, ErrSomtingWentWrong
+}
+
+func TestScan(t *testing.T) {
+	if _, err := io.Scan(&errorReader{}); err != nil {
+		return
+	}
+
+	t.Fatal("unexpected")
+}
+
 func TestMustScan(t *testing.T) {
 	cases := []struct {
 		input string
