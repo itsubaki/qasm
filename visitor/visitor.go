@@ -546,6 +546,11 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
 		}
 
+		if ctx.DeclarationExpression() != nil {
+			v.env.Variable[id] = v.Visit(ctx.DeclarationExpression()).([]any)
+			return nil
+		}
+
 		v.env.Variable[id] = v.Visit(ctx.ArrayType())
 		return nil
 	case ctx.ScalarType().INT() != nil:
@@ -1013,6 +1018,10 @@ func (v *Visitor) VisitDeclarationExpression(ctx *parser.DeclarationExpressionCo
 		return v.Visit(ctx.MeasureExpression())
 	}
 
+	if ctx.ArrayLiteral() != nil {
+		return v.Visit(ctx.ArrayLiteral())
+	}
+
 	return v.Visit(ctx.Expression())
 }
 
@@ -1192,7 +1201,6 @@ func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) any {
 func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
 	size := v.Visit(ctx.ExpressionList()).([]any)[0].(int64)
 
-	// make array
 	scalar := ctx.ScalarType()
 	switch {
 	case scalar.INT() != nil:
@@ -1242,16 +1250,21 @@ func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
 	}
 }
 
-func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext) any {
-	return fmt.Errorf("VisitArrayReferenceType: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) any {
-	return fmt.Errorf("VisitArrayLiteral: %w", ErrNotImplemented)
+	var list []any
+	for _, x := range ctx.AllExpression() {
+		list = append(list, v.Visit(x))
+	}
+
+	return list
 }
 
 func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) any {
 	return fmt.Errorf("VisitReturnSignature: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext) any {
+	return fmt.Errorf("VisitArrayReferenceType: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalArgumentDefinition(ctx *parser.DefcalArgumentDefinitionContext) any {
