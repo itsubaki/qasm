@@ -151,6 +151,32 @@ func ExampleVisitor_VisitIncludeStatement() {
 	// [1][  1]( 0.7071 0.0000i): 0.5000
 }
 
+func ExampleVisitor_VisitIncludeStatement_invalid() {
+	text := `
+	include "../testdata/invalid.qasm";
+	qubit q;
+	h q;
+	`
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	tree := p.Program()
+	fmt.Println(tree.ToStringTree(nil, p))
+
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	if err := v.Visit(tree); err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// (program (statementOrScope (statement (includeStatement include "../testdata/invalid.qasm" ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement h (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)
+	// include: identifier=invalid: identifier not found
+}
+
 func ExampleVisitor_VisitIncludeStatement_fileNotFound() {
 	text := `
 	include "file_not_found.qasm";
