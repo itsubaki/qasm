@@ -12,7 +12,7 @@
 ```shell
 % go run cmd/repl/main.go                       
 >> OPENQASM 3.0;
->> include "_testdata/stdgates.qasm";
+>> include "testdata/stdgates.qasm";
 >> 
 >> qubit[2] q;
 [00][  0]( 1.0000 0.0000i): 1.0000
@@ -43,12 +43,12 @@ subroutine: []
 ```
 
 ```shell
-% go run cmd/lex/main.go < _testdata/bell.qasm
+% go run cmd/lex/main.go < testdata/bell.qasm
 [@-1,0:7='OPENQASM',<1>,1:0]
 [@-1,9:11='3.0',<103>,1:9]
 [@-1,12:12=';',<63>,1:12]
 [@-1,14:20='include',<2>,2:0]
-[@-1,22:46='"_testdata/stdgates.qasm"',<105>,2:8]
+[@-1,22:46='"testdata/stdgates.qasm"',<105>,2:8]
 [@-1,47:47=';',<63>,2:33]
 [@-1,50:54='qubit',<31>,4:0]
 [@-1,55:55='[',<56>,4:5]
@@ -76,12 +76,12 @@ subroutine: []
 ```
 
 ```shell
-go run cmd/parse/main.go < _testdata/bell.qasm
+go run cmd/parse/main.go < testdata/bell.qasm
 (program
   (version OPENQASM 3.0 ;)
   (statementOrScope
     (statement
-      (includeStatement include "_testdata/stdgates.qasm" ;)))
+      (includeStatement include "testdata/stdgates.qasm" ;)))
   (statementOrScope
     (statement
       (quantumDeclarationStatement
