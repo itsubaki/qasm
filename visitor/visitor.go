@@ -54,11 +54,7 @@ func (v *Visitor) VisitTerminal(node antlr.TerminalNode) any {
 }
 
 func (v *Visitor) VisitErrorNode(node antlr.ErrorNode) any {
-	return node.GetText()
-}
-
-func (v *Visitor) VisitPragma(ctx *parser.PragmaContext) any {
-	return v.Visit(ctx.RemainingLineContent())
+	return fmt.Errorf("VisitErrorNode: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) any {
@@ -67,6 +63,10 @@ func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) any {
 
 func (v *Visitor) VisitChildren(node antlr.RuleNode) any {
 	return fmt.Errorf("VisitChildren: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitPragma(ctx *parser.PragmaContext) any {
+	return v.Visit(ctx.RemainingLineContent())
 }
 
 func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) any {
