@@ -1259,12 +1259,12 @@ func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) any {
 	return list
 }
 
-func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) any {
-	return fmt.Errorf("VisitReturnSignature: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext) any {
 	return fmt.Errorf("VisitArrayReferenceType: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) any {
+	return fmt.Errorf("VisitReturnSignature: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalArgumentDefinition(ctx *parser.DefcalArgumentDefinitionContext) any {
