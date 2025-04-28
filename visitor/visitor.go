@@ -547,10 +547,11 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		}
 
 		size := v.Visit(ctx.ArrayType().ExpressionList()).([]any)[0].(int64)
+		scalar := ctx.ArrayType().ScalarType()
 
 		// make array
-		if ctx.ArrayType().ScalarType().INT() != nil {
-			bits := v.Visit(ctx.ArrayType().ScalarType().Designator().Expression()).(int64)
+		if scalar.INT() != nil {
+			bits := v.Visit(scalar.Designator().Expression()).(int64)
 			switch bits {
 			case 8:
 				v.env.Variable[id] = make([]int8, size)
@@ -560,13 +561,15 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 				v.env.Variable[id] = make([]int32, size)
 			case 64:
 				v.env.Variable[id] = make([]int64, size)
+			default:
+				return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
 			}
 
 			return nil
 		}
 
-		if ctx.ArrayType().ScalarType().UINT() != nil {
-			bits := v.Visit(ctx.ArrayType().ScalarType().Designator().Expression()).(int64)
+		if scalar.UINT() != nil {
+			bits := v.Visit(scalar.Designator().Expression()).(int64)
 			switch bits {
 			case 8:
 				v.env.Variable[id] = make([]uint8, size)
@@ -576,24 +579,28 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 				v.env.Variable[id] = make([]uint32, size)
 			case 64:
 				v.env.Variable[id] = make([]uint64, size)
+			default:
+				return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
 			}
 
 			return nil
 		}
 
-		if ctx.ArrayType().ScalarType().FLOAT() != nil {
-			bits := v.Visit(ctx.ArrayType().ScalarType().Designator().Expression()).(int64)
+		if scalar.FLOAT() != nil {
+			bits := v.Visit(scalar.Designator().Expression()).(int64)
 			switch bits {
 			case 32:
 				v.env.Variable[id] = make([]float32, size)
 			case 64:
 				v.env.Variable[id] = make([]float64, size)
+			default:
+				return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
 			}
 
 			return nil
 		}
 
-		if ctx.ArrayType().ScalarType().BOOL() != nil {
+		if scalar.BOOL() != nil {
 			v.env.Variable[id] = make([]bool, size)
 			return nil
 		}
