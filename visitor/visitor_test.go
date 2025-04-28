@@ -1984,7 +1984,7 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 			continue
 		}
 
-		if len(env.ClassicalBit) > 0 && fmt.Sprintf("%v", env.ClassicalBit) != c.want {
+		if len(c.want) > 0 && fmt.Sprintf("%v", env.ClassicalBit) != c.want {
 			t.Errorf("got=%v, want=%v", env.ClassicalBit, c.want)
 		}
 	}
@@ -2032,7 +2032,7 @@ func TestVisitor_VisitIfStatement(t *testing.T) {
 			panic(ret)
 		}
 
-		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -2084,7 +2084,7 @@ func TestVisitor_VisitForStatement(t *testing.T) {
 			panic(ret)
 		}
 
-		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -2130,7 +2130,7 @@ func TestVisitor_VisitBreakStatement(t *testing.T) {
 			panic(ret)
 		}
 
-		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -2176,7 +2176,7 @@ func TestVisitor_VisitContinueStatement(t *testing.T) {
 			panic(ret)
 		}
 
-		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -2246,7 +2246,7 @@ func TestVisitor_VisitWhileStatement(t *testing.T) {
 			panic(ret)
 		}
 
-		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -2335,7 +2335,7 @@ func TestVisitor_VisitSwitchStatement(t *testing.T) {
 			panic(ret)
 		}
 
-		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -2368,6 +2368,16 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType uint) a = (declarationExpression (expression (scalarType uint) ( (expression 42.123) ))) ;))) <EOF>)",
 			want: "map[a:42]",
 		},
+		{
+			text: "int[32] a = 42;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int (designator [ (expression 32) ])) a = (declarationExpression (expression 42)) ;))) <EOF>)",
+			want: "map[a:42]",
+		},
+		{
+			text: "int[64] a = 42;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int (designator [ (expression 64) ])) a = (declarationExpression (expression 42)) ;))) <EOF>)",
+			want: "map[a:42]",
+		},
 	}
 
 	for _, c := range cases {
@@ -2392,7 +2402,64 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 			continue
 		}
 
-		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+			t.Errorf("got=%v, want=%v", env.Variable, c.want)
+		}
+	}
+}
+
+func TestVisitor_VisitArrayType(t *testing.T) {
+	cases := []struct {
+		text   string
+		tree   string
+		want   string
+		errMsg string
+	}{
+		{
+			text: "array[int[32], 5] aa;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType int (designator [ (expression 32) ])) , (expressionList (expression 5)) ]) aa ;))) <EOF>)",
+			want: "map[aa:[0 0 0 0 0]]",
+		},
+		{
+			text: "array[uint[64], 3] aa;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType uint (designator [ (expression 64) ])) , (expressionList (expression 3)) ]) aa ;))) <EOF>)",
+			want: "map[aa:[0 0 0]]",
+		},
+		{
+			text: "array[float[64], 3] aa;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType float (designator [ (expression 64) ])) , (expressionList (expression 3)) ]) aa ;))) <EOF>)",
+			want: "map[aa:[0 0 0]]",
+		},
+		{
+			text: "array[bool, 3] aa;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType bool) , (expressionList (expression 3)) ]) aa ;))) <EOF>)",
+			want: "map[aa:[false false false]]",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+			}
+
+			continue
+		}
+
+		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}

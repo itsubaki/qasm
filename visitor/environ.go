@@ -7,8 +7,8 @@ import (
 
 type Environ struct {
 	Version      string
-	Const        map[string]interface{}
-	Variable     map[string]interface{}
+	Const        map[string]any
+	Variable     map[string]any
 	Qubit        map[string][]q.Qubit
 	ClassicalBit map[string][]int64
 	Gate         map[string]Gate
@@ -18,8 +18,8 @@ type Environ struct {
 
 func NewEnviron() *Environ {
 	return &Environ{
-		Const:        make(map[string]interface{}),
-		Variable:     make(map[string]interface{}),
+		Const:        make(map[string]any),
+		Variable:     make(map[string]any),
 		Qubit:        make(map[string][]q.Qubit),
 		ClassicalBit: make(map[string][]int64),
 		Gate:         make(map[string]Gate),
@@ -33,7 +33,7 @@ func (e *Environ) NewEnclosed() *Environ {
 	return env
 }
 
-func (e *Environ) GetConst(name string) (interface{}, bool) {
+func (e *Environ) GetConst(name string) (any, bool) {
 	if c, ok := e.Const[name]; ok {
 		return c, true
 	}
@@ -45,7 +45,7 @@ func (e *Environ) GetConst(name string) (interface{}, bool) {
 	return nil, false
 }
 
-func (e *Environ) GetVariable(name string) (interface{}, bool) {
+func (e *Environ) GetVariable(name string) (any, bool) {
 	if v, ok := e.Variable[name]; ok {
 		return v, true
 	}
@@ -57,7 +57,7 @@ func (e *Environ) GetVariable(name string) (interface{}, bool) {
 	return nil, false
 }
 
-func (e *Environ) SetVariable(name string, value interface{}) {
+func (e *Environ) SetVariable(name string, value any) {
 	for env := e; env != nil; env = env.Outer {
 		if _, ok := env.Variable[name]; ok {
 			env.Variable[name] = value
@@ -144,7 +144,7 @@ const (
 	Continue = "continue;"
 )
 
-func contains(result interface{}, s ...string) bool {
+func contains(result any, s ...string) bool {
 	switch v := result.(type) {
 	case string:
 		for _, e := range s {
@@ -152,7 +152,7 @@ func contains(result interface{}, s ...string) bool {
 				return true
 			}
 		}
-	case []interface{}:
+	case []any:
 		for _, e := range v {
 			if contains(e, s...) {
 				return true
