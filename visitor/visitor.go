@@ -547,7 +547,7 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		}
 
 		if ctx.DeclarationExpression() != nil {
-			v.env.Variable[id] = v.Visit(ctx.DeclarationExpression()).([]any)
+			v.env.Variable[id] = v.Visit(ctx.DeclarationExpression())
 			return nil
 		}
 
