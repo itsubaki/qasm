@@ -546,61 +546,8 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
 		}
 
-		size := v.Visit(ctx.ArrayType().ExpressionList()).([]any)[0].(int64)
-		scalar := ctx.ArrayType().ScalarType()
-
-		// make array
-		switch {
-		case scalar.INT() != nil:
-			bits := v.Visit(scalar.Designator()).(int64)
-			switch bits {
-			case 8:
-				v.env.Variable[id] = make([]int8, size)
-			case 16:
-				v.env.Variable[id] = make([]int16, size)
-			case 32:
-				v.env.Variable[id] = make([]int32, size)
-			case 64:
-				v.env.Variable[id] = make([]int64, size)
-			default:
-				return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
-			}
-
-			return nil
-		case scalar.UINT() != nil:
-			bits := v.Visit(scalar.Designator()).(int64)
-			switch bits {
-			case 8:
-				v.env.Variable[id] = make([]uint8, size)
-			case 16:
-				v.env.Variable[id] = make([]uint16, size)
-			case 32:
-				v.env.Variable[id] = make([]uint32, size)
-			case 64:
-				v.env.Variable[id] = make([]uint64, size)
-			default:
-				return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
-			}
-
-			return nil
-		case scalar.FLOAT() != nil:
-			bits := v.Visit(scalar.Designator()).(int64)
-			switch bits {
-			case 32:
-				v.env.Variable[id] = make([]float32, size)
-			case 64:
-				v.env.Variable[id] = make([]float64, size)
-			default:
-				return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
-			}
-
-			return nil
-		case scalar.BOOL() != nil:
-			v.env.Variable[id] = make([]bool, size)
-			return nil
-		default:
-			return fmt.Errorf("scalar type=%s: %w", scalar.GetText(), ErrUnexpected)
-		}
+		v.env.Variable[id] = v.Visit(ctx.ArrayType())
+		return nil
 	case ctx.ScalarType().INT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetVariable(id); ok {
@@ -1243,7 +1190,56 @@ func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) any {
 }
 
 func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
-	return fmt.Errorf("VisitArrayType: %w", ErrNotImplemented)
+	size := v.Visit(ctx.ExpressionList()).([]any)[0].(int64)
+
+	// make array
+	scalar := ctx.ScalarType()
+	switch {
+	case scalar.INT() != nil:
+		bits := v.Visit(scalar.Designator()).(int64)
+		switch bits {
+		case 8:
+			return make([]int8, size)
+		case 16:
+			return make([]int16, size)
+		case 32:
+			return make([]int32, size)
+		case 64:
+			return make([]int64, size)
+		default:
+			return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
+		}
+
+	case scalar.UINT() != nil:
+		bits := v.Visit(scalar.Designator()).(int64)
+		switch bits {
+		case 8:
+			return make([]uint8, size)
+		case 16:
+			return make([]uint16, size)
+		case 32:
+			return make([]uint32, size)
+		case 64:
+			return make([]uint64, size)
+		default:
+			return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
+		}
+
+	case scalar.FLOAT() != nil:
+		bits := v.Visit(scalar.Designator()).(int64)
+		switch bits {
+		case 32:
+			return make([]float32, size)
+		case 64:
+			return make([]float64, size)
+		default:
+			return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
+		}
+	case scalar.BOOL() != nil:
+		return make([]bool, size)
+	default:
+		return fmt.Errorf("scalar type=%s: %w", scalar.GetText(), ErrUnexpected)
+	}
 }
 
 func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext) any {
