@@ -550,8 +550,9 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		scalar := ctx.ArrayType().ScalarType()
 
 		// make array
-		if scalar.INT() != nil {
-			bits := v.Visit(scalar.Designator().Expression()).(int64)
+		switch {
+		case scalar.INT() != nil:
+			bits := v.Visit(scalar.Designator()).(int64)
 			switch bits {
 			case 8:
 				v.env.Variable[id] = make([]int8, size)
@@ -566,10 +567,8 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 			}
 
 			return nil
-		}
-
-		if scalar.UINT() != nil {
-			bits := v.Visit(scalar.Designator().Expression()).(int64)
+		case scalar.UINT() != nil:
+			bits := v.Visit(scalar.Designator()).(int64)
 			switch bits {
 			case 8:
 				v.env.Variable[id] = make([]uint8, size)
@@ -584,10 +583,8 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 			}
 
 			return nil
-		}
-
-		if scalar.FLOAT() != nil {
-			bits := v.Visit(scalar.Designator().Expression()).(int64)
+		case scalar.FLOAT() != nil:
+			bits := v.Visit(scalar.Designator()).(int64)
 			switch bits {
 			case 32:
 				v.env.Variable[id] = make([]float32, size)
@@ -598,42 +595,12 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 			}
 
 			return nil
-		}
-
-		if scalar.BOOL() != nil {
+		case scalar.BOOL() != nil:
 			v.env.Variable[id] = make([]bool, size)
 			return nil
+		default:
+			return fmt.Errorf("scalar type=%s: %w", scalar.GetText(), ErrUnexpected)
 		}
-
-		return nil
-	case ctx.ScalarType().BIT() != nil:
-		id := v.Visit(ctx.Identifier()).(string)
-		if _, ok := v.env.GetClassicalBit(id); ok {
-			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
-		}
-
-		if ctx.DeclarationExpression() != nil {
-			bits := v.Visit(ctx.DeclarationExpression()).([]int64)
-			v.env.ClassicalBit[id] = bits
-			return nil
-		}
-
-		size := v.Visit(ctx.ScalarType()).(int64)
-		v.env.ClassicalBit[id] = make([]int64, int(size))
-		return nil
-	case ctx.ScalarType().FLOAT() != nil:
-		id := v.Visit(ctx.Identifier()).(string)
-		if _, ok := v.env.GetVariable(id); ok {
-			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
-		}
-
-		if ctx.DeclarationExpression() != nil {
-			v.env.Variable[id] = v.Visit(ctx.DeclarationExpression())
-			return nil
-		}
-
-		v.env.Variable[id] = float64(0)
-		return nil
 	case ctx.ScalarType().INT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetVariable(id); ok {
@@ -660,6 +627,19 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 
 		v.env.Variable[id] = uint(0)
 		return nil
+	case ctx.ScalarType().FLOAT() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.env.GetVariable(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if ctx.DeclarationExpression() != nil {
+			v.env.Variable[id] = v.Visit(ctx.DeclarationExpression())
+			return nil
+		}
+
+		v.env.Variable[id] = float64(0)
+		return nil
 	case ctx.ScalarType().BOOL() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetVariable(id); ok {
@@ -672,6 +652,21 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		}
 
 		v.env.Variable[id] = false
+		return nil
+	case ctx.ScalarType().BIT() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.env.GetClassicalBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if ctx.DeclarationExpression() != nil {
+			bits := v.Visit(ctx.DeclarationExpression()).([]int64)
+			v.env.ClassicalBit[id] = bits
+			return nil
+		}
+
+		size := v.Visit(ctx.ScalarType()).(int64)
+		v.env.ClassicalBit[id] = make([]int64, int(size))
 		return nil
 	default:
 		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
