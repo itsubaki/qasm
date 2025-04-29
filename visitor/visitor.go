@@ -203,7 +203,7 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) any {
 
 	enclosed := v.Enclosed()
 	for i := rx[0]; i < rx[1]; i++ {
-		enclosed.env.Variable[id] = i
+		enclosed.env.SetVariable(id, i)
 		result := enclosed.Visit(ctx.StatementOrScope())
 
 		if contains(result, Break) {
@@ -403,7 +403,7 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 		}
 
 		for i, p := range g.Params {
-			enclosed.env.Variable[p] = params[i]
+			enclosed.env.SetVariable(p, params[i])
 		}
 	}
 
@@ -547,11 +547,11 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		}
 
 		if ctx.DeclarationExpression() != nil {
-			v.env.Variable[id] = v.Visit(ctx.DeclarationExpression())
+			v.env.SetVariable(id, v.Visit(ctx.DeclarationExpression()))
 			return nil
 		}
 
-		v.env.Variable[id] = v.Visit(ctx.ArrayType())
+		v.env.SetVariable(id, v.Visit(ctx.ArrayType()))
 		return nil
 	case ctx.ScalarType().INT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
@@ -560,11 +560,11 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		}
 
 		if ctx.DeclarationExpression() != nil {
-			v.env.Variable[id] = v.Visit(ctx.DeclarationExpression())
+			v.env.SetVariable(id, v.Visit(ctx.DeclarationExpression()))
 			return nil
 		}
 
-		v.env.Variable[id] = int(0)
+		v.env.SetVariable(id, int(0))
 		return nil
 	case ctx.ScalarType().UINT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
@@ -573,11 +573,11 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		}
 
 		if ctx.DeclarationExpression() != nil {
-			v.env.Variable[id] = v.Visit(ctx.DeclarationExpression())
+			v.env.SetVariable(id, v.Visit(ctx.DeclarationExpression()))
 			return nil
 		}
 
-		v.env.Variable[id] = uint(0)
+		v.env.SetVariable(id, uint(0))
 		return nil
 	case ctx.ScalarType().FLOAT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
@@ -586,11 +586,11 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		}
 
 		if ctx.DeclarationExpression() != nil {
-			v.env.Variable[id] = v.Visit(ctx.DeclarationExpression())
+			v.env.SetVariable(id, v.Visit(ctx.DeclarationExpression()))
 			return nil
 		}
 
-		v.env.Variable[id] = float64(0)
+		v.env.SetVariable(id, float32(0))
 		return nil
 	case ctx.ScalarType().BOOL() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
@@ -599,11 +599,11 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		}
 
 		if ctx.DeclarationExpression() != nil {
-			v.env.Variable[id] = v.Visit(ctx.DeclarationExpression())
+			v.env.SetVariable(id, v.Visit(ctx.DeclarationExpression()))
 			return nil
 		}
 
-		v.env.Variable[id] = false
+		v.env.SetVariable(id, false)
 		return nil
 	case ctx.ScalarType().BIT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
