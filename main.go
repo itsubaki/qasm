@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"maps"
 	"os"
+	"slices"
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
@@ -30,7 +32,8 @@ func main() {
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
 	qsim := q.New()
-	v := visitor.New(qsim, visitor.NewEnviron())
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
 	switch err := v.Visit(p.Program()).(type) {
 	case error:
 		panic(err)
@@ -39,4 +42,11 @@ func main() {
 	for _, s := range qsim.State() {
 		fmt.Println(s)
 	}
+
+	fmt.Printf("%-10s: %v\n", "const", env.Const)
+	fmt.Printf("%-10s: %v\n", "variable", env.Variable)
+	fmt.Printf("%-10s: %v\n", "bit", env.ClassicalBit)
+	fmt.Printf("%-10s: %v\n", "qubit", env.Qubit)
+	fmt.Printf("%-10s: %v\n", "gate", slices.Sorted(maps.Keys(env.Gate)))
+	fmt.Printf("%-10s: %v\n", "subroutine", slices.Sorted(maps.Keys(env.Subroutine)))
 }

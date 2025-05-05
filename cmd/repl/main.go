@@ -44,16 +44,16 @@ func main() {
 			}
 
 			if text == "print" {
+				for _, s := range qsim.State() {
+					fmt.Println(s)
+				}
+
 				fmt.Printf("%-10s: %v\n", "const", env.Const)
 				fmt.Printf("%-10s: %v\n", "variable", env.Variable)
 				fmt.Printf("%-10s: %v\n", "bit", env.ClassicalBit)
 				fmt.Printf("%-10s: %v\n", "qubit", env.Qubit)
 				fmt.Printf("%-10s: %v\n", "gate", slices.Sorted(maps.Keys(env.Gate)))
 				fmt.Printf("%-10s: %v\n", "subroutine", slices.Sorted(maps.Keys(env.Subroutine)))
-
-				for _, s := range qsim.State() {
-					fmt.Println(s)
-				}
 
 				continue
 			}

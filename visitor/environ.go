@@ -124,10 +124,9 @@ type Gate struct {
 }
 
 type Subroutine struct {
-	Name            string
-	QArgs           []string
-	Body            *parser.ScopeContext
-	ReturnSignature *parser.ReturnSignatureContext
+	Name  string
+	QArgs []string
+	Body  *parser.ScopeContext
 }
 
 func flatten(qargs [][]q.Qubit) []q.Qubit {

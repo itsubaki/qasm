@@ -8,7 +8,7 @@ gate crz(theta) c, t {
     ctrl @ rz(theta) c, t;
 }
 
-def qft(qubit[3] q) -> bool {
+def qft(qubit[3] q) {
     h q[0];
     crz(pi/2) q[0], q[1];
     crz(pi/4) q[0], q[2];
@@ -29,6 +29,3 @@ def qft(qubit[3] q) -> bool {
 qubit[3] q;
 x q[2];
 qft(q);
-
-// debug
-print;

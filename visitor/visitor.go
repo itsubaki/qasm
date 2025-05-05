@@ -637,13 +637,13 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) any {
 		qargs = append(qargs, a.(string))
 	}
 
-	v.env.Subroutine[name] = Subroutine{
-		Name:            name,
-		QArgs:           qargs,
-		Body:            ctx.Scope().(*parser.ScopeContext),
-		ReturnSignature: ctx.ReturnSignature().(*parser.ReturnSignatureContext),
+	subr := Subroutine{
+		Name:  name,
+		QArgs: qargs,
+		Body:  ctx.Scope().(*parser.ScopeContext),
 	}
 
+	v.env.Subroutine[name] = subr
 	return nil
 }
 
