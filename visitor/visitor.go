@@ -45,6 +45,14 @@ func (v *Visitor) Enclosed() *Visitor {
 	return New(v.qsim, v.env.NewEnclosed())
 }
 
+func (v *Visitor) Run(tree antlr.ParseTree) error {
+	if err, ok := v.Visit(tree).(error); ok && err != nil {
+		return fmt.Errorf("visit: %w", err)
+	}
+
+	return nil
+}
+
 func (v *Visitor) Visit(tree antlr.ParseTree) any {
 	return tree.Accept(v)
 }

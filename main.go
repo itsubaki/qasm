@@ -34,8 +34,8 @@ func main() {
 	qsim := q.New()
 	env := visitor.NewEnviron()
 	v := visitor.New(qsim, env)
-	switch err := v.Visit(p.Program()).(type) {
-	case error:
+
+	if err := v.Run(p.Program()); err != nil {
 		panic(err)
 	}
 

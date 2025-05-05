@@ -40,6 +40,49 @@ func ExampleVisitor_comment() {
 	// end;
 }
 
+func ExampleVisitor_Run() {
+	text := `
+	OPENQASM 3.0;
+	`
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	if err := v.Run(p.Program()); err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(env.Version)
+
+	// Output:
+	// 3.0
+}
+
+func ExampleVisitor_Run_err() {
+	text := `
+	const int a = 42;
+	const int a = 43;
+	`
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	if err := v.Run(p.Program()); err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// visit: identifier=a: already declared
+}
+
 func ExampleVisitor_VisitVersion() {
 	text := `
 	OPENQASM 3.0;

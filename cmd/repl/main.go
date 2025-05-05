@@ -67,10 +67,8 @@ func main() {
 
 			lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 			p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-			tree := p.Program()
 
-			switch err := v.Visit(tree).(type) {
-			case error:
+			if err := v.Run(p.Program()); err != nil {
 				fmt.Println(err)
 				continue
 			}
