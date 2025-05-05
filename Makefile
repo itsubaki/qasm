@@ -17,3 +17,6 @@ parse:
 
 test:
 	go test -v -cover $(shell go list ./... | grep -v /cmd | grep -v /gen | grep -v -E "qasm$$") -v -coverprofile=coverage.txt -covermode=atomic
+
+run:
+	go run main.go -f testdata/qft.qasm

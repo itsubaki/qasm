@@ -17,14 +17,16 @@ def qft(qubit[3] q) -> bool {
 
     h q[2];
 
+    // swap
     cx q[0], q[2];
     cx q[2], q[0];
     cx q[0], q[2];
 
-    return true
+    return true;
 }
 
 qubit[3] q;
 qft(q);
 
+// debug
 print;
