@@ -1183,11 +1183,7 @@ func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) a
 }
 
 func (v *Visitor) VisitGateModifier(ctx *parser.GateModifierContext) any {
-	if ctx.Expression() != nil {
-		return v.Visit(ctx.Expression())
-	}
-
-	return int64(1)
+	return v.Visit(ctx.Expression())
 }
 
 func (v *Visitor) VisitScalarType(ctx *parser.ScalarTypeContext) any {
