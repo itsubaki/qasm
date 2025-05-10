@@ -18,13 +18,13 @@ func Controlled(u matrix.Matrix, c []int) matrix.Matrix {
 		mask |= (1 << (n - 1 - bit))
 	}
 
-	for i := 0; i < d; i++ {
+	for i := range d {
 		if (i & mask) != mask {
 			continue
 		}
 
-		for j := 0; j < d; j++ {
-			g[i][j] = u[i][j]
+		for j := range d {
+			g.Set(i, j, u.At(i, j))
 		}
 	}
 

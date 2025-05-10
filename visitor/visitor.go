@@ -324,10 +324,10 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 	if ctx.GPHASE() != nil {
 		params, err := v.Params(ctx.ExpressionList())
 		if err != nil {
-			return nil, false, fmt.Errorf("params: %w", err)
+			return matrix.Matrix{}, false, fmt.Errorf("params: %w", err)
 		}
 
-		n := v.qsim.NumberOfBit()
+		n := v.qsim.NumQubits()
 		u := gate.I(n).Mul(cmplx.Exp(complex(0, params[0])))
 		return u, true, nil
 	}
@@ -338,24 +338,24 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 		// params, qargs
 		params, err := v.Params(ctx.ExpressionList())
 		if err != nil {
-			return nil, false, fmt.Errorf("params: %w", err)
+			return matrix.Matrix{}, false, fmt.Errorf("params: %w", err)
 		}
 		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
 
 		// u
-		n := v.qsim.NumberOfBit()
+		n := v.qsim.NumQubits()
 		u := gate.U(params[0], params[1], params[2])
 		u = gate.TensorProduct(u, n, q.Index(flatten(qargs)...))
 
 		// modify
 		u, err = v.Modify(u, qargs, ctx.AllGateModifier())
 		if err != nil {
-			return nil, false, fmt.Errorf("modify: %w", err)
+			return matrix.Matrix{}, false, fmt.Errorf("modify: %w", err)
 		}
 
 		return u, true, nil
 	default:
-		return nil, false, nil
+		return matrix.Matrix{}, false, nil
 	}
 }
 
@@ -375,7 +375,7 @@ func (v *Visitor) Modify(u matrix.Matrix, qargs [][]q.Qubit, modifier []parser.I
 			case int64:
 				p = float64(n)
 			default:
-				return nil, fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
+				return matrix.Matrix{}, fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
 			}
 
 			u = Pow(u, p)
@@ -399,7 +399,7 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 	id := v.Visit(ctx.Identifier()).(string)
 	g, ok := v.env.GetGate(id)
 	if !ok {
-		return nil, fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
+		return matrix.Matrix{}, fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
 	}
 
 	// params, qargs
@@ -407,7 +407,7 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 	if ctx.ExpressionList() != nil {
 		params, err := v.Params(ctx.ExpressionList())
 		if err != nil {
-			return nil, fmt.Errorf("params: %w", err)
+			return matrix.Matrix{}, fmt.Errorf("params: %w", err)
 		}
 
 		for i, p := range g.Params {
@@ -438,13 +438,13 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 	for _, c := range g.Body {
 		u, ok, err := enclosed.Builtin(c)
 		if err != nil {
-			return nil, fmt.Errorf("builtin: %w", err)
+			return matrix.Matrix{}, fmt.Errorf("builtin: %w", err)
 		}
 
 		if !ok {
 			u, err = enclosed.Defined(c)
 			if err != nil {
-				return nil, fmt.Errorf("defined: %w", err)
+				return matrix.Matrix{}, fmt.Errorf("defined: %w", err)
 			}
 		}
 
@@ -457,7 +457,7 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (matrix.Matrix, 
 	// modify
 	u, err := v.Modify(u, qargs, ctx.AllGateModifier())
 	if err != nil {
-		return nil, fmt.Errorf("modify: %w", err)
+		return matrix.Matrix{}, fmt.Errorf("modify: %w", err)
 	}
 
 	return u, nil
