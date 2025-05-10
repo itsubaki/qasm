@@ -10,6 +10,18 @@
 ## Example
 
 ```shell
+% go run main.go -f testdata/bell.qasm 
+[00][  0]( 0.7071 0.0000i): 0.5000
+[11][  3]( 0.7071 0.0000i): 0.5000
+const     : map[]
+variable  : map[]
+bit       : map[]
+qubit     : map[q:[0 1]]
+gate      : [cx h i x y z]
+subroutine: []
+```
+
+```shell
 % go run cmd/repl/main.go                       
 >> OPENQASM 3.0;
 >> include "testdata/stdgates.qasm";
