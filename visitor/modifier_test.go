@@ -13,8 +13,8 @@ func TestControlled(t *testing.T) {
 	u := gate.U(rand.Float64(), rand.Float64(), rand.Float64())
 
 	cases := []struct {
-		in   matrix.Matrix
-		want matrix.Matrix
+		in   *matrix.Matrix
+		want *matrix.Matrix
 		bit  int
 	}{
 		{
@@ -79,8 +79,8 @@ func TestControlled(t *testing.T) {
 
 func TestNegControlled(t *testing.T) {
 	cases := []struct {
-		in   matrix.Matrix
-		want matrix.Matrix
+		in   *matrix.Matrix
+		want *matrix.Matrix
 		bit  int
 	}{
 		{
