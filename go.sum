@@ -2,5 +2,7 @@ github.com/antlr4-go/antlr/v4 v4.13.1 h1:SqQKkuVZ+zWkMMNkjy5FZe5mr5WURWnlpmOuzYW
 github.com/antlr4-go/antlr/v4 v4.13.1/go.mod h1:GKmUxMtwp6ZgGwZSva4eWPC5mS6vUAmOABFgjdkM7Nw=
 github.com/itsubaki/q v0.0.7-0.20250517051005-ef188f9a1488 h1:s/PM1jHlKqZQKseVdK9ENtgtyK5ipp2SLMtEOAY99lk=
 github.com/itsubaki/q v0.0.7-0.20250517051005-ef188f9a1488/go.mod h1:iu/YVKAxGQ9h/xxmcVveJqPfJ0yR4N3u6krgXEUC3J4=
+github.com/itsubaki/q v0.0.7-0.20250518082026-8949ff90c12b h1:r4sDyDH1j6fdhIw0IJi+MwxmxxCkiHeFBNmuYv3Jyyg=
+github.com/itsubaki/q v0.0.7-0.20250518082026-8949ff90c12b/go.mod h1:iu/YVKAxGQ9h/xxmcVveJqPfJ0yR4N3u6krgXEUC3J4=
 golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 h1:y5zboxd6LQAqYIhHnB48p0ByQ/GnQx2BE33L8BOHQkI=
 golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6/go.mod h1:U6Lno4MTRCDY+Ba7aCcauB9T60gsv5s4ralQzP72ZoQ=
