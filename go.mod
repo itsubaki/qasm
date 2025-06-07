@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.1
-	github.com/itsubaki/q v0.0.7-0.20250518082026-8949ff90c12b
+	github.com/itsubaki/q v0.0.7-0.20250607031610-5d68feab61ce
 )
 
 require golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
