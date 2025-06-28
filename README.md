@@ -7,7 +7,7 @@
 
 - Quantum Computation Simulator with [OpenQASM 3.0](https://openqasm.com)
 
-## Example
+## Examples
 
 ```shell
 % go run main.go -f testdata/bell.qasm 
