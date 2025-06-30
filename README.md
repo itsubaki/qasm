@@ -94,7 +94,7 @@ subroutine: []
 ```
 
 ```shell
-go run cmd/parse/main.go < testdata/bell.qasm
+% go run cmd/parse/main.go < testdata/bell.qasm
 (program
   (version OPENQASM 3.0 ;)
   (statementOrScope
