@@ -7,10 +7,16 @@
 
 - Quantum Computation Simulator with [OpenQASM 3.0](https://openqasm.com)
 
+## Install
+
+```shell
+go install github.com/itsubaki/qasm@latest
+```
+
 ## Examples
 
 ```shell
-% go run main.go -f testdata/bell.qasm 
+% qasm -f testdata/bell.qasm 
 [00][  0]( 0.7071 0.0000i): 0.5000
 [11][  3]( 0.7071 0.0000i): 0.5000
 const     : map[]
