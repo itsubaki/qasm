@@ -7,7 +7,7 @@
 
 - Quantum Computation Simulator with [OpenQASM 3.0](https://openqasm.com)
 
-## Install
+## Installation
 
 ```shell
 go install github.com/itsubaki/qasm@latest
