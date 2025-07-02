@@ -6,11 +6,11 @@ import (
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/qasm/gen/parser"
-	"github.com/itsubaki/qasm/io"
+	"github.com/itsubaki/qasm/scan"
 )
 
 func main() {
-	text := io.MustScan(os.Stdin)
+	text := scan.MustText(os.Stdin)
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 
 	for _, token := range lexer.GetAllTokens() {

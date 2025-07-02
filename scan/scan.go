@@ -1,4 +1,4 @@
-package io
+package scan
 
 import (
 	"bufio"
@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-func Scan(r io.Reader) (string, error) {
+func Text(r io.Reader) (string, error) {
 	scanner := bufio.NewScanner(r)
 
 	var text string
@@ -21,8 +21,8 @@ func Scan(r io.Reader) (string, error) {
 	return text, nil
 }
 
-func MustScan(r io.Reader) string {
-	return Must(Scan(r))
+func MustText(r io.Reader) string {
+	return Must(Text(r))
 }
 
 func Must(s string, err error) string {
