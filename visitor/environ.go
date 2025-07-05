@@ -128,36 +128,3 @@ type Subroutine struct {
 	QArgs []string
 	Body  *parser.ScopeContext
 }
-
-func flatten(qargs [][]q.Qubit) []q.Qubit {
-	var flat []q.Qubit
-	for _, q := range qargs {
-		flat = append(flat, q...)
-	}
-
-	return flat
-}
-
-const (
-	Break    = "break;"
-	Continue = "continue;"
-)
-
-func contains(result any, s ...string) bool {
-	switch v := result.(type) {
-	case string:
-		for _, e := range s {
-			if v == e {
-				return true
-			}
-		}
-	case []any:
-		for _, e := range v {
-			if contains(e, s...) {
-				return true
-			}
-		}
-	}
-
-	return false
-}

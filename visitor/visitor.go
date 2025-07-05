@@ -646,13 +646,12 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) any {
 		qargs = append(qargs, a.(string))
 	}
 
-	subr := Subroutine{
+	v.env.Subroutine[name] = Subroutine{
 		Name:  name,
 		QArgs: qargs,
 		Body:  ctx.Scope().(*parser.ScopeContext),
 	}
 
-	v.env.Subroutine[name] = subr
 	return nil
 }
 
@@ -1375,4 +1374,38 @@ func (v *Visitor) VisitExternArgumentList(ctx *parser.ExternArgumentListContext)
 	}
 
 	return list
+}
+
+const (
+	Break    string = "break;"
+	Continue string = "continue;"
+)
+
+// contains returns true if the result contains substrings.
+func contains(result any, substrings ...string) bool {
+	switch v := result.(type) {
+	case string:
+		for _, s := range substrings {
+			if strings.Contains(v, s) {
+				return true
+			}
+		}
+	case []any:
+		for _, r := range v {
+			if contains(r, substrings...) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func flatten(qargs [][]q.Qubit) []q.Qubit {
+	var flat []q.Qubit
+	for _, q := range qargs {
+		flat = append(flat, q...)
+	}
+
+	return flat
 }
