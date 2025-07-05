@@ -63,7 +63,7 @@ func ExampleEnviron_GetGate() {
 
 func ExampleEnviron_GetSubroutine() {
 	env := visitor.NewEnviron()
-	env.Subroutine["x"] = visitor.Subroutine{
+	env.Subroutine["x"] = &visitor.Subroutine{
 		Name: "x",
 	}
 

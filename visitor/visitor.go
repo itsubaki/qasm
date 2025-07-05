@@ -294,7 +294,7 @@ func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) any {
 		body = append(body, s.Statement().GateCallStatement().(*parser.GateCallStatementContext))
 	}
 
-	v.env.Gate[name] = Gate{
+	v.env.Gate[name] = &Gate{
 		Name:   name,
 		Params: params,
 		QArgs:  qargs,
@@ -646,7 +646,7 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) any {
 		qargs = append(qargs, a.(string))
 	}
 
-	v.env.Subroutine[name] = Subroutine{
+	v.env.Subroutine[name] = &Subroutine{
 		Name:  name,
 		QArgs: qargs,
 		Body:  ctx.Scope().(*parser.ScopeContext),

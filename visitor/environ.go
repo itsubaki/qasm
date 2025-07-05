@@ -11,9 +11,22 @@ type Environ struct {
 	Variable     map[string]any
 	Qubit        map[string][]q.Qubit
 	ClassicalBit map[string][]int64
-	Gate         map[string]Gate
-	Subroutine   map[string]Subroutine
+	Gate         map[string]*Gate
+	Subroutine   map[string]*Subroutine
 	Outer        *Environ
+}
+
+type Gate struct {
+	Name   string
+	Params []string
+	QArgs  []string
+	Body   []*parser.GateCallStatementContext
+}
+
+type Subroutine struct {
+	Name  string
+	QArgs []string
+	Body  *parser.ScopeContext
 }
 
 func NewEnviron() *Environ {
@@ -22,8 +35,8 @@ func NewEnviron() *Environ {
 		Variable:     make(map[string]any),
 		Qubit:        make(map[string][]q.Qubit),
 		ClassicalBit: make(map[string][]int64),
-		Gate:         make(map[string]Gate),
-		Subroutine:   make(map[string]Subroutine),
+		Gate:         make(map[string]*Gate),
+		Subroutine:   make(map[string]*Subroutine),
 	}
 }
 
@@ -92,7 +105,7 @@ func (e *Environ) GetClassicalBit(name string) ([]int64, bool) {
 	return nil, false
 }
 
-func (e *Environ) GetGate(name string) (Gate, bool) {
+func (e *Environ) GetGate(name string) (*Gate, bool) {
 	if g, ok := e.Gate[name]; ok {
 		return g, true
 	}
@@ -101,10 +114,10 @@ func (e *Environ) GetGate(name string) (Gate, bool) {
 		return e.Outer.GetGate(name)
 	}
 
-	return Gate{}, false
+	return nil, false
 }
 
-func (e *Environ) GetSubroutine(name string) (Subroutine, bool) {
+func (e *Environ) GetSubroutine(name string) (*Subroutine, bool) {
 	if s, ok := e.Subroutine[name]; ok {
 		return s, true
 	}
@@ -113,18 +126,5 @@ func (e *Environ) GetSubroutine(name string) (Subroutine, bool) {
 		return e.Outer.GetSubroutine(name)
 	}
 
-	return Subroutine{}, false
-}
-
-type Gate struct {
-	Name   string
-	Params []string
-	QArgs  []string
-	Body   []*parser.GateCallStatementContext
-}
-
-type Subroutine struct {
-	Name  string
-	QArgs []string
-	Body  *parser.ScopeContext
+	return nil, false
 }
