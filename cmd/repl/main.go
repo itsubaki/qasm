@@ -43,7 +43,7 @@ func main() {
 				continue
 			}
 
-			if text == "print" {
+			if text == "print;" {
 				for _, s := range qsim.State() {
 					fmt.Println(s)
 				}
@@ -58,7 +58,7 @@ func main() {
 				continue
 			}
 
-			if text == "clear" {
+			if text == "clear;" {
 				qsim = q.New()
 				env = visitor.NewEnviron()
 				v = visitor.New(qsim, env)

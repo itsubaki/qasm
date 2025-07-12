@@ -9,6 +9,9 @@ update:
 	go get -u ./...
 	go mod tidy
 
+run:
+	go run main.go < testdata/qft.qasm
+
 lex:
 	go run cmd/lex/main.go < testdata/bell.qasm
 
@@ -18,5 +21,3 @@ parse:
 test:
 	go test -v -cover $(shell go list ./... | grep -v /cmd | grep -v /gen | grep -v -E "qasm$$") -v -coverprofile=coverage.txt -covermode=atomic
 
-run:
-	go run main.go -f testdata/qft.qasm
