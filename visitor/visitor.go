@@ -358,83 +358,85 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		return fmt.Errorf("calling user-defined gates is not implemented: %s", ctx.GetText())
 	}
 
-	if !HasControlModifier(ctx) {
-		// no control modifier
-		for _, mod := range ReversedModifier(ctx) {
+	if HasControlModifier(ctx) {
+		// qubit[2] c;
+		// qubit t;
+		// U(pi/2, 0, pi) c;
+		// U(pi/2, 0, pi) c[0], c[1];
+		// ctrl @ U(pi, 0, pi) c, t;
+		// ctrl @ U(pi, 0, pi) c[0], t;
+		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		var ctrl, negctrl []q.Qubit
+		var ctrlcnt int
+		for _, mod := range ctx.AllGateModifier() {
+			// NOTE: pow is not supported with control modifier
 			switch {
 			case mod.INV() != nil:
 				u = u.Dagger()
-			case mod.POW() != nil:
-				var p float64
-				switch n := v.Visit(mod).(type) {
-				case float64:
-					p = n
-				case int64:
-					p = float64(n)
-				default:
-					return fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
-				}
-
-				u = Pow(u, p)
-			}
-		}
-
-		// qargs
-		var qargs []q.Qubit
-		if ctx.GateOperandList() != nil {
-			// qubit q0; qubit q1; U q0, q1;
-			// qubit[2] q; U q;
-			operand := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
-			for _, o := range operand {
-				qargs = append(qargs, o...)
-			}
-		} else {
-			// all qubits for gphase
-			for i := range v.qsim.NumQubits() {
-				qargs = append(qargs, q.Qubit(i))
+			case mod.CTRL() != nil:
+				ctrl = append(ctrl, qargs[ctrlcnt]...)
+				ctrlcnt++
+			case mod.NEGCTRL() != nil:
+				ctrl = append(ctrl, qargs[ctrlcnt]...)
+				negctrl = append(negctrl, qargs[ctrlcnt]...)
+				ctrlcnt++
 			}
 		}
 
 		n := v.qsim.NumQubits()
-		index := q.Index(qargs...)
-		u = gate.TensorProduct(u, n, index)
+		c := q.Index(ctrl...)
+		t := qargs[len(qargs)-1][0].Index()
+		u = gate.Controlled(u, n, c, t)
+
+		if len(negctrl) > 0 {
+			negc := q.Index(negctrl...)
+			x := gate.TensorProduct(gate.X(), n, negc)
+			u = matrix.MatMul(x, u, x)
+		}
 
 		v.qsim.Apply(u)
 		return nil
 	}
 
-	// qubit[2] c;
-	// qubit t;
-	// U(pi/2, 0, pi) c; or U(pi/2, 0, pi) c[0], c[1];
-	// ctrl @ U(pi, 0, pi) c, t;
-	qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
-	var ctrl, negctrl []q.Qubit
-	var ctrlcnt int
-	for _, mod := range ctx.AllGateModifier() {
-		// NOTE: pow is not supported with control modifier
+	// no control modifier
+	for _, mod := range ReversedModifier(ctx) {
 		switch {
 		case mod.INV() != nil:
 			u = u.Dagger()
-		case mod.CTRL() != nil:
-			ctrl = append(ctrl, qargs[ctrlcnt]...)
-			ctrlcnt++
-		case mod.NEGCTRL() != nil:
-			ctrl = append(ctrl, qargs[ctrlcnt]...)
-			negctrl = append(negctrl, qargs[ctrlcnt]...)
-			ctrlcnt++
+		case mod.POW() != nil:
+			var p float64
+			switch n := v.Visit(mod).(type) {
+			case float64:
+				p = n
+			case int64:
+				p = float64(n)
+			default:
+				return fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
+			}
+
+			u = Pow(u, p)
+		}
+	}
+
+	// qargs
+	var qargs []q.Qubit
+	if ctx.GateOperandList() != nil {
+		// qubit q0; qubit q1; U q0, q1;
+		// qubit[2] q; U q;
+		operand := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		for _, o := range operand {
+			qargs = append(qargs, o...)
+		}
+	} else {
+		// all qubits for gphase
+		for i := range v.qsim.NumQubits() {
+			qargs = append(qargs, q.Qubit(i))
 		}
 	}
 
 	n := v.qsim.NumQubits()
-	c := q.Index(ctrl...)
-	t := qargs[len(qargs)-1][0].Index()
-	u = gate.Controlled(u, n, c, t)
-
-	if len(negctrl) > 0 {
-		negc := q.Index(negctrl...)
-		x := gate.TensorProduct(gate.X(), n, negc)
-		u = matrix.MatMul(x, u, x)
-	}
+	index := q.Index(qargs...)
+	u = gate.TensorProduct(u, n, index)
 
 	v.qsim.Apply(u)
 	return nil
