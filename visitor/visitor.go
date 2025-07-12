@@ -356,31 +356,31 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	}
 
 	if !ok {
-		return fmt.Errorf("defined gate is not supported: %s", ctx.GetText())
+		return fmt.Errorf("calling user-defined gates is not implemented: %s", ctx.GetText())
 	}
 
 	// qargs
 	var qargs []q.Qubit
 	if ctx.GateOperandList() != nil {
-		// single operand. U q0; U q[0]
-		for _, op := range v.Visit(ctx.GateOperandList()).([][]q.Qubit) {
-			qargs = append(qargs, op[0])
+		// qubit q0; qubit q1; U q0, q1;
+		// qubit[2] q; U q;
+		operand := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		for _, o := range operand {
+			qargs = append(qargs, o...)
 		}
 	} else {
-		// all qubits
-		n := v.qsim.NumQubits()
-		qargs = make([]q.Qubit, n)
-		for i := range n {
-			qargs[i] = q.Qubit(i)
+		// all qubits for gphase
+		for i := range v.qsim.NumQubits() {
+			qargs = append(qargs, q.Qubit(i))
 		}
 	}
 
 	// modify
-	rev := make([]parser.IGateModifierContext, len(ctx.AllGateModifier()))
-	copy(rev, ctx.AllGateModifier())
-	slices.Reverse(rev)
+	modifier := make([]parser.IGateModifierContext, len(ctx.AllGateModifier()))
+	copy(modifier, ctx.AllGateModifier())
+	slices.Reverse(modifier)
 
-	for _, mod := range rev {
+	for _, mod := range modifier {
 		switch {
 		case mod.INV() != nil:
 			u = u.Dagger()
@@ -415,25 +415,28 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		return nil
 	}
 
-	// multi operand. ctrl @ U q0, q1; ctrl @ U q[0], q[1];
+	// qubit[2] c;
+	// qubit t;
+	// U(pi/2, 0, pi) c; or U(pi/2, 0, pi) c[0], c[1];
+	// ctrl @ U(pi, 0, pi) c, t;
 	operand := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
 	var ctrl, negctrl []q.Qubit
 	for i, mod := range ctrlmod {
 		switch {
 		case mod.CTRL() != nil:
-			ctrl = append(ctrl, operand[i][0])
+			ctrl = append(ctrl, operand[i]...)
 		case mod.NEGCTRL() != nil:
-			ctrl = append(ctrl, operand[i][0])
-			negctrl = append(negctrl, operand[i][0])
+			ctrl = append(ctrl, operand[i]...)
+			negctrl = append(negctrl, operand[i]...)
 		}
 	}
 
 	if len(negctrl) > 0 {
 		v.qsim.X(negctrl...)
-		defer func() { v.qsim.X(negctrl...) }()
+		defer v.qsim.X(negctrl...)
 	}
 
-	target := qargs[len(ctrlmod)]
+	target := operand[len(ctrlmod)][0]
 	v.qsim.Controlled(u, ctrl, target)
 	return nil
 }

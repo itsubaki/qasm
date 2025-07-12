@@ -10,6 +10,7 @@ import (
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/gen/parser"
+	"github.com/itsubaki/qasm/scan"
 	"github.com/itsubaki/qasm/visitor"
 )
 
@@ -18,14 +19,16 @@ func main() {
 	flag.StringVar(&filepath, "f", "", "filepath")
 	flag.Parse()
 
-	if filepath == "" {
-		fmt.Printf("Usage: %s -f filepath\n", os.Args[0])
-		return
-	}
+	var text string
+	if filepath != "" {
+		read, err := os.ReadFile(filepath)
+		if err != nil {
+			panic(err)
+		}
 
-	text, err := os.ReadFile(filepath)
-	if err != nil {
-		panic(err)
+		text = string(read)
+	} else {
+		text = scan.MustText(os.Stdin)
 	}
 
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(string(text)))

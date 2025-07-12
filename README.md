@@ -16,7 +16,7 @@ go install github.com/itsubaki/qasm@latest
 ## Examples
 
 ```shell
-% qasm -f testdata/bell.qasm 
+% qasm < testdata/bell.qasm
 [00][  0]( 0.7071 0.0000i): 0.5000
 [11][  3]( 0.7071 0.0000i): 0.5000
 const     : map[]
@@ -28,7 +28,7 @@ subroutine: []
 ```
 
 ```shell
-% go run cmd/repl/main.go                       
+% go run cmd/repl/main.go
 >> OPENQASM 3.0;
 >> include "testdata/stdgates.qasm";
 >> 
@@ -51,7 +51,7 @@ subroutine: []
 >> int n = 2;
 >> if (n > 0) { n = n*ratio; }
 >>
->> print
+>> print;
 const     : map[ratio:3.141592653589793]
 variable  : map[n:6.283185307179586]
 bit       : map[]

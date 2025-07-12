@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -10,7 +11,22 @@ import (
 )
 
 func main() {
-	text := scan.MustText(os.Stdin)
+	var filepath string
+	flag.StringVar(&filepath, "f", "", "filepath")
+	flag.Parse()
+
+	var text string
+	if filepath != "" {
+		read, err := os.ReadFile(filepath)
+		if err != nil {
+			panic(err)
+		}
+
+		text = string(read)
+	} else {
+		text = scan.MustText(os.Stdin)
+	}
+
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 
 	for _, token := range lexer.GetAllTokens() {
