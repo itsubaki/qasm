@@ -359,43 +359,6 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix,
 	}
 }
 
-func (v *Visitor) Modify(u *matrix.Matrix, qargs [][]q.Qubit, modifier []parser.IGateModifierContext) (*matrix.Matrix, error) {
-	rev := make([]parser.IGateModifierContext, len(modifier))
-	copy(rev, modifier)
-	slices.Reverse(rev)
-
-	for _, mod := range rev {
-		switch {
-		case mod.INV() != nil:
-			u = u.Dagger()
-		case mod.POW() != nil:
-			var p float64
-			switch n := v.Visit(mod).(type) {
-			case float64:
-				p = n
-			case int64:
-				p = float64(n)
-			default:
-				return nil, fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
-			}
-
-			u = Pow(u, p)
-		}
-	}
-
-	var i int
-	for _, mod := range modifier {
-		switch {
-		case mod.CTRL() != nil:
-			u, i = Controlled(u, q.Index(qargs[i]...)), i+1
-		case mod.NEGCTRL() != nil:
-			u, i = NegControlled(u, q.Index(qargs[i]...)), i+1
-		}
-	}
-
-	return u, nil
-}
-
 func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (*matrix.Matrix, error) {
 	id := v.Visit(ctx.Identifier()).(string)
 	g, ok := v.env.GetGate(id)
@@ -459,6 +422,43 @@ func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (*matrix.Matrix,
 	u, err := v.Modify(u, qargs, ctx.AllGateModifier())
 	if err != nil {
 		return nil, fmt.Errorf("modify: %w", err)
+	}
+
+	return u, nil
+}
+
+func (v *Visitor) Modify(u *matrix.Matrix, qargs [][]q.Qubit, modifier []parser.IGateModifierContext) (*matrix.Matrix, error) {
+	rev := make([]parser.IGateModifierContext, len(modifier))
+	copy(rev, modifier)
+	slices.Reverse(rev)
+
+	for _, mod := range rev {
+		switch {
+		case mod.INV() != nil:
+			u = u.Dagger()
+		case mod.POW() != nil:
+			var p float64
+			switch n := v.Visit(mod).(type) {
+			case float64:
+				p = n
+			case int64:
+				p = float64(n)
+			default:
+				return nil, fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
+			}
+
+			u = Pow(u, p)
+		}
+	}
+
+	var i int
+	for _, mod := range modifier {
+		switch {
+		case mod.CTRL() != nil:
+			u, i = Controlled(u, q.Index(qargs[i]...)), i+1
+		case mod.NEGCTRL() != nil:
+			u, i = NegControlled(u, q.Index(qargs[i]...)), i+1
+		}
 	}
 
 	return u, nil
