@@ -423,14 +423,19 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	// ctrl @ U(pi, 0, pi) c, t;
 	operand := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
 	var ctrl, negctrl []q.Qubit
-	for i, mod := range ctrlmod {
-		// NOTE: currently, ctrl and negctrl cannot be used together with other modifiers.
+	var ctrlcnt int
+	for _, mod := range ctx.AllGateModifier() {
+		// NOTE: pow is not supported with control modifier
 		switch {
+		case mod.INV() != nil:
+			u = u.Dagger()
 		case mod.CTRL() != nil:
-			ctrl = append(ctrl, operand[i]...)
+			ctrl = append(ctrl, operand[ctrlcnt]...)
+			ctrlcnt++
 		case mod.NEGCTRL() != nil:
-			ctrl = append(ctrl, operand[i]...)
-			negctrl = append(negctrl, operand[i]...)
+			ctrl = append(ctrl, operand[ctrlcnt]...)
+			negctrl = append(negctrl, operand[ctrlcnt]...)
+			ctrlcnt++
 		}
 	}
 
