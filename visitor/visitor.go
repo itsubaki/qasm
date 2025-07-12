@@ -360,23 +360,19 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	}
 
 	// qargs
-	n := v.qsim.NumQubits()
-	index := make([]q.Qubit, n)
-	for i := range n {
-		index[i] = q.Qubit(i)
-	}
-
+	var qargs []q.Qubit
 	if ctx.GateOperandList() != nil {
-		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
-		index = make([]q.Qubit, len(qargs[0]))
-		copy(index, qargs[0])
-	}
-
-	// no gate modifier
-	if len(ctx.AllGateModifier()) == 0 {
-		u = gate.TensorProduct(u, n, q.Index(index...))
-		v.qsim.Apply(u)
-		return nil
+		// single operand. U q0; U q[0]
+		for _, op := range v.Visit(ctx.GateOperandList()).([][]q.Qubit) {
+			qargs = append(qargs, op[0])
+		}
+	} else {
+		// all qubits
+		n := v.qsim.NumQubits()
+		qargs = make([]q.Qubit, n)
+		for i := range n {
+			qargs[i] = q.Qubit(i)
+		}
 	}
 
 	// modify
@@ -403,19 +399,42 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 	}
 
-	qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
-
-	var i int
-	var ctrl []q.Qubit
+	// control modifier
+	var ctrlmod []parser.IGateModifierContext
 	for _, mod := range ctx.AllGateModifier() {
-		switch {
-		case mod.CTRL() != nil:
-			ctrl = append(ctrl, qargs[i][0])
-			i++
+		if mod.CTRL() != nil || mod.NEGCTRL() != nil {
+			ctrlmod = append(ctrlmod, mod)
 		}
 	}
 
-	v.qsim.Controlled(u, ctrl, qargs[i][0])
+	// no control modifier
+	if len(ctrlmod) == 0 {
+		n := v.qsim.NumQubits()
+		u = gate.TensorProduct(u, n, q.Index(qargs...))
+		v.qsim.Apply(u)
+		return nil
+	}
+
+	// multi operand. ctrl @ U q0, q1; ctrl @ U q[0], q[1];
+	operand := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+	var ctrl, negctrl []q.Qubit
+	for i, mod := range ctrlmod {
+		switch {
+		case mod.CTRL() != nil:
+			ctrl = append(ctrl, operand[i][0])
+		case mod.NEGCTRL() != nil:
+			ctrl = append(ctrl, operand[i][0])
+			negctrl = append(negctrl, operand[i][0])
+		}
+	}
+
+	if len(negctrl) > 0 {
+		v.qsim.X(negctrl...)
+		defer func() { v.qsim.X(negctrl...) }()
+	}
+
+	target := qargs[len(ctrlmod)-1]
+	v.qsim.Controlled(u, ctrl, target)
 	return nil
 }
 
