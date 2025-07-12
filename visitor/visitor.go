@@ -434,15 +434,16 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 	}
 
-	if len(negctrl) > 0 {
-		v.qsim.X(negctrl...)
-		defer v.qsim.X(negctrl...)
-	}
-
 	n := v.qsim.NumQubits()
 	c := q.Index(ctrl...)
 	t := operand[len(operand)-1][0].Index()
 	u = gate.Controlled(u, n, c, t)
+
+	if len(negctrl) > 0 {
+		negc := q.Index(negctrl...)
+		x := gate.TensorProduct(gate.X(), n, negc)
+		u = matrix.MatMul(x, u, x)
+	}
 
 	v.qsim.Apply(u)
 	return nil
