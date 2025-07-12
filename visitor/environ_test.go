@@ -54,23 +54,32 @@ func ExampleEnviron_SetVariable() {
 
 func ExampleEnviron_GetGate() {
 	env := visitor.NewEnviron()
-	_, ok := env.GetGate("x")
-	fmt.Println(ok)
+	env.Gate["x"] = &visitor.Gate{
+		Name: "x",
+	}
+
+	g, ok := env.GetGate("x")
+	fmt.Println(g.Name, ok)
+
+	enclosed := env.NewEnclosed()
+	encg, ok := enclosed.GetGate("x")
+	fmt.Println(encg.Name, ok)
 
 	// Output:
-	// false
+	// x true
+	// x true
 }
 
 func ExampleEnviron_GetSubroutine() {
 	env := visitor.NewEnviron()
-	env.Subroutine["x"] = &visitor.Subroutine{
-		Name: "x",
+	env.Subroutine["qft"] = &visitor.Subroutine{
+		Name: "qft",
 	}
 
 	enclosed := env.NewEnclosed()
-	sub, ok := enclosed.GetSubroutine("x")
+	sub, ok := enclosed.GetSubroutine("qft")
 	fmt.Println(sub.Name, ok)
 
 	// Output:
-	// x true
+	// qft true
 }
