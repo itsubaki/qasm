@@ -410,7 +410,9 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 
 		n := v.qsim.NumQubits()
-		u = gate.TensorProduct(u, n, q.Index(qargs...))
+		index := q.Index(qargs...)
+		u = gate.TensorProduct(u, n, index)
+
 		v.qsim.Apply(u)
 		return nil
 	}
@@ -437,8 +439,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		defer v.qsim.X(negctrl...)
 	}
 
-	target := operand[len(ctrlmod)][0]
-	v.qsim.Controlled(u, ctrl, target)
+	n := v.qsim.NumQubits()
+	c := q.Index(ctrl...)
+	t := operand[len(operand)-1][0].Index()
+	u = gate.Controlled(u, n, c, t)
+
+	v.qsim.Apply(u)
 	return nil
 }
 
