@@ -376,30 +376,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	}
 
 	// modify
-	modifier := make([]parser.IGateModifierContext, len(ctx.AllGateModifier()))
-	copy(modifier, ctx.AllGateModifier())
-	slices.Reverse(modifier)
-
-	for _, mod := range modifier {
-		switch {
-		case mod.INV() != nil:
-			u = u.Dagger()
-		case mod.POW() != nil:
-			var p float64
-			switch n := v.Visit(mod).(type) {
-			case float64:
-				p = n
-			case int64:
-				p = float64(n)
-			default:
-				return fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
-			}
-
-			u = Pow(u, p)
-		}
-	}
-
-	// control modifier
+	// check if there is a control modifier
 	var ctrlmod []parser.IGateModifierContext
 	for _, mod := range ctx.AllGateModifier() {
 		if mod.CTRL() != nil || mod.NEGCTRL() != nil {
@@ -409,6 +386,29 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 
 	// no control modifier
 	if len(ctrlmod) == 0 {
+		modifier := make([]parser.IGateModifierContext, len(ctx.AllGateModifier()))
+		copy(modifier, ctx.AllGateModifier())
+		slices.Reverse(modifier)
+
+		for _, mod := range modifier {
+			switch {
+			case mod.INV() != nil:
+				u = u.Dagger()
+			case mod.POW() != nil:
+				var p float64
+				switch n := v.Visit(mod).(type) {
+				case float64:
+					p = n
+				case int64:
+					p = float64(n)
+				default:
+					return fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
+				}
+
+				u = Pow(u, p)
+			}
+		}
+
 		n := v.qsim.NumQubits()
 		u = gate.TensorProduct(u, n, q.Index(qargs...))
 		v.qsim.Apply(u)
@@ -422,6 +422,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	operand := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
 	var ctrl, negctrl []q.Qubit
 	for i, mod := range ctrlmod {
+		// NOTE: currently, ctrl and negctrl cannot be used together with other modifiers.
 		switch {
 		case mod.CTRL() != nil:
 			ctrl = append(ctrl, operand[i]...)
