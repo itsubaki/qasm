@@ -433,7 +433,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		defer func() { v.qsim.X(negctrl...) }()
 	}
 
-	target := qargs[len(ctrlmod)-1]
+	target := qargs[len(ctrlmod)]
 	v.qsim.Controlled(u, ctrl, target)
 	return nil
 }
