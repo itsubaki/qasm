@@ -327,109 +327,61 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix,
 			return nil, false, fmt.Errorf("params: %w", err)
 		}
 
-		n := v.qsim.NumQubits()
-		u := gate.I(n).Mul(cmplx.Exp(complex(0, params[0])))
+		// u 2x2
+		u := gate.I().Mul(cmplx.Exp(complex(0, params[0])))
 		return u, true, nil
 	}
 
 	id := v.Visit(ctx.Identifier()).(string)
 	switch id {
 	case U:
-		// params, qargs
+		// params
 		params, err := v.Params(ctx.ExpressionList())
 		if err != nil {
 			return nil, false, fmt.Errorf("params: %w", err)
 		}
-		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
 
-		// u
-		n := v.qsim.NumQubits()
+		// u 2x2
 		u := gate.U(params[0], params[1], params[2])
-		u = gate.TensorProduct(u, n, q.Index(flatten(qargs)...))
-
-		// modify
-		u, err = v.Modify(u, qargs, ctx.AllGateModifier())
-		if err != nil {
-			return nil, false, fmt.Errorf("modify: %w", err)
-		}
-
 		return u, true, nil
 	default:
 		return nil, false, nil
 	}
 }
 
-func (v *Visitor) Defined(ctx *parser.GateCallStatementContext) (*matrix.Matrix, error) {
-	id := v.Visit(ctx.Identifier()).(string)
-	g, ok := v.env.GetGate(id)
+func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
+	u, ok, err := v.Builtin(ctx)
+	if err != nil {
+		return fmt.Errorf("builtin: %w", err)
+	}
+
 	if !ok {
-		return nil, fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
+		return fmt.Errorf("defined gate is not supported: %s", ctx.GetText())
 	}
 
-	// params, qargs
-	enclosed := v.Enclosed()
-	if ctx.ExpressionList() != nil {
-		params, err := v.Params(ctx.ExpressionList())
-		if err != nil {
-			return nil, fmt.Errorf("params: %w", err)
-		}
-
-		for i, p := range g.Params {
-			enclosed.env.SetVariable(p, params[i])
-		}
+	// qargs
+	n := v.qsim.NumQubits()
+	index := make([]q.Qubit, n)
+	for i := range n {
+		index[i] = q.Qubit(i)
 	}
 
-	var qargs [][]q.Qubit
 	if ctx.GateOperandList() != nil {
-		var shift int
-		for _, mod := range ctx.AllGateModifier() {
-			switch {
-			case
-				mod.CTRL() != nil,
-				mod.NEGCTRL() != nil:
-				shift++
-			}
-		}
-
-		qargs = v.Visit(ctx.GateOperandList()).([][]q.Qubit)
-		for i, id := range g.QArgs {
-			enclosed.env.Qubit[id] = qargs[i+shift]
-		}
+		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		index = make([]q.Qubit, len(qargs[0]))
+		copy(index, qargs[0])
 	}
 
-	// u
-	var list []*matrix.Matrix
-	for _, c := range g.Body {
-		u, ok, err := enclosed.Builtin(c)
-		if err != nil {
-			return nil, fmt.Errorf("builtin: %w", err)
-		}
-
-		if !ok {
-			u, err = enclosed.Defined(c)
-			if err != nil {
-				return nil, fmt.Errorf("defined: %w", err)
-			}
-		}
-
-		list = append(list, u)
+	// no gate modifier
+	if len(ctx.AllGateModifier()) == 0 {
+		u = gate.TensorProduct(u, n, q.Index(index...))
+		v.qsim.Apply(u)
+		return nil
 	}
-
-	// matrix.Apply(A, B, C, ...) is ...CBA
-	u := matrix.Apply(list...)
 
 	// modify
-	u, err := v.Modify(u, qargs, ctx.AllGateModifier())
-	if err != nil {
-		return nil, fmt.Errorf("modify: %w", err)
-	}
-
-	return u, nil
-}
-
-func (v *Visitor) Modify(u *matrix.Matrix, qargs [][]q.Qubit, modifier []parser.IGateModifierContext) (*matrix.Matrix, error) {
-	rev := make([]parser.IGateModifierContext, len(modifier))
-	copy(rev, modifier)
+	rev := make([]parser.IGateModifierContext, len(ctx.AllGateModifier()))
+	copy(rev, ctx.AllGateModifier())
 	slices.Reverse(rev)
 
 	for _, mod := range rev {
@@ -444,40 +396,26 @@ func (v *Visitor) Modify(u *matrix.Matrix, qargs [][]q.Qubit, modifier []parser.
 			case int64:
 				p = float64(n)
 			default:
-				return nil, fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
+				return fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
 			}
 
 			u = Pow(u, p)
 		}
 	}
 
+	qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+
 	var i int
-	for _, mod := range modifier {
+	var ctrl []q.Qubit
+	for _, mod := range ctx.AllGateModifier() {
 		switch {
 		case mod.CTRL() != nil:
-			u, i = Controlled(u, q.Index(qargs[i]...)), i+1
-		case mod.NEGCTRL() != nil:
-			u, i = NegControlled(u, q.Index(qargs[i]...)), i+1
+			ctrl = append(ctrl, qargs[i][0])
+			i++
 		}
 	}
 
-	return u, nil
-}
-
-func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
-	u, ok, err := v.Builtin(ctx)
-	if err != nil {
-		return fmt.Errorf("builtin: %w", err)
-	}
-
-	if !ok {
-		u, err = v.Defined(ctx)
-		if err != nil {
-			return fmt.Errorf("defined: %w", err)
-		}
-	}
-
-	v.qsim.Apply(u)
+	v.qsim.Controlled(u, ctrl, qargs[i][0])
 	return nil
 }
 
@@ -1399,13 +1337,4 @@ func contains(result any, substrings ...string) bool {
 	}
 
 	return false
-}
-
-func flatten(qargs [][]q.Qubit) []q.Qubit {
-	var flat []q.Qubit
-	for _, q := range qargs {
-		flat = append(flat, q...)
-	}
-
-	return flat
 }
