@@ -348,6 +348,45 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix,
 	}
 }
 
+func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) error {
+	id := v.Visit(ctx.Identifier()).(string)
+	g, ok := v.env.GetGate(id)
+	if !ok {
+		return fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
+	}
+
+	// params
+	enclosed := v.Enclosed()
+	if ctx.ExpressionList() != nil {
+		params, err := v.Params(ctx.ExpressionList())
+		if err != nil {
+			return fmt.Errorf("params: %w", err)
+		}
+
+		for i, p := range g.Params {
+			enclosed.env.SetVariable(p, params[i])
+		}
+	}
+
+	// qargs
+	if ctx.GateOperandList() != nil {
+		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		for i, id := range g.QArgs {
+			enclosed.env.Qubit[id] = qargs[i]
+		}
+	}
+
+	// call body
+	for i, c := range g.Body {
+		result := enclosed.VisitGateCallStatement(c)
+		if err, ok := result.(error); ok && err != nil {
+			return fmt.Errorf("gate[%d] : %w", i, err)
+		}
+	}
+
+	return nil
+}
+
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
 	u, ok, err := v.Builtin(ctx)
 	if err != nil {
@@ -355,7 +394,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	}
 
 	if !ok {
-		return fmt.Errorf("calling user-defined gates is not implemented: %s", ctx.GetText())
+		// NOTE: modifier is not implemented in user-defined gate call
+		if err := v.UserDefinedGateCall(ctx); err != nil {
+			return fmt.Errorf("user-defined gate call: %w", err)
+		}
+
+		return nil
 	}
 
 	if HasControlModifier(ctx) {
@@ -369,7 +413,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		var ctrl, negctrl []q.Qubit
 		var ctrlcnt int
 		for _, mod := range ctx.AllGateModifier() {
-			// NOTE: pow is not supported with control modifier
+			// NOTE: pow is not implemented with control modifier
 			switch {
 			case mod.INV() != nil:
 				u = u.Dagger()
