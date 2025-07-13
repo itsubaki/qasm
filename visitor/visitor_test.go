@@ -1557,14 +1557,6 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		},
 		{
 			text: `
-				qubit q;
-				gphase(true);
-			`,
-			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement gphase ( (expressionList (expression true)) ) ;))) <EOF>)",
-			errMsg: "builtin: params: param=true(bool): unexpected",
-		},
-		{
-			text: `
 				qubit[2] q;
 				U(pi/2, 0, pi) q[0];
 				ctrl @ U(pi, 0, pi) q[0], q[1];
@@ -1575,6 +1567,95 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				"[11][  3]( 0.7071 0.0000i): 0.5000",
 			},
 		},
+		{
+			text: `
+				qubit[2] q;
+				U(pi/2, 0, pi) q[0];
+				inv @ U(pi/2, 0, pi) q[0];
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier inv @) U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) <EOF>)",
+			want: []string{
+				"[00][  0]( 1.0000 0.0000i): 1.0000",
+			},
+		},
+		{
+			text: `
+				qubit[2] q;
+				pow(2) @ U(pi/2, 0, pi) q[0];
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression 2) ) @) U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) <EOF>)",
+			want: []string{
+				"[00][  0]( 1.0000 0.0000i): 1.0000",
+			},
+		},
+		{
+			text: `
+				qubit[2] q;
+				pow(3) @ U(pi/2, 0, pi) q[0];
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression 3) ) @) U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) <EOF>)",
+			want: []string{
+				"[00][  0]( 0.7071 0.0000i): 0.5000",
+				"[10][  2]( 0.7071 0.0000i): 0.5000",
+			},
+		},
+		{
+			text: `
+				qubit q;
+				gphase(true);
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement gphase ( (expressionList (expression true)) ) ;))) <EOF>)",
+			errMsg: "builtin: params: param=true(bool): unexpected",
+		},
+		{
+			text: `
+				qubit[2] q;
+				U(true, 0, pi) q;
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression true) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			errMsg: "builtin: params: param=true(bool): unexpected",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		qsim := q.New()
+		env := visitor.NewEnviron()
+		v := visitor.New(qsim, env)
+
+		switch ret := v.Visit(tree).(type) {
+		case error:
+			if ret.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", ret.Error(), c.errMsg)
+			}
+
+			continue
+		}
+
+		for i, s := range qsim.State() {
+			if s.String() == c.want[i] {
+				continue
+			}
+
+			t.Errorf("got=%v, want=%v", s.String(), c.want[i])
+		}
+	}
+}
+
+func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
+	cases := []struct {
+		text   string
+		tree   string
+		want   []string
+		errMsg string
+	}{
 		{
 			text: `
 				gate u q { }
@@ -1589,16 +1670,207 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				myg(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement myg ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "calling user-defined gates is not implemented: myg(pi,0,pi)q;",
+			errMsg: "user-defined gate call: idenfitier=myg: gate not found",
 		},
 		{
 			text: `
+				gate h q0 { U(pi/2, 0, pi) q0; }
+				gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
 				qubit[2] q;
-				U(true, 0, pi) q;
+				h q[0];
+				cx q[0], q[1];
 			`,
-			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression true) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "builtin: params: param=true(bool): unexpected",
+			tree: "(program (statementOrScope (statement (gateStatement gate h (identifierList q0) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) })))) (statementOrScope (statement (gateStatement gate cx (identifierList q0 , q1) (scope { (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement h (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement cx (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) <EOF>)",
+			want: []string{
+				"[00][  0]( 0.7071 0.0000i): 0.5000",
+				"[11][  3]( 0.7071 0.0000i): 0.5000",
+			},
 		},
+		{
+			text: `
+				gate x q0 { U(pi, 0, pi) q0; }
+				gate y q0 { U(pi, pi/2, pi/2) q0; }
+				qubit q;
+				x q;
+				y q;
+			`,
+			tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q0) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) })))) (statementOrScope (statement (gateStatement gate y (identifierList q0) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression (expression pi) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q0))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement y (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[0][  0]( 0.0000-1.0000i): 1.0000",
+			},
+		},
+		{
+			text: `
+				gate x q { U(pi, 0, pi) q; }
+				gate y q { U(pi, pi/2, pi/2) q; }
+				gate xy q { x q; y q; }
+				qubit q;
+				xy q;
+			`,
+			tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (gateStatement gate y (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression (expression pi) / (expression 2)) , (expression (expression pi) / (expression 2))) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (gateStatement gate xy (identifierList q) (scope { (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement y (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement xy (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[0][  0]( 0.0000-1.0000i): 1.0000",
+			},
+		},
+		{
+			text: `
+				gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
+				qubit q;
+				u(pi, 0, pi) q;
+			`,
+			tree: "(program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement u ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[1][  1]( 1.0000 0.0000i): 1.0000",
+			},
+		},
+		{
+			text: `
+				gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
+				const int n = 3;
+				qubit q;
+				pow(n) @ u(pi, 0, pi) q;
+			`,
+			tree: "(program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (constDeclarationStatement const (scalarType int) n = (declarationExpression (expression 3)) ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression n) ) @) u ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[1][  1]( 1.0000 0.0000i): 1.0000",
+			},
+		},
+		{
+			text: `
+				gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
+				qubit[2] q;
+				u(pi, 0, pi) q;
+			`,
+			tree: "(program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement u ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[11][  3]( 1.0000 0.0000i): 1.0000",
+			},
+		},
+		// not implemented.
+		// {
+		// 	text: `
+		// 		gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
+		// 		qubit q;
+		// 		u(pi, 0, pi) q;
+		// 		inv @ u(pi, 0, pi) q;
+		// 	`,
+		// 	tree: "(program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement u ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier inv @) u ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+		// 	want: []string{
+		// 		"[0][  0]( 1.0000 0.0000i): 1.0000",
+		// 	},
+		// },
+		// {
+		// 	text: `
+		// 		gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
+		// 		gate invu(p0, p1, p2) q { inv @ u(p0, p1, p2) q; }
+		// 		qubit q;
+		// 		u(1, 2, 3) q;
+		// 		invu(1, 2, 3) q;
+		// 	`,
+		// 	tree: "(program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (gateStatement gate invu ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement (gateModifier inv @) u ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement u ( (expressionList (expression 1) , (expression 2) , (expression 3)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement invu ( (expressionList (expression 1) , (expression 2) , (expression 3)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+		// 	want: []string{
+		// 		"[0][  0]( 1.0000 0.0000i): 1.0000",
+		// 	},
+		// },
+		// {
+		// 	text: `
+		// 		gate x q { U(pi, 0, pi) q; }
+		// 		qubit[2] q;
+		// 		x q[0];
+		// 		ctrl @ x q[0], q[1];
+		// 	`,
+		// 	tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) x (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) <EOF>)",
+		// 	want: []string{
+		// 		"[11][  3]( 1.0000 0.0000i): 1.0000",
+		// 	},
+		// },
+		// {
+		// 	text: `
+		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate cx q0, q1 { ctrl @ x q0, q1; }
+		// 		qubit[2] q;
+		// 		qubit t;
+		// 		x q;
+		// 		ctrl @ cx q[0], q[1], t;
+		// 	`,
+		// 	tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (gateStatement gate cx (identifierList q0 , q1) (scope { (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) x (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) t ;))) (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) cx (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ]))) , (gateOperand (indexedIdentifier t))) ;))) <EOF>)",
+		// 	want: []string{
+		// 		"[111][  7]( 1.0000 0.0000i): 1.0000",
+		// 	},
+		// },
+		// {
+		// 	text: `
+		// 		gate x q { U(pi, 0, pi) q; }
+		// 		qubit[2] q;
+		// 		negctrl @ x q[0], q[1];
+		// 	`,
+		// 	tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier negctrl @) x (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) <EOF>)",
+		// 	want: []string{
+		// 		"[01][  1]( 1.0000 0.0000i): 1.0000",
+		// 	},
+		// },
+		// {
+		// 	text: `
+		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate negcx q0, q1 { negctrl @ x q0, q1; }
+		// 		qubit[3] q;
+		// 		negctrl @ negcx q[0], q[1], q[2];
+		// 	`,
+		// 	tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (gateStatement gate negcx (identifierList q0 , q1) (scope { (statementOrScope (statement (gateCallStatement (gateModifier negctrl @) x (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier negctrl @) negcx (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 2) ])))) ;))) <EOF>)",
+		// 	want: []string{
+		// 		"[001][  1]( 1.0000 0.0000i): 1.0000",
+		// 	},
+		// },
+		// {
+		// 	text: `
+		// 		gate x q { U(pi, 0, pi) q; }
+		// 		qubit[2] q;
+		// 		x q[1];
+		// 		ctrl @ x q[1], q[0];
+		// 	`,
+		// 	tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) x (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) <EOF>)",
+		// 	want: []string{
+		// 		"[11][  3]( 1.0000 0.0000i): 1.0000",
+		// 	},
+		// },
+		// {
+		// 	text: `
+		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate negcx q0, q1 { negctrl @ x q0, q1; }
+		// 		qubit[3] q;
+		// 		negctrl @ negcx q[1], q[2], q[0];
+		// 	`,
+		// 	tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (gateStatement gate negcx (identifierList q0 , q1) (scope { (statementOrScope (statement (gateCallStatement (gateModifier negctrl @) x (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier negctrl @) negcx (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 2) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) <EOF>)",
+		// 	want: []string{
+		// 		"[100][  4]( 1.0000 0.0000i): 1.0000",
+		// 	},
+		// },
+		// {
+		// 	text: `
+		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate negcx q0, q1 { negctrl @ x q0, q1; }
+		// 		qubit[3] q;
+		// 		negctrl @ negcx q[2], q[0], q[1];
+		// 	`,
+		// 	tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (gateStatement gate negcx (identifierList q0 , q1) (scope { (statementOrScope (statement (gateCallStatement (gateModifier negctrl @) x (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier negctrl @) negcx (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 2) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) <EOF>)",
+		// 	want: []string{
+		// 		"[010][  2]( 1.0000 0.0000i): 1.0000",
+		// 	},
+		// },
+		// {
+		// 	text: `
+		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate cx q0, q1 { ctrl @ x q0, q1; }
+		// 		qubit[3] q;
+		// 		x q[1];
+		// 		x q[2];
+		// 		ctrl @ cx q[1], q[2], q[0];
+		// 	`,
+		// 	tree: "(program (statementOrScope (statement (gateStatement gate x (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (gateStatement gate cx (identifierList q0 , q1) (scope { (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) x (gateOperandList (gateOperand (indexedIdentifier q0)) , (gateOperand (indexedIdentifier q1))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (gateCallStatement x (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 2) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) cx (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 2) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) <EOF>)",
+		// 	want: []string{
+		// 		"[111][  7]( 1.0000 0.0000i): 1.0000",
+		// 	},
+		// },
 	}
 
 	for _, c := range cases {
