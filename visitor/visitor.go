@@ -349,6 +349,10 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix,
 }
 
 func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) error {
+	if len(ctx.AllGateModifier()) > 0 {
+		return fmt.Errorf("modifier is not implemented in user-defined gate call: %w", ErrNotImplemented)
+	}
+
 	id := v.Visit(ctx.Identifier()).(string)
 	g, ok := v.env.GetGate(id)
 	if !ok {
