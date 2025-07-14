@@ -61,7 +61,7 @@ func (v *Visitor) VisitTerminal(node antlr.TerminalNode) any {
 }
 
 func (v *Visitor) VisitErrorNode(node antlr.ErrorNode) any {
-	return fmt.Errorf("error node: %s", node.GetText())
+	return fmt.Errorf("%s: %w", node.GetText(), ErrUnexpected)
 }
 
 func (v *Visitor) VisitChildren(node antlr.RuleNode) any {
