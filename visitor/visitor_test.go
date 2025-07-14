@@ -29,11 +29,7 @@ func ExampleVisitor_comment() {
 	env := visitor.NewEnviron()
 	v := visitor.New(qsim, env)
 
-	if err := v.Visit(tree); err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println(env.Version)
+	fmt.Println(v.Visit(tree))
 
 	// Output:
 	// (program (statementOrScope (statement (endStatement end ;))) <EOF>)
@@ -54,6 +50,7 @@ func ExampleVisitor_Run() {
 
 	if err := v.Run(p.Program()); err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	fmt.Println(env.Version)
@@ -77,10 +74,40 @@ func ExampleVisitor_Run_err() {
 
 	if err := v.Run(p.Program()); err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	// Output:
-	// visit: identifier=a: already declared
+	// identifier=a: already declared
+}
+
+func ExampleVisitor_VisitChildren() {
+	text := `
+	OPENQASM 3.0;
+
+	qubit q;
+	U(pi/2, 0, pi) q;
+	`
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	if err, ok := v.VisitChildren(p.Program()).(error); ok && err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	for _, s := range qsim.State() {
+		fmt.Println(s)
+	}
+
+	// Output:
+	// [0][  0]( 0.7071 0.0000i): 0.5000
+	// [1][  1]( 0.7071 0.0000i): 0.5000
 }
 
 func ExampleVisitor_VisitVersion() {
@@ -98,8 +125,9 @@ func ExampleVisitor_VisitVersion() {
 	env := visitor.NewEnviron()
 	v := visitor.New(qsim, env)
 
-	if err := v.Visit(tree); err != nil {
+	if err := v.Run(tree); err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	fmt.Println(env.Version)
@@ -124,7 +152,8 @@ func ExampleVisitor_VisitPragma() {
 	env := visitor.NewEnviron()
 	v := visitor.New(qsim, env)
 
-	fmt.Println(v.Visit(tree))
+	pragma := v.Visit(tree).(*visitor.Pragma)
+	fmt.Println(pragma.Inspect())
 
 	// Output:
 	// (program (statementOrScope (statement (pragma pragma qiskit.simulator noise model "qpu1.noise";))) <EOF>)
@@ -148,8 +177,9 @@ func ExampleVisitor_VisitResetStatement() {
 	env := visitor.NewEnviron()
 	v := visitor.New(qsim, env)
 
-	if err := v.Visit(tree); err != nil {
+	if err := v.Run(tree); err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	for _, s := range qsim.State() {
@@ -176,14 +206,12 @@ func ExampleVisitor_VisitIncludeStatement() {
 	env := visitor.NewEnviron()
 	v := visitor.New(qsim, env)
 
-	if err := v.Visit(tree); err != nil {
+	if err := v.Run(tree); err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	fmt.Println(slices.Sorted(maps.Keys(env.Gate)))
-	for _, s := range qsim.State() {
-		fmt.Println(s)
-	}
 
 	// Output:
 	// (program (statementOrScope (statement (includeStatement include "../testdata/stdgates.qasm" ;))) <EOF>)
@@ -207,8 +235,9 @@ func ExampleVisitor_VisitIncludeStatement_invalid() {
 	env := visitor.NewEnviron()
 	v := visitor.New(qsim, env)
 
-	if err := v.Visit(tree); err != nil {
+	if err := v.Run(tree); err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	// Output:
@@ -231,7 +260,7 @@ func ExampleVisitor_VisitIncludeStatement_fileNotFound() {
 	env := visitor.NewEnviron()
 	v := visitor.New(qsim, env)
 
-	if err := v.Visit(tree); err != nil {
+	if err := v.Run(tree); err != nil {
 		fmt.Println(err)
 	}
 
@@ -277,10 +306,9 @@ func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -409,10 +437,9 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -470,15 +497,16 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
-		default:
-			if fmt.Sprintf("%v", env.Qubit) != c.want {
-				t.Errorf("got=%v, want=%v", env.Qubit, c.want)
-			}
+
+			continue
+		}
+
+		if fmt.Sprintf("%v", env.Qubit) != c.want {
+			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
 		}
 	}
 }
@@ -530,10 +558,9 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -597,10 +624,9 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -706,10 +732,9 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -838,9 +863,9 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			panic(ret)
+		if err := v.Run(tree); err != nil {
+			t.Errorf("got=%v, want no error", err)
+			continue
 		}
 
 		if len(c.want.classicalBit) != 0 {
@@ -952,10 +977,9 @@ func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
-		switch ret := result.(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+		if err, ok := result.(error); ok && err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -1081,13 +1105,14 @@ func TestVisitor_VisitCallExpression(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			panic(ret)
-		default:
-			if fmt.Sprintf("%v", ret) != c.want {
-				t.Errorf("got=%v, want=%v", ret, c.want)
-			}
+		result := v.Visit(tree)
+		if err, ok := result.(error); ok && err != nil {
+			t.Errorf("got=%v, want no error", err)
+			continue
+		}
+
+		if fmt.Sprintf("%v", result) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
 		}
 	}
 }
@@ -1630,10 +1655,9 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret.Error(), c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -1886,10 +1910,9 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret.Error(), c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -2055,10 +2078,9 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret.Error(), c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -2127,10 +2149,9 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret.Error(), c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -2179,9 +2200,9 @@ func TestVisitor_VisitIfStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			panic(ret)
+		if err := v.Run(tree); err != nil {
+			t.Errorf("got=%v, want no error", err)
+			continue
 		}
 
 		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2231,9 +2252,9 @@ func TestVisitor_VisitForStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			panic(ret)
+		if err := v.Run(tree); err != nil {
+			t.Errorf("got=%v, want no error", err)
+			continue
 		}
 
 		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2277,9 +2298,9 @@ func TestVisitor_VisitBreakStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			panic(ret)
+		if err := v.Run(tree); err != nil {
+			t.Errorf("got=%v, want no error", err)
+			continue
 		}
 
 		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2323,9 +2344,9 @@ func TestVisitor_VisitContinueStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			panic(ret)
+		if err := v.Run(tree); err != nil {
+			t.Errorf("got=%v, want no error", err)
+			continue
 		}
 
 		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2393,9 +2414,9 @@ func TestVisitor_VisitWhileStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			panic(ret)
+		if err := v.Run(tree); err != nil {
+			t.Errorf("got=%v, want no error", err)
+			continue
 		}
 
 		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2482,9 +2503,9 @@ func TestVisitor_VisitSwitchStatement(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			panic(ret)
+		if err := v.Run(tree); err != nil {
+			t.Errorf("got=%v, want no error", err)
+			continue
 		}
 
 		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2545,10 +2566,9 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -2657,10 +2677,9 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -2699,10 +2718,9 @@ func TestVisitor_VisitArrayLiteral(t *testing.T) {
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		switch ret := v.Visit(tree).(type) {
-		case error:
-			if ret.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", ret, c.errMsg)
+		if err := v.Run(tree); err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue

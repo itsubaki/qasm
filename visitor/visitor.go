@@ -46,7 +46,7 @@ func (v *Visitor) Enclosed() *Visitor {
 
 func (v *Visitor) Run(tree antlr.ParseTree) error {
 	if err, ok := v.Visit(tree).(error); ok && err != nil {
-		return fmt.Errorf("visit: %w", err)
+		return err
 	}
 
 	return nil
@@ -61,19 +61,51 @@ func (v *Visitor) VisitTerminal(node antlr.TerminalNode) any {
 }
 
 func (v *Visitor) VisitErrorNode(node antlr.ErrorNode) any {
-	return fmt.Errorf("VisitErrorNode: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) any {
-	return fmt.Errorf("VisitAnnotation: %w", ErrNotImplemented)
+	return fmt.Errorf("error node: %s", node.GetText())
 }
 
 func (v *Visitor) VisitChildren(node antlr.RuleNode) any {
-	return fmt.Errorf("VisitChildren: %w", ErrNotImplemented)
+	for _, c := range node.GetChildren() {
+		if c == nil {
+			continue
+		}
+
+		if tree, ok := c.(antlr.ParseTree); ok {
+			if err, ok := v.Visit(tree).(error); ok && err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (v *Visitor) VisitPragma(ctx *parser.PragmaContext) any {
-	return v.Visit(ctx.RemainingLineContent())
+	var remaining string
+	if ctx.RemainingLineContent() != nil {
+		remaining = v.Visit(ctx.RemainingLineContent()).(string)
+	}
+
+	return &Pragma{
+		RemainingLineContent: remaining,
+	}
+}
+
+func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) any {
+	var keyword string
+	if ctx.AnnotationKeyword() != nil {
+		keyword = v.Visit(ctx.AnnotationKeyword()).(string)
+	}
+
+	var remaining string
+	if ctx.RemainingLineContent() != nil {
+		remaining = v.Visit(ctx.RemainingLineContent()).(string)
+	}
+
+	return &Annotation{
+		Keyword:              keyword,
+		RemainingLineContent: remaining,
+	}
 }
 
 func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) any {
@@ -171,9 +203,8 @@ func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) any
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(string(text)))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
-	switch ret := v.Visit(p.Program()).(type) {
-	case error:
-		return fmt.Errorf("include: %w", ret)
+	if err := v.Run(p.Program()); err != nil {
+		return fmt.Errorf("include: %w", err)
 	}
 
 	return nil
