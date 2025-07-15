@@ -20,13 +20,13 @@ type Gate struct {
 	Name   string
 	Params []string
 	QArgs  []string
-	Body   []*parser.GateCallStatementContext
+	Body   parser.IScopeContext
 }
 
 type Subroutine struct {
 	Name  string
 	QArgs []string
-	Body  *parser.ScopeContext
+	Body  parser.IScopeContext
 }
 
 func NewEnviron() *Environ {

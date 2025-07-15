@@ -66,14 +66,9 @@ func (v *Visitor) VisitErrorNode(node antlr.ErrorNode) any {
 
 func (v *Visitor) VisitChildren(node antlr.RuleNode) any {
 	for _, c := range node.GetChildren() {
-		if c == nil {
-			continue
-		}
-
-		if tree, ok := c.(antlr.ParseTree); ok {
-			if err, ok := v.Visit(tree).(error); ok && err != nil {
-				return err
-			}
+		tree := c.(antlr.ParseTree)
+		if err, ok := v.Visit(tree).(error); ok && err != nil {
+			return err
 		}
 	}
 
@@ -319,16 +314,11 @@ func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) any {
 		return fmt.Errorf("len(identifier list)=%d: %w", len(ctx.AllIdentifierList()), ErrUnexpected)
 	}
 
-	var body []*parser.GateCallStatementContext
-	for _, s := range ctx.Scope().AllStatementOrScope() {
-		body = append(body, s.Statement().GateCallStatement().(*parser.GateCallStatementContext))
-	}
-
 	v.env.Gate[name] = &Gate{
 		Name:   name,
 		Params: params,
 		QArgs:  qargs,
-		Body:   body,
+		Body:   ctx.Scope(),
 	}
 
 	return nil
@@ -413,8 +403,13 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 	}
 
 	// call body
-	for i, c := range g.Body {
-		result := enclosed.VisitGateCallStatement(c)
+	for i, s := range g.Body.AllStatementOrScope() {
+		ss, ok := s.Statement().GateCallStatement().(*parser.GateCallStatementContext)
+		if !ok {
+			return fmt.Errorf("statement[%d] is not gate call statement: %w", i, ErrUnexpected)
+		}
+
+		result := enclosed.VisitGateCallStatement(ss)
 		if err, ok := result.(error); ok && err != nil {
 			return fmt.Errorf("gate[%d] : %w", i, err)
 		}
@@ -691,7 +686,7 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) any {
 	v.env.Subroutine[name] = &Subroutine{
 		Name:  name,
 		QArgs: qargs,
-		Body:  ctx.Scope().(*parser.ScopeContext),
+		Body:  ctx.Scope(),
 	}
 
 	return nil
