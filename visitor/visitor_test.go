@@ -160,32 +160,6 @@ func ExampleVisitor_VisitPragma() {
 	// qiskit.simulator noise model "qpu1.noise";
 }
 
-func ExampleVisitor_VisitAnnotation() {
-	text := `
-	@myself test annotation
-	@reversible
-	gate multiply a, b, x {
-		x = a * b;
-	}
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	tree := p.Program()
-	fmt.Println(tree.ToStringTree(nil, p))
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	fmt.Println(v.Visit(tree))
-
-	// Output:
-	// (program (statementOrScope (statement (annotation @myself test annotation) (annotation @reversible) (gateStatement gate multiply (identifierList a , b , x) (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier x) = (expression (expression a) * (expression b)) ;))) })))) <EOF>)
-	// <nil>
-}
-
 func ExampleVisitor_VisitResetStatement() {
 	text := `
 	qubit q;

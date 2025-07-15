@@ -87,20 +87,7 @@ func (v *Visitor) VisitPragma(ctx *parser.PragmaContext) any {
 }
 
 func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) any {
-	var keyword string
-	if ctx.AnnotationKeyword() != nil {
-		keyword = v.Visit(ctx.AnnotationKeyword()).(string)
-	}
-
-	var remaining string
-	if ctx.RemainingLineContent() != nil {
-		remaining = v.Visit(ctx.RemainingLineContent()).(string)
-	}
-
-	return &Annotation{
-		Keyword:              keyword,
-		RemainingLineContent: remaining,
-	}
+	return fmt.Errorf("VisitAnnotation: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) any {
