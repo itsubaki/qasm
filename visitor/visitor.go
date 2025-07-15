@@ -404,12 +404,8 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 
 	// call body
 	for i, s := range g.Body.AllStatementOrScope() {
-		ss, ok := s.Statement().GateCallStatement().(*parser.GateCallStatementContext)
-		if !ok {
-			return fmt.Errorf("statement[%d] is not gate call statement: %w", i, ErrUnexpected)
-		}
-
-		result := enclosed.VisitGateCallStatement(ss)
+		call := s.Statement().GateCallStatement().(*parser.GateCallStatementContext)
+		result := enclosed.VisitGateCallStatement(call)
 		if err, ok := result.(error); ok && err != nil {
 			return fmt.Errorf("gate[%d] : %w", i, err)
 		}
