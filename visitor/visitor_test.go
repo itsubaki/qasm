@@ -269,6 +269,19 @@ func ExampleVisitor_VisitIncludeStatement_fileNotFound() {
 	// read file=file_not_found.qasm: open file_not_found.qasm: no such file or directory
 }
 
+func ExampleVisitor_VisitErrorNode() {
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	token := &antlr.BaseToken{}
+	token.SetText("something went wrong")
+	fmt.Println(v.VisitErrorNode(antlr.NewErrorNodeImpl(token)))
+
+	// Output:
+	// something went wrong: unexpected
+}
+
 func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 	cases := []struct {
 		text   string
@@ -1640,6 +1653,15 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression true) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
 			errMsg: "builtin: params: param=true(bool): unexpected",
 		},
+		{
+			text: `
+				qubit[2] q;
+				U(pi/2, 0, pi) q[0];
+				ctrl @ pow(2) @ U(pi, 0, pi) q[0], q[1];
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) (gateModifier pow ( (expression 2) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) <EOF>)",
+			errMsg: "pow with control modifier is not implemented: not implemented",
+		},
 	}
 
 	for _, c := range cases {
@@ -1757,6 +1779,15 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 			want: []string{
 				"[11][  3]( 1.0000 0.0000i): 1.0000",
 			},
+		},
+		{
+			text: `
+				gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
+				qubit q;
+				inv @ u(pi, 0, pi) q;
+			`,
+			tree:   "(program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier inv @) u ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			errMsg: "user-defined gate call: modifier is not implemented in user-defined gate call: not implemented",
 		},
 		// not implemented.
 		// {
