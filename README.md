@@ -13,6 +13,19 @@
 go install github.com/itsubaki/qasm@latest
 ```
 
+```shell
+% qasm -help
+Usage of qasm:
+  -f string
+        filepath
+  -lex
+        the input into a sequence of tokens
+  -parse
+        the input into an convert to an AST (abstract syntax tree)
+  -repl
+        REPL(read-eval-print loop) mode
+```
+
 ## Examples
 
 ```shell
@@ -28,7 +41,7 @@ subroutine: []
 ```
 
 ```shell
-% go run cmd/repl/main.go
+% qasm -repl
 >> OPENQASM 3.0;
 >> 
 >> qubit[2] q;
@@ -42,7 +55,7 @@ subroutine: []
 ```
 
 ```shell
-% go run cmd/repl/main.go
+% qasm -repl
 >> OPENQASM 3.0;
 >> 
 >> const float ratio = pi;
@@ -60,7 +73,7 @@ subroutine: []
 ```
 
 ```shell
-% go run cmd/lex/main.go < testdata/bell.qasm
+% cat testdata/bell.qasm | qasm -lex
 [@-1,0:7='OPENQASM',<1>,1:0]
 [@-1,9:11='3.0',<103>,1:9]
 [@-1,12:12=';',<63>,1:12]
@@ -108,58 +121,67 @@ subroutine: []
 ```
 
 ```shell
-% go run cmd/parse/main.go < testdata/bell.qasm
+% cat testdata/bell.qasm | qasm -parse
 (program
-  (version OPENQASM 3.0 ;)
+  (version OPENQASM 3.0 ;
+  )
+  (statementOrScope
+    (statement
+      (includeStatement include "testdata/stdgates.qasm" ;
+      )
+    )
+  )
   (statementOrScope
     (statement
       (quantumDeclarationStatement
         (qubitType qubit
-          (designator [ (expression 2) ])
-        ) q;
+          (designator [
+            (expression 2
+            ) ]
+          )
+        ) q ;
       )
     )
   )
   (statementOrScope
     (statement
-      (gateCallStatement U
-        (
-          (expressionList
-            (expression (expression pi) / (expression 2.0)),
-            (expression 0),
-            (expression pi)
-          )
-        )
+      (gateCallStatement h
         (gateOperandList
           (gateOperand
-            (indexedIdentifier q (indexOperator [ (expression 0) ]))
+            (indexedIdentifier q
+              (indexOperator [
+                (expression 0
+                ) ]
+              )
+            )
           )
-        );
+        ) ;
       )
     )
   )
   (statementOrScope
     (statement
-      (gateCallStatement
-        (gateModifier ctrl @) U
-        (
-          (expressionList
-            (expression pi),
-            (expression 0),
-            (expression pi)
-          )
-        )
+      (gateCallStatement cx
         (gateOperandList
           (gateOperand
-            (indexedIdentifier q (indexOperator [ (expression 0) ]))
-          ),
+            (indexedIdentifier q
+              (indexOperator [
+                (expression 0
+                ) ]
+              )
+            )
+          ) ,
           (gateOperand
-            (indexedIdentifier q (indexOperator [ (expression 1) ]))
+            (indexedIdentifier q
+              (indexOperator [
+                (expression 1
+                ) ]
+              )
+            )
           )
-        );
+        ) ;
       )
     )
-  )
-  <EOF>
+  ) <EOF>
 )
 ```
