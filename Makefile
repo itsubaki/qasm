@@ -1,23 +1,25 @@
 SHELL := /bin/bash
 
-antlr:
-	# https://github.com/openqasm/openqasm/blob/main/source/grammar
-	pip install antlr4-tools
-	antlr4 -Dlanguage=Go -visitor -o ./gen/parser -package parser qasm3Lexer.g4 qasm3Parser.g4
-
 update:
+	GOPROXY=direct go get github.com/itsubaki/q@HEAD
 	go get -u ./...
 	go mod tidy
 
-run:
-	go run main.go < testdata/qft.qasm
-
-lex:
-	go run cmd/lex/main.go < testdata/bell.qasm
-
-parse:
-	go run cmd/parse/main.go < testdata/bell.qasm
-
 test:
 	go test -v -cover $(shell go list ./... | grep -v /cmd | grep -v /gen | grep -v -E "qasm$$") -v -coverprofile=coverage.txt -covermode=atomic
+
+antlr:
+	curl -s -O https://raw.githubusercontent.com/openqasm/openqasm/refs/heads/main/source/grammar/qasm3Lexer.g4
+	curl -s -O https://raw.githubusercontent.com/openqasm/openqasm/refs/heads/main/source/grammar/qasm3Parser.g4
+	pip install antlr4-tools
+	antlr4 -Dlanguage=Go -visitor -o ./gen/parser -package parser qasm3Lexer.g4 qasm3Parser.g4
+
+run:
+	cat testdata/qft.qasm | go run main.go
+
+lex:
+	cat testdata/bell.qasm | go run main.go -lex
+
+parse:
+	cat testdata/bell.qasm | go run main.go -parse
 
