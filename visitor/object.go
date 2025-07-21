@@ -2,6 +2,7 @@ package visitor
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -12,6 +13,7 @@ const (
 	IntType         Type = "Int"
 	FloatType       Type = "Float"
 	BoolType        Type = "Bool"
+	AngleType       Type = "Angle"
 	ArrayType       Type = "Array"
 	ReturnValueType Type = "ReturnValue"
 	ErrorType       Type = "Error"
@@ -151,4 +153,42 @@ func (p *Pragma) Type() Type {
 
 func (p *Pragma) Inspect() string {
 	return p.RemainingLineContent
+}
+
+type Angle struct {
+	Bits      uint
+	BitString string
+	K         uint
+}
+
+func (a *Angle) Type() Type {
+	return AngleType
+}
+
+func (a *Angle) Inspect() string {
+	return fmt.Sprintf("%v(%s)", a.K, a.BitString)
+}
+
+func (a *Angle) String() string {
+	return a.Inspect()
+}
+
+func (a *Angle) Radian() float64 {
+	return 2 * math.Pi * float64(a.K) / math.Pow(2, float64(a.Bits))
+}
+
+func NewAngle(bits uint, radian float64) *Angle {
+	mod := math.Mod(radian, 2*math.Pi)
+	if mod < 0 {
+		// normalize to [0, 2pi)
+		mod += 2 * math.Pi
+	}
+
+	// k = angle / 2pi * 2^bits
+	k := uint(math.Round(mod / (2 * math.Pi) * float64(uint(1)<<bits)))
+	return &Angle{
+		Bits:      bits,
+		BitString: fmt.Sprintf("%0*b", bits, k),
+		K:         k,
+	}
 }

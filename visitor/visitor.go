@@ -649,6 +649,24 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		size := v.Visit(ctx.ScalarType()).(int64)
 		v.env.ClassicalBit[id] = make([]int64, int(size))
 		return nil
+	case ctx.ScalarType().ANGLE() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.env.GetVariable(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if ctx.DeclarationExpression() != nil {
+			bits := v.Visit(ctx.ScalarType()).(int64)
+			radian := v.Visit(ctx.DeclarationExpression()).(float64)
+			angle := NewAngle(uint(bits), radian)
+
+			v.env.SetVariable(id, angle)
+			return nil
+		}
+
+		bits := v.Visit(ctx.ScalarType()).(int64)
+		v.env.SetVariable(id, NewAngle(uint(bits), 0))
+		return nil
 	default:
 		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
 	}

@@ -2,10 +2,77 @@ package visitor_test
 
 import (
 	"errors"
+	"math"
 	"testing"
 
 	"github.com/itsubaki/qasm/visitor"
 )
+
+func TestAngle(t *testing.T) {
+	type want struct {
+		bitString string
+		k         uint
+		radian    float64
+	}
+
+	cases := []struct {
+		bits   uint
+		radian float64
+		want   want
+	}{
+		{
+			bits:   4,
+			radian: math.Pi,
+			want: want{
+				bitString: "1000",
+				k:         8,
+				radian:    math.Pi,
+			},
+		},
+		{
+			bits:   6,
+			radian: math.Pi / 2,
+			want: want{
+				bitString: "010000",
+				k:         16,
+				radian:    math.Pi / 2,
+			},
+		},
+		{
+			bits:   8,
+			radian: 7 * math.Pi / 8,
+			want: want{
+				bitString: "01110000",
+				k:         112,
+				radian:    7 * math.Pi / 8,
+			},
+		},
+		{
+			bits:   4,
+			radian: -math.Pi / 2,
+			want: want{
+				bitString: "1100",
+				k:         12,
+				radian:    3 * math.Pi / 2, // normalized to [0, 2pi)
+			},
+		},
+	}
+
+	for _, c := range cases {
+		angle := visitor.NewAngle(c.bits, c.radian)
+		if angle.BitString != c.want.bitString {
+			t.Errorf("got=%v, want=%v", angle.BitString, c.want.bitString)
+		}
+
+		if angle.K != c.want.k {
+			t.Errorf("got=%v, want=%v", angle.K, c.want.k)
+		}
+
+		if angle.Radian() != c.want.radian {
+			t.Errorf("got=%v, want=%v", angle.Radian(), c.want.radian)
+		}
+	}
+}
 
 func TestObject_Inspect(t *testing.T) {
 	cases := []struct {
@@ -66,6 +133,15 @@ func TestObject_Inspect(t *testing.T) {
 			obj:     &visitor.Pragma{RemainingLineContent: "This is a pragma"},
 			objType: visitor.PragmaType,
 			want:    "This is a pragma",
+		},
+		{
+			obj: &visitor.Angle{
+				Bits:      4,
+				BitString: "1000",
+				K:         8,
+			},
+			objType: visitor.AngleType,
+			want:    "8(1000)",
 		},
 	}
 
