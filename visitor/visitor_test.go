@@ -371,14 +371,44 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			want: "map[c:[1]]",
 		},
 		{
+			text: "int ans = 42;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) ans = (declarationExpression (expression 42)) ;))) <EOF>)",
+			want: "map[ans:42]",
+		},
+		{
 			text: "float ratio = 22 / 7;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) ratio = (declarationExpression (expression (expression 22) / (expression 7))) ;))) <EOF>)",
 			want: "map[ratio:3.142857142857143]",
 		},
 		{
-			text: "int ans = 42;",
-			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) ans = (declarationExpression (expression 42)) ;))) <EOF>)",
-			want: "map[ans:42]",
+			text: "float f1 = 1.2;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) f1 = (declarationExpression (expression 1.2)) ;))) <EOF>)",
+			want: "map[f1:1.2]",
+		},
+		{
+			text: "float f2 = .1;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) f2 = (declarationExpression (expression .1)) ;))) <EOF>)",
+			want: "map[f2:0.1]",
+		},
+		{
+			text: "float f3 = 0.;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) f3 = (declarationExpression (expression 0.)) ;))) <EOF>)",
+			want: "map[f3:0]",
+		},
+		{
+			text: "float f4 = 3.14e10;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) f4 = (declarationExpression (expression 3.14e10)) ;))) <EOF>)",
+			want: "map[f4:3.14e+10]",
+		},
+		{
+			text: "float f5 = 2e+1;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) f5 = (declarationExpression (expression 2e+1)) ;))) <EOF>)",
+			want: "map[f5:20]",
+		},
+		{
+			text: "float f6 = 2.0E-1;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) f6 = (declarationExpression (expression 2.0E-1)) ;))) <EOF>)",
+			want: "map[f6:0.2]",
 		},
 		{
 			text: "uint ans = 42;",
