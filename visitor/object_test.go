@@ -134,6 +134,15 @@ func TestObject_Inspect(t *testing.T) {
 			objType: visitor.PragmaType,
 			want:    "This is a pragma",
 		},
+		{
+			obj: &visitor.Angle{
+				Bits:      4,
+				BitString: "1000",
+				K:         8,
+			},
+			objType: visitor.AngleType,
+			want:    "8(1000)",
+		},
 	}
 
 	for _, c := range cases {
