@@ -14,7 +14,9 @@ def qft(qubit[3] q) {
     crz(pi/2) q[1], q[2];
 
     h q[2];
+}
 
+def swap(qubit[3] q) {
     cx q[0], q[2];
     cx q[2], q[0];
     cx q[0], q[2];
@@ -23,6 +25,7 @@ def qft(qubit[3] q) {
 qubit[3] q;
 x q[2];
 qft(q);
+swap(q);
 
 // [000][  0]( 0.3536 0.0000i): 0.1250
 // [001][  1]( 0.2500 0.2500i): 0.1250
