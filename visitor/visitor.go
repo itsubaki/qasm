@@ -1189,6 +1189,13 @@ func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) any {
 		case int64:
 			return uint(v)
 		}
+	case ctx.ScalarType().FLOAT() != nil:
+		switch v := val.(type) {
+		case float64:
+			return v
+		case int64:
+			return float64(v)
+		}
 	}
 
 	return fmt.Errorf("x=%s: %w", ctx.GetText(), ErrUnexpected)

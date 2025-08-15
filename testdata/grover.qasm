@@ -26,7 +26,8 @@ qubit[4] q;
 reset q;
 h q;
 
-int r = int(floor(pi/4 * sqrt(16.0)));
+int n = 2**4;
+int r = int(floor(pi/4 * sqrt(float(n))));
 for int i in [0:r] {
     oracle(q);
     diffuser(q);
