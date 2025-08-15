@@ -31,3 +31,5 @@ for int i in [0:r] {
     oracle(q);
     diffuser(q);
 }
+
+measure q[3];
