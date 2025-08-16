@@ -426,6 +426,11 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		var ctrl, negctrl []q.Qubit
 		var ctrlcnt int
 		for _, mod := range ctx.AllGateModifier() {
+			var n int64 = 1
+			if x := mod.Expression(); x != nil {
+				n = v.Visit(x).(int64)
+			}
+
 			switch {
 			case mod.INV() != nil:
 				u = u.Dagger()
@@ -433,12 +438,16 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 				// NOTE: pow is not implemented with control modifier
 				return fmt.Errorf("pow with control modifier is not implemented: %w", ErrNotImplemented)
 			case mod.CTRL() != nil:
-				ctrl = append(ctrl, qargs[ctrlcnt]...)
-				ctrlcnt++
+				for range n {
+					ctrl = append(ctrl, qargs[ctrlcnt]...)
+					ctrlcnt++
+				}
 			case mod.NEGCTRL() != nil:
-				ctrl = append(ctrl, qargs[ctrlcnt]...)
-				negctrl = append(negctrl, qargs[ctrlcnt]...)
-				ctrlcnt++
+				for range n {
+					ctrl = append(ctrl, qargs[ctrlcnt]...)
+					negctrl = append(negctrl, qargs[ctrlcnt]...)
+					ctrlcnt++
+				}
 			}
 		}
 

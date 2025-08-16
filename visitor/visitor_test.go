@@ -2082,6 +2082,20 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 		},
 		{
 			text: `
+				qubit[3] q;
+				U(pi/2.0, 0, pi) q[0], q[1];
+				ctrl(2) @ U(pi, 0, pi) q[0], q[1], q[2];
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl ( (expression 2) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 2) ])))) ;))) <EOF>)",
+			want: []string{
+				"[000][  0]( 0.5000 0.0000i): 0.2500",
+				"[010][  2]( 0.5000 0.0000i): 0.2500",
+				"[100][  4]( 0.5000 0.0000i): 0.2500",
+				"[111][  7]( 0.5000 0.0000i): 0.2500",
+			},
+		},
+		{
+			text: `
 				qubit q0;
 				qubit q1;
 				U(pi/2.0, 0, pi) q0;
