@@ -473,7 +473,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			u = u.Dagger()
 		case mod.POW() != nil:
 			var p float64
-			switch n := v.Visit(mod).(type) {
+			switch n := v.Visit(mod.Expression()).(type) {
 			case float64:
 				p = n
 			case int64:
