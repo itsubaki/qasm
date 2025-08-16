@@ -28,7 +28,7 @@ reset q;
 h q;
 
 int N = 2**n;
-int r = int(floor(pi/4 * sqrt(float(N))));
+int r = int(pi/4 * sqrt(float(N)));
 for int i in [0:r] {
     oracle(q);
     diffuser(q);
