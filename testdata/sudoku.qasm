@@ -8,6 +8,9 @@ gate cccz c0, c1, c2, t { ctrl @ ctrl @ ctrl @ U(0, pi, 0) c0, c1, c2, t; }
 gate ccccz c0, c1, c2, c3, t { ctrl @ ctrl @ ctrl @ ctrl @ U(0, pi, 0) c0, c1, c2, c3, t; }
 gate xor q0, q1, q2 { cx q0, q2; cx q1, q2; }
 
+// The oracle constructs a Grover oracle that validates solutions to a 2x2 mini-sudoku puzzle.
+// It enforces the following uniqueness constraints: a != b, c != d, a != c, b != d
+// Valid solutions are [1, 0, 0, 1] and [0, 1, 1, 0].
 def oracle(qubit[4] r, qubit[4] s, qubit a) {
     xor r[0], r[1], s[0];
     xor r[2], r[3], s[1];
