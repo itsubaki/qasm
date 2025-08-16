@@ -108,7 +108,7 @@ func Parse(text string) {
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 	tree := p.Program()
-	Print(tree.ToStringTree(nil, p))
+	PrintAST(tree.ToStringTree(nil, p))
 }
 
 func REPL() {
@@ -180,7 +180,7 @@ func REPL() {
 	}
 }
 
-func Print(input string) {
+func PrintAST(input string) {
 	var indent int
 	var token string
 

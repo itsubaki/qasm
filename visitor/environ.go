@@ -9,6 +9,7 @@ type Environ struct {
 	Version      string
 	Const        map[string]any
 	Variable     map[string]any
+	QubitOrder   []string
 	Qubit        map[string][]q.Qubit
 	ClassicalBit map[string][]int64
 	Gate         map[string]*Gate
@@ -79,6 +80,11 @@ func (e *Environ) SetVariable(name string, value any) {
 	}
 
 	e.Variable[name] = value
+}
+
+func (e *Environ) SetQubit(name string, qubits []q.Qubit) {
+	e.Qubit[name] = qubits
+	e.QubitOrder = append(e.QubitOrder, name)
 }
 
 func (e *Environ) GetQubit(name string) ([]q.Qubit, bool) {
