@@ -108,7 +108,7 @@ func Parse(text string) {
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 	tree := p.Program()
-	PrintAST(tree.ToStringTree(nil, p))
+	fmt.Println(tree.ToStringTree(nil, p))
 }
 
 func REPL() {
@@ -178,49 +178,4 @@ func REPL() {
 			}
 		}
 	}
-}
-
-func PrintAST(input string) {
-	var indent int
-	var token string
-
-	flush := func() {
-		if token == "" {
-			return
-		}
-
-		fmt.Print(token)
-		token = ""
-	}
-
-	first := true
-	for i := range len(input) {
-		c := input[i]
-		switch c {
-		case '(':
-			flush()
-			if !first {
-				fmt.Println()
-			}
-
-			fmt.Print(strings.Repeat("  ", indent), "(")
-			indent++
-			first = false
-		case ')':
-			flush()
-			indent--
-			fmt.Println()
-			fmt.Print(strings.Repeat("  ", indent), ")")
-		case ' ', '\n', '\t':
-			flush()
-			if i+1 < len(input) && input[i+1] != '(' {
-				fmt.Print(" ")
-			}
-		default:
-			token += string(c)
-		}
-	}
-
-	flush()
-	fmt.Println()
 }
