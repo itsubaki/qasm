@@ -2237,6 +2237,15 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 	}{
 		{
 			text: `
+				def xm(qubit q1) { U(pi, 0, pi) q1; measure q1; }
+				qubit q;
+				xm(q);
+			`,
+			tree: "(program (statementOrScope (statement (defStatement def xm ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q1)) ) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q1))) ;))) (statementOrScope (statement (measureArrowAssignmentStatement (measureExpression measure (gateOperand (indexedIdentifier q1))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (expressionStatement (expression xm ( (expressionList (expression q)) )) ;))) <EOF>)",
+			want: "map[]",
+		},
+		{
+			text: `
 				def xm(qubit q1) -> bit { U(pi, 0, pi) q1; return measure q1; }
 				qubit q;
 				bit c = xm(q);
@@ -2654,6 +2663,16 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 		errMsg string
 	}{
 		{
+			text: "int a = 42; float b = float(a); float c = b + 0.1;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 42)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType float) b = (declarationExpression (expression (scalarType float) ( (expression a) ))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType float) c = (declarationExpression (expression (expression b) + (expression 0.1))) ;))) <EOF>)",
+			want: "map[a:42 b:42 c:42.1]",
+		},
+		{
+			text: "int a = 42; float b = float(a+0.1);",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 42)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType float) b = (declarationExpression (expression (scalarType float) ( (expression (expression a) + (expression 0.1)) ))) ;))) <EOF>)",
+			want: "map[a:42 b:42.1]",
+		},
+		{
 			text: "int a = int(42);",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression (scalarType int) ( (expression 42) ))) ;))) <EOF>)",
 			want: "map[a:42]",
@@ -2676,6 +2695,11 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 		{
 			text: "int[32] a = 42;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int (designator [ (expression 32) ])) a = (declarationExpression (expression 42)) ;))) <EOF>)",
+			want: "map[a:42]",
+		},
+		{
+			text: "int[64] a = 42;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int (designator [ (expression 64) ])) a = (declarationExpression (expression 42)) ;))) <EOF>)",
 			want: "map[a:42]",
 		},
 		{

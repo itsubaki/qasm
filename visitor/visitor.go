@@ -426,11 +426,6 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		var ctrl, negctrl []q.Qubit
 		var ctrlcnt int
 		for _, mod := range ctx.AllGateModifier() {
-			var n int64 = 1
-			if x := mod.Expression(); x != nil {
-				n = v.Visit(x).(int64)
-			}
-
 			switch {
 			case mod.INV() != nil:
 				u = u.Dagger()
@@ -438,12 +433,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 				// NOTE: pow is not implemented with control modifier
 				return fmt.Errorf("pow with control modifier is not implemented: %w", ErrNotImplemented)
 			case mod.CTRL() != nil:
-				for range n {
+				for range v.Visit(mod).(int64) {
 					ctrl = append(ctrl, qargs[ctrlcnt]...)
 					ctrlcnt++
 				}
 			case mod.NEGCTRL() != nil:
-				for range n {
+				for range v.Visit(mod).(int64) {
 					ctrl = append(ctrl, qargs[ctrlcnt]...)
 					negctrl = append(negctrl, qargs[ctrlcnt]...)
 					ctrlcnt++
@@ -693,10 +688,16 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) any {
 		qargs = append(qargs, a.(string))
 	}
 
+	var outType any
+	if ctx.ReturnSignature() != nil {
+		outType = v.Visit(ctx.ReturnSignature())
+	}
+
 	v.env.Subroutine[name] = &Subroutine{
-		Name:  name,
-		QArgs: qargs,
-		Body:  ctx.Scope(),
+		Name:       name,
+		QArgs:      qargs,
+		Body:       ctx.Scope(),
+		OutputType: outType,
 	}
 
 	return nil
@@ -1251,7 +1252,11 @@ func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) a
 }
 
 func (v *Visitor) VisitGateModifier(ctx *parser.GateModifierContext) any {
-	return v.Visit(ctx.Expression())
+	if ctx.Expression() != nil {
+		return v.Visit(ctx.Expression())
+	}
+
+	return int64(1)
 }
 
 func (v *Visitor) VisitScalarType(ctx *parser.ScalarTypeContext) any {
@@ -1331,12 +1336,12 @@ func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) any {
 	return list
 }
 
-func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext) any {
-	return fmt.Errorf("VisitArrayReferenceType: %w", ErrNotImplemented)
+func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) any {
+	return ctx.ScalarType()
 }
 
-func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) any {
-	return fmt.Errorf("VisitReturnSignature: %w", ErrNotImplemented)
+func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext) any {
+	return fmt.Errorf("VisitArrayReferenceType: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalArgumentDefinition(ctx *parser.DefcalArgumentDefinitionContext) any {

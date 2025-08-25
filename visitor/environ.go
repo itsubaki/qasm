@@ -25,9 +25,10 @@ type Gate struct {
 }
 
 type Subroutine struct {
-	Name  string
-	QArgs []string
-	Body  parser.IScopeContext
+	Name       string
+	QArgs      []string
+	Body       parser.IScopeContext
+	OutputType any
 }
 
 func NewEnviron() *Environ {
