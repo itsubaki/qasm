@@ -24,20 +24,29 @@ var (
 	ErrVariableNotFound     = errors.New("variable not found")
 	ErrGateNotFound         = errors.New("gate not found")
 	ErrFunctionNotFound     = errors.New("function not found")
+	ErrTooManyQubits        = errors.New("too many qubits")
 	ErrUnexpected           = errors.New("unexpected")
 	ErrNotImplemented       = errors.New("not implemented")
 )
 
 type Visitor struct {
-	qsim *q.Q
-	env  *Environ
+	qsim      *q.Q
+	env       *Environ
+	maxQubits int
 }
 
-func New(qsim *q.Q, env *Environ) *Visitor {
-	return &Visitor{
-		qsim,
-		env,
+func New(qsim *q.Q, env *Environ, opt ...Option) *Visitor {
+	v := &Visitor{
+		qsim:      qsim,
+		env:       env,
+		maxQubits: math.MaxInt,
 	}
+
+	for _, o := range opt {
+		o(v)
+	}
+
+	return v
 }
 
 func (v *Visitor) Enclosed() *Visitor {
@@ -569,6 +578,11 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 	}
 
 	size := v.Visit(ctx.QubitType()).(int64)
+	need := v.qsim.NumQubits() + int(size)
+	if need > v.maxQubits {
+		return fmt.Errorf("need=%d, max=%d: %w", need, v.maxQubits, ErrTooManyQubits)
+	}
+
 	v.env.SetQubit(id, v.qsim.Zeros(int(size)))
 	return nil
 }
@@ -727,6 +741,11 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 		var size int64 = 1
 		if ctx.Designator() != nil {
 			size = v.Visit(ctx.Designator()).(int64)
+		}
+
+		need := v.qsim.NumQubits() + int(size)
+		if need > v.maxQubits {
+			return fmt.Errorf("need=%d, max=%d: %w", need, v.maxQubits, ErrTooManyQubits)
 		}
 
 		v.env.SetQubit(id, v.qsim.Zeros(int(size)))
