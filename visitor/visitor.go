@@ -579,7 +579,7 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 
 	size := v.Visit(ctx.QubitType()).(int64)
 	need := v.qsim.NumQubits() + int(size)
-	if need > v.maxQubits {
+	if v.maxQubits > 0 && need > v.maxQubits {
 		return fmt.Errorf("need=%d, max=%d: %w", need, v.maxQubits, ErrTooManyQubits)
 	}
 
@@ -744,7 +744,7 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 		}
 
 		need := v.qsim.NumQubits() + int(size)
-		if need > v.maxQubits {
+		if v.maxQubits > 0 && need > v.maxQubits {
 			return fmt.Errorf("need=%d, max=%d: %w", need, v.maxQubits, ErrTooManyQubits)
 		}
 
