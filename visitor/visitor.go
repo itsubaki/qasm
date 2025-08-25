@@ -37,13 +37,12 @@ type Visitor struct {
 
 func New(qsim *q.Q, env *Environ, opt ...Option) *Visitor {
 	v := &Visitor{
-		qsim:      qsim,
-		env:       env,
-		maxQubits: math.MaxInt,
+		qsim: qsim,
+		env:  env,
 	}
 
-	for _, o := range opt {
-		o(v)
+	for _, f := range opt {
+		f(v)
 	}
 
 	return v
