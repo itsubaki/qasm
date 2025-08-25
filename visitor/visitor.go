@@ -433,12 +433,14 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 				// NOTE: pow is not implemented with control modifier
 				return fmt.Errorf("pow with control modifier is not implemented: %w", ErrNotImplemented)
 			case mod.CTRL() != nil:
-				for range v.Visit(mod).(int64) {
+				n := v.Visit(mod).(int64)
+				for range n {
 					ctrl = append(ctrl, qargs[ctrlcnt]...)
 					ctrlcnt++
 				}
 			case mod.NEGCTRL() != nil:
-				for range v.Visit(mod).(int64) {
+				n := v.Visit(mod).(int64)
+				for range n {
 					ctrl = append(ctrl, qargs[ctrlcnt]...)
 					negctrl = append(negctrl, qargs[ctrlcnt]...)
 					ctrlcnt++
