@@ -74,8 +74,12 @@ func (v *Visitor) VisitErrorNode(node antlr.ErrorNode) any {
 
 func (v *Visitor) VisitChildren(node antlr.RuleNode) any {
 	for _, c := range node.GetChildren() {
-		tree := c.(antlr.ParseTree)
-		if err, ok := v.Visit(tree).(error); ok && err != nil {
+		tree, ok := c.(antlr.ParseTree)
+		if !ok {
+			return fmt.Errorf("unexpected child type: %T: %w", c, ErrUnexpected)
+		}
+
+		if err := v.Run(tree); err != nil {
 			return err
 		}
 	}
