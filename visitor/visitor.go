@@ -406,7 +406,7 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 		call := s.Statement().GateCallStatement().(*parser.GateCallStatementContext)
 		result := enclosed.VisitGateCallStatement(call)
 		if err, ok := result.(error); ok && err != nil {
-			return fmt.Errorf("gate[%d] : %w", i, err)
+			return fmt.Errorf("gate call (i=%d): %w", i, err)
 		}
 	}
 
