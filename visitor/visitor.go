@@ -377,7 +377,7 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 	id := v.Visit(ctx.Identifier()).(string)
 	g, ok := v.env.GetGate(id)
 	if !ok {
-		return fmt.Errorf("idenfitier=%s: %w", id, ErrGateNotFound)
+		return fmt.Errorf("identifier=%s: %w", id, ErrGateNotFound)
 	}
 
 	// params
