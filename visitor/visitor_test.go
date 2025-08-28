@@ -1803,7 +1803,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				myg(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement myg ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "user-defined gate call: idenfitier=myg: gate not found",
+			errMsg: "user-defined gate call: identifier=myg: gate not found",
 		},
 		{
 			text: `
