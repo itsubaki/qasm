@@ -32,7 +32,7 @@ func TestPow(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		if got := visitor.Pow(c.in, c.p); !got.Equals(c.want) {
+		if got := visitor.Pow(c.in, c.p); !got.Equal(c.want) {
 			t.Fail()
 		}
 	}
