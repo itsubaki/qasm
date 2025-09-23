@@ -3,6 +3,8 @@ SHELL := /bin/bash
 test:
 	go test -v -cover $(shell go list ./... | grep -v /cmd | grep -v /gen | grep -v -E "qasm$$") -v -coverprofile=coverage.txt -covermode=atomic
 	go tool cover -html=coverage.txt -o coverage.html
+
+lint:
 	golangci-lint run
 
 update:
