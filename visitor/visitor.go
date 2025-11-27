@@ -174,9 +174,11 @@ func (v *Visitor) VisitStatement(ctx *parser.StatementContext) any {
 }
 
 func (v *Visitor) VisitScope(ctx *parser.ScopeContext) any {
+	enclosed := v.Enclosed()
+
 	var list []any
 	for _, s := range ctx.AllStatementOrScope() {
-		result := v.Visit(s)
+		result := enclosed.Visit(s)
 		list = append(list, result)
 
 		if contains(result, Break, Continue) {
