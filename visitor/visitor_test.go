@@ -2540,6 +2540,38 @@ func TestVisitor_VisitWhileStatement(t *testing.T) {
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (whileStatement while ( (expression (expression a) < (expression 100)) ) (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 1)) ;))) (statementOrScope (statement (ifStatement if ( (expression (expression a) < (expression 10)) ) (statementOrScope (scope { (statementOrScope (statement (continueStatement continue ;))) }))))) (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 10)) ;))) }))))) <EOF>)",
 			want: "map[a:108]",
 		},
+		{
+			text: `
+				int a = 0;
+				for int i in [0:10] {
+					{
+						if (a > 2) {
+							break;
+						}
+						a = a + 1;
+					}
+					a = a + 100;
+				}
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (forStatement for (scalarType int) i in [ (rangeExpression (expression 0) : (expression 10)) ] (statementOrScope (scope { (statementOrScope (scope { (statementOrScope (statement (ifStatement if ( (expression (expression a) > (expression 2)) ) (statementOrScope (scope { (statementOrScope (statement (breakStatement break ;))) }))))) (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 1)) ;))) })) (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 100)) ;))) }))))) <EOF>)",
+			want: "map[a:101]",
+		},
+		{
+			text: `
+				int a = 0;
+				for int i in [0:10] {
+					{
+						if (a > 2) {
+							continue;
+						}
+						a = a + 1;
+					}
+					a = a + 100;
+				}
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (forStatement for (scalarType int) i in [ (rangeExpression (expression 0) : (expression 10)) ] (statementOrScope (scope { (statementOrScope (scope { (statementOrScope (statement (ifStatement if ( (expression (expression a) > (expression 2)) ) (statementOrScope (scope { (statementOrScope (statement (continueStatement continue ;))) }))))) (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 1)) ;))) })) (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression 100)) ;))) }))))) <EOF>)",
+			want: "map[a:101]",
+		},
 	}
 
 	for _, c := range cases {
