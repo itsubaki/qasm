@@ -16,7 +16,7 @@ qubit q0 q1;
 
 	listener := &visitor.ErrorListener{}
 	l := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(l, antlr.TokenDefaultChannel))
 
 	l.AddErrorListener(listener)
 	p.AddErrorListener(listener)
