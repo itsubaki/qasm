@@ -14,15 +14,15 @@ OPENQASM 3.0;
 qubit q0 q1;
 `
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	listener := &visitor.ErrorListener{}
+	l := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
-	errListener := &visitor.ErrorListener{}
-	lexer.AddErrorListener(errListener)
-	p.AddErrorListener(errListener)
+	l.AddErrorListener(listener)
+	p.AddErrorListener(listener)
 
 	_ = p.Program()
-	for _, e := range errListener.Errors {
+	for _, e := range listener.Errors {
 		fmt.Println(e)
 	}
 
