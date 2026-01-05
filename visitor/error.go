@@ -12,12 +12,12 @@ type ErrorListener struct {
 }
 
 func (l *ErrorListener) SyntaxError(
-	recognizer antlr.Recognizer,
-	offendingSymbol any,
+	_ antlr.Recognizer,
+	_ any, // offending symbol
 	line int,
 	column int,
 	msg string,
-	e antlr.RecognitionException,
+	_ antlr.RecognitionException,
 ) {
 	l.Errors = append(l.Errors, fmt.Errorf("syntax error at line:%d:%d: %s", line, column, msg))
 }
