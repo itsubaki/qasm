@@ -19,9 +19,9 @@ Usage of qasm:
   -f string
         filepath
   -lex
-        the input into a sequence of tokens
+        Lex the input into a sequence of tokens
   -parse
-        the input into an convert to an AST (abstract syntax tree)
+        Parse the input and convert it into an AST (abstract syntax tree)
   -repl
         REPL(read-eval-print loop) mode
 ```
