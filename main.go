@@ -23,8 +23,8 @@ func main() {
 	var repl, lex, parse bool
 	flag.StringVar(&filepath, "f", "", "filepath")
 	flag.BoolVar(&repl, "repl", false, "REPL(read-eval-print loop) mode")
-	flag.BoolVar(&lex, "lex", false, "the input into a sequence of tokens")
-	flag.BoolVar(&parse, "parse", false, "the input into an convert to an AST (abstract syntax tree)")
+	flag.BoolVar(&lex, "lex", false, "Lex the input into a sequence of tokens")
+	flag.BoolVar(&parse, "parse", false, "Parse the input and convert it into an AST (abstract syntax tree)")
 	flag.Parse()
 
 	switch {
