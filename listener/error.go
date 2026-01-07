@@ -7,7 +7,7 @@ import (
 )
 
 type ErrorListener struct {
-	antlr.ErrorListener
+	antlr.DefaultErrorListener
 	Errors []error
 }
 
