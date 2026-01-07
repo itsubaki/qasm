@@ -83,11 +83,6 @@ func (e *Environ) SetVariable(name string, value any) {
 	e.Variable[name] = value
 }
 
-func (e *Environ) SetQubit(name string, qubits []q.Qubit) {
-	e.Qubit[name] = qubits
-	e.QubitOrder = append(e.QubitOrder, name)
-}
-
 func (e *Environ) GetQubit(name string) ([]q.Qubit, bool) {
 	if q, ok := e.Qubit[name]; ok {
 		return q, true
@@ -98,6 +93,11 @@ func (e *Environ) GetQubit(name string) ([]q.Qubit, bool) {
 	}
 
 	return nil, false
+}
+
+func (e *Environ) SetQubit(name string, qubits []q.Qubit) {
+	e.Qubit[name] = qubits
+	e.QubitOrder = append(e.QubitOrder, name)
 }
 
 func (e *Environ) GetClassicalBit(name string) ([]int64, bool) {
@@ -134,4 +134,14 @@ func (e *Environ) GetSubroutine(name string) (*Subroutine, bool) {
 	}
 
 	return nil, false
+}
+
+// Index returns the index of all qubits in the order they were declared.
+func (e *Environ) Index() [][]int {
+	var index [][]int
+	for _, n := range e.QubitOrder {
+		index = append(index, q.Index(e.Qubit[n]...))
+	}
+
+	return index
 }

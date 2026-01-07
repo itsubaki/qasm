@@ -1,11 +1,11 @@
-package visitor_test
+package listener_test
 
 import (
 	"fmt"
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/qasm/gen/parser"
-	"github.com/itsubaki/qasm/visitor"
+	"github.com/itsubaki/qasm/listener"
 )
 
 func ExampleErrorListener() {
@@ -14,7 +14,7 @@ OPENQASM 3.0;
 qubit q0 q1;
 `
 
-	listener := &visitor.ErrorListener{}
+	listener := &listener.ErrorListener{}
 	l := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(l, antlr.TokenDefaultChannel))
 

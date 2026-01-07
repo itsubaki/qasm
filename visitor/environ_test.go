@@ -83,3 +83,15 @@ func ExampleEnviron_GetSubroutine() {
 	// Output:
 	// qft true
 }
+
+func ExampleEnviron_Index() {
+	env := visitor.NewEnviron()
+	env.SetQubit("q0", []q.Qubit{0, 1})
+	env.SetQubit("q1", []q.Qubit{2, 3, 4})
+
+	index := env.Index()
+	fmt.Println(index)
+
+	// Output:
+	// [[0 1] [2 3 4]]
+}

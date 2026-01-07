@@ -87,21 +87,6 @@ func (v *Visitor) VisitChildren(node antlr.RuleNode) any {
 	return nil
 }
 
-func (v *Visitor) VisitPragma(ctx *parser.PragmaContext) any {
-	var remaining string
-	if ctx.RemainingLineContent() != nil {
-		remaining = v.Visit(ctx.RemainingLineContent()).(string)
-	}
-
-	return &Pragma{
-		RemainingLineContent: remaining,
-	}
-}
-
-func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) any {
-	return fmt.Errorf("VisitAnnotation: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) any {
 	if ctx.Version() != nil {
 		v.env.Version = v.Visit(ctx.Version()).(string)
@@ -775,38 +760,6 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 	}
 }
 
-func (v *Visitor) VisitIoDeclarationStatement(ctx *parser.IoDeclarationStatementContext) any {
-	return fmt.Errorf("VisitIoDeclarationStatement: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitExternStatement(ctx *parser.ExternStatementContext) any {
-	return fmt.Errorf("VisitExternStatement: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitCalStatement(ctx *parser.CalStatementContext) any {
-	return fmt.Errorf("VisitCalStatement: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitDefcalStatement(ctx *parser.DefcalStatementContext) any {
-	return fmt.Errorf("VisitDefcalStatement: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitCalibrationGrammarStatement(ctx *parser.CalibrationGrammarStatementContext) any {
-	return fmt.Errorf("VisitCalibrationGrammarStatement: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitBarrierStatement(ctx *parser.BarrierStatementContext) any {
-	return fmt.Errorf("VisitBarrierStatement: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitBoxStatement(ctx *parser.BoxStatementContext) any {
-	return fmt.Errorf("VisitBoxStatement: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitDelayStatement(ctx *parser.DelayStatementContext) any {
-	return fmt.Errorf("VisitDelayStatement: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) any {
 	switch {
 	case ctx.Identifier() != nil:
@@ -1251,14 +1204,6 @@ func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) any {
 	return v.Visit(ctx.Expression())
 }
 
-func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionContext) any {
-	return fmt.Errorf("VisitDurationofExpression: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitSetExpression(ctx *parser.SetExpressionContext) any {
-	return fmt.Errorf("VisitSetExpression: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) any {
 	var list []any
 	for _, x := range ctx.AllExpression() {
@@ -1366,26 +1311,6 @@ func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) any {
 
 func (v *Visitor) VisitReturnSignature(ctx *parser.ReturnSignatureContext) any {
 	return ctx.ScalarType()
-}
-
-func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext) any {
-	return fmt.Errorf("VisitArrayReferenceType: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitDefcalArgumentDefinition(ctx *parser.DefcalArgumentDefinitionContext) any {
-	return fmt.Errorf("VisitDefcalArgumentDefinition: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitDefcalTarget(ctx *parser.DefcalTargetContext) any {
-	return fmt.Errorf("VisitDefcalTarget: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitDefcalOperand(ctx *parser.DefcalOperandContext) any {
-	return fmt.Errorf("VisitDefcalOperand: %w", ErrNotImplemented)
-}
-
-func (v *Visitor) VisitExternArgument(ctx *parser.ExternArgumentContext) any {
-	return fmt.Errorf("VisitExternArgument: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitArgumentDefinition(ctx *parser.ArgumentDefinitionContext) any {
@@ -1500,4 +1425,79 @@ func contains(result any, substrings ...string) bool {
 	}
 
 	return false
+}
+
+func (v *Visitor) VisitPragma(ctx *parser.PragmaContext) any {
+	var remaining string
+	if ctx.RemainingLineContent() != nil {
+		remaining = v.Visit(ctx.RemainingLineContent()).(string)
+	}
+
+	return &Pragma{
+		RemainingLineContent: remaining,
+	}
+}
+
+func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) any {
+	return fmt.Errorf("VisitAnnotation: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDurationofExpression(ctx *parser.DurationofExpressionContext) any {
+	return fmt.Errorf("VisitDurationofExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitSetExpression(ctx *parser.SetExpressionContext) any {
+	return fmt.Errorf("VisitSetExpression: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext) any {
+	return fmt.Errorf("VisitArrayReferenceType: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDefcalArgumentDefinition(ctx *parser.DefcalArgumentDefinitionContext) any {
+	return fmt.Errorf("VisitDefcalArgumentDefinition: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDefcalTarget(ctx *parser.DefcalTargetContext) any {
+	return fmt.Errorf("VisitDefcalTarget: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDefcalOperand(ctx *parser.DefcalOperandContext) any {
+	return fmt.Errorf("VisitDefcalOperand: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitIoDeclarationStatement(ctx *parser.IoDeclarationStatementContext) any {
+	return fmt.Errorf("VisitIoDeclarationStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitExternStatement(ctx *parser.ExternStatementContext) any {
+	return fmt.Errorf("VisitExternStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitExternArgument(ctx *parser.ExternArgumentContext) any {
+	return fmt.Errorf("VisitExternArgument: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitCalStatement(ctx *parser.CalStatementContext) any {
+	return fmt.Errorf("VisitCalStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDefcalStatement(ctx *parser.DefcalStatementContext) any {
+	return fmt.Errorf("VisitDefcalStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitCalibrationGrammarStatement(ctx *parser.CalibrationGrammarStatementContext) any {
+	return fmt.Errorf("VisitCalibrationGrammarStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitBarrierStatement(ctx *parser.BarrierStatementContext) any {
+	return fmt.Errorf("VisitBarrierStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitBoxStatement(ctx *parser.BoxStatementContext) any {
+	return fmt.Errorf("VisitBoxStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDelayStatement(ctx *parser.DelayStatementContext) any {
+	return fmt.Errorf("VisitDelayStatement: %w", ErrNotImplemented)
 }
