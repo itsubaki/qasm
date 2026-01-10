@@ -12,7 +12,31 @@ import (
 	"github.com/itsubaki/qasm/visitor"
 )
 
-func ExampleEnviron_qubitOrder() {
+func Example_comment() {
+	text := `
+	// this is a comment
+	/* this is a comment block */
+	end;
+	`
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	tree := p.Program()
+	fmt.Println(tree.ToStringTree(nil, p))
+
+	qsim := q.New()
+	env := visitor.NewEnviron()
+	v := visitor.New(qsim, env)
+
+	fmt.Println(v.Visit(tree))
+
+	// Output:
+	// (program (statementOrScope (statement (endStatement end ;))) <EOF>)
+	// end;
+}
+
+func ExampleVisitor_index() {
 	text := `
 	OPENQASM 3.0;
 	include "../testdata/stdgates.qasm";
@@ -37,12 +61,7 @@ func ExampleEnviron_qubitOrder() {
 		return
 	}
 
-	var index [][]int
-	for _, n := range env.QubitOrder {
-		index = append(index, q.Index(env.Qubit[n]...))
-	}
-
-	qstate := qsim.Underlying().State(index...)
+	qstate := qsim.Underlying().State(env.Index()...)
 	for _, s := range qstate {
 		fmt.Println(s)
 	}
@@ -52,30 +71,6 @@ func ExampleEnviron_qubitOrder() {
 	// [0 11 01][  0   3   1]( 0.5000 0.0000i): 0.2500
 	// [0 11 10][  0   3   2]( 0.5000 0.0000i): 0.2500
 	// [0 11 11][  0   3   3]( 0.5000 0.0000i): 0.2500
-}
-
-func ExampleVisitor_comment() {
-	text := `
-	// this is a comment
-	/* this is a comment block */
-	end;
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	tree := p.Program()
-	fmt.Println(tree.ToStringTree(nil, p))
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	fmt.Println(v.Visit(tree))
-
-	// Output:
-	// (program (statementOrScope (statement (endStatement end ;))) <EOF>)
-	// end;
 }
 
 func ExampleVisitor_Run() {
@@ -101,7 +96,7 @@ func ExampleVisitor_Run() {
 	// 3.0
 }
 
-func ExampleVisitor_Run_err() {
+func ExampleVisitor_Run_error() {
 	text := `
 	const int a = 42;
 	const int a = 43;

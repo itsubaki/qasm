@@ -21,3 +21,18 @@ func (l *ErrorListener) SyntaxError(
 ) {
 	l.Errors = append(l.Errors, fmt.Errorf("syntax error at line:%d:%d: %s", line, column, msg))
 }
+
+func NewErrorListener(r ...antlr.Recognizer) *ErrorListener {
+	// remove default error listeners
+	for _, v := range r {
+		v.RemoveErrorListeners()
+	}
+
+	// add custom error listener
+	listener := &ErrorListener{}
+	for _, v := range r {
+		v.AddErrorListener(listener)
+	}
+
+	return listener
+}

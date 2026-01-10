@@ -16,13 +16,10 @@ qubit q0 q1;
 
 	l := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(l, antlr.TokenDefaultChannel))
-
-	listener := &listener.ErrorListener{}
-	l.AddErrorListener(listener)
-	p.AddErrorListener(listener)
+	errListener := listener.NewErrorListener(l, p)
 
 	_ = p.Program()
-	for _, e := range listener.Errors {
+	for _, e := range errListener.Errors {
 		fmt.Println(e)
 	}
 
