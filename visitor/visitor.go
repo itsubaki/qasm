@@ -17,7 +17,6 @@ import (
 )
 
 var (
-	ErrInvalidVersion       = errors.New("invalid version")
 	ErrAlreadyDeclared      = errors.New("already declared")
 	ErrIdentifierNotFound   = errors.New("identifier not found")
 	ErrQubitNotFound        = errors.New("qubit not found")
