@@ -174,29 +174,6 @@ func ExampleVisitor_VisitVersion() {
 	// 3.0
 }
 
-func ExampleVisitor_VisitPragma() {
-	text := `
-	pragma qiskit.simulator noise model "qpu1.noise";
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	tree := p.Program()
-	fmt.Println(tree.ToStringTree(nil, p))
-
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
-
-	pragma := v.Visit(tree).(*visitor.Pragma)
-	fmt.Println(pragma.Inspect())
-
-	// Output:
-	// (program (statementOrScope (statement (pragma pragma qiskit.simulator noise model "qpu1.noise";))) <EOF>)
-	// qiskit.simulator noise model "qpu1.noise";
-}
-
 func ExampleVisitor_VisitResetStatement() {
 	text := `
 	qubit q;

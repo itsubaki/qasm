@@ -1187,6 +1187,8 @@ func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) any {
 		case int64:
 			return float64(v)
 		}
+	default:
+		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
 	}
 
 	return fmt.Errorf("x=%s: %w", ctx.GetText(), ErrUnexpected)
@@ -1375,33 +1377,6 @@ func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
 	return list
 }
 
-func (v *Visitor) VisitDefcalArgumentDefinitionList(ctx *parser.DefcalArgumentDefinitionListContext) any {
-	var list []any
-	for _, def := range ctx.AllDefcalArgumentDefinition() {
-		list = append(list, v.Visit(def))
-	}
-
-	return list
-}
-
-func (v *Visitor) VisitDefcalOperandList(ctx *parser.DefcalOperandListContext) any {
-	var list []any
-	for _, o := range ctx.AllDefcalOperand() {
-		list = append(list, v.Visit(o))
-	}
-
-	return list
-}
-
-func (v *Visitor) VisitExternArgumentList(ctx *parser.ExternArgumentListContext) any {
-	var list []any
-	for _, arg := range ctx.AllExternArgument() {
-		list = append(list, v.Visit(arg))
-	}
-
-	return list
-}
-
 const (
 	Break    string = "break;"
 	Continue string = "continue;"
@@ -1428,14 +1403,7 @@ func contains(result any, substrings ...string) bool {
 }
 
 func (v *Visitor) VisitPragma(ctx *parser.PragmaContext) any {
-	var remaining string
-	if ctx.RemainingLineContent() != nil {
-		remaining = v.Visit(ctx.RemainingLineContent()).(string)
-	}
-
-	return &Pragma{
-		RemainingLineContent: remaining,
-	}
+	return fmt.Errorf("VisitPragma: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitAnnotation(ctx *parser.AnnotationContext) any {
@@ -1454,12 +1422,20 @@ func (v *Visitor) VisitArrayReferenceType(ctx *parser.ArrayReferenceTypeContext)
 	return fmt.Errorf("VisitArrayReferenceType: %w", ErrNotImplemented)
 }
 
+func (v *Visitor) VisitDefcalArgumentDefinitionList(ctx *parser.DefcalArgumentDefinitionListContext) any {
+	return fmt.Errorf("VisitDefcalArgumentDefinitionList: %w", ErrNotImplemented)
+}
+
 func (v *Visitor) VisitDefcalArgumentDefinition(ctx *parser.DefcalArgumentDefinitionContext) any {
 	return fmt.Errorf("VisitDefcalArgumentDefinition: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalTarget(ctx *parser.DefcalTargetContext) any {
 	return fmt.Errorf("VisitDefcalTarget: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitDefcalOperandList(ctx *parser.DefcalOperandListContext) any {
+	return fmt.Errorf("VisitDefcalOperandList: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitDefcalOperand(ctx *parser.DefcalOperandContext) any {
@@ -1472,6 +1448,10 @@ func (v *Visitor) VisitIoDeclarationStatement(ctx *parser.IoDeclarationStatement
 
 func (v *Visitor) VisitExternStatement(ctx *parser.ExternStatementContext) any {
 	return fmt.Errorf("VisitExternStatement: %w", ErrNotImplemented)
+}
+
+func (v *Visitor) VisitExternArgumentList(ctx *parser.ExternArgumentListContext) any {
+	return fmt.Errorf("VisitExternArgumentList: %w", ErrNotImplemented)
 }
 
 func (v *Visitor) VisitExternArgument(ctx *parser.ExternArgumentContext) any {
