@@ -19,10 +19,10 @@ def oracle(qubit[4] r, qubit[4] s, qubit a) {
 
     ccccz s[0], s[1], s[2], s[3], a;
 
-    xor r[3], r[1], s[3];
-    xor r[2], r[0], s[2];
-    xor r[3], r[2], s[1];
-    xor r[1], r[0], s[0];
+    xor r[1], r[3], s[3];
+    xor r[0], r[2], s[2];
+    xor r[2], r[3], s[1];
+    xor r[0], r[1], s[0];
 }
 
 def diffuser(qubit[4] r) {
