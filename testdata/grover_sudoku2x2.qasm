@@ -41,6 +41,7 @@ qubit a;
 reset r;
 reset s;
 reset a;
+x a;
 
 h r;
 h a;
