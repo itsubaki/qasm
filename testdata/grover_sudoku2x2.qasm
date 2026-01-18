@@ -43,8 +43,6 @@ reset s;
 reset a;
 
 h r;
-
-x a;
 h a;
 
 int N = 2**n;
