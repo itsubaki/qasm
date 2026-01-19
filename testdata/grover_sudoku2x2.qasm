@@ -45,7 +45,7 @@ int M = 2;
 int R = int(pi/4 * sqrt(float(N)/float(M)));
 
 for int i in [0:R] {
-    oracle(r, s, a);
+    oracle(r, s);
     diffuser(r);
 }
 
