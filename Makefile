@@ -19,7 +19,7 @@ antlr:
 	antlr4 -Dlanguage=Go -visitor -o ./gen/parser -package parser qasm3Lexer.g4 qasm3Parser.g4
 
 run:
-	cat testdata/grover_csp.qasm | go run main.go
+	cat testdata/grover_2x2.qasm | go run main.go
 
 lex:
 	cat testdata/bell.qasm | go run main.go -lex
