@@ -17,7 +17,7 @@ def oracle(qubit[4] r, qubit[4] s, qubit a) {
     xor r[0], r[2], s[2];
     xor r[1], r[3], s[3];
 
-    cccz s[0], s[1], s[2], s[3], a;
+    ccccz s[0], s[1], s[2], s[3], a;
 
     xor r[1], r[3], s[3];
     xor r[0], r[2], s[2];
