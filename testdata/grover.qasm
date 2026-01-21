@@ -26,10 +26,10 @@ const int n = 4;
 qubit[n] q;
 reset q;
 
+h q;
+
 int N = 2**n;
 int R = int(pi/4 * sqrt(float(N)));
-
-h q;
 
 for int i in [1:r] {
     oracle(q);

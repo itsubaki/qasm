@@ -42,12 +42,12 @@ reset r;
 reset s;
 reset a;
 
+h r;
+x a;
+
 int N = 2**n;
 int M = 2;
 int R = int(pi/4 * sqrt(float(N)/float(M)));
-
-h r;
-x a;
 
 for int i in [1:R] {
     oracle(r, s, a);
