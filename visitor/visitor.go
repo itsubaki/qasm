@@ -1143,6 +1143,11 @@ func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) any {
 	qubit := v.Visit(ctx.Expression()).([]q.Qubit)
 
 	var result []q.Qubit
+	for _, x := range ctx.IndexOperator().AllExpression() {
+		index := v.Visit(x).(int64)
+		result = append(result, qubit[index])
+	}
+
 	for _, x := range ctx.IndexOperator().AllRangeExpression() {
 		index := v.Visit(x).([]int64)
 		result = append(result, qubit[index[0]:index[1]]...)
