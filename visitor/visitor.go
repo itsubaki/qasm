@@ -221,7 +221,7 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) any {
 	rx := v.Visit(ctx.RangeExpression()).([]int64)
 
 	enclosed := v.Enclosed()
-	for i := rx[0]; i < rx[1]; i++ {
+	for i := rx[0]; i <= rx[1]; i++ {
 		enclosed.env.SetVariable(id, i)
 		result := enclosed.Visit(ctx.StatementOrScope())
 

@@ -25,11 +25,13 @@ def diffuser(qubit[4] q) {
 const int n = 4;
 qubit[n] q;
 reset q;
-h q;
 
 int N = 2**n;
-int r = int(pi/4 * sqrt(float(N)));
-for int i in [0:r] {
+int R = int(pi/4 * sqrt(float(N)));
+
+h q;
+
+for int i in [1:r] {
     oracle(q);
     diffuser(q);
 }
