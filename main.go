@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"sort"
 
 	"maps"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
+	"github.com/itsubaki/q/quantum/qubit"
 	"github.com/itsubaki/qasm/gen/parser"
 	"github.com/itsubaki/qasm/scan"
 	"github.com/itsubaki/qasm/visitor"
@@ -21,7 +23,9 @@ import (
 func main() {
 	var filepath string
 	var repl, lex, parse bool
+	var top int
 	flag.StringVar(&filepath, "f", "", "filepath")
+	flag.IntVar(&top, "top", -1, "")
 	flag.BoolVar(&repl, "repl", false, "REPL(read-eval-print loop) mode")
 	flag.BoolVar(&lex, "lex", false, "Lex the input into a sequence of tokens")
 	flag.BoolVar(&parse, "parse", false, "Parse the input and convert it into an AST (abstract syntax tree)")
@@ -45,7 +49,7 @@ func main() {
 
 		Parse(text)
 	case repl:
-		REPL()
+		REPL(top)
 	default:
 		text, err := Read(filepath)
 		if err != nil {
@@ -65,7 +69,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		for _, s := range qsim.State() {
+		for _, s := range Top(qsim.State(), top) {
 			fmt.Println(s)
 		}
 
@@ -110,7 +114,7 @@ func Parse(text string) {
 	fmt.Println(tree.ToStringTree(nil, p))
 }
 
-func REPL() {
+func REPL(top int) {
 	sigint := make(chan os.Signal, 2)
 	signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
 
@@ -143,7 +147,7 @@ func REPL() {
 			}
 
 			if text == "print;" {
-				for _, s := range qsim.State() {
+				for _, s := range Top(qsim.State(), top) {
 					fmt.Println(s)
 				}
 
@@ -177,4 +181,16 @@ func REPL() {
 			}
 		}
 	}
+}
+
+func Top(s []qubit.State, n int) []qubit.State {
+	if n < 0 {
+		return s
+	}
+
+	sort.Slice(s, func(i, j int) bool {
+		return s[i].Probability() > s[j].Probability()
+	})
+
+	return s[:min(n, len(s))]
 }
