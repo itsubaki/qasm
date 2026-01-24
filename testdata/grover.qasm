@@ -2,38 +2,42 @@ OPENQASM 3.0;
 
 gate x q { U(pi, 0, pi) q; }
 gate h q { U(pi/2.0, 0, pi) q; }
-gate cccx c0, c1, c2, t { ctrl(3) @ U(pi, 0, pi) c0, c1, c2, t; }
+gate cccz c0, c1, c2, t { ctrl(3) @ U(0, 0, pi) c0, c1, c2, t; }
 
-def oracle(qubit[4] q) {
-    x q[2], q[3];
-    h q[3];
-    cccx q[0], q[1], q[2], q[3];
-    h q[3];
-    x q[2], q[3];
+// oracle for |110>|x>
+def oracle(qubit[3] q, qubit a) {
+    x q[2];
+    x a;
+    cccz q[0], q[1], q[2], a;
+    x a;
+    x q[2];
 }
 
-def diffuser(qubit[4] q) {
+def diffuser(qubit[3] q, qubit a) {
     h q;
+    h a;
     x q;
-    h q[3];
-    cccx q[0], q[1], q[2], q[3];
-    h q[3];
+    x a;
+    cccz q[0], q[1], q[2], a;
+    x a;
     x q;
+    h a;
     h q;
 }
 
-const int n = 4;
+const int n = 3;
 qubit[n] q;
+qubit a;
 reset q;
+reset a;
 
 h q;
+h a;
 
-int N = 2**n;
+int N = 2**(n+1);
 int R = int(pi/4 * sqrt(float(N)));
 
-for int i in [1:r] {
-    oracle(q);
-    diffuser(q);
+for int i in [1:R] {
+    oracle(q, a);
+    diffuser(q, a);
 }
-
-measure q[3];
