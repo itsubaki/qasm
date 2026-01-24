@@ -31,7 +31,7 @@ h q;
 int N = 2**n;
 int R = int(pi/4 * sqrt(float(N)));
 
-for int i in [1:r] {
+for int i in [1:R] {
     oracle(q);
     diffuser(q);
 }
