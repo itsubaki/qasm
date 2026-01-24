@@ -39,9 +39,17 @@ jobs:
         run: |
           make parse
 
-      - name: Run
+      - name: Shor's algorithm
         run: |
-          make run
+          make shor
+
+      - name: Grover's algorithm
+        run: |
+          make grover
+
+      - name: Quantum Counting
+        run: |
+          make counting
 
       - name: Codecov
         uses: codecov/codecov-action@v5

@@ -18,8 +18,14 @@ antlr:
 	pip install antlr4-tools
 	antlr4 -Dlanguage=Go -visitor -o ./gen/parser -package parser qasm3Lexer.g4 qasm3Parser.g4
 
-run:
+shor:
+	cat testdata/shor15.qasm | go run main.go -top 8
+
+grover:
 	cat testdata/grover_2x2.qasm | go run main.go -top 8
+
+counting:
+	cat testdata/counting.qasm | go run main.go -top 8
 
 lex:
 	cat testdata/bell.qasm | go run main.go -lex

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"sort"
 
 	"maps"
 	"os"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
-	"github.com/itsubaki/q/quantum/qubit"
 	"github.com/itsubaki/qasm/gen/parser"
 	"github.com/itsubaki/qasm/listener"
 	"github.com/itsubaki/qasm/scan"
@@ -26,7 +24,7 @@ func main() {
 	var top int
 	var repl, lex, parse bool
 	flag.StringVar(&filepath, "f", "", "filepath")
-	flag.IntVar(&top, "top", -1, "")
+	flag.IntVar(&top, "top", -1, "top results")
 	flag.BoolVar(&repl, "repl", false, "REPL(read-eval-print loop) mode")
 	flag.BoolVar(&lex, "lex", false, "Lex the input into a sequence of tokens")
 	flag.BoolVar(&parse, "parse", false, "Parse the input and convert it into an AST (abstract syntax tree)")
@@ -79,7 +77,7 @@ func main() {
 		}
 
 		states := qsim.Underlying().State(env.Index()...)
-		for _, s := range Top(states, top) {
+		for _, s := range q.Top(states, top) {
 			fmt.Println(s)
 		}
 
@@ -121,6 +119,7 @@ func Parse(text string) {
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 	tree := p.Program()
+
 	fmt.Println(tree.ToStringTree(nil, p))
 }
 
@@ -158,7 +157,7 @@ func REPL(top int) {
 
 			if text == "print;" {
 				states := qsim.Underlying().State(env.Index()...)
-				for _, s := range Top(states, top) {
+				for _, s := range q.Top(states, top) {
 					fmt.Println(s)
 				}
 
@@ -195,21 +194,9 @@ func REPL(top int) {
 			}
 
 			states := qsim.Underlying().State(env.Index()...)
-			for _, s := range Top(states, top) {
+			for _, s := range q.Top(states, top) {
 				fmt.Println(s)
 			}
 		}
 	}
-}
-
-func Top(s []qubit.State, n int) []qubit.State {
-	if n < 0 {
-		return s
-	}
-
-	sort.Slice(s, func(i, j int) bool {
-		return s[i].Probability() > s[j].Probability()
-	})
-
-	return s[:min(n, len(s))]
 }
