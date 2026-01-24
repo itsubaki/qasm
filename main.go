@@ -16,14 +16,15 @@ import (
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/q/quantum/qubit"
 	"github.com/itsubaki/qasm/gen/parser"
+	"github.com/itsubaki/qasm/listener"
 	"github.com/itsubaki/qasm/scan"
 	"github.com/itsubaki/qasm/visitor"
 )
 
 func main() {
 	var filepath string
-	var repl, lex, parse bool
 	var top int
+	var repl, lex, parse bool
 	flag.StringVar(&filepath, "f", "", "filepath")
 	flag.IntVar(&top, "top", -1, "")
 	flag.BoolVar(&repl, "repl", false, "REPL(read-eval-print loop) mode")
@@ -59,17 +60,26 @@ func main() {
 
 		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		errListener := listener.NewErrorListener(lexer, p)
 
 		qsim := q.New()
 		env := visitor.NewEnviron()
 		v := visitor.New(qsim, env)
 
-		if err := v.Run(p.Program()); err != nil {
+		// parse
+		program := p.Program()
+		if len(errListener.Errors) > 0 {
+			fmt.Fprintln(os.Stderr, errListener.Errors[0])
+			os.Exit(1)
+		}
+
+		if err := v.Run(program); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 
-		for _, s := range Top(qsim.State(), top) {
+		states := qsim.Underlying().State(env.Index()...)
+		for _, s := range Top(states, top) {
 			fmt.Println(s)
 		}
 
@@ -147,7 +157,8 @@ func REPL(top int) {
 			}
 
 			if text == "print;" {
-				for _, s := range Top(qsim.State(), top) {
+				states := qsim.Underlying().State(env.Index()...)
+				for _, s := range Top(states, top) {
 					fmt.Println(s)
 				}
 
@@ -170,13 +181,21 @@ func REPL(top int) {
 
 			lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 			p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+			errListener := listener.NewErrorListener(lexer, p)
 
-			if err := v.Run(p.Program()); err != nil {
+			program := p.Program()
+			if len(errListener.Errors) > 0 {
+				fmt.Fprintln(os.Stderr, errListener.Errors[0])
+				os.Exit(1)
+			}
+
+			if err := v.Run(program); err != nil {
 				fmt.Println(err)
 				continue
 			}
 
-			for _, s := range qsim.State() {
+			states := qsim.Underlying().State(env.Index()...)
+			for _, s := range Top(states, top) {
 				fmt.Println(s)
 			}
 		}

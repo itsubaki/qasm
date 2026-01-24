@@ -6,7 +6,7 @@ gate crz(theta) c, t { ctrl @ U(0, 0, theta) c, t; }
 
 gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
 gate xor q0, q1, q2 { cx q0, q2; cx q1, q2; }
-gate ccccz c0, c1, c2, c3, t { ctrl(3) @ U(0, 0, pi) c0, c1, c2, c3, t; }
+gate ccccz c0, c1, c2, c3, t { ctrl(4) @ U(0, 0, pi) c0, c1, c2, c3, t; }
 gate cccccz c0, c1, c2, c3, c4, t { ctrl(5) @ U(0, 0, pi) c0, c1, c2, c3, c4, t; }
 
 def oracle(qubit[4] r, qubit[4] s, qubit c, qubit a) {
