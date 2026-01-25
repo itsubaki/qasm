@@ -2,12 +2,10 @@ OPENQASM 3.0;
 
 gate x q { U(pi, 0, pi) q; }
 gate h q { U(pi/2.0, 0, pi) q; }
-
 gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
 gate xor q0, q1, q2 { cx q0, q2; cx q1, q2; }
-
-gate c3z c0, c1, c2, t { ctrl(3) @ U(0, 0, pi) c0, c1, c2, t; }
-gate c4z c0, c1, c2, c3, t { ctrl(4) @ U(0, 0, pi) c0, c1, c2, c3, t; }
+gate cccz c0, c1, c2, t { ctrl(3) @ U(0, 0, pi) c0, c1, c2, t; }
+gate ccccz c0, c1, c2, c3, t { ctrl(4) @ U(0, 0, pi) c0, c1, c2, c3, t; }
 
 // The oracle constructs a Grover oracle that checks solutions to a 2x2 sudoku puzzle.
 // The oracle flips the phase when the following uniqueness constraints are satisfied: a != b, c != d, a != c, and b != d.
@@ -18,7 +16,7 @@ def oracle(qubit[4] r, qubit[4] s, qubit a) {
     xor r[0], r[2], s[2];
     xor r[1], r[3], s[3];
 
-    c4z s[0], s[1], s[2], s[3], a;
+    ccccz s[0], s[1], s[2], s[3], a;
 
     xor r[1], r[3], s[3];
     xor r[0], r[2], s[2];
@@ -29,7 +27,7 @@ def oracle(qubit[4] r, qubit[4] s, qubit a) {
 def diffuser(qubit[4] r) {
     h r;
     x r;
-    c3z r[0], r[1], r[2], r[3];
+    cccz r[0], r[1], r[2], r[3];
     x r;
     h r;
 }
