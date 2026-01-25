@@ -7,11 +7,7 @@ gate cccz c0, c1, c2, t { ctrl(3) @ U(0, 0, pi) c0, c1, c2, t; }
 // oracle for |110>|x>
 def oracle(qubit[3] q, qubit a) {
     x q[2];
-
-    x a;
     cccz q[0], q[1], q[2], a;
-    x a;
-
     x q[2];
 }
 
