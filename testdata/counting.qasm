@@ -9,11 +9,6 @@ gate xor q0, q1, q2 { cx q0, q2; cx q1, q2; }
 gate ccccz c0, c1, c2, c3, t { ctrl(4) @ U(0, 0, pi) c0, c1, c2, c3, t; }
 gate cccccz c0, c1, c2, c3, c4, t { ctrl(5) @ U(0, 0, pi) c0, c1, c2, c3, c4, t; }
 
-def controlledG(qubit[4] r, qubit[4] s, qubit c, qubit a) {
-  oracle(r, s, c, a);
-  diffuser(c, r);
-}
-
 def oracle(qubit[4] r, qubit[4] s, qubit c, qubit a) {
     xor r[0], r[1], s[0];
     xor r[2], r[3], s[1];
@@ -36,6 +31,11 @@ def diffuser(qubit c, qubit[4] r) {
     ccccz c, r[0], r[1], r[2], r[3];
     x r;
     h r;
+}
+
+def controlledG(qubit[4] r, qubit[4] s, qubit c, qubit a) {
+  oracle(r, s, c, a);
+  diffuser(c, r);
 }
 
 def swap(qubit[3] q) {
