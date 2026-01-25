@@ -6,8 +6,13 @@ gate crz(theta) c, t { ctrl @ U(0, 0, theta) c, t; }
 
 gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
 gate xor q0, q1, q2 { cx q0, q2; cx q1, q2; }
-gate cccz c0, c1, c2, t { ctrl(3) @ U(0, 0, pi) c0, c1, c2, t; }
+gate ccccz c0, c1, c2, c3, t { ctrl(4) @ U(0, 0, pi) c0, c1, c2, c3, t; }
 gate cccccz c0, c1, c2, c3, c4, t { ctrl(5) @ U(0, 0, pi) c0, c1, c2, c3, c4, t; }
+
+def controlledG(qubit[4] r, qubit[4] s, qubit c, qubit a) {
+  oracle(r, s, c, a);
+  diffuser(c, r);
+}
 
 def oracle(qubit[4] r, qubit[4] s, qubit c, qubit a) {
     xor r[0], r[1], s[0];
@@ -15,7 +20,9 @@ def oracle(qubit[4] r, qubit[4] s, qubit c, qubit a) {
     xor r[0], r[2], s[2];
     xor r[1], r[3], s[3];
 
+    x a;
     cccccz s[0], s[1], s[2], s[3], c, a;
+    x a;
 
     xor r[1], r[3], s[3];
     xor r[0], r[2], s[2];
@@ -23,10 +30,10 @@ def oracle(qubit[4] r, qubit[4] s, qubit c, qubit a) {
     xor r[0], r[1], s[0];
 }
 
-def diffuser(qubit[4] r) {
+def diffuser(qubit c, qubit[4] r) {
     h r;
     x r;
-    cccz r[0], r[1], r[2], r[3];
+    ccccz c, r[0], r[1], r[2], r[3];
     x r;
     h r;
 }
@@ -61,40 +68,31 @@ reset a;
 
 h c;
 h r;
-x a;
-h a;
 
 // controlled-G**(2**0)
-oracle(r, s, c[2], a);
-diffuser(r);
+controlledG(r, s, c[2], a);
 
 // controlled-G**(2**1)
-oracle(r, s, c[1], a);
-diffuser(r);
-oracle(r, s, c[1], a);
-diffuser(r);
+controlledG(r, s, c[1], a);
+controlledG(r, s, c[1], a);
 
 // controlled-G**(2**2)
-oracle(r, s, c[0], a);
-diffuser(r);
-oracle(r, s, c[0], a);
-diffuser(r);
-oracle(r, s, c[0], a);
-diffuser(r);
-oracle(r, s, c[0], a);
-diffuser(r);
+controlledG(r, s, c[0], a);
+controlledG(r, s, c[0], a);
+controlledG(r, s, c[0], a);
+controlledG(r, s, c[0], a);
 
 // inverse qft
 swap(c);
 inv_qft(c);
 
 // top 4
-// [111 1001 0000 1][  7   9   0   1]( 0.0418 0.2540i): 0.0663
-// [111 0110 0000 1][  7   6   0   1]( 0.0418 0.2540i): 0.0663
-// [001 0110 0000 1][  1   6   0   1]( 0.0418-0.2540i): 0.0663
-// [001 1001 0000 1][  1   9   0   1]( 0.0418-0.2540i): 0.0663
+// [011 1001 0000 0][  3   9   0   0]( 0.0591 0.3592i): 0.1325
+// [011 0110 0000 0][  3   6   0   0]( 0.0591 0.3592i): 0.1325
+// [101 1001 0000 0][  5   9   0   0]( 0.0591-0.3592i): 0.1325
+// [101 0110 0000 0][  5   6   0   0]( 0.0591-0.3592i): 0.1325
 
 // measure c;
-// M = N * sin(theta)**2, theta=pi*phi, phi=k/2**t
-// 111(7) -> phi=0.8750, theta=2.7489, M=2.3431
-// 001(1) -> phi=0.1250, theta=0.3927, M=2.3431
+// M = N * sin(theta/2)**2, theta=2*pi*phi, phi=k/2**t
+// 011(3) -> phi=0.3750, theta=0.7854, M=2.3431
+// 101(5) -> phi=0.6250, theta=0.7854, M=2.3431
