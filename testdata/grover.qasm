@@ -25,6 +25,11 @@ def diffuser(qubit[3] q, qubit a) {
     h q;
 }
 
+def G(qubit[3] q, qubit a) {
+    oracle(q, a);
+    diffuser(q, a);
+}
+
 const int n = 3;
 qubit[n] q;
 qubit a;
@@ -38,6 +43,5 @@ int N = 2**(n+1);
 int R = int(pi/4 * sqrt(float(N)));
 
 for int i in [1:R] {
-    oracle(q, a);
-    diffuser(q, a);
+    G(q, a);
 }
