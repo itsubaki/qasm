@@ -4,6 +4,11 @@ gate x q { U(pi, 0, pi) q; }
 gate h q { U(pi/2.0, 0, pi) q; }
 gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
 
+def oracle(qubit q0, qubit q1) {
+    constant(q0, q1);
+//    balanced(q0, q1);
+}
+
 def constant(qubit q0, qubit q1) {
     x q1;
 }
@@ -21,8 +26,10 @@ x q1;
 h q0;
 h q1;
 
-balanced(q0, q1);
+oracle(q0, q1);
 
 h q0;
 measure q0;
 
+// constant: 00 + 01
+// balanced: 10 + 11
