@@ -1162,7 +1162,7 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) a
 
 	var bits []int64
 	for _, q := range qargs {
-		bits = append(bits, v.qsim.State(q)[0].Int(0))
+		bits = append(bits, v.qsim.State(q)[0].Int()[0])
 	}
 
 	return bits

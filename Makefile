@@ -22,7 +22,7 @@ shor:
 	cat testdata/shor15.qasm | go run main.go -top 8
 
 grover:
-	cat testdata/grover_2x2.qasm | go run main.go -top 8
+	cat testdata/grover.qasm | go run main.go -top 8
 
 counting:
 	cat testdata/counting.qasm | go run main.go -top 8

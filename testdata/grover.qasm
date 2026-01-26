@@ -2,40 +2,68 @@ OPENQASM 3.0;
 
 gate x q { U(pi, 0, pi) q; }
 gate h q { U(pi/2.0, 0, pi) q; }
+gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
+gate xor q0, q1, q2 { cx q0, q2; cx q1, q2; }
 gate cccz c0, c1, c2, t { ctrl(3) @ U(0, 0, pi) c0, c1, c2, t; }
+gate ccccx c0, c1, c2, c3, t { ctrl(4) @ U(pi, 0, pi) c0, c1, c2, c3, t; }
 
-// oracle for |110>|x>
-def oracle(qubit[3] q, qubit a) {
-    x q[2];
-    cccz q[0], q[1], q[2], a;
-    x q[2];
+// The oracle constructs a Grover oracle that checks solutions to a 2x2 sudoku puzzle.
+// The oracle flips the phase when the following uniqueness constraints are satisfied: a != b, c != d, a != c, and b != d.
+// The valid solutions are [1,0,0,1] and [0,1,1,0].
+def oracle(qubit[4] r, qubit[4] s, qubit a) {
+    xor r[0], r[1], s[0];
+    xor r[2], r[3], s[1];
+    xor r[0], r[2], s[2];
+    xor r[1], r[3], s[3];
+
+    ccccx s[0], s[1], s[2], s[3], a;
+
+    xor r[1], r[3], s[3];
+    xor r[0], r[2], s[2];
+    xor r[2], r[3], s[1];
+    xor r[0], r[1], s[0];
 }
 
-def diffuser(qubit[3] q, qubit a) {
-    h q; h a;
-    x q; x a;
-    cccz q[0], q[1], q[2], a;
-    x q; x a;
-    h q; h a;
+def diffuser(qubit[4] r) {
+    h r;
+    x r;
+    cccz r[0], r[1], r[2], r[3];
+    x r;
+    h r;
 }
 
-def G(qubit[3] q, qubit a) {
-    oracle(q, a);
-    diffuser(q, a);
+def G(qubit[4] r, qubit[4] s, qubit a) {
+    oracle(r, s, a);
+    diffuser(r);
 }
 
-const int n = 3;
-qubit[n] q;
+const int n = 4;
+qubit[n] r;
+qubit[4] s;
 qubit a;
-reset q;
+
+reset r;
+reset s;
 reset a;
 
-h q;
+h r;
+x a;
 h a;
 
-int N = 2**(n+1);
-int R = int(pi/4 * sqrt(float(N)));
+int N = 2**n;
+int M = 2;
+int R = int(pi/4 * sqrt(float(N)/float(M)));
 
 for int i in [1:R] {
-    G(q, a);
+    G(r, s, a);
 }
+
+// top 8
+// [0110 0000 0][  6   0   0]( 0.4861 0.0000i): 0.2363
+// [1001 0000 1][  9   0   1](-0.4861 0.0000i): 0.2363
+// [1001 0000 0][  9   0   0]( 0.4861 0.0000i): 0.2363
+// [0110 0000 1][  6   0   1](-0.4861 0.0000i): 0.2363
+// [0101 0000 0][  5   0   0](-0.0442 0.0000i): 0.0020
+// [1111 0000 0][ 15   0   0](-0.0442 0.0000i): 0.0020
+// [0001 0000 0][  1   0   0](-0.0442 0.0000i): 0.0020
+// [1110 0000 0][ 14   0   0](-0.0442 0.0000i): 0.0020
