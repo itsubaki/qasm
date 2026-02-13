@@ -22,8 +22,8 @@ qubit q1;
 reset q0;
 reset q1;
 
-x q1;
 h q0;
+x q1;
 h q1;
 
 oracle(q0, q1);
