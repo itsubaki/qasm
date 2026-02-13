@@ -61,7 +61,7 @@ func ExampleVisitor_index() {
 		return
 	}
 
-	qstate := qsim.Underlying().State(env.Index()...)
+	qstate := qsim.Qubit().State(env.Index()...)
 	for _, s := range qstate {
 		fmt.Println(s)
 	}

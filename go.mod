@@ -1,12 +1,10 @@
 module github.com/itsubaki/qasm
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.25.0
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.1
-	github.com/itsubaki/q v0.0.10-0.20260126102831-fbadee41f4d6
+	github.com/itsubaki/q v0.0.11-0.20260213103739-efd176e9c698
 )
 
-require golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
+require golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a // indirect

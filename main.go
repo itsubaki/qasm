@@ -76,7 +76,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		states := qsim.Underlying().State(env.Index()...)
+		states := qsim.Qubit().State(env.Index()...)
 		for _, s := range q.Top(states, top) {
 			fmt.Println(s)
 		}
@@ -156,7 +156,7 @@ func REPL(top int) {
 			}
 
 			if text == "print;" {
-				states := qsim.Underlying().State(env.Index()...)
+				states := qsim.Qubit().State(env.Index()...)
 				for _, s := range q.Top(states, top) {
 					fmt.Println(s)
 				}
@@ -193,7 +193,7 @@ func REPL(top int) {
 				continue
 			}
 
-			states := qsim.Underlying().State(env.Index()...)
+			states := qsim.Qubit().State(env.Index()...)
 			for _, s := range q.Top(states, top) {
 				fmt.Println(s)
 			}
