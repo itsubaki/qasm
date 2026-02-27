@@ -25,7 +25,7 @@ def oracle(qubit[4] r, qubit[4] s, qubit c, qubit a) {
 def diffuser(qubit c, qubit[4] r) {
     h r;
     x r;
-    ccccz c, r[0], r[1], r[2], r[3];
+    ccccz r[0], r[1], r[2], c, r[3];
     x r;
     h r;
 }
