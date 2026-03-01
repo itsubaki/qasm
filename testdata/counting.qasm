@@ -2,7 +2,7 @@ OPENQASM 3.0;
 
 gate x q { U(pi, 0, pi) q; }
 gate h q { U(pi/2.0, 0, pi) q; }
-gate crz(theta) c, t { ctrl @ U(0, 0, theta) c, t; }
+gate cr(theta) c, t { ctrl @ U(0, 0, theta) c, t; }
 gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
 gate xor q0, q1, q2 { cx q0, q2; cx q1, q2; }
 gate ccccz c0, c1, c2, c3, t { ctrl(4) @ U(0, 0, pi) c0, c1, c2, c3, t; }
@@ -43,11 +43,11 @@ def swap(qubit[3] q) {
 
 def inv_qft(qubit[3] q) {
   h q[2];
-  crz(-pi/2) q[2], q[1];
+  cr(-pi/2) q[2], q[1];
   
   h q[1];
-  crz(-pi/4) q[2], q[0];
-  crz(-pi/2) q[1], q[0];
+  cr(-pi/4) q[2], q[0];
+  cr(-pi/2) q[1], q[0];
   
   h q[0];
 }
