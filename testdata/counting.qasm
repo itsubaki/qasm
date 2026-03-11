@@ -68,18 +68,12 @@ h r;
 x a;
 h a;
 
-// controlled-G**(2**0)
-controlledG(r, s, c[2], a);
-
-// controlled-G**(2**1)
-controlledG(r, s, c[1], a);
-controlledG(r, s, c[1], a);
-
-// controlled-G**(2**2)
-controlledG(r, s, c[0], a);
-controlledG(r, s, c[0], a);
-controlledG(r, s, c[0], a);
-controlledG(r, s, c[0], a);
+// controlled-G
+for int i in [0:2] {
+  for int j in [0:(1<<i)-1] {
+    controlledG(r, s, c[2-i], a);
+  }
+}
 
 // inverse qft
 swap(c);
