@@ -28,7 +28,7 @@ type Subroutine struct {
 	Name       string
 	QArgs      []string
 	Body       parser.IScopeContext
-	OutputType any
+	ReturnType any
 }
 
 func NewEnviron() *Environ {

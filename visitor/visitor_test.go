@@ -2332,7 +2332,7 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				pow(true) @ U(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression true) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "pow=true(bool): unexpected",
+			errMsg: "cast to float64 true(bool): unexpected",
 		},
 		{
 			text: `

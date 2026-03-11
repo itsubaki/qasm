@@ -478,7 +478,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			case int64:
 				p = float64(n)
 			default:
-				return fmt.Errorf("pow=%v(%T): %w", n, n, ErrUnexpected)
+				return fmt.Errorf("cast to float64 %v(%T): %w", n, n, ErrUnexpected)
 			}
 
 			u = Pow(u, p)
@@ -697,16 +697,16 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) any {
 		qargs = append(qargs, a.(string))
 	}
 
-	var outType any
+	var retType any
 	if ctx.ReturnSignature() != nil {
-		outType = v.Visit(ctx.ReturnSignature())
+		retType = v.Visit(ctx.ReturnSignature())
 	}
 
 	v.env.Subroutine[name] = &Subroutine{
 		Name:       name,
 		QArgs:      qargs,
 		Body:       ctx.Scope(),
-		OutputType: outType,
+		ReturnType: retType,
 	}
 
 	return nil
