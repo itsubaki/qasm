@@ -1009,6 +1009,71 @@ func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
 			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 10) % (expression 3)) ;))) <EOF>)",
 			want: "1",
 		},
+		{
+			text: "int(1) * int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 1) )) * (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "int(9) / int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 9) )) / (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "int(9) % int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 9) )) % (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: "0",
+		},
+		{
+			text: "int(1) * 3;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 1) )) * (expression 3)) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "int(9) / 3;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 9) )) / (expression 3)) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "int(9) % 3;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 9) )) % (expression 3)) ;))) <EOF>)",
+			want: "0",
+		},
+		{
+			text: "int(1) * 3.0;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 1) )) * (expression 3.0)) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "int(9) / 3.0;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 9) )) / (expression 3.0)) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "9 % int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 9) % (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: "0",
+		},
+		{
+			text: "1 * int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 1) * (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "9 / int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 9) / (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "1.0 * int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 1.0) * (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "9.0 / int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 9.0) / (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: "3",
+		},
 	}
 
 	for _, c := range cases {
@@ -1062,6 +1127,56 @@ func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 			text: "1.3 - 3.1;",
 			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 1.3) - (expression 3.1)) ;))) <EOF>)",
 			want: "-1.8",
+		},
+		{
+			text: "int(1.5)+int(2.5);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 1.5) )) + (expression (scalarType int) ( (expression 2.5) ))) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "int(1.5)-int(2.5);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 1.5) )) - (expression (scalarType int) ( (expression 2.5) ))) ;))) <EOF>)",
+			want: "-1",
+		},
+		{
+			text: "int(2.5)+1;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 2.5) )) + (expression 1)) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "int(2.5)+1.5;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 2.5) )) + (expression 1.5)) ;))) <EOF>)",
+			want: "3.5",
+		},
+		{
+			text: "1+int(2.5);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 1) + (expression (scalarType int) ( (expression 2.5) ))) ;))) <EOF>)",
+			want: "3",
+		},
+		{
+			text: "1.5+int(2.5);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 1.5) + (expression (scalarType int) ( (expression 2.5) ))) ;))) <EOF>)",
+			want: "3.5",
+		},
+		{
+			text: "int(2.5)-1;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 2.5) )) - (expression 1)) ;))) <EOF>)",
+			want: "1",
+		},
+		{
+			text: "int(2.5)-1.5;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 2.5) )) - (expression 1.5)) ;))) <EOF>)",
+			want: "0.5",
+		},
+		{
+			text: "1-int(2.5);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 1) - (expression (scalarType int) ( (expression 2.5) ))) ;))) <EOF>)",
+			want: "-1",
+		},
+		{
+			text: "1.5-int(2.5);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 1.5) - (expression (scalarType int) ( (expression 2.5) ))) ;))) <EOF>)",
+			want: "-0.5",
 		},
 	}
 
@@ -1545,6 +1660,56 @@ func TestVisitor_VisitEqualityExpression(t *testing.T) {
 			text: "(1 == 1) != true;",
 			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression ( (expression (expression 1) == (expression 1)) )) != (expression true)) ;))) <EOF>)",
 			want: false,
+		},
+		{
+			text: "int(5) == int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 5) )) == (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: false,
+		},
+		{
+			text: "int(5) != int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 5) )) != (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: true,
+		},
+		{
+			text: "int(5) == 3;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 5) )) == (expression 3)) ;))) <EOF>)",
+			want: false,
+		},
+		{
+			text: "int(5) != 3;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 5) )) != (expression 3)) ;))) <EOF>)",
+			want: true,
+		},
+		{
+			text: "int(5) == 3.5;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 5) )) == (expression 3.5)) ;))) <EOF>)",
+			want: false,
+		},
+		{
+			text: "int(5) != 3.5;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType int) ( (expression 5) )) != (expression 3.5)) ;))) <EOF>)",
+			want: true,
+		},
+		{
+			text: "5 == int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 5) == (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: false,
+		},
+		{
+			text: "5 != int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 5) != (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: true,
+		},
+		{
+			text: "float(5.5) == int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType float) ( (expression 5.5) )) == (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: false,
+		},
+		{
+			text: "float(5.5) != int(3);",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression (scalarType float) ( (expression 5.5) )) != (expression (scalarType int) ( (expression 3) ))) ;))) <EOF>)",
+			want: true,
 		},
 	}
 
@@ -2419,6 +2584,17 @@ func TestVisitor_VisitForStatement(t *testing.T) {
 			`,
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (forStatement for (scalarType int) i in [ (rangeExpression (expression ( (expression (expression 1) - (expression 1)) )) : (expression 9)) ] (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression i)) ;))) }))))) <EOF>)",
 			want: "map[a:45]",
+		},
+		{
+			text: `
+				int R = 10;
+				int a = 0;
+				for int i in [0:R-1] {
+					a = a + i;
+				}
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) R = (declarationExpression (expression 10)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (forStatement for (scalarType int) i in [ (rangeExpression (expression 0) : (expression (expression R) - (expression 1))) ] (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression i)) ;))) }))))) <EOF>)",
+			want: "map[R:10 a:45]",
 		},
 	}
 

@@ -837,8 +837,39 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 	right := v.Visit(ctx.Expression(1))
 
 	switch l := left.(type) {
+	case int:
+		switch r := right.(type) {
+		case int:
+			if ctx.PLUS() != nil {
+				return l + r
+			}
+			if ctx.MINUS() != nil {
+				return l - r
+			}
+		case int64:
+			if ctx.PLUS() != nil {
+				return int64(l) + r
+			}
+			if ctx.MINUS() != nil {
+				return int64(l) - r
+			}
+		case float64:
+			if ctx.PLUS() != nil {
+				return float64(l) + r
+			}
+			if ctx.MINUS() != nil {
+				return float64(l) - r
+			}
+		}
 	case int64:
 		switch r := right.(type) {
+		case int:
+			if ctx.PLUS() != nil {
+				return l + int64(r)
+			}
+			if ctx.MINUS() != nil {
+				return l - int64(r)
+			}
 		case int64:
 			if ctx.PLUS() != nil {
 				return l + r
@@ -856,6 +887,13 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 		}
 	case float64:
 		switch r := right.(type) {
+		case int:
+			if ctx.PLUS() != nil {
+				return l + float64(r)
+			}
+			if ctx.MINUS() != nil {
+				return l - float64(r)
+			}
 		case int64:
 			if ctx.PLUS() != nil {
 				return l + float64(r)
@@ -881,8 +919,48 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 	right := v.Visit(ctx.Expression(1))
 
 	switch l := left.(type) {
+	case int:
+		switch r := right.(type) {
+		case int:
+			if ctx.ASTERISK() != nil {
+				return l * r
+			}
+			if ctx.SLASH() != nil {
+				return l / r
+			}
+			if ctx.PERCENT() != nil {
+				return l % r
+			}
+		case int64:
+			if ctx.ASTERISK() != nil {
+				return int64(l) * r
+			}
+			if ctx.SLASH() != nil {
+				return int64(l) / r
+			}
+			if ctx.PERCENT() != nil {
+				return int64(l) % r
+			}
+		case float64:
+			if ctx.ASTERISK() != nil {
+				return float64(l) * r
+			}
+			if ctx.SLASH() != nil {
+				return float64(l) / r
+			}
+		}
 	case int64:
 		switch r := right.(type) {
+		case int:
+			if ctx.ASTERISK() != nil {
+				return l * int64(r)
+			}
+			if ctx.SLASH() != nil {
+				return l / int64(r)
+			}
+			if ctx.PERCENT() != nil {
+				return l % int64(r)
+			}
 		case int64:
 			if ctx.ASTERISK() != nil {
 				return l * r
@@ -903,6 +981,13 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 		}
 	case float64:
 		switch r := right.(type) {
+		case int:
+			if ctx.ASTERISK() != nil {
+				return l * float64(r)
+			}
+			if ctx.SLASH() != nil {
+				return l / float64(r)
+			}
 		case int64:
 			if ctx.ASTERISK() != nil {
 				return l * float64(r)
@@ -933,8 +1018,40 @@ func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext)
 	}
 
 	switch l := left.(type) {
+	case int:
+		switch r := right.(type) {
+		case int:
+			if op == "==" {
+				return l == r
+			}
+			if op == "!=" {
+				return l != r
+			}
+		case int64:
+			if op == "==" {
+				return int64(l) == r
+			}
+			if op == "!=" {
+				return int64(l) != r
+			}
+		case float64:
+			if op == "==" {
+				return isClose(float64(l), r)
+			}
+			if op == "!=" {
+				return !isClose(float64(l), r)
+			}
+		}
+
 	case int64:
 		switch r := right.(type) {
+		case int:
+			if op == "==" {
+				return l == int64(r)
+			}
+			if op == "!=" {
+				return l != int64(r)
+			}
 		case int64:
 			if op == "==" {
 				return l == r
@@ -950,9 +1067,15 @@ func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext)
 				return !isClose(float64(l), r)
 			}
 		}
-
 	case float64:
 		switch r := right.(type) {
+		case int:
+			if op == "==" {
+				return isClose(l, float64(r))
+			}
+			if op == "!=" {
+				return !isClose(l, float64(r))
+			}
 		case int64:
 			if op == "==" {
 				return isClose(l, float64(r))
@@ -968,7 +1091,6 @@ func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext)
 				return !isClose(l, r)
 			}
 		}
-
 	case bool:
 		if r, ok := right.(bool); ok {
 			if op == "==" {

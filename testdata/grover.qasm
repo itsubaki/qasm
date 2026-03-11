@@ -54,7 +54,7 @@ int N = 2**n;
 int M = 2;
 int R = int(pi/4 * sqrt(float(N)/float(M)));
 
-for int i in [1:R] {
+for int i in [0:R-1] {
     G(r, s, a);
 }
 
