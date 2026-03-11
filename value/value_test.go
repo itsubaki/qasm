@@ -6,7 +6,7 @@ import (
 	"github.com/itsubaki/qasm/value"
 )
 
-func Equal(a, b value.Value) bool {
+func Equal(a, b *value.Value) bool {
 	ok, err := a.Eq(b)
 	if err != nil {
 		return false
@@ -830,6 +830,140 @@ func TestValue_Float64(t *testing.T) {
 
 	for _, c := range cases {
 		v, err := value.New(c.v).Float64()
+		if err != nil {
+			if c.hasErr {
+				continue
+			}
+
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		if ok := Equal(v, value.New(c.want)); !ok {
+			t.Errorf("got=%v, want=%v", v.Value(), c.want)
+		}
+	}
+}
+
+func TestNegative(t *testing.T) {
+	cases := []struct {
+		v      any
+		want   any
+		hasErr bool
+	}{
+		{
+			v:      complex(1, 2),
+			hasErr: true,
+		},
+		{
+			v:      true,
+			hasErr: true,
+		},
+		{
+			v:      int(4),
+			want:   int(-4),
+			hasErr: false,
+		},
+		{
+			v:      int64(4),
+			want:   int64(-4),
+			hasErr: false,
+		},
+		{
+			v:      float64(4.5),
+			want:   float64(-4.5),
+			hasErr: false,
+		},
+	}
+
+	for _, c := range cases {
+		v, err := value.New(c.v).Negative()
+		if err != nil {
+			if c.hasErr {
+				continue
+			}
+
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		if ok := Equal(v, value.New(c.want)); !ok {
+			t.Errorf("got=%v, want=%v", v.Value(), c.want)
+		}
+	}
+}
+
+func TestBitNot(t *testing.T) {
+	cases := []struct {
+		v      any
+		want   any
+		hasErr bool
+	}{
+		{
+			v:      complex(1, 2),
+			hasErr: true,
+		},
+		{
+			v:      true,
+			hasErr: true,
+		},
+		{
+			v:      int(4),
+			want:   int(^4),
+			hasErr: false,
+		},
+		{
+			v:      int64(4),
+			want:   int64(^4),
+			hasErr: false,
+		},
+	}
+
+	for _, c := range cases {
+		v, err := value.New(c.v).BitNot()
+		if err != nil {
+			if c.hasErr {
+				continue
+			}
+
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		if ok := Equal(v, value.New(c.want)); !ok {
+			t.Errorf("got=%v, want=%v", v.Value(), c.want)
+		}
+	}
+}
+
+func TestBoolNot(t *testing.T) {
+	cases := []struct {
+		v      any
+		want   any
+		hasErr bool
+	}{
+		{
+			v:      complex(1, 2),
+			hasErr: true,
+		},
+		{
+			v:      int(4),
+			hasErr: true,
+		},
+		{
+			v:      int64(4),
+			hasErr: true,
+		},
+		{
+			v:      float64(4.5),
+			hasErr: true,
+		},
+		{
+			v:      true,
+			want:   false,
+			hasErr: false,
+		},
+	}
+
+	for _, c := range cases {
+		v, err := value.New(c.v).BoolNot()
 		if err != nil {
 			if c.hasErr {
 				continue

@@ -52,7 +52,8 @@ def inv_qft(qubit[3] q) {
   h q[0];
 }
 
-qubit[3] c;
+const int n = 3;
+qubit[n] c;
 qubit[4] r;
 qubit[4] s;
 qubit a;
@@ -69,7 +70,7 @@ x a;
 h a;
 
 // controlled-G
-for int i in [0:2] {
+for int i in [0:n-1] {
   for int j in [0:(1<<i)-1] {
     controlledG(r, s, c[2-i], a);
   }
@@ -78,3 +79,7 @@ for int i in [0:2] {
 // inverse qft
 swap(c);
 inv_qft(c);
+
+bit m = measure c;
+// 011: phi=0.3750, theta=2.3562, M=2.3431
+// 101: phi=0.6250, theta=3.9270, M=2.3431

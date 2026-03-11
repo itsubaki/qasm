@@ -471,17 +471,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		case mod.POW() != nil:
 			x := v.Visit(mod)
 
-			var p float64
-			switch n := x.(type) {
-			case float64:
-				p = n
-			case int64:
-				p = float64(n)
-			default:
-				return fmt.Errorf("cast to float64 %v(%T): %w", n, n, ErrUnexpected)
+			p, err := value.New(x).Float64()
+			if err != nil {
+				return fmt.Errorf("cast to float64: %w", err)
 			}
 
-			u = Pow(u, p)
+			u = Pow(u, p.Value().(float64))
 		}
 	}
 
@@ -833,6 +828,35 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 	}
 }
 
+func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) any {
+	val := v.Visit(ctx.Expression())
+	switch {
+	case ctx.ScalarType().INT() != nil:
+		v, err := value.New(val).Int()
+		if err != nil {
+			return fmt.Errorf("cast to int: %w", err)
+		}
+
+		return v.Value()
+	case ctx.ScalarType().UINT() != nil:
+		v, err := value.New(val).UInt()
+		if err != nil {
+			return fmt.Errorf("cast to uint: %w", err)
+		}
+
+		return v.Value()
+	case ctx.ScalarType().FLOAT() != nil:
+		v, err := value.New(val).Float64()
+		if err != nil {
+			return fmt.Errorf("cast to float: %w", err)
+		}
+
+		return v.Value()
+	default:
+		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
+	}
+}
+
 func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
 	right := v.Visit(ctx.Expression(1))
@@ -865,30 +889,30 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 	a, b := value.New(left), value.New(right)
 
 	if ctx.ASTERISK() != nil {
-		v, err := a.Mul(b)
+		w, err := a.Mul(b)
 		if err != nil {
 			return fmt.Errorf("mul: %w", err)
 		}
 
-		return v.Value()
+		return w.Value()
 	}
 
 	if ctx.SLASH() != nil {
-		v, err := a.Div(b)
+		w, err := a.Div(b)
 		if err != nil {
 			return fmt.Errorf("div: %w", err)
 		}
 
-		return v.Value()
+		return w.Value()
 	}
 
 	if ctx.PERCENT() != nil {
-		v, err := a.Mod(b)
+		w, err := a.Mod(b)
 		if err != nil {
 			return fmt.Errorf("mod: %w", err)
 		}
 
-		return v.Value()
+		return w.Value()
 	}
 
 	return fmt.Errorf("unexpected operator=%q: %w", ctx.GetText(), ErrUnexpected)
@@ -902,19 +926,19 @@ func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext)
 	op := v.Visit(ctx.EqualityOperator()).(string)
 	switch op {
 	case "==":
-		v, err := a.Eq(b)
+		w, err := a.Eq(b)
 		if err != nil {
 			return fmt.Errorf("eq: %w", err)
 		}
 
-		return v.Value()
+		return w.Value()
 	case "!=":
-		v, err := a.NotEq(b)
+		w, err := a.NotEq(b)
 		if err != nil {
 			return fmt.Errorf("not eq: %w", err)
 		}
 
-		return v.Value()
+		return w.Value()
 	}
 
 	return fmt.Errorf("unexpected operator=%q: %w", op, ErrUnexpected)
@@ -928,36 +952,96 @@ func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionCont
 	op := v.Visit(ctx.ComparisonOperator()).(string)
 	switch op {
 	case "<":
-		v, err := a.LessThan(b)
+		w, err := a.LessThan(b)
 		if err != nil {
 			return fmt.Errorf("less than: %w", err)
 		}
 
-		return v.Value()
+		return w.Value()
 	case "<=":
-		v, err := a.LessThanOrEqual(b)
+		w, err := a.LessThanOrEqual(b)
 		if err != nil {
 			return fmt.Errorf("less than or equal: %w", err)
 		}
 
-		return v.Value()
+		return w.Value()
 	case ">":
-		v, err := a.GreaterThan(b)
+		w, err := a.GreaterThan(b)
 		if err != nil {
 			return fmt.Errorf("greater than: %w", err)
 		}
 
-		return v.Value()
+		return w.Value()
 	case ">=":
-		v, err := a.GreaterThanOrEqual(b)
+		w, err := a.GreaterThanOrEqual(b)
 		if err != nil {
 			return fmt.Errorf("greater than or equal: %w", err)
 		}
 
-		return v.Value()
+		return w.Value()
 	}
 
 	return fmt.Errorf("unexpected operator=%q: %w", op, ErrUnexpected)
+}
+
+func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) any {
+	x := v.Visit(ctx.Expression())
+	switch {
+	case ctx.MINUS() != nil:
+		w, err := value.New(x).Negative()
+		if err != nil {
+			return fmt.Errorf("negate: %w", err)
+		}
+
+		return w.Value()
+	case ctx.EXCLAMATION_POINT() != nil:
+		w, err := value.New(x).BoolNot()
+		if err != nil {
+			return fmt.Errorf("boolean not: %w", err)
+		}
+
+		return w.Value()
+	case ctx.TILDE() != nil:
+		w, err := value.New(x).BitNot()
+		if err != nil {
+			return fmt.Errorf("bitwise not: %w", err)
+		}
+
+		return w.Value()
+	default:
+		return fmt.Errorf("operator=%s: %w", ctx.GetOp().GetText(), ErrUnexpected)
+	}
+}
+
+func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) any {
+	var operand []float64
+	for _, x := range ctx.AllExpression() {
+		switch val := v.Visit(x).(type) {
+		case float64:
+			operand = append(operand, val)
+		case int64:
+			operand = append(operand, float64(val))
+		default:
+			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
+		}
+	}
+
+	return math.Pow(operand[0], operand[1])
+}
+
+func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext) any {
+	op := v.Visit(ctx.BitshiftOperator()).(string)
+	result := v.Visit(ctx.AllExpression()[0]).(int64)
+	for _, x := range ctx.AllExpression()[1:] {
+		switch op {
+		case "<<":
+			result = result << v.Visit(x).(int64)
+		case ">>":
+			result = result >> v.Visit(x).(int64)
+		}
+	}
+
+	return result
 }
 
 func (v *Visitor) VisitLogicalAndExpression(ctx *parser.LogicalAndExpressionContext) any {
@@ -1007,68 +1091,6 @@ func (v *Visitor) VisitBitwiseXorExpression(ctx *parser.BitwiseXorExpressionCont
 	}
 
 	return result
-}
-
-func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext) any {
-	op := v.Visit(ctx.BitshiftOperator()).(string)
-	result := v.Visit(ctx.AllExpression()[0]).(int64)
-	for _, x := range ctx.AllExpression()[1:] {
-		switch op {
-		case "<<":
-			result = result << v.Visit(x).(int64)
-		case ">>":
-			result = result >> v.Visit(x).(int64)
-		}
-	}
-
-	return result
-}
-
-func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) any {
-	var operand []float64
-	for _, x := range ctx.AllExpression() {
-		switch val := v.Visit(x).(type) {
-		case float64:
-			operand = append(operand, val)
-		case int64:
-			operand = append(operand, float64(val))
-		default:
-			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
-		}
-	}
-
-	return math.Pow(operand[0], operand[1])
-}
-
-func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) any {
-	operand := v.Visit(ctx.Expression())
-	switch {
-	case ctx.MINUS() != nil:
-		switch val := operand.(type) {
-		case float64:
-			return -1 * val
-		case int64:
-			return -1 * val
-		default:
-			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
-		}
-	case ctx.EXCLAMATION_POINT() != nil:
-		switch val := operand.(type) {
-		case bool:
-			return !val
-		default:
-			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
-		}
-	case ctx.TILDE() != nil:
-		switch val := operand.(type) {
-		case int64:
-			return ^val
-		default:
-			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
-		}
-	default:
-		return fmt.Errorf("operator=%s: %w", ctx.GetOp().GetText(), ErrUnexpected)
-	}
 }
 
 func (v *Visitor) VisitDeclarationExpression(ctx *parser.DeclarationExpressionContext) any {
@@ -1187,35 +1209,6 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) a
 	}
 
 	return bits
-}
-
-func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) any {
-	val := v.Visit(ctx.Expression())
-	switch {
-	case ctx.ScalarType().INT() != nil:
-		v, err := value.New(val).Int()
-		if err != nil {
-			return fmt.Errorf("cast to int: %w", err)
-		}
-
-		return v.Value()
-	case ctx.ScalarType().UINT() != nil:
-		v, err := value.New(val).UInt()
-		if err != nil {
-			return fmt.Errorf("cast to uint: %w", err)
-		}
-
-		return v.Value()
-	case ctx.ScalarType().FLOAT() != nil:
-		v, err := value.New(val).Float64()
-		if err != nil {
-			return fmt.Errorf("cast to float: %w", err)
-		}
-
-		return v.Value()
-	default:
-		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
-	}
 }
 
 func (v *Visitor) VisitParenthesisExpression(ctx *parser.ParenthesisExpressionContext) any {
