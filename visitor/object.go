@@ -43,49 +43,49 @@ type Int struct {
 	Value int64
 }
 
-func (i *Int) Type() Type {
+func (v *Int) Type() Type {
 	return IntType
 }
 
-func (i *Int) Inspect() string {
-	return fmt.Sprintf("%d", i.Value)
+func (v *Int) Inspect() string {
+	return fmt.Sprintf("%d", v.Value)
 }
 
 type Float struct {
 	Value float64
 }
 
-func (f *Float) Type() Type {
+func (v *Float) Type() Type {
 	return FloatType
 }
 
-func (f *Float) Inspect() string {
-	return fmt.Sprintf("%f", f.Value)
+func (v *Float) Inspect() string {
+	return fmt.Sprintf("%f", v.Value)
 }
 
 type Bool struct {
 	Value bool
 }
 
-func (b *Bool) Type() Type {
+func (v *Bool) Type() Type {
 	return BoolType
 }
 
-func (b *Bool) Inspect() string {
-	return fmt.Sprintf("%t", b.Value)
+func (v *Bool) Inspect() string {
+	return fmt.Sprintf("%t", v.Value)
 }
 
 type Array struct {
 	Elements []Object
 }
 
-func (a *Array) Type() Type {
+func (v *Array) Type() Type {
 	return ArrayType
 }
 
-func (a *Array) Inspect() string {
+func (v *Array) Inspect() string {
 	var sb strings.Builder
-	for i, e := range a.Elements {
+	for i, e := range v.Elements {
 		if i != 0 {
 			sb.WriteString(", ")
 		}
@@ -100,34 +100,34 @@ type ReturnValue struct {
 	Value Object
 }
 
-func (rv *ReturnValue) Type() Type {
+func (v *ReturnValue) Type() Type {
 	return ReturnValueType
 }
 
-func (rv *ReturnValue) Inspect() string {
-	return rv.Value.Inspect()
+func (v *ReturnValue) Inspect() string {
+	return v.Value.Inspect()
 }
 
 type Error struct {
 	Err error
 }
 
-func (e *Error) Type() Type {
+func (v *Error) Type() Type {
 	return ErrorType
 }
 
-func (e *Error) Inspect() string {
-	return e.Err.Error()
+func (v *Error) Inspect() string {
+	return v.Err.Error()
 }
 
 type Nil struct{}
 
-func (n *Nil) Type() Type {
+func (v *Nil) Type() Type {
 	return NilType
 }
 
-func (n *Nil) Inspect() string {
-	return "nil"
+func (v *Nil) Inspect() string {
+	return "<nil>"
 }
 
 type Annotation struct {
@@ -135,24 +135,24 @@ type Annotation struct {
 	RemainingLineContent string
 }
 
-func (a *Annotation) Type() Type {
+func (v *Annotation) Type() Type {
 	return AnnotationType
 }
 
-func (a *Annotation) Inspect() string {
-	return fmt.Sprintf("%s %s", a.Keyword, a.RemainingLineContent)
+func (v *Annotation) Inspect() string {
+	return fmt.Sprintf("%s %s", v.Keyword, v.RemainingLineContent)
 }
 
 type Pragma struct {
 	RemainingLineContent string
 }
 
-func (p *Pragma) Type() Type {
+func (v *Pragma) Type() Type {
 	return PragmaType
 }
 
-func (p *Pragma) Inspect() string {
-	return p.RemainingLineContent
+func (v *Pragma) Inspect() string {
+	return v.RemainingLineContent
 }
 
 type Angle struct {
@@ -161,20 +161,20 @@ type Angle struct {
 	K         uint
 }
 
-func (a *Angle) Type() Type {
+func (v *Angle) Type() Type {
 	return AngleType
 }
 
-func (a *Angle) Inspect() string {
-	return fmt.Sprintf("%v(%s)", a.K, a.BitString)
+func (v *Angle) Inspect() string {
+	return fmt.Sprintf("%v(%s)", v.K, v.BitString)
 }
 
-func (a *Angle) String() string {
-	return a.Inspect()
+func (v *Angle) String() string {
+	return v.Inspect()
 }
 
-func (a *Angle) Radian() float64 {
-	return 2 * math.Pi * float64(a.K) / math.Pow(2, float64(a.Bits))
+func (v *Angle) Radian() float64 {
+	return 2 * math.Pi * float64(v.K) / math.Pow(2, float64(v.Bits))
 }
 
 func NewAngle(bits uint, radian float64) *Angle {

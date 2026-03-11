@@ -120,7 +120,7 @@ func TestObject_Inspect(t *testing.T) {
 		{
 			obj:     &visitor.Nil{},
 			objType: visitor.NilType,
-			want:    "nil",
+			want:    "<nil>",
 		},
 		{
 			obj: &visitor.ReturnValue{
