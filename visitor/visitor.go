@@ -901,7 +901,6 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 				return float64(l) / r
 			}
 		}
-
 	case float64:
 		switch r := right.(type) {
 		case int64:
@@ -925,34 +924,63 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 }
 
 func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext) any {
-	var operand []float64
-	for _, x := range ctx.AllExpression() {
-		switch val := v.Visit(x).(type) {
-		case float64:
-			operand = append(operand, val)
-		case int64:
-			operand = append(operand, float64(val))
-		case bool:
-			var o float64
-			if val {
-				o = 1
-			}
+	left := v.Visit(ctx.Expression(0))
+	right := v.Visit(ctx.Expression(1))
+	op := v.Visit(ctx.EqualityOperator()).(string)
 
-			operand = append(operand, o)
-		default:
-			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
+	isClose := func(a, b float64) bool {
+		return math.Abs(a-b) <= 1e-8+1e-5*math.Max(math.Abs(a), math.Abs(b))
+	}
+
+	switch l := left.(type) {
+	case int64:
+		switch r := right.(type) {
+		case int64:
+			if op == "==" {
+				return l == r
+			}
+			if op == "!=" {
+				return l != r
+			}
+		case float64:
+			if op == "==" {
+				return isClose(float64(l), r)
+			}
+			if op == "!=" {
+				return !isClose(float64(l), r)
+			}
+		}
+
+	case float64:
+		switch r := right.(type) {
+		case int64:
+			if op == "==" {
+				return isClose(l, float64(r))
+			}
+			if op == "!=" {
+				return !isClose(l, float64(r))
+			}
+		case float64:
+			if op == "==" {
+				return isClose(l, r)
+			}
+			if op == "!=" {
+				return !isClose(l, r)
+			}
+		}
+
+	case bool:
+		if r, ok := right.(bool); ok {
+			if op == "==" {
+				return l == r
+			}
+			if op == "!=" {
+				return l != r
+			}
 		}
 	}
 
-	op := v.Visit(ctx.EqualityOperator()).(string)
-	switch op {
-	case "==":
-		return operand[0] == operand[1]
-	case "!=":
-		return operand[0] != operand[1]
-	default:
-		return fmt.Errorf("operator=%s: %w", op, ErrUnexpected)
-	}
+	return fmt.Errorf("left=%v(%T), right=%v(%T): %w", left, left, right, right, ErrUnexpected)
 }
 
 func (v *Visitor) VisitLogicalAndExpression(ctx *parser.LogicalAndExpressionContext) any {

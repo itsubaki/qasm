@@ -1512,9 +1512,39 @@ func TestVisitor_VisitEqualityExpression(t *testing.T) {
 			want: false,
 		},
 		{
+			text: "5 != 3;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 5) != (expression 3)) ;))) <EOF>)",
+			want: true,
+		},
+		{
+			text: "5 == 3.0;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 5) == (expression 3.0)) ;))) <EOF>)",
+			want: false,
+		},
+		{
+			text: "5 != 3.0;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 5) != (expression 3.0)) ;))) <EOF>)",
+			want: true,
+		},
+		{
+			text: "5.0 == 3;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 5.0) == (expression 3)) ;))) <EOF>)",
+			want: false,
+		},
+		{
+			text: "5.0 != 3;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 5.0) != (expression 3)) ;))) <EOF>)",
+			want: true,
+		},
+		{
 			text: "(1 == 1) == true;",
 			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression ( (expression (expression 1) == (expression 1)) )) == (expression true)) ;))) <EOF>)",
 			want: true,
+		},
+		{
+			text: "(1 == 1) != true;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression ( (expression (expression 1) == (expression 1)) )) != (expression true)) ;))) <EOF>)",
+			want: false,
 		},
 	}
 
