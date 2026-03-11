@@ -835,80 +835,24 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
 	right := v.Visit(ctx.Expression(1))
+	a, b := NewValue(left), NewValue(right)
 
-	switch l := left.(type) {
-	case int:
-		switch r := right.(type) {
-		case int:
-			if ctx.PLUS() != nil {
-				return l + r
-			}
-			if ctx.MINUS() != nil {
-				return l - r
-			}
-		case int64:
-			if ctx.PLUS() != nil {
-				return int64(l) + r
-			}
-			if ctx.MINUS() != nil {
-				return int64(l) - r
-			}
-		case float64:
-			if ctx.PLUS() != nil {
-				return float64(l) + r
-			}
-			if ctx.MINUS() != nil {
-				return float64(l) - r
-			}
+	if ctx.PLUS() != nil {
+		v, err := a.Add(b)
+		if err != nil {
+			return fmt.Errorf("add: %w", err)
 		}
-	case int64:
-		switch r := right.(type) {
-		case int:
-			if ctx.PLUS() != nil {
-				return l + int64(r)
-			}
-			if ctx.MINUS() != nil {
-				return l - int64(r)
-			}
-		case int64:
-			if ctx.PLUS() != nil {
-				return l + r
-			}
-			if ctx.MINUS() != nil {
-				return l - r
-			}
-		case float64:
-			if ctx.PLUS() != nil {
-				return float64(l) + r
-			}
-			if ctx.MINUS() != nil {
-				return float64(l) - r
-			}
+
+		return v.Value()
+	}
+
+	if ctx.MINUS() != nil {
+		v, err := a.Sub(b)
+		if err != nil {
+			return fmt.Errorf("sub: %w", err)
 		}
-	case float64:
-		switch r := right.(type) {
-		case int:
-			if ctx.PLUS() != nil {
-				return l + float64(r)
-			}
-			if ctx.MINUS() != nil {
-				return l - float64(r)
-			}
-		case int64:
-			if ctx.PLUS() != nil {
-				return l + float64(r)
-			}
-			if ctx.MINUS() != nil {
-				return l - float64(r)
-			}
-		case float64:
-			if ctx.PLUS() != nil {
-				return l + r
-			}
-			if ctx.MINUS() != nil {
-				return l - r
-			}
-		}
+
+		return v.Value()
 	}
 
 	return fmt.Errorf("left=%v(%T), right=%v(%T): %w", left, left, right, right, ErrUnexpected)
@@ -917,92 +861,33 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
 	right := v.Visit(ctx.Expression(1))
+	a, b := NewValue(left), NewValue(right)
 
-	switch l := left.(type) {
-	case int:
-		switch r := right.(type) {
-		case int:
-			if ctx.ASTERISK() != nil {
-				return l * r
-			}
-			if ctx.SLASH() != nil {
-				return l / r
-			}
-			if ctx.PERCENT() != nil {
-				return l % r
-			}
-		case int64:
-			if ctx.ASTERISK() != nil {
-				return int64(l) * r
-			}
-			if ctx.SLASH() != nil {
-				return int64(l) / r
-			}
-			if ctx.PERCENT() != nil {
-				return int64(l) % r
-			}
-		case float64:
-			if ctx.ASTERISK() != nil {
-				return float64(l) * r
-			}
-			if ctx.SLASH() != nil {
-				return float64(l) / r
-			}
+	if ctx.ASTERISK() != nil {
+		v, err := a.Mul(b)
+		if err != nil {
+			return fmt.Errorf("mul: %w", err)
 		}
-	case int64:
-		switch r := right.(type) {
-		case int:
-			if ctx.ASTERISK() != nil {
-				return l * int64(r)
-			}
-			if ctx.SLASH() != nil {
-				return l / int64(r)
-			}
-			if ctx.PERCENT() != nil {
-				return l % int64(r)
-			}
-		case int64:
-			if ctx.ASTERISK() != nil {
-				return l * r
-			}
-			if ctx.SLASH() != nil {
-				return l / r
-			}
-			if ctx.PERCENT() != nil {
-				return l % r
-			}
-		case float64:
-			if ctx.ASTERISK() != nil {
-				return float64(l) * r
-			}
-			if ctx.SLASH() != nil {
-				return float64(l) / r
-			}
+
+		return v.Value()
+	}
+
+	if ctx.SLASH() != nil {
+		v, err := a.Div(b)
+		if err != nil {
+			return fmt.Errorf("div: %w", err)
 		}
-	case float64:
-		switch r := right.(type) {
-		case int:
-			if ctx.ASTERISK() != nil {
-				return l * float64(r)
-			}
-			if ctx.SLASH() != nil {
-				return l / float64(r)
-			}
-		case int64:
-			if ctx.ASTERISK() != nil {
-				return l * float64(r)
-			}
-			if ctx.SLASH() != nil {
-				return l / float64(r)
-			}
-		case float64:
-			if ctx.ASTERISK() != nil {
-				return l * r
-			}
-			if ctx.SLASH() != nil {
-				return l / r
-			}
+
+		return v.Value()
+	}
+
+	if ctx.PERCENT() != nil {
+		v, err := a.Mod(b)
+		if err != nil {
+			return fmt.Errorf("mod: %w", err)
 		}
+
+		return v.Value()
 	}
 
 	return fmt.Errorf("left=%v(%T), right=%v(%T): %w", left, left, right, right, ErrUnexpected)
@@ -1011,95 +896,24 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
 	right := v.Visit(ctx.Expression(1))
+	a, b := NewValue(left), NewValue(right)
+
 	op := v.Visit(ctx.EqualityOperator()).(string)
-
-	isClose := func(a, b float64) bool {
-		return math.Abs(a-b) <= 1e-8+1e-5*math.Max(math.Abs(a), math.Abs(b))
-	}
-
-	switch l := left.(type) {
-	case int:
-		switch r := right.(type) {
-		case int:
-			if op == "==" {
-				return l == r
-			}
-			if op == "!=" {
-				return l != r
-			}
-		case int64:
-			if op == "==" {
-				return int64(l) == r
-			}
-			if op == "!=" {
-				return int64(l) != r
-			}
-		case float64:
-			if op == "==" {
-				return isClose(float64(l), r)
-			}
-			if op == "!=" {
-				return !isClose(float64(l), r)
-			}
+	switch op {
+	case "==":
+		v, err := a.Eq(b)
+		if err != nil {
+			return fmt.Errorf("eq: %w", err)
 		}
 
-	case int64:
-		switch r := right.(type) {
-		case int:
-			if op == "==" {
-				return l == int64(r)
-			}
-			if op == "!=" {
-				return l != int64(r)
-			}
-		case int64:
-			if op == "==" {
-				return l == r
-			}
-			if op == "!=" {
-				return l != r
-			}
-		case float64:
-			if op == "==" {
-				return isClose(float64(l), r)
-			}
-			if op == "!=" {
-				return !isClose(float64(l), r)
-			}
+		return v.Value()
+	case "!=":
+		v, err := a.NotEq(b)
+		if err != nil {
+			return fmt.Errorf("not eq: %w", err)
 		}
-	case float64:
-		switch r := right.(type) {
-		case int:
-			if op == "==" {
-				return isClose(l, float64(r))
-			}
-			if op == "!=" {
-				return !isClose(l, float64(r))
-			}
-		case int64:
-			if op == "==" {
-				return isClose(l, float64(r))
-			}
-			if op == "!=" {
-				return !isClose(l, float64(r))
-			}
-		case float64:
-			if op == "==" {
-				return isClose(l, r)
-			}
-			if op == "!=" {
-				return !isClose(l, r)
-			}
-		}
-	case bool:
-		if r, ok := right.(bool); ok {
-			if op == "==" {
-				return l == r
-			}
-			if op == "!=" {
-				return l != r
-			}
-		}
+
+		return v.Value()
 	}
 
 	return fmt.Errorf("left=%v(%T), right=%v(%T): %w", left, left, right, right, ErrUnexpected)
