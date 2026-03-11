@@ -855,7 +855,7 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 		return v.Value()
 	}
 
-	return fmt.Errorf("left=%v(%T), right=%v(%T): %w", left, left, right, right, ErrUnexpected)
+	return fmt.Errorf("unexpected operator=%q: %w", ctx.GetText(), ErrUnexpected)
 }
 
 func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpressionContext) any {
@@ -890,7 +890,7 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 		return v.Value()
 	}
 
-	return fmt.Errorf("left=%v(%T), right=%v(%T): %w", left, left, right, right, ErrUnexpected)
+	return fmt.Errorf("unexpected operator=%q: %w", ctx.GetText(), ErrUnexpected)
 }
 
 func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext) any {
@@ -916,7 +916,47 @@ func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext)
 		return v.Value()
 	}
 
-	return fmt.Errorf("left=%v(%T), right=%v(%T): %w", left, left, right, right, ErrUnexpected)
+	return fmt.Errorf("unexpected operator=%q: %w", op, ErrUnexpected)
+}
+
+func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionContext) any {
+	left := v.Visit(ctx.Expression(0))
+	right := v.Visit(ctx.Expression(1))
+	a, b := NewValue(left), NewValue(right)
+
+	op := v.Visit(ctx.ComparisonOperator()).(string)
+	switch op {
+	case "<":
+		v, err := a.LessThan(b)
+		if err != nil {
+			return fmt.Errorf("less than: %w", err)
+		}
+
+		return v.Value()
+	case "<=":
+		v, err := a.LessThanOrEqual(b)
+		if err != nil {
+			return fmt.Errorf("less than or equal: %w", err)
+		}
+
+		return v.Value()
+	case ">":
+		v, err := a.GreaterThan(b)
+		if err != nil {
+			return fmt.Errorf("greater than: %w", err)
+		}
+
+		return v.Value()
+	case ">=":
+		v, err := a.GreaterThanOrEqual(b)
+		if err != nil {
+			return fmt.Errorf("greater than or equal: %w", err)
+		}
+
+		return v.Value()
+	}
+
+	return fmt.Errorf("unexpected operator=%q: %w", op, ErrUnexpected)
 }
 
 func (v *Visitor) VisitLogicalAndExpression(ctx *parser.LogicalAndExpressionContext) any {
@@ -981,34 +1021,6 @@ func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext)
 	}
 
 	return result
-}
-
-func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionContext) any {
-	var operand []float64
-	for _, x := range ctx.AllExpression() {
-		switch val := v.Visit(x).(type) {
-		case float64:
-			operand = append(operand, val)
-		case int64:
-			operand = append(operand, float64(val))
-		default:
-			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
-		}
-	}
-
-	op := v.Visit(ctx.ComparisonOperator()).(string)
-	switch op {
-	case "<":
-		return operand[0] < operand[1]
-	case "<=":
-		return operand[0] <= operand[1]
-	case ">":
-		return operand[0] > operand[1]
-	case ">=":
-		return operand[0] >= operand[1]
-	default:
-		return fmt.Errorf("operator=%s: %w", op, ErrUnexpected)
-	}
 }
 
 func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) any {

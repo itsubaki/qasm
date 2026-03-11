@@ -187,3 +187,77 @@ func (v Value) NotEq(w Value) (Value, error) {
 func isClose(a, b float64) bool {
 	return math.Abs(a-b) <= 1e-8+1e-5*math.Max(math.Abs(a), math.Abs(b))
 }
+
+func (v Value) LessThan(w Value) (Value, error) {
+	a, b, err := Promote(v, w)
+	if err != nil {
+		return Value{}, err
+	}
+
+	switch av := a.v.(type) {
+	case int:
+		return NewValue(av < b.v.(int)), nil
+	case int64:
+		return NewValue(av < b.v.(int64)), nil
+	case float64:
+		return NewValue(av < b.v.(float64)), nil
+	}
+
+	return Value{}, fmt.Errorf("unexpected %T < %T", a.v, b.v)
+}
+
+func (v Value) LessThanOrEqual(w Value) (Value, error) {
+	a, b, err := Promote(v, w)
+	if err != nil {
+		return Value{}, err
+	}
+
+	switch av := a.v.(type) {
+	case int:
+		return NewValue(av <= b.v.(int)), nil
+	case int64:
+		return NewValue(av <= b.v.(int64)), nil
+	case float64:
+		bv := b.v.(float64)
+		return NewValue(av < bv || isClose(av, bv)), nil
+	}
+
+	return Value{}, fmt.Errorf("unexpected %T <= %T", a.v, b.v)
+}
+
+func (v Value) GreaterThan(w Value) (Value, error) {
+	a, b, err := Promote(v, w)
+	if err != nil {
+		return Value{}, err
+	}
+
+	switch av := a.v.(type) {
+	case int:
+		return NewValue(av > b.v.(int)), nil
+	case int64:
+		return NewValue(av > b.v.(int64)), nil
+	case float64:
+		return NewValue(av > b.v.(float64)), nil
+	}
+
+	return Value{}, fmt.Errorf("unexpected %T > %T", a.v, b.v)
+}
+
+func (v Value) GreaterThanOrEqual(w Value) (Value, error) {
+	a, b, err := Promote(v, w)
+	if err != nil {
+		return Value{}, err
+	}
+
+	switch av := a.v.(type) {
+	case int:
+		return NewValue(av >= b.v.(int)), nil
+	case int64:
+		return NewValue(av >= b.v.(int64)), nil
+	case float64:
+		bv := b.v.(float64)
+		return NewValue(av > bv || isClose(av, bv)), nil
+	}
+
+	return Value{}, fmt.Errorf("unexpected %T >= %T", a.v, b.v)
+}

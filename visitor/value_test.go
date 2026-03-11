@@ -232,3 +232,159 @@ func TestNotEq(t *testing.T) {
 		}
 	}
 }
+
+func TestLessThan(t *testing.T) {
+	cases := []struct {
+		a, b   any
+		hasErr bool
+	}{
+		{
+			a:      1,
+			b:      2,
+			hasErr: false,
+		},
+		{
+			a:      1.5,
+			b:      2.5,
+			hasErr: false,
+		},
+		{
+			a:      complex(1, 2),
+			b:      1,
+			hasErr: true,
+		},
+		{
+			a:      true,
+			b:      true,
+			hasErr: true,
+		},
+	}
+
+	for _, c := range cases {
+		a, b := visitor.NewValue(c.a), visitor.NewValue(c.b)
+		if _, err := a.LessThan(b); err != nil {
+			if c.hasErr {
+				continue
+			}
+
+			t.Errorf("unexpected error: %v", err)
+		}
+	}
+}
+
+func TestLessThanOrEqual(t *testing.T) {
+	cases := []struct {
+		a, b   any
+		hasErr bool
+	}{
+		{
+			a:      1,
+			b:      2,
+			hasErr: false,
+		},
+		{
+			a:      1.5,
+			b:      2.5,
+			hasErr: false,
+		},
+		{
+			a:      complex(1, 2),
+			b:      1,
+			hasErr: true,
+		},
+		{
+			a:      true,
+			b:      true,
+			hasErr: true,
+		},
+	}
+
+	for _, c := range cases {
+		a, b := visitor.NewValue(c.a), visitor.NewValue(c.b)
+		if _, err := a.LessThanOrEqual(b); err != nil {
+			if c.hasErr {
+				continue
+			}
+
+			t.Errorf("unexpected error: %v", err)
+		}
+	}
+}
+
+func TestGreaterThan(t *testing.T) {
+	cases := []struct {
+		a, b   any
+		hasErr bool
+	}{
+		{
+			a:      1,
+			b:      2,
+			hasErr: false,
+		},
+		{
+			a:      1.5,
+			b:      2.5,
+			hasErr: false,
+		},
+		{
+			a:      complex(1, 2),
+			b:      1,
+			hasErr: true,
+		},
+		{
+			a:      true,
+			b:      true,
+			hasErr: true,
+		},
+	}
+
+	for _, c := range cases {
+		a, b := visitor.NewValue(c.a), visitor.NewValue(c.b)
+		if _, err := a.GreaterThan(b); err != nil {
+			if c.hasErr {
+				continue
+			}
+
+			t.Errorf("unexpected error: %v", err)
+		}
+	}
+}
+
+func TestGreaterThanOrEqual(t *testing.T) {
+	cases := []struct {
+		a, b   any
+		hasErr bool
+	}{
+		{
+			a:      1,
+			b:      2,
+			hasErr: false,
+		},
+		{
+			a:      1.5,
+			b:      2.5,
+			hasErr: false,
+		},
+		{
+			a:      complex(1, 2),
+			b:      1,
+			hasErr: true,
+		},
+		{
+			a:      true,
+			b:      true,
+			hasErr: true,
+		},
+	}
+
+	for _, c := range cases {
+		a, b := visitor.NewValue(c.a), visitor.NewValue(c.b)
+		if _, err := a.GreaterThanOrEqual(b); err != nil {
+			if c.hasErr {
+				continue
+			}
+
+			t.Errorf("unexpected error: %v", err)
+		}
+	}
+}
