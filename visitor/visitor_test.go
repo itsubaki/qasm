@@ -392,6 +392,11 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		{
 			text: "float ratio = 22 / 7;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) ratio = (declarationExpression (expression (expression 22) / (expression 7))) ;))) <EOF>)",
+			want: "map[ratio:3]",
+		},
+		{
+			text: "float ratio = 22 / 7.0;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) ratio = (declarationExpression (expression (expression 22) / (expression 7.0))) ;))) <EOF>)",
 			want: "map[ratio:3.142857142857143]",
 		},
 		{
@@ -985,6 +990,16 @@ func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
 			want: "3",
 		},
 		{
+			text: "2 * 3.1;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 2) * (expression 3.1)) ;))) <EOF>)",
+			want: "6.2",
+		},
+		{
+			text: "2.5 * 3.1;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 2.5) * (expression 3.1)) ;))) <EOF>)",
+			want: "7.75",
+		},
+		{
 			text: "4 / 2;",
 			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 4) / (expression 2)) ;))) <EOF>)",
 			want: "2",
@@ -1029,9 +1044,24 @@ func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 			want: "4",
 		},
 		{
+			text: "1.1 + 3;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 1.1) + (expression 3)) ;))) <EOF>)",
+			want: "4.1",
+		},
+		{
 			text: "1.0 - 3;",
 			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 1.0) - (expression 3)) ;))) <EOF>)",
 			want: "-2",
+		},
+		{
+			text: "1 - 3.1;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 1) - (expression 3.1)) ;))) <EOF>)",
+			want: "-2.1",
+		},
+		{
+			text: "1.3 - 3.1;",
+			tree: "(program (statementOrScope (statement (expressionStatement (expression (expression 1.3) - (expression 3.1)) ;))) <EOF>)",
+			want: "-1.8",
 		},
 	}
 
@@ -2348,6 +2378,16 @@ func TestVisitor_VisitForStatement(t *testing.T) {
 				}
 			`,
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (forStatement for (scalarType int) i in [ (rangeExpression (expression 0) : (expression 9)) ] (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression i)) ;))) }))))) <EOF>)",
+			want: "map[a:45]",
+		},
+		{
+			text: `
+				int a = 0;
+				for int i in [(1-1):9] {
+					a = a + i;
+				}
+			`,
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) (statementOrScope (statement (forStatement for (scalarType int) i in [ (rangeExpression (expression ( (expression (expression 1) - (expression 1)) )) : (expression 9)) ] (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression (expression a) + (expression i)) ;))) }))))) <EOF>)",
 			want: "map[a:45]",
 		},
 	}

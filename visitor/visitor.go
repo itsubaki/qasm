@@ -833,51 +833,95 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 }
 
 func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext) any {
-	var operand []float64
-	for _, x := range ctx.AllExpression() {
-		switch val := v.Visit(x).(type) {
-		case float64:
-			operand = append(operand, val)
+	left := v.Visit(ctx.Expression(0))
+	right := v.Visit(ctx.Expression(1))
+
+	switch l := left.(type) {
+	case int64:
+		switch r := right.(type) {
 		case int64:
-			operand = append(operand, float64(val))
-		default:
-			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
+			if ctx.PLUS() != nil {
+				return l + r
+			}
+			if ctx.MINUS() != nil {
+				return l - r
+			}
+		case float64:
+			if ctx.PLUS() != nil {
+				return float64(l) + r
+			}
+			if ctx.MINUS() != nil {
+				return float64(l) - r
+			}
+		}
+	case float64:
+		switch r := right.(type) {
+		case int64:
+			if ctx.PLUS() != nil {
+				return l + float64(r)
+			}
+			if ctx.MINUS() != nil {
+				return l - float64(r)
+			}
+		case float64:
+			if ctx.PLUS() != nil {
+				return l + r
+			}
+			if ctx.MINUS() != nil {
+				return l - r
+			}
 		}
 	}
 
-	switch {
-	case ctx.PLUS() != nil:
-		return operand[0] + operand[1]
-	case ctx.MINUS() != nil:
-		return operand[0] - operand[1]
-	default:
-		return fmt.Errorf("operator=%s: %w", ctx.GetOp().GetText(), ErrUnexpected)
-	}
+	return fmt.Errorf("left=%v(%T), right=%v(%T): %w", left, left, right, right, ErrUnexpected)
 }
 
 func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpressionContext) any {
-	var operand []float64
-	for _, x := range ctx.AllExpression() {
-		switch val := v.Visit(x).(type) {
-		case float64:
-			operand = append(operand, val)
+	left := v.Visit(ctx.Expression(0))
+	right := v.Visit(ctx.Expression(1))
+
+	switch l := left.(type) {
+	case int64:
+		switch r := right.(type) {
 		case int64:
-			operand = append(operand, float64(val))
-		default:
-			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
+			if ctx.ASTERISK() != nil {
+				return l * r
+			}
+			if ctx.SLASH() != nil {
+				return l / r
+			}
+			if ctx.PERCENT() != nil {
+				return l % r
+			}
+		case float64:
+			if ctx.ASTERISK() != nil {
+				return float64(l) * r
+			}
+			if ctx.SLASH() != nil {
+				return float64(l) / r
+			}
+		}
+
+	case float64:
+		switch r := right.(type) {
+		case int64:
+			if ctx.ASTERISK() != nil {
+				return l * float64(r)
+			}
+			if ctx.SLASH() != nil {
+				return l / float64(r)
+			}
+		case float64:
+			if ctx.ASTERISK() != nil {
+				return l * r
+			}
+			if ctx.SLASH() != nil {
+				return l / r
+			}
 		}
 	}
 
-	switch {
-	case ctx.ASTERISK() != nil:
-		return operand[0] * operand[1]
-	case ctx.SLASH() != nil:
-		return operand[0] / operand[1]
-	case ctx.PERCENT() != nil:
-		return float64(int64(operand[0]) % int64(operand[1]))
-	default:
-		return fmt.Errorf("operator=%s: %w", ctx.GetOp().GetText(), ErrUnexpected)
-	}
+	return fmt.Errorf("left=%v(%T), right=%v(%T): %w", left, left, right, right, ErrUnexpected)
 }
 
 func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext) any {
