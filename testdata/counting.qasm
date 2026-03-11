@@ -35,12 +35,6 @@ def controlledG(qubit[4] r, qubit[4] s, qubit c, qubit a) {
   diffuser(c, r);
 }
 
-def swap(qubit[3] q) {
-  cx q[0], q[2];
-  cx q[2], q[0];
-  cx q[0], q[2];
-}
-
 def inv_qft(qubit[3] q) {
   h q[2];
   cr(-pi/2) q[2], q[1];
@@ -72,14 +66,12 @@ h a;
 // controlled-G
 for int i in [0:n-1] {
   for int j in [0:(1<<i)-1] {
-    controlledG(r, s, c[2-i], a);
+    controlledG(r, s, c[i], a);
   }
 }
 
-// inverse qft
-swap(c);
 inv_qft(c);
 
-bit m = measure c;
+// bit m = measure c;
 // 011: phi=0.3750, theta=2.3562, M=2.3431
 // 101: phi=0.6250, theta=3.9270, M=2.3431
