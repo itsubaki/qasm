@@ -6,7 +6,6 @@ gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
 
 def oracle(qubit q0, qubit q1) {
     constant(q0, q1);
-//    balanced(q0, q1);
 }
 
 def constant(qubit q0, qubit q1) {
