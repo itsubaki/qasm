@@ -14,6 +14,7 @@ import (
 	"github.com/itsubaki/q/math/matrix"
 	"github.com/itsubaki/q/quantum/gate"
 	"github.com/itsubaki/qasm/gen/parser"
+	"github.com/itsubaki/qasm/value"
 )
 
 var (
@@ -835,7 +836,7 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
 	right := v.Visit(ctx.Expression(1))
-	a, b := NewValue(left), NewValue(right)
+	a, b := value.New(left), value.New(right)
 
 	if ctx.PLUS() != nil {
 		v, err := a.Add(b)
@@ -861,7 +862,7 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
 	right := v.Visit(ctx.Expression(1))
-	a, b := NewValue(left), NewValue(right)
+	a, b := value.New(left), value.New(right)
 
 	if ctx.ASTERISK() != nil {
 		v, err := a.Mul(b)
@@ -896,7 +897,7 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
 	right := v.Visit(ctx.Expression(1))
-	a, b := NewValue(left), NewValue(right)
+	a, b := value.New(left), value.New(right)
 
 	op := v.Visit(ctx.EqualityOperator()).(string)
 	switch op {
@@ -922,7 +923,7 @@ func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext)
 func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
 	right := v.Visit(ctx.Expression(1))
-	a, b := NewValue(left), NewValue(right)
+	a, b := value.New(left), value.New(right)
 
 	op := v.Visit(ctx.ComparisonOperator()).(string)
 	switch op {
@@ -1192,31 +1193,29 @@ func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) any {
 	val := v.Visit(ctx.Expression())
 	switch {
 	case ctx.ScalarType().INT() != nil:
-		switch v := val.(type) {
-		case float64:
-			return int(v)
-		case int64:
-			return int(v)
+		v, err := value.New(val).Int()
+		if err != nil {
+			return fmt.Errorf("cast to int: %w", err)
 		}
+
+		return v.Value()
 	case ctx.ScalarType().UINT() != nil:
-		switch v := val.(type) {
-		case float64:
-			return uint(v)
-		case int64:
-			return uint(v)
+		v, err := value.New(val).UInt()
+		if err != nil {
+			return fmt.Errorf("cast to uint: %w", err)
 		}
+
+		return v.Value()
 	case ctx.ScalarType().FLOAT() != nil:
-		switch v := val.(type) {
-		case float64:
-			return v
-		case int64:
-			return float64(v)
+		v, err := value.New(val).Float64()
+		if err != nil {
+			return fmt.Errorf("cast to float: %w", err)
 		}
+
+		return v.Value()
 	default:
 		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
 	}
-
-	return fmt.Errorf("x=%s: %w", ctx.GetText(), ErrUnexpected)
 }
 
 func (v *Visitor) VisitParenthesisExpression(ctx *parser.ParenthesisExpressionContext) any {
