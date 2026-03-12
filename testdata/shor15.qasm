@@ -8,8 +8,8 @@ gate cr(theta) c, t { ctrl @ U(0, 0, theta) c, t; }
 
 def modexp(qubit[3] q, qubit[4] a) {
     // controlled-U^(2^0)
-    cx q[2], a[1];
-    cx q[2], a[2];
+    cx q[0], a[1];
+    cx q[0], a[2];
 
     // controlled-U^(2^1)
     cx        a[0], a[2];
@@ -19,12 +19,6 @@ def modexp(qubit[3] q, qubit[4] a) {
     cx        a[3], a[1];
     ccx q[1], a[1], a[3];
     cx        a[3], a[1];
-}
-
-def swap(qubit[3] q) {
-  cx q[0], q[2];
-  cx q[2], q[0];
-  cx q[0], q[2];
 }
 
 def inv_qft(qubit[3] q) {
@@ -48,7 +42,6 @@ x a[3];
 h q;
 
 modexp(q, a);
-swap(q);
 inv_qft(q);
 
 measure a;
