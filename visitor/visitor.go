@@ -1153,21 +1153,7 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) any {
 	var list []int64
 	for _, x := range ctx.AllExpression() {
-		val := v.Visit(x)
-		switch v := val.(type) {
-		case int:
-			list = append(list, int64(v))
-		case int8:
-			list = append(list, int64(v))
-		case int16:
-			list = append(list, int64(v))
-		case int32:
-			list = append(list, int64(v))
-		case int64:
-			list = append(list, v)
-		default:
-			return fmt.Errorf("value=%v(%T): %w", v, v, ErrUnexpected)
-		}
+		list = append(list, v.Visit(x).(int64))
 	}
 
 	return list
@@ -1205,7 +1191,7 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) a
 
 	var bits []bool
 	for _, q := range qargs {
-		bits = append(bits, v.qsim.State(q)[0].Int()[0] != 0)
+		bits = append(bits, v.qsim.State(q)[0].Int()[0] == 1)
 	}
 
 	return bits
