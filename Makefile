@@ -25,7 +25,7 @@ grover:
 	cat testdata/grover.qasm | go run main.go -top 8
 
 counting:
-	cat testdata/counting.qasm | go run main.go -top 8
+	cat testdata/quantum_counting.qasm | go run main.go -top 8
 
 lex:
 	cat testdata/bell.qasm | go run main.go -lex
