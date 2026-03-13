@@ -518,11 +518,11 @@ func (v *Visitor) MeasureAssignment(identifier parser.IIndexedIdentifierContext,
 
 	index := v.Visit(identifier).([]int64)
 	if len(index) == 0 {
-		copy(bits, measured.([]int64))
+		copy(bits, measured.([]bool))
 		return nil
 	}
 
-	for i, m := range measured.([]int64) {
+	for i, m := range measured.([]bool) {
 		bits[index[i]] = m
 	}
 
@@ -649,13 +649,13 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		}
 
 		if ctx.DeclarationExpression() != nil {
-			bits := v.Visit(ctx.DeclarationExpression()).([]int64)
+			bits := v.Visit(ctx.DeclarationExpression()).([]bool)
 			v.env.ClassicalBit[id] = bits
 			return nil
 		}
 
 		size := v.Visit(ctx.ScalarType()).(int64)
-		v.env.ClassicalBit[id] = make([]int64, int(size))
+		v.env.ClassicalBit[id] = make([]bool, int(size))
 		return nil
 	case ctx.ScalarType().ANGLE() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
@@ -749,7 +749,7 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 			size = v.Visit(ctx.Designator()).(int64)
 		}
 
-		v.env.ClassicalBit[id] = make([]int64, int(size))
+		v.env.ClassicalBit[id] = make([]bool, int(size))
 		return nil
 	default:
 		return fmt.Errorf("x=%s: %w", ctx.GetText(), ErrUnexpected)
@@ -815,11 +815,11 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 		return lit
 	case ctx.BitstringLiteral() != nil:
 		s := v.Visit(ctx.BitstringLiteral()).(string)
-		bistring := strings.Trim(s, "\"")
+		bitstring := strings.Trim(s, "\"")
 
-		lit := make([]int64, len(bistring))
-		for i, b := range bistring {
-			lit[i] = int64(b - '0')
+		lit := make([]bool, len(bitstring))
+		for i, b := range bitstring {
+			lit[i] = b == '1'
 		}
 
 		return lit
@@ -1203,9 +1203,9 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) a
 	qargs := v.Visit(ctx.GateOperand()).([]q.Qubit)
 	v.qsim.Measure(qargs...)
 
-	var bits []int64
+	var bits []bool
 	for _, q := range qargs {
-		bits = append(bits, int64(v.qsim.State(q)[0].Int()[0]))
+		bits = append(bits, v.qsim.State(q)[0].Int()[0] != 0)
 	}
 
 	return bits
