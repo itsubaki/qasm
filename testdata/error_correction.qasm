@@ -3,7 +3,6 @@ OPENQASM 3.0;
 gate x q { U(pi, 0, pi) q; }
 gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
 
-// logical qubit
 qubit phi;
 U(1, 2, 3) phi;
 
