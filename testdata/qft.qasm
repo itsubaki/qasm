@@ -23,6 +23,8 @@ def swap(qubit[3] q) {
 }
 
 qubit[3] q;
+reset q;
+
 x q[2];
 qft(q);
 swap(q);
