@@ -2511,9 +2511,10 @@ func TestVisitor_VisitIfStatement(t *testing.T) {
 			text: `
 				int a = 10;
 				if (a == 10) { a = 20; }
+				int b = 30;
 			`,
-			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 10)) ;))) (statementOrScope (statement (ifStatement if ( (expression (expression a) == (expression 10)) ) (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression 20) ;))) }))))) <EOF>)",
-			want: "map[a:20]",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 10)) ;))) (statementOrScope (statement (ifStatement if ( (expression (expression a) == (expression 10)) ) (statementOrScope (scope { (statementOrScope (statement (assignmentStatement (indexedIdentifier a) = (expression 20) ;))) }))))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) b = (declarationExpression (expression 30)) ;))) <EOF>)",
+			want: "map[a:20 b:30]",
 		},
 		{
 			text: `

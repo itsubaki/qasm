@@ -205,13 +205,23 @@ func (v *Visitor) VisitEndStatement(ctx *parser.EndStatementContext) any {
 }
 
 func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) any {
+	unwrap := func(v any) any {
+		if s, ok := v.([]any); ok {
+			if len(s) == 1 && s[0] == nil {
+				return nil
+			}
+		}
+
+		return v
+	}
+
 	enclosed := v.Enclosed()
 	if v.Visit(ctx.Expression()).(bool) {
-		return enclosed.Visit(ctx.GetIf_body())
+		return unwrap(enclosed.Visit(ctx.GetIf_body()))
 	}
 
 	if ctx.GetElse_body() != nil {
-		return enclosed.Visit(ctx.GetElse_body())
+		return unwrap(enclosed.Visit(ctx.GetElse_body()))
 	}
 
 	return nil
@@ -225,7 +235,6 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) any {
 	for i := rx[0]; i <= rx[1]; i++ {
 		enclosed.env.SetVariable(id, i)
 		result := enclosed.Visit(ctx.StatementOrScope())
-
 		if contains(result, Break) {
 			return nil
 		}
@@ -649,7 +658,16 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		}
 
 		if ctx.DeclarationExpression() != nil {
-			bits := v.Visit(ctx.DeclarationExpression()).([]bool)
+			var bits []bool
+			switch v := v.Visit(ctx.DeclarationExpression()).(type) {
+			case bool:
+				bits = []bool{v}
+			case []bool:
+				bits = v
+			default:
+				return fmt.Errorf("declaration expression: %v(%T): %w", v, v, ErrUnexpected)
+			}
+
 			v.env.ClassicalBit[id] = bits
 			return nil
 		}
@@ -777,6 +795,10 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 		}
 
 		if lit, ok := v.env.GetClassicalBit(s); ok {
+			if len(lit) == 1 {
+				return lit[0]
+			}
+
 			return lit
 		}
 
