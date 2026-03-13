@@ -11,7 +11,7 @@ qubit[2] enc;
 cx phi, enc[0];
 cx phi, enc[1];
 
-// error
+// error (bit-flip)
 x phi;
 
 // add ancilla
@@ -30,6 +30,6 @@ if(m0 && !m1) { x phi; }
 if(m0 && m1)  { x enc[0]; }
 if(!m0 && m1) { x enc[1]; }
 
-// dencoding
+// decoding
 cx phi, enc[1];
 cx phi, enc[0];
