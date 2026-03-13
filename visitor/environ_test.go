@@ -10,11 +10,11 @@ import (
 func ExampleEnviron_NewEnclosed() {
 	env := visitor.NewEnviron()
 	env.Qubit["q0"] = []q.Qubit{0, 1}
-	env.ClassicalBit["c0"] = []int64{0, 1}
+	env.ClassicalBit["c0"] = []bool{false, true}
 
 	enclosed := env.NewEnclosed()
 	enclosed.Qubit["q1"] = []q.Qubit{2, 3}
-	enclosed.ClassicalBit["c1"] = []int64{2, 3}
+	enclosed.ClassicalBit["c1"] = []bool{true, false}
 
 	fmt.Println(enclosed.GetQubit("q0"))
 	fmt.Println(enclosed.GetQubit("q1"))
@@ -24,8 +24,8 @@ func ExampleEnviron_NewEnclosed() {
 	// Output:
 	// [0 1] true
 	// [2 3] true
-	// [0 1] true
-	// [2 3] true
+	// [false true] true
+	// [true false] true
 }
 
 func ExampleEnviron_SetVariable() {

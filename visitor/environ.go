@@ -11,7 +11,7 @@ type Environ struct {
 	Variable     map[string]any
 	QubitOrder   []string
 	Qubit        map[string][]q.Qubit
-	ClassicalBit map[string][]int64
+	ClassicalBit map[string][]bool
 	Gate         map[string]*Gate
 	Subroutine   map[string]*Subroutine
 	Outer        *Environ
@@ -36,7 +36,7 @@ func NewEnviron() *Environ {
 		Const:        make(map[string]any),
 		Variable:     make(map[string]any),
 		Qubit:        make(map[string][]q.Qubit),
-		ClassicalBit: make(map[string][]int64),
+		ClassicalBit: make(map[string][]bool),
 		Gate:         make(map[string]*Gate),
 		Subroutine:   make(map[string]*Subroutine),
 	}
@@ -100,7 +100,7 @@ func (e *Environ) SetQubit(name string, qubits []q.Qubit) {
 	e.QubitOrder = append(e.QubitOrder, name)
 }
 
-func (e *Environ) GetClassicalBit(name string) ([]int64, bool) {
+func (e *Environ) GetClassicalBit(name string) ([]bool, bool) {
 	if q, ok := e.ClassicalBit[name]; ok {
 		return q, true
 	}
