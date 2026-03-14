@@ -13,6 +13,7 @@ import (
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/q/math/matrix"
 	"github.com/itsubaki/q/quantum/gate"
+	"github.com/itsubaki/qasm/environ"
 	"github.com/itsubaki/qasm/gen/parser"
 	"github.com/itsubaki/qasm/value"
 )
@@ -32,11 +33,11 @@ var (
 
 type Visitor struct {
 	qsim      *q.Q
-	env       *Environ
+	env       *environ.Environ
 	maxQubits int
 }
 
-func New(qsim *q.Q, env *Environ, opt ...Option) *Visitor {
+func New(qsim *q.Q, env *environ.Environ, opt ...Option) *Visitor {
 	v := &Visitor{
 		qsim: qsim,
 		env:  env,
@@ -310,7 +311,7 @@ func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) any {
 		return fmt.Errorf("len(identifier list)=%d: %w", len(ctx.AllIdentifierList()), ErrUnexpected)
 	}
 
-	v.env.Gate[name] = &Gate{
+	v.env.Gate[name] = &environ.Gate{
 		Name:   name,
 		Params: params,
 		QArgs:  qargs,
@@ -715,7 +716,7 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) any {
 		retType = v.Visit(ctx.ReturnSignature())
 	}
 
-	v.env.Subroutine[name] = &Subroutine{
+	v.env.Subroutine[name] = &environ.Subroutine{
 		Name:       name,
 		QArgs:      qargs,
 		Body:       ctx.Scope(),

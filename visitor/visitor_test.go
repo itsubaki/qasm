@@ -8,6 +8,7 @@ import (
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
+	"github.com/itsubaki/qasm/environ"
 	"github.com/itsubaki/qasm/gen/parser"
 	"github.com/itsubaki/qasm/visitor"
 )
@@ -25,9 +26,10 @@ func Example_comment() {
 	tree := p.Program()
 	fmt.Println(tree.ToStringTree(nil, p))
 
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env)
+	v := visitor.New(
+		q.New(),
+		environ.New(),
+	)
 
 	fmt.Println(v.Visit(tree))
 
@@ -53,7 +55,7 @@ func ExampleVisitor_index() {
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
 	qsim := q.New()
-	env := visitor.NewEnviron()
+	env := environ.New()
 	v := visitor.New(qsim, env)
 
 	if err := v.Run(p.Program()); err != nil {
@@ -82,7 +84,7 @@ func ExampleVisitor_Run() {
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
 	qsim := q.New()
-	env := visitor.NewEnviron()
+	env := environ.New()
 	v := visitor.New(qsim, env)
 
 	if err := v.Run(p.Program()); err != nil {
@@ -106,7 +108,7 @@ func ExampleVisitor_Run_error() {
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
 	qsim := q.New()
-	env := visitor.NewEnviron()
+	env := environ.New()
 	v := visitor.New(qsim, env)
 
 	if err := v.Run(p.Program()); err != nil {
@@ -130,7 +132,7 @@ func ExampleVisitor_VisitChildren() {
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
 	qsim := q.New()
-	env := visitor.NewEnviron()
+	env := environ.New()
 	v := visitor.New(qsim, env)
 
 	if err, ok := v.VisitChildren(p.Program()).(error); ok && err != nil {
@@ -159,7 +161,7 @@ func ExampleVisitor_VisitVersion() {
 	fmt.Println(tree.ToStringTree(nil, p))
 
 	qsim := q.New()
-	env := visitor.NewEnviron()
+	env := environ.New()
 	v := visitor.New(qsim, env)
 
 	if err := v.Run(tree); err != nil {
@@ -188,7 +190,7 @@ func ExampleVisitor_VisitResetStatement() {
 	fmt.Println(tree.ToStringTree(nil, p))
 
 	qsim := q.New()
-	env := visitor.NewEnviron()
+	env := environ.New()
 	v := visitor.New(qsim, env)
 
 	if err := v.Run(tree); err != nil {
@@ -217,7 +219,7 @@ func ExampleVisitor_VisitIncludeStatement() {
 	fmt.Println(tree.ToStringTree(nil, p))
 
 	qsim := q.New()
-	env := visitor.NewEnviron()
+	env := environ.New()
 	v := visitor.New(qsim, env)
 
 	if err := v.Run(tree); err != nil {
@@ -246,7 +248,7 @@ func ExampleVisitor_VisitIncludeStatement_invalid() {
 	fmt.Println(tree.ToStringTree(nil, p))
 
 	qsim := q.New()
-	env := visitor.NewEnviron()
+	env := environ.New()
 	v := visitor.New(qsim, env)
 
 	if err := v.Run(tree); err != nil {
@@ -271,7 +273,7 @@ func ExampleVisitor_VisitIncludeStatement_fileNotFound() {
 	fmt.Println(tree.ToStringTree(nil, p))
 
 	qsim := q.New()
-	env := visitor.NewEnviron()
+	env := environ.New()
 	v := visitor.New(qsim, env)
 
 	if err := v.Run(tree); err != nil {
@@ -285,7 +287,7 @@ func ExampleVisitor_VisitIncludeStatement_fileNotFound() {
 
 func ExampleVisitor_VisitErrorNode() {
 	qsim := q.New()
-	env := visitor.NewEnviron()
+	env := environ.New()
 	v := visitor.New(qsim, env)
 
 	token := &antlr.BaseToken{}
@@ -330,7 +332,7 @@ func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -511,7 +513,7 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -571,7 +573,7 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -632,7 +634,7 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -698,7 +700,7 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -806,7 +808,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -937,7 +939,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -1086,7 +1088,7 @@ func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1190,7 +1192,7 @@ func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1231,7 +1233,7 @@ func TestVisitor_VisitParenthesisExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1319,7 +1321,7 @@ func TestVisitor_VisitCallExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1362,7 +1364,7 @@ func TestVisitor_VisitPowerExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1410,7 +1412,7 @@ func TestVisitor_VisitLogicalOrExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1458,7 +1460,7 @@ func TestVisitor_VisitLogicalAndExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1491,7 +1493,7 @@ func TestVisitor_VisitBitwiseAndExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1524,7 +1526,7 @@ func TestVisitor_VisitBitwiseOrExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1557,7 +1559,7 @@ func TestVisitor_VisitBitwiseXorExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1600,7 +1602,7 @@ func TestVisitor_VisitBitshiftExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1723,7 +1725,7 @@ func TestVisitor_VisitEqualityExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1781,7 +1783,7 @@ func TestVisitor_VisitUnaryExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1829,7 +1831,7 @@ func TestVisitor_VisitComparisonExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		result := v.Visit(tree)
@@ -1958,7 +1960,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -2222,7 +2224,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -2404,7 +2406,7 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -2484,7 +2486,7 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -2536,7 +2538,7 @@ func TestVisitor_VisitIfStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -2609,7 +2611,7 @@ func TestVisitor_VisitForStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -2655,7 +2657,7 @@ func TestVisitor_VisitBreakStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -2701,7 +2703,7 @@ func TestVisitor_VisitContinueStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -2803,7 +2805,7 @@ func TestVisitor_VisitWhileStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -2892,7 +2894,7 @@ func TestVisitor_VisitSwitchStatement(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -2970,7 +2972,7 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -3081,7 +3083,7 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
@@ -3122,7 +3124,7 @@ func TestVisitor_VisitArrayLiteral(t *testing.T) {
 		}
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {

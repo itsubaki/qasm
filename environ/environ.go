@@ -1,4 +1,4 @@
-package visitor
+package environ
 
 import (
 	"github.com/itsubaki/q"
@@ -31,7 +31,7 @@ type Subroutine struct {
 	ReturnType any
 }
 
-func NewEnviron() *Environ {
+func New() *Environ {
 	return &Environ{
 		Const:        make(map[string]any),
 		Variable:     make(map[string]any),
@@ -43,7 +43,7 @@ func NewEnviron() *Environ {
 }
 
 func (e *Environ) NewEnclosed() *Environ {
-	env := NewEnviron()
+	env := New()
 	env.Outer = e
 	return env
 }

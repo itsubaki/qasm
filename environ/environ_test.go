@@ -1,14 +1,14 @@
-package visitor_test
+package environ_test
 
 import (
 	"fmt"
 
 	"github.com/itsubaki/q"
-	"github.com/itsubaki/qasm/visitor"
+	"github.com/itsubaki/qasm/environ"
 )
 
 func ExampleEnviron_NewEnclosed() {
-	env := visitor.NewEnviron()
+	env := environ.New()
 	env.Qubit["q0"] = []q.Qubit{0, 1}
 	env.ClassicalBit["c0"] = []bool{false, true}
 
@@ -29,7 +29,7 @@ func ExampleEnviron_NewEnclosed() {
 }
 
 func ExampleEnviron_SetVariable() {
-	env := visitor.NewEnviron()
+	env := environ.New()
 
 	env.SetVariable("a", 42)
 	fmt.Println("env:", env.Variable)
@@ -53,8 +53,8 @@ func ExampleEnviron_SetVariable() {
 }
 
 func ExampleEnviron_GetGate() {
-	env := visitor.NewEnviron()
-	env.Gate["x"] = &visitor.Gate{
+	env := environ.New()
+	env.Gate["x"] = &environ.Gate{
 		Name: "x",
 	}
 
@@ -71,8 +71,8 @@ func ExampleEnviron_GetGate() {
 }
 
 func ExampleEnviron_GetSubroutine() {
-	env := visitor.NewEnviron()
-	env.Subroutine["qft"] = &visitor.Subroutine{
+	env := environ.New()
+	env.Subroutine["qft"] = &environ.Subroutine{
 		Name: "qft",
 	}
 
@@ -85,7 +85,7 @@ func ExampleEnviron_GetSubroutine() {
 }
 
 func ExampleEnviron_Index() {
-	env := visitor.NewEnviron()
+	env := environ.New()
 	env.SetQubit("q0", []q.Qubit{0, 1})
 	env.SetQubit("q1", []q.Qubit{2, 3, 4})
 

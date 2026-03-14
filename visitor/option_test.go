@@ -5,14 +5,15 @@ import (
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
+	"github.com/itsubaki/qasm/environ"
 	"github.com/itsubaki/qasm/gen/parser"
 	"github.com/itsubaki/qasm/visitor"
 )
 
 func ExampleWithMaxQubits() {
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env,
+	v := visitor.New(
+		q.New(),
+		environ.New(),
 		visitor.WithMaxQubits(5),
 	)
 
@@ -28,9 +29,9 @@ func ExampleWithMaxQubits() {
 }
 
 func ExampleWithMaxQubits_oldstyle() {
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env,
+	v := visitor.New(
+		q.New(),
+		environ.New(),
 		visitor.WithMaxQubits(5),
 	)
 
@@ -46,9 +47,10 @@ func ExampleWithMaxQubits_oldstyle() {
 }
 
 func ExampleWithMaxQubits_unlimited() {
-	qsim := q.New()
-	env := visitor.NewEnviron()
-	v := visitor.New(qsim, env,
+	env := environ.New()
+	v := visitor.New(
+		q.New(),
+		env,
 		visitor.WithMaxQubits(0),
 	)
 

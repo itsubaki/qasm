@@ -13,6 +13,7 @@ import (
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
+	"github.com/itsubaki/qasm/environ"
 	"github.com/itsubaki/qasm/gen/parser"
 	"github.com/itsubaki/qasm/listener"
 	"github.com/itsubaki/qasm/scan"
@@ -61,7 +62,7 @@ func main() {
 		errListener := listener.NewErrorListener(lexer, p)
 
 		qsim := q.New()
-		env := visitor.NewEnviron()
+		env := environ.New()
 		v := visitor.New(qsim, env)
 
 		// parse
@@ -136,7 +137,7 @@ func REPL(top int) {
 	}()
 
 	qsim := q.New()
-	env := visitor.NewEnviron()
+	env := environ.New()
 	v := visitor.New(qsim, env)
 
 	fmt.Println(">> OPENQASM 3.0;")
@@ -173,7 +174,7 @@ func REPL(top int) {
 
 			if text == "clear;" {
 				qsim = q.New()
-				env = visitor.NewEnviron()
+				env = environ.New()
 				v = visitor.New(qsim, env)
 				continue
 			}
