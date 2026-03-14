@@ -5,6 +5,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/itsubaki/qasm/angle"
 	"github.com/itsubaki/qasm/visitor"
 )
 
@@ -59,7 +60,7 @@ func TestAngle(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		angle := visitor.NewAngle(c.bits, c.radian)
+		angle := angle.New(c.bits, c.radian)
 		if angle.BitString != c.want.bitString {
 			t.Errorf("got=%v, want=%v", angle.BitString, c.want.bitString)
 		}
@@ -155,9 +156,11 @@ func TestObject_Inspect(t *testing.T) {
 		},
 		{
 			obj: &visitor.Angle{
-				Bits:      4,
-				BitString: "1000",
-				K:         8,
+				Angle: &angle.Angle{
+					Bits:      4,
+					BitString: "1000",
+					K:         8,
+				},
 			},
 			objType: visitor.AngleType,
 			want:    "8(1000)",

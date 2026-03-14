@@ -750,6 +750,53 @@ func TestValue_Int(t *testing.T) {
 	}
 }
 
+func TestValue_Int64(t *testing.T) {
+	cases := []struct {
+		v      any
+		want   int64
+		hasErr bool
+	}{
+		{
+			v:      complex(1, 2),
+			hasErr: true,
+		},
+		{
+			v:      true,
+			hasErr: true,
+		},
+		{
+			v:      int(4),
+			want:   int64(4),
+			hasErr: false,
+		},
+		{
+			v:      int64(4),
+			want:   int64(4),
+			hasErr: false,
+		},
+		{
+			v:      float64(4.5),
+			want:   int64(4),
+			hasErr: false,
+		},
+	}
+
+	for _, c := range cases {
+		v, err := value.New(c.v).Int64()
+		if err != nil {
+			if c.hasErr {
+				continue
+			}
+
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		if ok := Equal(v, value.New(c.want)); !ok {
+			t.Error("unexpected error")
+		}
+	}
+}
+
 func TestValue_UInt(t *testing.T) {
 	cases := []struct {
 		v      any

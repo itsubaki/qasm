@@ -13,6 +13,7 @@ import (
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/q/math/matrix"
 	"github.com/itsubaki/q/quantum/gate"
+	"github.com/itsubaki/qasm/angle"
 	"github.com/itsubaki/qasm/environ"
 	"github.com/itsubaki/qasm/gen/parser"
 	"github.com/itsubaki/qasm/value"
@@ -652,30 +653,6 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 
 		v.env.SetVariable(id, false)
 		return nil
-	case ctx.ScalarType().BIT() != nil:
-		id := v.Visit(ctx.Identifier()).(string)
-		if _, ok := v.env.GetClassicalBit(id); ok {
-			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
-		}
-
-		if ctx.DeclarationExpression() != nil {
-			var bits []bool
-			switch v := v.Visit(ctx.DeclarationExpression()).(type) {
-			case bool:
-				bits = []bool{v}
-			case []bool:
-				bits = v
-			default:
-				return fmt.Errorf("declaration expression: %v(%T): %w", v, v, ErrUnexpected)
-			}
-
-			v.env.ClassicalBit[id] = bits
-			return nil
-		}
-
-		size := v.Visit(ctx.ScalarType()).(int64)
-		v.env.ClassicalBit[id] = make([]bool, int(size))
-		return nil
 	case ctx.ScalarType().ANGLE() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetVariable(id); ok {
@@ -685,14 +662,42 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		if ctx.DeclarationExpression() != nil {
 			bits := v.Visit(ctx.ScalarType()).(int64)
 			radian := v.Visit(ctx.DeclarationExpression()).(float64)
-			angle := NewAngle(uint(bits), radian)
+			v.env.SetVariable(id, &Angle{
+				Angle: angle.New(uint(bits), radian),
+			})
 
-			v.env.SetVariable(id, angle)
 			return nil
 		}
 
 		bits := v.Visit(ctx.ScalarType()).(int64)
-		v.env.SetVariable(id, NewAngle(uint(bits), 0))
+		v.env.SetVariable(id, &Angle{
+			Angle: angle.New(uint(bits), 0),
+		})
+
+		return nil
+	case ctx.ScalarType().BIT() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.env.GetClassicalBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if ctx.DeclarationExpression() != nil {
+			var bits []bool
+			switch val := v.Visit(ctx.DeclarationExpression()).(type) {
+			case bool:
+				bits = []bool{val}
+			case []bool:
+				bits = val
+			default:
+				return fmt.Errorf("declaration expression: %v(%T): %w", val, val, ErrUnexpected)
+			}
+
+			v.env.ClassicalBit[id] = bits
+			return nil
+		}
+
+		size := v.Visit(ctx.ScalarType()).(int64)
+		v.env.ClassicalBit[id] = make([]bool, int(size))
 		return nil
 	default:
 		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
@@ -1176,7 +1181,12 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) any {
 	var list []int64
 	for _, x := range ctx.AllExpression() {
-		list = append(list, v.Visit(x).(int64))
+		val, err := value.New(v.Visit(x)).Int64()
+		if err != nil {
+			return fmt.Errorf("cast to int64: %w", err)
+		}
+
+		list = append(list, val.Value().(int64))
 	}
 
 	return list
@@ -1244,8 +1254,8 @@ func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) any {
 func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) any {
 	var index []int64
 	for _, op := range ctx.AllIndexOperator() {
-		for _, v := range v.Visit(op).([]any) {
-			index = append(index, v.(int64))
+		for _, val := range v.Visit(op).([]any) {
+			index = append(index, val.(int64))
 		}
 	}
 

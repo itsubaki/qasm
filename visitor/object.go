@@ -2,8 +2,9 @@ package visitor
 
 import (
 	"fmt"
-	"math"
 	"strings"
+
+	"github.com/itsubaki/qasm/angle"
 )
 
 type Type string
@@ -156,9 +157,7 @@ func (v *Pragma) Inspect() string {
 }
 
 type Angle struct {
-	Bits      uint
-	BitString string
-	K         uint
+	*angle.Angle
 }
 
 func (v *Angle) Type() Type {
@@ -166,29 +165,9 @@ func (v *Angle) Type() Type {
 }
 
 func (v *Angle) Inspect() string {
-	return fmt.Sprintf("%v(%s)", v.K, v.BitString)
+	return fmt.Sprintf("%d(%s)", v.K, v.BitString)
 }
 
 func (v *Angle) String() string {
 	return v.Inspect()
-}
-
-func (v *Angle) Radian() float64 {
-	return 2 * math.Pi * float64(v.K) / math.Pow(2, float64(v.Bits))
-}
-
-func NewAngle(bits uint, radian float64) *Angle {
-	mod := math.Mod(radian, 2*math.Pi)
-	if mod < 0 {
-		// normalize to [0, 2pi)
-		mod += 2 * math.Pi
-	}
-
-	// k = angle / 2pi * 2^bits
-	k := uint(math.Round(mod / (2 * math.Pi) * float64(uint(1)<<bits)))
-	return &Angle{
-		Bits:      bits,
-		BitString: fmt.Sprintf("%0*b", bits, k),
-		K:         k,
-	}
 }

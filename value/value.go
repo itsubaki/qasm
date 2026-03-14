@@ -282,6 +282,19 @@ func (v *Value) Int() (*Value, error) {
 	return nil, fmt.Errorf("unexpected type: %T", v.v)
 }
 
+func (v *Value) Int64() (*Value, error) {
+	switch v := v.v.(type) {
+	case int:
+		return New(int64(v)), nil
+	case int64:
+		return New(int64(v)), nil
+	case float64:
+		return New(int64(v)), nil
+	}
+
+	return nil, fmt.Errorf("unexpected type: %T", v.v)
+}
+
 func (v *Value) UInt() (*Value, error) {
 	switch v := v.v.(type) {
 	case int:
