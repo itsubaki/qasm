@@ -502,19 +502,19 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	return nil
 }
 
-func (v *Visitor) MeasureAssignment(identifier parser.IIndexedIdentifierContext, measure parser.IMeasureExpressionContext) error {
+func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure parser.IMeasureExpressionContext) error {
 	measured := v.Visit(measure)
-	if identifier == nil {
+	if id == nil {
 		return nil
 	}
 
-	operand := v.Visit(identifier.Identifier()).(string)
+	operand := v.Visit(id.Identifier()).(string)
 	bits, ok := v.env.GetClassicalBit(operand)
 	if !ok {
 		return fmt.Errorf("operand=%s: %w", operand, ErrClassicalBitNotFound)
 	}
 
-	index := v.Visit(identifier).([]int64)
+	index := v.Visit(id).([]int64)
 	if len(index) == 0 {
 		copy(bits, measured.([]bool))
 		return nil
@@ -536,8 +536,11 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 		return v.MeasureAssignment(ctx.IndexedIdentifier(), ctx.MeasureExpression())
 	}
 
-	id := v.Visit(ctx.IndexedIdentifier().Identifier()).(string)
-	v.env.SetVariable(id, v.Visit(ctx.Expression()))
+	id := ctx.IndexedIdentifier()
+	operand := v.Visit(id.Identifier()).(string)
+	x := v.Visit(ctx.Expression())
+
+	v.env.SetVariable(operand, x)
 	return nil
 }
 
