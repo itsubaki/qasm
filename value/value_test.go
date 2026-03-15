@@ -138,6 +138,12 @@ func TestAdd(t *testing.T) {
 			want:   float64(3),
 			hasErr: false,
 		},
+		{
+			a:      uint(1),
+			b:      uint(2),
+			want:   uint(3),
+			hasErr: false,
+		},
 	}
 
 	for _, c := range cases {
@@ -189,6 +195,12 @@ func TestSub(t *testing.T) {
 			a:      int(1),
 			b:      float64(2),
 			want:   float64(-1),
+			hasErr: false,
+		},
+		{
+			a:      uint(3),
+			b:      uint(2),
+			want:   uint(1),
 			hasErr: false,
 		},
 	}
@@ -244,6 +256,12 @@ func TestMul(t *testing.T) {
 			want:   float64(2),
 			hasErr: false,
 		},
+		{
+			a:      uint(3),
+			b:      uint(2),
+			want:   uint(6),
+			hasErr: false,
+		},
 	}
 
 	for _, c := range cases {
@@ -297,6 +315,12 @@ func TestDiv(t *testing.T) {
 			want:   float64(2),
 			hasErr: false,
 		},
+		{
+			a:      uint(4),
+			b:      uint(2),
+			want:   uint(2),
+			hasErr: false,
+		},
 	}
 
 	for _, c := range cases {
@@ -342,6 +366,12 @@ func TestMod(t *testing.T) {
 			a:      int(4),
 			b:      int64(2),
 			want:   int64(0),
+			hasErr: false,
+		},
+		{
+			a:      uint(13),
+			b:      uint(3),
+			want:   uint(1),
 			hasErr: false,
 		},
 	}
@@ -426,6 +456,12 @@ func TestNotEq(t *testing.T) {
 			want:   true,
 			hasErr: false,
 		},
+		{
+			a:      uint(4),
+			b:      uint(3),
+			want:   true,
+			hasErr: false,
+		},
 	}
 
 	for _, c := range cases {
@@ -488,6 +524,12 @@ func TestLessThan(t *testing.T) {
 		{
 			a:      int(4),
 			b:      float64(8),
+			want:   true,
+			hasErr: false,
+		},
+		{
+			a:      uint(4),
+			b:      uint(8),
 			want:   true,
 			hasErr: false,
 		},
@@ -556,6 +598,12 @@ func TestLessThanOrEqual(t *testing.T) {
 			want:   true,
 			hasErr: false,
 		},
+		{
+			a:      uint(4),
+			b:      uint(8),
+			want:   true,
+			hasErr: false,
+		},
 	}
 
 	for _, c := range cases {
@@ -616,6 +664,12 @@ func TestGreaterThan(t *testing.T) {
 		{
 			a:      int(4),
 			b:      float64(2),
+			want:   true,
+			hasErr: false,
+		},
+		{
+			a:      uint(4),
+			b:      uint(2),
 			want:   true,
 			hasErr: false,
 		},
@@ -681,6 +735,12 @@ func TestGreaterThanOrEqual(t *testing.T) {
 		{
 			a:      int(4),
 			b:      float64(2),
+			want:   true,
+			hasErr: false,
+		},
+		{
+			a:      uint(4),
+			b:      uint(2),
 			want:   true,
 			hasErr: false,
 		},
@@ -871,6 +931,11 @@ func TestValue_Float64(t *testing.T) {
 		{
 			v:      float64(4.5),
 			want:   4.5,
+			hasErr: false,
+		},
+		{
+			v:      uint(4),
+			want:   4.0,
 			hasErr: false,
 		},
 	}
