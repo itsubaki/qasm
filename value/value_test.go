@@ -393,6 +393,59 @@ func TestMod(t *testing.T) {
 	}
 }
 
+func TestPow(t *testing.T) {
+	cases := []struct {
+		a, b   any
+		want   any
+		hasErr bool
+	}{
+		{
+			a:      complex(1, 2),
+			b:      1,
+			hasErr: true,
+		},
+		{
+			a:      true,
+			b:      true,
+			hasErr: true,
+		},
+		{
+			a:      int(3),
+			b:      int(2),
+			want:   int(9),
+			hasErr: false,
+		},
+		{
+			a:      int(3),
+			b:      int64(2),
+			want:   int64(9),
+			hasErr: false,
+		},
+		{
+			a:      int(3),
+			b:      float64(2),
+			want:   float64(9),
+			hasErr: false,
+		},
+	}
+
+	for _, c := range cases {
+		a, b := value.New(c.a), value.New(c.b)
+		v, err := a.Pow(b)
+		if err != nil {
+			if c.hasErr {
+				continue
+			}
+
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		if ok := Equal(v, value.New(c.want)); !ok {
+			t.Error("unexpected error")
+		}
+	}
+}
+
 func TestEq(t *testing.T) {
 	cases := []struct {
 		a, b   any

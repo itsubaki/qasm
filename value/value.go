@@ -3,6 +3,8 @@ package value
 import (
 	"fmt"
 	"math"
+
+	"github.com/itsubaki/q/math/number"
 )
 
 type Value struct {
@@ -157,6 +159,24 @@ func (v *Value) Mod(w *Value) (*Value, error) {
 	}
 
 	return nil, fmt.Errorf("unexpected %T %% %T", a.v, b.v)
+}
+
+func (v *Value) Pow(w *Value) (*Value, error) {
+	a, b, err := Promote(v, w)
+	if err != nil {
+		return nil, err
+	}
+
+	switch left := a.v.(type) {
+	case int:
+		return New(number.Pow(left, b.v.(int))), nil
+	case int64:
+		return New(number.Pow(left, b.v.(int64))), nil
+	case float64:
+		return New(math.Pow(left, b.v.(float64))), nil
+	}
+
+	return nil, fmt.Errorf("unexpected %T ** %T", a.v, b.v)
 }
 
 func (v *Value) Eq(w *Value) (*Value, error) {

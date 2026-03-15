@@ -1032,19 +1032,16 @@ func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) any {
 }
 
 func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) any {
-	var operand []float64
-	for _, x := range ctx.AllExpression() {
-		switch val := v.Visit(x).(type) {
-		case float64:
-			operand = append(operand, val)
-		case int64:
-			operand = append(operand, float64(val))
-		default:
-			return fmt.Errorf("operand=%v(%T): %w", val, val, ErrUnexpected)
-		}
+	base := v.Visit(ctx.Expression(0))
+	exp := v.Visit(ctx.Expression(1))
+	a, b := value.New(base), value.New(exp)
+
+	w, err := a.Pow(b)
+	if err != nil {
+		return fmt.Errorf("pow: %w", err)
 	}
 
-	return math.Pow(operand[0], operand[1])
+	return w.Value()
 }
 
 func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext) any {
@@ -1153,17 +1150,17 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 	case "mod":
 		return math.Mod(args[0].(float64), args[1].(float64))
 	default:
-		sub, ok := v.env.GetSubroutine(id)
+		routine, ok := v.env.GetSubroutine(id)
 		if !ok {
 			return fmt.Errorf("identifier=%s: %w", id, ErrFunctionNotFound)
 		}
 
 		enclosed := v.Enclosed()
-		for i, p := range sub.QArgs {
+		for i, p := range routine.QArgs {
 			enclosed.env.Qubit[p] = args[i].([]q.Qubit)
 		}
 
-		result := enclosed.Visit(sub.Body).([]any)
+		result := enclosed.Visit(routine.Body).([]any)
 		return result[len(result)-1]
 	}
 }
