@@ -459,18 +459,10 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			}
 		}
 
-		n := v.qsim.NumQubits()
-		c := q.Index(ctrl...)
-		t := qargs[len(qargs)-1][0].Index()
-		u = gate.Controlled(u, n, c, t)
+		v.qsim.X(negctrl...)
+		defer v.qsim.X(negctrl...)
 
-		if len(negctrl) > 0 {
-			negc := q.Index(negctrl...)
-			x := gate.TensorProduct(gate.X(), n, negc)
-			u = matrix.MatMul(x, u, x)
-		}
-
-		v.qsim.Apply(u)
+		v.qsim.Controlled(u, ctrl, qargs[len(qargs)-1])
 		return nil
 	}
 
@@ -481,7 +473,6 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			u = u.Dagger()
 		case mod.POW() != nil:
 			x := v.Visit(mod)
-
 			p, err := value.New(x).Float64()
 			if err != nil {
 				return fmt.Errorf("cast to float64: %w", err)
@@ -507,11 +498,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 	}
 
-	n := v.qsim.NumQubits()
-	index := q.Index(qargs...)
-	u = gate.TensorProduct(u, n, index)
-
-	v.qsim.Apply(u)
+	v.qsim.G(u, qargs...)
 	return nil
 }
 
@@ -1356,15 +1343,15 @@ func (v *Visitor) VisitArgumentDefinition(ctx *parser.ArgumentDefinitionContext)
 }
 
 func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
-	indexID := ctx.IndexedIdentifier()
+	id := ctx.IndexedIdentifier()
+	operand := v.Visit(id.Identifier()).(string)
 
-	operand := v.Visit(indexID.Identifier()).(string)
 	qb, ok := v.env.GetQubit(operand)
 	if !ok {
 		return fmt.Errorf("operand=%s: %w", operand, ErrQubitNotFound)
 	}
 
-	index := v.Visit(indexID).([]int64)
+	index := v.Visit(id).([]int64)
 	if len(index) == 0 {
 		return qb
 	}
