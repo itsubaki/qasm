@@ -434,8 +434,8 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		// ctrl @ U(pi, 0, pi) c, t;
 		// ctrl @ U(pi, 0, pi) c[0], t;
 		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
-		var ctrl, negctrl []q.Qubit
-		var ctrlcnt int
+		var ctrl, neg []q.Qubit
+		var cursor int
 		for _, mod := range ctx.AllGateModifier() {
 			x := v.Visit(mod)
 
@@ -447,22 +447,23 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 				return fmt.Errorf("pow with control modifier is not implemented: %w", ErrNotImplemented)
 			case mod.CTRL() != nil:
 				for range x.(int64) {
-					ctrl = append(ctrl, qargs[ctrlcnt]...)
-					ctrlcnt++
+					ctrl = append(ctrl, qargs[cursor]...)
+					cursor++
 				}
 			case mod.NEGCTRL() != nil:
 				for range x.(int64) {
-					ctrl = append(ctrl, qargs[ctrlcnt]...)
-					negctrl = append(negctrl, qargs[ctrlcnt]...)
-					ctrlcnt++
+					ctrl = append(ctrl, qargs[cursor]...)
+					neg = append(neg, qargs[cursor]...)
+					cursor++
 				}
 			}
 		}
 
-		v.qsim.X(negctrl...)
-		defer v.qsim.X(negctrl...)
+		v.qsim.X(neg...)
+		defer v.qsim.X(neg...)
 
-		v.qsim.Controlled(u, ctrl, qargs[len(qargs)-1])
+		target := qargs[len(qargs)-1]
+		v.qsim.Controlled(u, ctrl, target)
 		return nil
 	}
 
