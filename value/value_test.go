@@ -104,7 +104,7 @@ func TestPromote(t *testing.T) {
 	}
 }
 
-func TestAdd(t *testing.T) {
+func TestValue_Add(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		want   any
@@ -163,7 +163,7 @@ func TestAdd(t *testing.T) {
 	}
 }
 
-func TestSub(t *testing.T) {
+func TestValue_Sub(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		want   any
@@ -222,7 +222,7 @@ func TestSub(t *testing.T) {
 	}
 }
 
-func TestMul(t *testing.T) {
+func TestValue_Mul(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		want   any
@@ -281,7 +281,7 @@ func TestMul(t *testing.T) {
 	}
 }
 
-func TestDiv(t *testing.T) {
+func TestValue_Div(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		want   any
@@ -340,7 +340,7 @@ func TestDiv(t *testing.T) {
 	}
 }
 
-func TestMod(t *testing.T) {
+func TestValue_Mod(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		want   any
@@ -393,7 +393,7 @@ func TestMod(t *testing.T) {
 	}
 }
 
-func TestPow(t *testing.T) {
+func TestValue_Pow(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		want   any
@@ -446,7 +446,7 @@ func TestPow(t *testing.T) {
 	}
 }
 
-func TestEq(t *testing.T) {
+func TestValue_Eq(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		hasErr bool
@@ -475,7 +475,7 @@ func TestEq(t *testing.T) {
 	}
 }
 
-func TestNotEq(t *testing.T) {
+func TestValue_NotEq(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		want   bool
@@ -534,7 +534,7 @@ func TestNotEq(t *testing.T) {
 	}
 }
 
-func TestLessThan(t *testing.T) {
+func TestValue_LessThan(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		want   bool
@@ -605,7 +605,7 @@ func TestLessThan(t *testing.T) {
 	}
 }
 
-func TestLessThanOrEqual(t *testing.T) {
+func TestValue_LessThanOrEqual(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		want   bool
@@ -676,7 +676,7 @@ func TestLessThanOrEqual(t *testing.T) {
 	}
 }
 
-func TestGreaterThan(t *testing.T) {
+func TestValue_GreaterThan(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		want   bool
@@ -745,7 +745,7 @@ func TestGreaterThan(t *testing.T) {
 	}
 }
 
-func TestGreaterThanOrEqual(t *testing.T) {
+func TestValue_GreaterThanOrEqual(t *testing.T) {
 	cases := []struct {
 		a, b   any
 		want   bool
@@ -1009,7 +1009,7 @@ func TestValue_Float64(t *testing.T) {
 	}
 }
 
-func TestNegative(t *testing.T) {
+func TestValue_Negative(t *testing.T) {
 	cases := []struct {
 		v      any
 		want   any
@@ -1056,7 +1056,7 @@ func TestNegative(t *testing.T) {
 	}
 }
 
-func TestBitNot(t *testing.T) {
+func TestValue_BitNot(t *testing.T) {
 	cases := []struct {
 		v      any
 		want   any
@@ -1098,7 +1098,7 @@ func TestBitNot(t *testing.T) {
 	}
 }
 
-func TestBoolNot(t *testing.T) {
+func TestValue_BoolNot(t *testing.T) {
 	cases := []struct {
 		v      any
 		want   any

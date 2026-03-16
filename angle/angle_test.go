@@ -15,12 +15,14 @@ func ExampleAngle() {
 	fmt.Println("bits:", a.Bits)
 	fmt.Println("bit string:", a.BitString)
 	fmt.Println("k:", a.K)
+	fmt.Println(a)
 
 	// Output:
 	// 3.141592653589793
 	// bits: 4
 	// bit string: 1000
 	// k: 8
+	// 3.141592653589793(8,1000)
 }
 
 func TestMod(t *testing.T) {

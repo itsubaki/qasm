@@ -25,6 +25,10 @@ func (v *Angle) Radian() float64 {
 	return 2 * math.Pi * math.Ldexp(float64(v.K), -int(v.Bits))
 }
 
+func (v *Angle) String() string {
+	return fmt.Sprintf("%v(%d,%s)", v.Radian(), v.K, v.BitString)
+}
+
 func Mod2Pi(radian float64) float64 {
 	mod := math.Mod(radian, 2*math.Pi)
 	if mod < 0 {

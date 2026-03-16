@@ -3,8 +3,6 @@ package value
 import (
 	"fmt"
 	"math"
-
-	"github.com/itsubaki/q/math/number"
 )
 
 type Value struct {
@@ -169,9 +167,9 @@ func (v *Value) Pow(w *Value) (*Value, error) {
 
 	switch left := a.v.(type) {
 	case int:
-		return New(number.Pow(left, b.v.(int))), nil
+		return New(Pow(left, b.v.(int))), nil
 	case int64:
-		return New(number.Pow(left, b.v.(int64))), nil
+		return New(Pow(left, b.v.(int64))), nil
 	case float64:
 		return New(math.Pow(left, b.v.(float64))), nil
 	}

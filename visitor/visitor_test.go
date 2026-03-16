@@ -464,12 +464,12 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		{
 			text: "angle[4] a;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a ;))) <EOF>)",
-			want: "map[a:0(0000)]",
+			want: "map[a:0(0,0000)]",
 		},
 		{
 			text: "angle[4] a = pi;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a = (declarationExpression (expression pi)) ;))) <EOF>)",
-			want: "map[a:8(1000)]",
+			want: "map[a:3.141592653589793(8,1000)]",
 		},
 		{
 			text:   "float a = 1; float a = 0;",

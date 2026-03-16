@@ -653,18 +653,13 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		if ctx.DeclarationExpression() != nil {
 			bits := v.Visit(ctx.ScalarType()).(int64)
 			radian := v.Visit(ctx.DeclarationExpression()).(float64)
-			v.env.SetVariable(id, &Angle{
-				Angle: angle.New(uint(bits), radian),
-			})
+			v.env.SetVariable(id, angle.New(uint(bits), radian))
 
 			return nil
 		}
 
 		bits := v.Visit(ctx.ScalarType()).(int64)
-		v.env.SetVariable(id, &Angle{
-			Angle: angle.New(uint(bits), 0),
-		})
-
+		v.env.SetVariable(id, angle.New(uint(bits), 0))
 		return nil
 	case ctx.ScalarType().BIT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
