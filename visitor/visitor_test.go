@@ -501,6 +501,11 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a ;))) <EOF>)",
 			errMsg: "identifier=a: already declared",
 		},
+		{
+			text:   `bit[8] a = 3.14;`,
+			tree:   `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 8) ])) a = (declarationExpression (expression 3.14)) ;))) <EOF>)`,
+			errMsg: "declaration expression: 3.14(float64): unexpected",
+		},
 	}
 
 	for _, c := range cases {
