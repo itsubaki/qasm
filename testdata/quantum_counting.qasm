@@ -63,7 +63,7 @@ h r;
 x a;
 h a;
 
-// Here, controlled-G is applied 2**i times explicitly.
+// Here, controlledG is applied 2**i times explicitly.
 // In principle, this could be replaced by a single application of a circuit implementing G**(2**i).
 for int i in [0:n-1] {
   for int j in [0:(1<<i)-1] {
