@@ -38,14 +38,14 @@ qubit[4] a;
 reset q;
 reset a;
 
-x a[3];
 h q;
+x a[3];
 
 modexp(q, a);
 inv_qft(q);
 
 measure a;
-// measure q;
+// bit m = measure q;
 //
 // 010 > 0.010 > 0.25 > 1/4; r=4.
 // 110 > 0.110 > 0.75 > 3/4; r=4.
