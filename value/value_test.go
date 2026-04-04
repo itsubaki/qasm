@@ -427,6 +427,18 @@ func TestValue_Pow(t *testing.T) {
 			want:   float64(9),
 			hasErr: false,
 		},
+		{
+			a:      float64(9),
+			b:      int(2),
+			want:   float64(81),
+			hasErr: false,
+		},
+		{
+			a:      float64(9),
+			b:      float64(0.5),
+			want:   float64(3),
+			hasErr: false,
+		},
 	}
 
 	for _, c := range cases {
