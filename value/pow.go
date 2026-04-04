@@ -9,9 +9,9 @@ import (
 func Pow[T int | int64 | float64](a, r T) T {
 	switch left := any(a).(type) {
 	case int:
-		return T(pow(left, any(r).(int)))
+		return T(powInt(left, any(r).(int)))
 	case int64:
-		return T(pow(left, any(r).(int64)))
+		return T(powInt(left, any(r).(int64)))
 	case float64:
 		return T(math.Pow(left, any(r).(float64)))
 	}
@@ -19,7 +19,7 @@ func Pow[T int | int64 | float64](a, r T) T {
 	panic(fmt.Sprintf("unexpected pow types %T and %T", a, r))
 }
 
-func pow[T int | int64](a, r T) T {
+func powInt[T int | int64](a, r T) T {
 	if a == 0 {
 		return 0
 	}
