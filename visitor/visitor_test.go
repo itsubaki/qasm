@@ -1,9 +1,11 @@
 package visitor_test
 
 import (
+	"errors"
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/antlr4-go/antlr/v4"
@@ -3142,6 +3144,46 @@ func TestVisitor_VisitArrayLiteral(t *testing.T) {
 
 		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
+		}
+	}
+}
+
+func TestVisitor_unimplemented(t *testing.T) {
+	v := visitor.New(q.New(), environ.New())
+
+	cases := []struct {
+		name string
+		err  error
+	}{
+		{name: "VisitPragma", err: v.VisitPragma(&parser.PragmaContext{}).(error)},
+		{name: "VisitAnnotation", err: v.VisitAnnotation(&parser.AnnotationContext{}).(error)},
+		{name: "VisitDurationofExpression", err: v.VisitDurationofExpression(&parser.DurationofExpressionContext{}).(error)},
+		{name: "VisitSetExpression", err: v.VisitSetExpression(&parser.SetExpressionContext{}).(error)},
+		{name: "VisitArrayReferenceType", err: v.VisitArrayReferenceType(&parser.ArrayReferenceTypeContext{}).(error)},
+		{name: "VisitDefcalArgumentDefinitionList", err: v.VisitDefcalArgumentDefinitionList(&parser.DefcalArgumentDefinitionListContext{}).(error)},
+		{name: "VisitDefcalArgumentDefinition", err: v.VisitDefcalArgumentDefinition(&parser.DefcalArgumentDefinitionContext{}).(error)},
+		{name: "VisitDefcalTarget", err: v.VisitDefcalTarget(&parser.DefcalTargetContext{}).(error)},
+		{name: "VisitDefcalOperandList", err: v.VisitDefcalOperandList(&parser.DefcalOperandListContext{}).(error)},
+		{name: "VisitDefcalOperand", err: v.VisitDefcalOperand(&parser.DefcalOperandContext{}).(error)},
+		{name: "VisitIoDeclarationStatement", err: v.VisitIoDeclarationStatement(&parser.IoDeclarationStatementContext{}).(error)},
+		{name: "VisitExternStatement", err: v.VisitExternStatement(&parser.ExternStatementContext{}).(error)},
+		{name: "VisitExternArgumentList", err: v.VisitExternArgumentList(&parser.ExternArgumentListContext{}).(error)},
+		{name: "VisitExternArgument", err: v.VisitExternArgument(&parser.ExternArgumentContext{}).(error)},
+		{name: "VisitCalStatement", err: v.VisitCalStatement(&parser.CalStatementContext{}).(error)},
+		{name: "VisitDefcalStatement", err: v.VisitDefcalStatement(&parser.DefcalStatementContext{}).(error)},
+		{name: "VisitCalibrationGrammarStatement", err: v.VisitCalibrationGrammarStatement(&parser.CalibrationGrammarStatementContext{}).(error)},
+		{name: "VisitBarrierStatement", err: v.VisitBarrierStatement(&parser.BarrierStatementContext{}).(error)},
+		{name: "VisitBoxStatement", err: v.VisitBoxStatement(&parser.BoxStatementContext{}).(error)},
+		{name: "VisitDelayStatement", err: v.VisitDelayStatement(&parser.DelayStatementContext{}).(error)},
+	}
+
+	for _, c := range cases {
+		if !errors.Is(c.err, visitor.ErrNotImplemented) {
+			t.Fatalf("got=%v", c.err)
+		}
+
+		if !strings.Contains(c.err.Error(), c.name) {
+			t.Fatalf("got=%v", c.err)
 		}
 	}
 }
