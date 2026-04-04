@@ -4,23 +4,23 @@ gate h q { U(pi/2.0, 0, pi) q; }
 gate cx c, t { ctrl @ U(pi, 0, pi) c, t; }
 gate cz c, t { ctrl @ U(0, pi, 0) c, t; }
 
-qubit phi;
+qubit psi;
 qubit a;
 qubit t;
 
-reset phi;
+reset psi;
 reset a;
 reset t;
 
-U(1, 2, 3) phi;
+U(1, 2, 3) psi;
 
 h a;
 cx a, t;
-cx phi, a;
-h phi;
+cx psi, a;
+h psi;
 
 cx a, t;
-cz phi, t;
+cz psi, t;
 
-measure phi;
+measure psi;
 measure a;
