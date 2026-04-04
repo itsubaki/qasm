@@ -4,13 +4,12 @@ import "math"
 
 // Pow returns a**r, the base-a exponential of r.
 func Pow[T int | int64 | float64](a, r T) T {
-	switch left := any(a).(type) {
-	case int:
+	if left, ok := any(a).(int); ok {
 		return T(powInt(left, any(r).(int)))
-	case int64:
+	}
+
+	if left, ok := any(a).(int64); ok {
 		return T(powInt(left, any(r).(int64)))
-	case float64:
-		return T(math.Pow(left, any(r).(float64)))
 	}
 
 	return T(math.Pow(float64(a), float64(r)))
