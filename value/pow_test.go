@@ -19,7 +19,7 @@ func TestPow(t *testing.T) {
 	for _, c := range cases {
 		got := value.Pow(c.a, c.r)
 		if got != c.want {
-			t.Errorf("got=%v, want=%v", got, c.want)
+			t.Errorf("Pow(%v, %v): got=%v, want=%v", c.a, c.r, got, c.want)
 		}
 	}
 }
