@@ -1,9 +1,6 @@
 package value
 
-import (
-	"fmt"
-	"math"
-)
+import "math"
 
 // Pow returns a**r, the base-a exponential of r.
 func Pow[T int | int64 | float64](a, r T) T {
@@ -12,11 +9,9 @@ func Pow[T int | int64 | float64](a, r T) T {
 		return T(powInt(left, any(r).(int)))
 	case int64:
 		return T(powInt(left, any(r).(int64)))
-	case float64:
-		return T(math.Pow(left, any(r).(float64)))
 	}
 
-	panic(fmt.Sprintf("unexpected pow types %T and %T", a, r))
+	return T(math.Pow(float64(a), float64(r)))
 }
 
 func powInt[T int | int64](a, r T) T {
