@@ -2379,6 +2379,19 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 			},
 		},
 		{
+			// pow(0.5) @ X is the SX (√X) gate; produces equal superposition from |0⟩.
+			// Under the old int(p) truncation this became pow(0) = I, giving |0⟩ instead.
+			text: `
+				qubit q;
+				pow(0.5) @ U(pi, 0, pi) q;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression 0.5) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			want: []string{
+				"[0][  0]( 0.5000 0.5000i): 0.5000",
+				"[1][  1]( 0.5000-0.5000i): 0.5000",
+			},
+		},
+		{
 			text: `
 				qubit q;
 				U(pi/2, -pi/2, pi/2) q;
