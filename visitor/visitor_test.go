@@ -1016,6 +1016,19 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 		},
 		{
 			text: `
+				qubit[3] q;
+				bit c;
+				U(pi, 0, pi) q[1];
+				measure q[1] -> c;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (measureArrowAssignmentStatement (measureExpression measure (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) -> (indexedIdentifier c) ;))) <EOF>)",
+			want: Want{
+				bit:   []string{"map[c:true]"},
+				qubit: []string{"[[010][  2]( 1.0000 0.0000i): 1.0000]"},
+			},
+		},
+		{
+			text: `
 				qubit q;
 				bit[1] c;
 				U(pi, 0, pi) q;
