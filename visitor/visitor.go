@@ -531,10 +531,6 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 	}
 
 	if _, ok := v.env.GetBit(operand); ok {
-		if len(index) != 0 {
-			return fmt.Errorf("operand=%s: %w", operand, ErrUnexpected)
-		}
-
 		switch m := measured.(type) {
 		case bool:
 			v.env.SetBit(operand, m)
