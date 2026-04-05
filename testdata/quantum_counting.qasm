@@ -31,19 +31,19 @@ def diffuser(qubit c, qubit[4] r) {
 }
 
 def controlledG(qubit[4] r, qubit[4] s, qubit c, qubit a) {
-  oracle(r, s, c, a);
-  diffuser(c, r);
+    oracle(r, s, c, a);
+    diffuser(c, r);
 }
 
 def inv_qft(qubit[3] q) {
-  h q[2];
-  cr(-pi/2) q[2], q[1];
-  
-  h q[1];
-  cr(-pi/4) q[2], q[0];
-  cr(-pi/2) q[1], q[0];
-  
-  h q[0];
+    h q[2];
+    cr(-pi/2) q[2], q[1];
+
+    h q[1];
+    cr(-pi/4) q[2], q[0];
+    cr(-pi/2) q[1], q[0];
+
+    h q[0];
 }
 
 const int n = 3;
@@ -64,9 +64,9 @@ x a;
 h a;
 
 for int i in [0:n-1] {
-  for int j in [0:(1<<i)-1] {
-    controlledG(r, s, c[i], a);
-  }
+    for int j in [0:(1<<i)-1] {
+        controlledG(r, s, c[i], a);
+    }
 }
 
 inv_qft(c);

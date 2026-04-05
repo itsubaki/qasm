@@ -26,9 +26,7 @@ x q1;
 h q1;
 
 oracle(q0, q1);
-
 h q0;
-measure q0;
 
 // constant: 00 + 01
 // balanced: 10 + 11
