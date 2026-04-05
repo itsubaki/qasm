@@ -389,6 +389,11 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			want: "map[a:[true false false false true true true true]]",
 		},
 		{
+			text: `bit[2] c = "10"; c;`,
+			tree: `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 2) ])) c = (declarationExpression (expression "10")) ;))) (statementOrScope (statement (expressionStatement (expression c) ;))) <EOF>)`,
+			want: "map[c:[true false]]",
+		},
+		{
 			text: "bit[1] a = true;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) a = (declarationExpression (expression true)) ;))) <EOF>)",
 			want: "map[a:[true]]",
