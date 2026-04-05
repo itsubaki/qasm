@@ -20,16 +20,17 @@ import (
 )
 
 var (
-	ErrAlreadyDeclared      = errors.New("already declared")
-	ErrIdentifierNotFound   = errors.New("identifier not found")
-	ErrQubitNotFound        = errors.New("qubit not found")
-	ErrClassicalBitNotFound = errors.New("classical bit not found")
-	ErrVariableNotFound     = errors.New("variable not found")
-	ErrGateNotFound         = errors.New("gate not found")
-	ErrFunctionNotFound     = errors.New("function not found")
-	ErrTooManyQubits        = errors.New("too many qubits")
-	ErrUnexpected           = errors.New("unexpected")
-	ErrNotImplemented       = errors.New("not implemented")
+	ErrAlreadyDeclared    = errors.New("already declared")
+	ErrIdentifierNotFound = errors.New("identifier not found")
+	ErrQubitNotFound      = errors.New("qubit not found")
+	ErrBitNotFound        = errors.New("bit not found")
+	ErrVariableNotFound   = errors.New("variable not found")
+	ErrGateNotFound       = errors.New("gate not found")
+	ErrFunctionNotFound   = errors.New("function not found")
+	ErrTooManyQubits      = errors.New("too many qubits")
+	ErrBitWidthMismatch   = errors.New("bit width mismatch")
+	ErrUnexpected         = errors.New("unexpected")
+	ErrNotImplemented     = errors.New("not implemented")
 )
 
 type Visitor struct {
@@ -394,7 +395,12 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 
 	// qargs
 	if ctx.GateOperandList() != nil {
-		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		visited := v.Visit(ctx.GateOperandList())
+		if err, ok := visited.(error); ok {
+			return err
+		}
+
+		qargs := visited.([][]q.Qubit)
 		for i, id := range g.QArgs {
 			enclosed.env.Qubit[id] = qargs[i]
 		}
@@ -433,7 +439,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		// U(pi/2, 0, pi) c[0], c[1];
 		// ctrl @ U(pi, 0, pi) c, t;
 		// ctrl @ U(pi, 0, pi) c[0], t;
-		qargs := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		visited := v.Visit(ctx.GateOperandList())
+		if err, ok := visited.(error); ok {
+			return err
+		}
+
+		qargs := visited.([][]q.Qubit)
 		var ctrl, neg []q.Qubit
 		var cursor int
 		for _, mod := range ctx.AllGateModifier() {
@@ -485,7 +496,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	if ctx.GateOperandList() != nil {
 		// qubit q0; qubit q1; U q0, q1;
 		// qubit[2] q; U q;
-		operand := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		visited := v.Visit(ctx.GateOperandList())
+		if err, ok := visited.(error); ok {
+			return err
+		}
+
+		operand := visited.([][]q.Qubit)
 		for _, o := range operand {
 			qargs = append(qargs, o...)
 		}
@@ -507,22 +523,40 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 	}
 
 	operand := v.Visit(id.Identifier()).(string)
-	bits, ok := v.env.GetClassicalBit(operand)
-	if !ok {
-		return fmt.Errorf("operand=%s: %w", operand, ErrClassicalBitNotFound)
-	}
-
 	index := v.Visit(id).([]int64)
-	if len(index) == 0 {
-		copy(bits, measured.([]bool))
+
+	if bits, ok := v.env.GetBitArray(operand); ok {
+		var val []bool
+		switch m := measured.(type) {
+		case bool:
+			val = []bool{m}
+		case []bool:
+			val = m
+		}
+
+		if len(index) == 0 {
+			v.env.SetBitArray(operand, val)
+			return nil
+		}
+
+		for i, bit := range val {
+			bits[index[i]] = bit
+		}
+
 		return nil
 	}
 
-	for i, m := range measured.([]bool) {
-		bits[index[i]] = m
+	if _, ok := v.env.GetBit(operand); ok {
+		switch m := measured.(type) {
+		case bool:
+			v.env.SetBit(operand, m)
+			return nil
+		case []bool:
+			return fmt.Errorf("measure expression: %w", ErrBitWidthMismatch)
+		}
 	}
 
-	return nil
+	return fmt.Errorf("operand=%s: %w", operand, ErrBitNotFound)
 }
 
 func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) any {
@@ -536,7 +570,44 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 
 	id := ctx.IndexedIdentifier()
 	operand := v.Visit(id.Identifier()).(string)
+	index := v.Visit(id).([]int64)
 	x := v.Visit(ctx.Expression())
+
+	if bits, ok := v.env.GetBitArray(operand); ok {
+		var val []bool
+		switch m := x.(type) {
+		case bool:
+			val = []bool{m}
+		case []bool:
+			val = m
+		}
+
+		if len(index) == 0 {
+			v.env.SetBitArray(operand, val)
+			return nil
+		}
+
+		for i, bit := range val {
+			bits[index[i]] = bit
+		}
+
+		return nil
+	}
+
+	if _, ok := v.env.GetBit(operand); ok {
+		switch bit := x.(type) {
+		case bool:
+			v.env.SetBit(operand, bit)
+			return nil
+		case []bool:
+			if len(bit) != 1 {
+				return fmt.Errorf("expression: %w", ErrBitWidthMismatch)
+			}
+
+			v.env.SetBit(operand, bit[0])
+			return nil
+		}
+	}
 
 	v.env.SetVariable(operand, x)
 	return nil
@@ -630,6 +701,14 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		return nil
 	case ctx.ScalarType().BOOL() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.env.GetBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if _, ok := v.env.GetBitArray(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
 		if _, ok := v.env.GetVariable(id); ok {
 			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
 		}
@@ -643,6 +722,14 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		return nil
 	case ctx.ScalarType().ANGLE() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.env.GetBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if _, ok := v.env.GetBitArray(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
 		if _, ok := v.env.GetVariable(id); ok {
 			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
 		}
@@ -660,28 +747,60 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		return nil
 	case ctx.ScalarType().BIT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
-		if _, ok := v.env.GetClassicalBit(id); ok {
+		if _, ok := v.env.GetVariable(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if _, ok := v.env.GetBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if _, ok := v.env.GetBitArray(id); ok {
 			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
 		}
 
 		if ctx.DeclarationExpression() != nil {
-			var bits []bool
-			switch val := v.Visit(ctx.DeclarationExpression()).(type) {
-			case bool:
-				bits = []bool{val}
-			case []bool:
-				bits = val
+			x := v.Visit(ctx.DeclarationExpression())
+			switch {
+			case ctx.ScalarType().Designator() != nil:
+				switch bits := x.(type) {
+				case bool:
+					v.env.SetBitArray(id, []bool{bits})
+					return nil
+				case []bool:
+					v.env.SetBitArray(id, bits)
+					return nil
+				default:
+					return fmt.Errorf("declaration expression: %v(%T): %w", x, x, ErrUnexpected)
+				}
 			default:
-				return fmt.Errorf("declaration expression: %v(%T): %w", val, val, ErrUnexpected)
-			}
+				switch bit := x.(type) {
+				case bool:
+					v.env.SetBit(id, bit)
+					return nil
+				case []bool:
+					if len(bit) != 1 {
+						return fmt.Errorf("declaration expression: %w", ErrBitWidthMismatch)
+					}
 
-			v.env.ClassicalBit[id] = bits
-			return nil
+					v.env.SetBit(id, bit[0])
+					return nil
+				default:
+					return fmt.Errorf("declaration expression: %v(%T): %w", x, x, ErrUnexpected)
+				}
+			}
 		}
 
-		size := v.Visit(ctx.ScalarType()).(int64)
-		v.env.ClassicalBit[id] = make([]bool, int(size))
-		return nil
+		// default value
+		switch {
+		case ctx.ScalarType().Designator() != nil:
+			size := v.Visit(ctx.ScalarType()).(int64)
+			v.env.SetBitArray(id, make([]bool, int(size)))
+			return nil
+		default:
+			v.env.SetBit(id, false)
+			return nil
+		}
 	default:
 		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
 	}
@@ -747,7 +866,11 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 		return nil
 	case ctx.CREG() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
-		if _, ok := v.env.GetClassicalBit(id); ok {
+		if _, ok := v.env.GetBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if _, ok := v.env.GetBitArray(id); ok {
 			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
 		}
 
@@ -756,7 +879,7 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 			size = v.Visit(ctx.Designator()).(int64)
 		}
 
-		v.env.ClassicalBit[id] = make([]bool, int(size))
+		v.env.SetBitArray(id, make([]bool, int(size)))
 		return nil
 	default:
 		return fmt.Errorf("x=%s: %w", ctx.GetText(), ErrUnexpected)
@@ -779,11 +902,11 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 			return lit
 		}
 
-		if lit, ok := v.env.GetClassicalBit(s); ok {
-			if len(lit) == 1 {
-				return lit[0]
-			}
+		if lit, ok := v.env.GetBit(s); ok {
+			return lit
+		}
 
+		if lit, ok := v.env.GetBitArray(s); ok {
 			return lit
 		}
 
@@ -1207,6 +1330,10 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) a
 		bits = append(bits, v.qsim.State(q)[0].Int()[0] == 1)
 	}
 
+	if len(bits) == 1 {
+		return bits[0]
+	}
+
 	return bits
 }
 
@@ -1387,7 +1514,12 @@ func (v *Visitor) VisitIdentifierList(ctx *parser.IdentifierListContext) any {
 func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
 	var list [][]q.Qubit
 	for _, o := range ctx.AllGateOperand() {
-		list = append(list, v.Visit(o).([]q.Qubit))
+		visited := v.Visit(o)
+		if err, ok := visited.(error); ok {
+			return err
+		}
+
+		list = append(list, visited.([]q.Qubit))
 	}
 
 	return list

@@ -47,6 +47,54 @@ func ExampleEnviron_SetVariable() {
 	// enclosed: map[b:101]
 }
 
+func ExampleEnviron_SetBit() {
+	env := environ.New()
+
+	env.SetBit("a", true)
+	fmt.Println("env:", env.Bit)
+
+	enclosed := env.NewEnclosed()
+	enclosed.SetBit("a", false)
+	fmt.Println("env:", env.Bit)
+	fmt.Println("enclosed:", enclosed.Bit)
+
+	enclosed.SetBit("b", true)
+	enclosed.SetBit("b", false)
+	fmt.Println("env:", env.Bit)
+	fmt.Println("enclosed:", enclosed.Bit)
+
+	// Output:
+	// env: map[a:true]
+	// env: map[a:false]
+	// enclosed: map[]
+	// env: map[a:false]
+	// enclosed: map[b:false]
+}
+
+func ExampleEnviron_SetBitArray() {
+	env := environ.New()
+
+	env.SetBitArray("a", []bool{true, false})
+	fmt.Println("env:", env.BitArray)
+
+	enclosed := env.NewEnclosed()
+	enclosed.SetBitArray("a", []bool{false, true})
+	fmt.Println("env:", env.BitArray)
+	fmt.Println("enclosed:", enclosed.BitArray)
+
+	enclosed.SetBitArray("b", []bool{true, true})
+	enclosed.SetBitArray("b", []bool{false, false})
+	fmt.Println("env:", env.BitArray)
+	fmt.Println("enclosed:", enclosed.BitArray)
+
+	// Output:
+	// env: map[a:[true false]]
+	// env: map[a:[false true]]
+	// enclosed: map[]
+	// env: map[a:[false true]]
+	// enclosed: map[b:[false false]]
+}
+
 func ExampleEnviron_GetConst() {
 	env := environ.New()
 	env.Const["c0"] = 42
@@ -98,16 +146,33 @@ func ExampleEnviron_GetQubit() {
 	// [3 4] true
 }
 
-func ExampleEnviron_GetClassicalBit() {
+func ExampleEnviron_GetBit() {
 	env := environ.New()
-	env.ClassicalBit["c"] = []bool{true, false}
+	env.Bit["c"] = true
 
 	enclosed := env.NewEnclosed()
-	enclosed.ClassicalBit["d"] = []bool{false, true}
+	enclosed.Bit["d"] = false
 
-	fmt.Println(enclosed.GetClassicalBit("not found"))
-	fmt.Println(enclosed.GetClassicalBit("c"))
-	fmt.Println(enclosed.GetClassicalBit("d"))
+	fmt.Println(enclosed.GetBit("not found"))
+	fmt.Println(enclosed.GetBit("c"))
+	fmt.Println(enclosed.GetBit("d"))
+
+	// Output:
+	// false false
+	// true true
+	// false true
+}
+
+func ExampleEnviron_GetBitArray() {
+	env := environ.New()
+	env.BitArray["c"] = []bool{true, false}
+
+	enclosed := env.NewEnclosed()
+	enclosed.BitArray["d"] = []bool{false, true}
+
+	fmt.Println(enclosed.GetBitArray("not found"))
+	fmt.Println(enclosed.GetBitArray("c"))
+	fmt.Println(enclosed.GetBitArray("d"))
 
 	// Output:
 	// [] false
