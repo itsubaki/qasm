@@ -677,6 +677,14 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 		},
 		{
 			text: `
+				qubit[5] q;
+				let myreg = q[1];
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 5) ])) q ;))) (statementOrScope (statement (aliasDeclarationStatement let myreg = (aliasExpression (expression (expression q) (indexOperator [ (expression 1) ]))) ;))) <EOF>)",
+			want: "map[myreg:[1] q:[0 1 2 3 4]]",
+		},
+		{
+			text: `
 				qubit[2] one;
 				qubit[10] two;
 				let concatenated = one ++ two;
