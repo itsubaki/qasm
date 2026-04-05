@@ -6,15 +6,16 @@ import (
 )
 
 type Environ struct {
-	Version      string
-	Const        map[string]any
-	Variable     map[string]any
-	QubitOrder   []string
-	Qubit        map[string][]q.Qubit
-	ClassicalBit map[string][]bool
-	Gate         map[string]*Gate
-	Subroutine   map[string]*Subroutine
-	Outer        *Environ
+	Version    string
+	Const      map[string]any
+	Variable   map[string]any
+	QubitOrder []string
+	Qubit      map[string][]q.Qubit
+	BitArray   map[string][]bool
+	Bit        map[string]bool
+	Gate       map[string]*Gate
+	Subroutine map[string]*Subroutine
+	Outer      *Environ
 }
 
 type Gate struct {
@@ -33,12 +34,13 @@ type Subroutine struct {
 
 func New() *Environ {
 	return &Environ{
-		Const:        make(map[string]any),
-		Variable:     make(map[string]any),
-		Qubit:        make(map[string][]q.Qubit),
-		ClassicalBit: make(map[string][]bool),
-		Gate:         make(map[string]*Gate),
-		Subroutine:   make(map[string]*Subroutine),
+		Const:      make(map[string]any),
+		Variable:   make(map[string]any),
+		Qubit:      make(map[string][]q.Qubit),
+		Bit:        make(map[string]bool),
+		BitArray:   make(map[string][]bool),
+		Gate:       make(map[string]*Gate),
+		Subroutine: make(map[string]*Subroutine),
 	}
 }
 
@@ -100,16 +102,50 @@ func (e *Environ) SetQubit(name string, qubits []q.Qubit) {
 	e.QubitOrder = append(e.QubitOrder, name)
 }
 
-func (e *Environ) GetClassicalBit(name string) ([]bool, bool) {
-	if q, ok := e.ClassicalBit[name]; ok {
+func (e *Environ) GetBit(name string) (bool, bool) {
+	if q, ok := e.Bit[name]; ok {
 		return q, true
 	}
 
 	if e.Outer != nil {
-		return e.Outer.GetClassicalBit(name)
+		return e.Outer.GetBit(name)
+	}
+
+	return false, false
+}
+
+func (e *Environ) SetBit(name string, bit bool) {
+	for env := e; env != nil; env = env.Outer {
+		if _, ok := env.Bit[name]; ok {
+			env.Bit[name] = bit
+			return
+		}
+	}
+
+	e.Bit[name] = bit
+}
+
+func (e *Environ) GetBitArray(name string) ([]bool, bool) {
+	if q, ok := e.BitArray[name]; ok {
+		return q, true
+	}
+
+	if e.Outer != nil {
+		return e.Outer.GetBitArray(name)
 	}
 
 	return nil, false
+}
+
+func (e *Environ) SetBitArray(name string, bits []bool) {
+	for env := e; env != nil; env = env.Outer {
+		if _, ok := env.BitArray[name]; ok {
+			env.BitArray[name] = bits
+			return
+		}
+	}
+
+	e.BitArray[name] = bits
 }
 
 func (e *Environ) GetGate(name string) (*Gate, bool) {

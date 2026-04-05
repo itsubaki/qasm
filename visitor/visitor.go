@@ -507,22 +507,45 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 	}
 
 	operand := v.Visit(id.Identifier()).(string)
-	bits, ok := v.env.GetClassicalBit(operand)
-	if !ok {
-		return fmt.Errorf("operand=%s: %w", operand, ErrClassicalBitNotFound)
-	}
-
 	index := v.Visit(id).([]int64)
-	if len(index) == 0 {
-		copy(bits, measured.([]bool))
+
+	if bits, ok := v.env.GetBitArray(operand); ok {
+		var val []bool
+		switch m := measured.(type) {
+		case bool:
+			val = []bool{m}
+		case []bool:
+			val = m
+		}
+
+		if len(index) == 0 {
+			v.env.SetBitArray(operand, val)
+			return nil
+		}
+
+		for i, bit := range val {
+			bits[index[i]] = bit
+		}
+
 		return nil
 	}
 
-	for i, m := range measured.([]bool) {
-		bits[index[i]] = m
+	if _, ok := v.env.GetBit(operand); ok {
+		if len(index) != 0 {
+			return fmt.Errorf("operand=%s: %w", operand, ErrUnexpected)
+		}
+
+		switch m := measured.(type) {
+		case bool:
+			v.env.SetBit(operand, m)
+			return nil
+		case []bool:
+			v.env.SetBit(operand, m[0])
+			return nil
+		}
 	}
 
-	return nil
+	return fmt.Errorf("operand=%s: %w", operand, ErrClassicalBitNotFound)
 }
 
 func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) any {
@@ -536,7 +559,40 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 
 	id := ctx.IndexedIdentifier()
 	operand := v.Visit(id.Identifier()).(string)
+	index := v.Visit(id).([]int64)
 	x := v.Visit(ctx.Expression())
+
+	if bits, ok := v.env.GetBitArray(operand); ok {
+		var val []bool
+		switch m := x.(type) {
+		case bool:
+			val = []bool{m}
+		case []bool:
+			val = m
+		}
+
+		if len(index) == 0 {
+			v.env.SetBitArray(operand, val)
+			return nil
+		}
+
+		for i, bit := range val {
+			bits[index[i]] = bit
+		}
+
+		return nil
+	}
+
+	if _, ok := v.env.GetBit(operand); ok {
+		switch bit := x.(type) {
+		case bool:
+			v.env.SetBit(operand, bit)
+			return nil
+		case []bool:
+			v.env.SetBit(operand, bit[0])
+			return nil
+		}
+	}
 
 	v.env.SetVariable(operand, x)
 	return nil
@@ -630,6 +686,14 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		return nil
 	case ctx.ScalarType().BOOL() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.env.GetBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if _, ok := v.env.GetBitArray(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
 		if _, ok := v.env.GetVariable(id); ok {
 			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
 		}
@@ -643,6 +707,14 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		return nil
 	case ctx.ScalarType().ANGLE() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.env.GetBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if _, ok := v.env.GetBitArray(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
 		if _, ok := v.env.GetVariable(id); ok {
 			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
 		}
@@ -660,27 +732,52 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		return nil
 	case ctx.ScalarType().BIT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
-		if _, ok := v.env.GetClassicalBit(id); ok {
+		if _, ok := v.env.GetVariable(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if _, ok := v.env.GetBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if _, ok := v.env.GetBitArray(id); ok {
 			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
 		}
 
 		if ctx.DeclarationExpression() != nil {
-			var bits []bool
-			switch val := v.Visit(ctx.DeclarationExpression()).(type) {
-			case bool:
-				bits = []bool{val}
-			case []bool:
-				bits = val
-			default:
-				return fmt.Errorf("declaration expression: %v(%T): %w", val, val, ErrUnexpected)
+			x := v.Visit(ctx.DeclarationExpression())
+			if ctx.ScalarType().Designator() != nil {
+				switch bits := x.(type) {
+				case bool:
+					v.env.SetBitArray(id, []bool{bits})
+					return nil
+				case []bool:
+					v.env.SetBitArray(id, bits)
+					return nil
+				default:
+					return fmt.Errorf("declaration expression: %v(%T): %w", x, x, ErrUnexpected)
+				}
 			}
 
-			v.env.ClassicalBit[id] = bits
+			switch bit := x.(type) {
+			case bool:
+				v.env.SetBit(id, bit)
+				return nil
+			case []bool:
+				v.env.SetBit(id, bit[0])
+				return nil
+			default:
+				return fmt.Errorf("declaration expression: %v(%T): %w", x, x, ErrUnexpected)
+			}
+		}
+
+		if ctx.ScalarType().Designator() != nil {
+			size := v.Visit(ctx.ScalarType()).(int64)
+			v.env.SetBitArray(id, make([]bool, int(size)))
 			return nil
 		}
 
-		size := v.Visit(ctx.ScalarType()).(int64)
-		v.env.ClassicalBit[id] = make([]bool, int(size))
+		v.env.SetBit(id, false)
 		return nil
 	default:
 		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
@@ -747,7 +844,11 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 		return nil
 	case ctx.CREG() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
-		if _, ok := v.env.GetClassicalBit(id); ok {
+		if _, ok := v.env.GetBit(id); ok {
+			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
+		}
+
+		if _, ok := v.env.GetBitArray(id); ok {
 			return fmt.Errorf("identifier=%s: %w", id, ErrAlreadyDeclared)
 		}
 
@@ -756,7 +857,7 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 			size = v.Visit(ctx.Designator()).(int64)
 		}
 
-		v.env.ClassicalBit[id] = make([]bool, int(size))
+		v.env.SetBitArray(id, make([]bool, int(size)))
 		return nil
 	default:
 		return fmt.Errorf("x=%s: %w", ctx.GetText(), ErrUnexpected)
@@ -779,11 +880,11 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 			return lit
 		}
 
-		if lit, ok := v.env.GetClassicalBit(s); ok {
-			if len(lit) == 1 {
-				return lit[0]
-			}
+		if lit, ok := v.env.GetBit(s); ok {
+			return lit
+		}
 
+		if lit, ok := v.env.GetBitArray(s); ok {
 			return lit
 		}
 
@@ -1313,6 +1414,8 @@ func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
 		}
 	case scalar.BOOL() != nil:
 		return make([]bool, size)
+	case scalar.BIT() != nil:
+		return fmt.Errorf("scalar type=%s: %w", scalar.GetText(), ErrUnexpected)
 	default:
 		return fmt.Errorf("scalar type=%s: %w", scalar.GetText(), ErrUnexpected)
 	}

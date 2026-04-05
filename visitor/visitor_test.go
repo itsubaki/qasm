@@ -371,6 +371,11 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		{
 			text: "bit c;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) <EOF>)",
+			want: "map[c:false]",
+		},
+		{
+			text: "bit[1] c;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) c ;))) <EOF>)",
 			want: "map[c:[false]]",
 		},
 		{
@@ -386,7 +391,7 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		{
 			text: `qubit q; U(pi, 0, pi) q; bit c = measure q;`,
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q)))) ;))) <EOF>)",
-			want: "map[c:[true]]",
+			want: "map[c:true]",
 		},
 		{
 			text: "int ans = 42;",
@@ -531,8 +536,12 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			continue
 		}
 
-		if len(env.ClassicalBit) > 0 && fmt.Sprintf("%v", env.ClassicalBit) != c.want {
-			t.Errorf("got=%v, want=%v", env.ClassicalBit, c.want)
+		if len(env.Bit) > 0 && fmt.Sprintf("%v", env.Bit) != c.want {
+			t.Errorf("got=%v, want=%v", env.Bit, c.want)
+		}
+
+		if len(env.BitArray) > 0 && fmt.Sprintf("%v", env.BitArray) != c.want {
+			t.Errorf("got=%v, want=%v", env.BitArray, c.want)
 		}
 
 		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
@@ -718,8 +727,12 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 			continue
 		}
 
-		if len(env.ClassicalBit) > 0 && fmt.Sprintf("%v", env.ClassicalBit) != c.want {
-			t.Errorf("got=%v, want=%v", env.ClassicalBit, c.want)
+		if len(env.Bit) > 0 && fmt.Sprintf("%v", env.Bit) != c.want {
+			t.Errorf("got=%v, want=%v", env.Bit, c.want)
+		}
+
+		if len(env.BitArray) > 0 && fmt.Sprintf("%v", env.BitArray) != c.want {
+			t.Errorf("got=%v, want=%v", env.BitArray, c.want)
 		}
 
 		if len(env.Qubit) > 0 && fmt.Sprintf("%v", env.Qubit) != c.want {
@@ -730,9 +743,9 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 
 func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 	type Want struct {
-		classicalBit []string
-		qubit        []string
-		variable     []string
+		bit      []string
+		qubit    []string
+		variable []string
 	}
 
 	cases := []struct {
@@ -751,7 +764,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 			`,
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 2) ])) c ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (measureExpression measure (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
 			want: Want{
-				classicalBit: []string{
+				bit: []string{
 					"map[c:[false false]]",
 					"map[c:[true true]]",
 				},
@@ -772,7 +785,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 			`,
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 2) ])) c ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c (indexOperator [ (expression 0) ])) = (measureExpression measure (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c (indexOperator [ (expression 1) ])) = (measureExpression measure (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) <EOF>)",
 			want: Want{
-				classicalBit: []string{
+				bit: []string{
 					"map[c:[false false]]",
 					"map[c:[true true]]",
 				},
@@ -780,6 +793,20 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 					"[[00][  0]( 1.0000 0.0000i): 1.0000]",
 					"[[11][  3]( 1.0000 0.0000i): 1.0000]",
 				},
+			},
+		},
+		{
+			text: "bit c; c = true;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (expression true) ;))) <EOF>)",
+			want: Want{
+				bit: []string{"map[c:true]"},
+			},
+		},
+		{
+			text: "bit[1] c; c = true;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) c ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (expression true) ;))) <EOF>)",
+			want: Want{
+				bit: []string{"map[c:[true]]"},
 			},
 		},
 		{
@@ -826,16 +853,20 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 			continue
 		}
 
-		if len(c.want.classicalBit) != 0 {
+		if len(c.want.bit) != 0 {
 			var found bool
-			for _, w := range c.want.classicalBit {
-				if fmt.Sprintf("%v", env.ClassicalBit) == w {
+			for _, w := range c.want.bit {
+				if fmt.Sprintf("%v", env.Bit) == w {
+					found = true
+				}
+
+				if fmt.Sprintf("%v", env.BitArray) == w {
 					found = true
 				}
 			}
 
 			if !found {
-				t.Errorf("got=%v, want=%v", env.ClassicalBit, c.want.classicalBit)
+				t.Errorf("got=%v/%v, want=%v", env.Bit, env.BitArray, c.want.bit)
 			}
 		}
 
@@ -869,8 +900,8 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 
 func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 	type Want struct {
-		classicalBit []string
-		qubit        []string
+		bit   []string
+		qubit []string
 	}
 
 	cases := []struct {
@@ -888,7 +919,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 			`,
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 2) ])) c ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (measureArrowAssignmentStatement (measureExpression measure (gateOperand (indexedIdentifier q))) -> (indexedIdentifier c) ;))) <EOF>)",
 			want: Want{
-				classicalBit: []string{
+				bit: []string{
 					"map[c:[false false]]",
 					"map[c:[true true]]",
 				},
@@ -909,7 +940,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 			`,
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 2) ])) c ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ]))) , (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (measureArrowAssignmentStatement (measureExpression measure (gateOperand (indexedIdentifier q (indexOperator [ (expression 0) ])))) -> (indexedIdentifier c (indexOperator [ (expression 0) ])) ;))) (statementOrScope (statement (measureArrowAssignmentStatement (measureExpression measure (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) -> (indexedIdentifier c (indexOperator [ (expression 1) ])) ;))) <EOF>)",
 			want: Want{
-				classicalBit: []string{
+				bit: []string{
 					"map[c:[false false]]",
 					"map[c:[true true]]",
 				},
@@ -954,16 +985,20 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 			continue
 		}
 
-		if len(c.want.classicalBit) != 0 {
+		if len(c.want.bit) != 0 {
 			var found bool
-			for _, w := range c.want.classicalBit {
-				if fmt.Sprintf("%v", env.ClassicalBit) == w {
+			for _, w := range c.want.bit {
+				if fmt.Sprintf("%v", env.Bit) == w {
+					found = true
+				}
+
+				if fmt.Sprintf("%v", env.BitArray) == w {
 					found = true
 				}
 			}
 
 			if !found {
-				t.Errorf("got=%v, want=%v", env.ClassicalBit, c.want.classicalBit)
+				t.Errorf("got=%v/%v, want=%v", env.Bit, env.BitArray, c.want.bit)
 			}
 		}
 
@@ -2457,7 +2492,7 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 				bit c = xm(q);
 			`,
 			tree: "(program (statementOrScope (statement (defStatement def xm ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q1)) ) (returnSignature -> (scalarType bit)) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q1))) ;))) (statementOrScope (statement (returnStatement return (measureExpression measure (gateOperand (indexedIdentifier q1))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (expression xm ( (expressionList (expression q)) ))) ;))) <EOF>)",
-			want: "map[c:[true]]",
+			want: "map[c:true]",
 		},
 		{
 			text: `
@@ -2466,7 +2501,7 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 				bit c = xm(q);
 			`,
 			tree: "(program (statementOrScope (statement (defStatement def xm ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q1)) ) (returnSignature -> (scalarType bit)) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q1))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) m = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q1)))) ;))) (statementOrScope (statement (returnStatement return (expression m) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (expression xm ( (expressionList (expression q)) ))) ;))) <EOF>)",
-			want: "map[c:[true]]",
+			want: "map[c:true]",
 		},
 		{
 			text: `
@@ -2504,8 +2539,12 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 			continue
 		}
 
-		if len(c.want) > 0 && fmt.Sprintf("%v", env.ClassicalBit) != c.want {
-			t.Errorf("got=%v, want=%v", env.ClassicalBit, c.want)
+		if len(env.Bit) > 0 && fmt.Sprintf("%v", env.Bit) != c.want {
+			t.Errorf("got=%v, want=%v", env.Bit, c.want)
+		}
+
+		if len(env.BitArray) > 0 && fmt.Sprintf("%v", env.BitArray) != c.want {
+			t.Errorf("got=%v, want=%v", env.BitArray, c.want)
 		}
 	}
 }

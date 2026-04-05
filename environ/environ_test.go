@@ -98,16 +98,33 @@ func ExampleEnviron_GetQubit() {
 	// [3 4] true
 }
 
-func ExampleEnviron_GetClassicalBit() {
+func ExampleEnviron_GetBit() {
 	env := environ.New()
-	env.ClassicalBit["c"] = []bool{true, false}
+	env.Bit["c"] = true
 
 	enclosed := env.NewEnclosed()
-	enclosed.ClassicalBit["d"] = []bool{false, true}
+	enclosed.Bit["d"] = false
 
-	fmt.Println(enclosed.GetClassicalBit("not found"))
-	fmt.Println(enclosed.GetClassicalBit("c"))
-	fmt.Println(enclosed.GetClassicalBit("d"))
+	fmt.Println(enclosed.GetBit("not found"))
+	fmt.Println(enclosed.GetBit("c"))
+	fmt.Println(enclosed.GetBit("d"))
+
+	// Output:
+	// false false
+	// true true
+	// false true
+}
+
+func ExampleEnviron_GetBitArray() {
+	env := environ.New()
+	env.BitArray["c"] = []bool{true, false}
+
+	enclosed := env.NewEnclosed()
+	enclosed.BitArray["d"] = []bool{false, true}
+
+	fmt.Println(enclosed.GetBitArray("not found"))
+	fmt.Println(enclosed.GetBitArray("c"))
+	fmt.Println(enclosed.GetBitArray("d"))
 
 	// Output:
 	// [] false
