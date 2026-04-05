@@ -766,6 +766,11 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 			tree:   "(program (statementOrScope (statement (oldStyleDeclarationStatement creg c ;))) (statementOrScope (statement (oldStyleDeclarationStatement creg c ;))) <EOF>)",
 			errMsg: "identifier=c: already declared",
 		},
+		{
+			text:   "bit c; creg c;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (oldStyleDeclarationStatement creg c ;))) <EOF>)",
+			errMsg: "identifier=c: already declared",
+		},
 	}
 
 	for _, c := range cases {
