@@ -389,6 +389,16 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			want: "map[a:[true false false false true true true true]]",
 		},
 		{
+			text: "bit[1] a = true;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) a = (declarationExpression (expression true)) ;))) <EOF>)",
+			want: "map[a:[true]]",
+		},
+		{
+			text: `bit a = "1";`,
+			tree: `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a = (declarationExpression (expression "1")) ;))) <EOF>)`,
+			want: "map[a:true]",
+		},
+		{
 			text: `qubit q; U(pi, 0, pi) q; bit c = measure q;`,
 			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q)))) ;))) <EOF>)",
 			want: "map[c:true]",
@@ -509,13 +519,43 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			errMsg: "identifier=a: already declared",
 		},
 		{
+			text:   "bit a; bool a;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a ;))) <EOF>)",
+			errMsg: "identifier=a: already declared",
+		},
+		{
+			text:   "bit[1] a; bool a;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a ;))) <EOF>)",
+			errMsg: "identifier=a: already declared",
+		},
+		{
 			text:   "bit a; bit a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) <EOF>)",
 			errMsg: "identifier=a: already declared",
 		},
 		{
+			text:   "int a = 1; bit a;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) <EOF>)",
+			errMsg: "identifier=a: already declared",
+		},
+		{
+			text:   "bit[1] a; bit a;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) <EOF>)",
+			errMsg: "identifier=a: already declared",
+		},
+		{
 			text:   "angle[4] a; angle[4] a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a ;))) <EOF>)",
+			errMsg: "identifier=a: already declared",
+		},
+		{
+			text:   "bit a; angle[4] a;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a ;))) <EOF>)",
+			errMsg: "identifier=a: already declared",
+		},
+		{
+			text:   "bit[1] a; angle[4] a;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a ;))) <EOF>)",
 			errMsg: "identifier=a: already declared",
 		},
 		{
