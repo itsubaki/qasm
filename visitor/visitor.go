@@ -20,16 +20,16 @@ import (
 )
 
 var (
-	ErrAlreadyDeclared      = errors.New("already declared")
-	ErrIdentifierNotFound   = errors.New("identifier not found")
-	ErrQubitNotFound        = errors.New("qubit not found")
-	ErrClassicalBitNotFound = errors.New("classical bit not found")
-	ErrVariableNotFound     = errors.New("variable not found")
-	ErrGateNotFound         = errors.New("gate not found")
-	ErrFunctionNotFound     = errors.New("function not found")
-	ErrTooManyQubits        = errors.New("too many qubits")
-	ErrUnexpected           = errors.New("unexpected")
-	ErrNotImplemented       = errors.New("not implemented")
+	ErrAlreadyDeclared    = errors.New("already declared")
+	ErrIdentifierNotFound = errors.New("identifier not found")
+	ErrQubitNotFound      = errors.New("qubit not found")
+	ErrBitNotFound        = errors.New("bit not found")
+	ErrVariableNotFound   = errors.New("variable not found")
+	ErrGateNotFound       = errors.New("gate not found")
+	ErrFunctionNotFound   = errors.New("function not found")
+	ErrTooManyQubits      = errors.New("too many qubits")
+	ErrUnexpected         = errors.New("unexpected")
+	ErrNotImplemented     = errors.New("not implemented")
 )
 
 type Visitor struct {
@@ -541,7 +541,7 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 		}
 	}
 
-	return fmt.Errorf("operand=%s: %w", operand, ErrClassicalBitNotFound)
+	return fmt.Errorf("operand=%s: %w", operand, ErrBitNotFound)
 }
 
 func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) any {

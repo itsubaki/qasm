@@ -828,7 +828,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 				c = measure q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (measureExpression measure (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "operand=c: classical bit not found",
+			errMsg: "operand=c: bit not found",
 		},
 	}
 
