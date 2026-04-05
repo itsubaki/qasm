@@ -771,10 +771,6 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 			return lit
 		}
 
-		if lit, ok := v.env.GetConst(s); ok {
-			return lit
-		}
-
 		if lit, ok := v.env.GetVariable(s); ok {
 			return lit
 		}
@@ -788,6 +784,10 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 				return lit[0]
 			}
 
+			return lit
+		}
+
+		if lit, ok := v.env.GetConst(s); ok {
 			return lit
 		}
 
