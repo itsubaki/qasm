@@ -1440,8 +1440,6 @@ func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
 		}
 	case scalar.BOOL() != nil:
 		return make([]bool, size)
-	case scalar.BIT() != nil:
-		return fmt.Errorf("scalar type=%s: %w", scalar.GetText(), ErrUnexpected)
 	default:
 		return fmt.Errorf("scalar type=%s: %w", scalar.GetText(), ErrUnexpected)
 	}
