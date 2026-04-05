@@ -932,6 +932,32 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 	}{
 		{
 			text: `
+				qubit q;
+				bit c;
+				U(pi, 0, pi) q;
+				measure q -> c;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (measureArrowAssignmentStatement (measureExpression measure (gateOperand (indexedIdentifier q))) -> (indexedIdentifier c) ;))) <EOF>)",
+			want: Want{
+				bit:   []string{"map[c:true]"},
+				qubit: []string{"[[1][  1]( 1.0000 0.0000i): 1.0000]"},
+			},
+		},
+		{
+			text: `
+				qubit q;
+				bit[1] c;
+				U(pi, 0, pi) q;
+				measure q -> c;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) c ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (measureArrowAssignmentStatement (measureExpression measure (gateOperand (indexedIdentifier q))) -> (indexedIdentifier c) ;))) <EOF>)",
+			want: Want{
+				bit:   []string{"map[c:[true]]"},
+				qubit: []string{"[[1][  1]( 1.0000 0.0000i): 1.0000]"},
+			},
+		},
+		{
+			text: `
 				qubit[2] q;
 				bit[2] c;
 				U(pi/2.0, 0, pi) q[0];
@@ -1033,6 +1059,71 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 
 			if !found {
 				t.Errorf("got=%v, want=%v", qsim.State(), c.want.qubit)
+			}
+		}
+	}
+}
+
+func TestVisitor_VisitMeasureExpression(t *testing.T) {
+	cases := []struct {
+		text string
+		want any
+	}{
+		{
+			text: `
+				qubit q;
+				U(pi, 0, pi) q;
+				measure q;
+			`,
+			want: true,
+		},
+		{
+			text: `
+				qubit[2] q;
+				U(pi, 0, pi) q[0];
+				U(pi, 0, pi) q[1];
+				measure q;
+			`,
+			want: []bool{true, true},
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		statements := p.Program().AllStatementOrScope()
+
+		v := visitor.New(q.New(), environ.New())
+		for _, s := range statements[:len(statements)-1] {
+			if err := v.Run(s); err != nil {
+				t.Fatalf("got=%v, want no error", err)
+			}
+		}
+
+		got := v.Visit(statements[len(statements)-1].
+			Statement().
+			MeasureArrowAssignmentStatement().
+			MeasureExpression(),
+		)
+
+		switch want := c.want.(type) {
+		case bool:
+			bit, ok := got.(bool)
+			if !ok {
+				t.Fatalf("got=%T, want bool", got)
+			}
+
+			if bit != want {
+				t.Fatalf("got=%v, want=%v", bit, want)
+			}
+		case []bool:
+			bits, ok := got.([]bool)
+			if !ok {
+				t.Fatalf("got=%T, want []bool", got)
+			}
+
+			if fmt.Sprintf("%v", bits) != fmt.Sprintf("%v", want) {
+				t.Fatalf("got=%v, want=%v", bits, want)
 			}
 		}
 	}

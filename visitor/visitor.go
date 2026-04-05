@@ -1307,6 +1307,10 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) a
 		bits = append(bits, v.qsim.State(q)[0].Int()[0] == 1)
 	}
 
+	if len(bits) == 1 {
+		return bits[0]
+	}
+
 	return bits
 }
 
