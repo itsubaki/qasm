@@ -803,10 +803,31 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 			},
 		},
 		{
+			text: `bit c; c = "1";`,
+			tree: `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (expression "1") ;))) <EOF>)`,
+			want: Want{
+				bit: []string{"map[c:true]"},
+			},
+		},
+		{
 			text: "bit[1] c; c = true;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) c ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (expression true) ;))) <EOF>)",
 			want: Want{
 				bit: []string{"map[c:[true]]"},
+			},
+		},
+		{
+			text: `bit[2] c; c = "10";`,
+			tree: `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 2) ])) c ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (expression "10") ;))) <EOF>)`,
+			want: Want{
+				bit: []string{"map[c:[true false]]"},
+			},
+		},
+		{
+			text: `bit[2] c; c[0] = "1"; c[1] = "0";`,
+			tree: `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 2) ])) c ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c (indexOperator [ (expression 0) ])) = (expression "1") ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c (indexOperator [ (expression 1) ])) = (expression "0") ;))) <EOF>)`,
+			want: Want{
+				bit: []string{"map[c:[true false]]"},
 			},
 		},
 		{
