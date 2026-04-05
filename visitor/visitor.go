@@ -28,6 +28,7 @@ var (
 	ErrGateNotFound       = errors.New("gate not found")
 	ErrFunctionNotFound   = errors.New("function not found")
 	ErrTooManyQubits      = errors.New("too many qubits")
+	ErrBitWidthMismatch   = errors.New("bit width mismatch")
 	ErrUnexpected         = errors.New("unexpected")
 	ErrNotImplemented     = errors.New("not implemented")
 )
@@ -536,6 +537,10 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 			v.env.SetBit(operand, m)
 			return nil
 		case []bool:
+			if len(m) != 1 {
+				return fmt.Errorf("measure expression: %w", ErrBitWidthMismatch)
+			}
+
 			v.env.SetBit(operand, m[0])
 			return nil
 		}
@@ -585,6 +590,10 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 			v.env.SetBit(operand, bit)
 			return nil
 		case []bool:
+			if len(bit) != 1 {
+				return fmt.Errorf("expression: %w", ErrBitWidthMismatch)
+			}
+
 			v.env.SetBit(operand, bit[0])
 			return nil
 		}
@@ -760,6 +769,10 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 					v.env.SetBit(id, bit)
 					return nil
 				case []bool:
+					if len(bit) != 1 {
+						return fmt.Errorf("declaration expression: %w", ErrBitWidthMismatch)
+					}
+
 					v.env.SetBit(id, bit[0])
 					return nil
 				default:

@@ -394,6 +394,16 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			want: "map[c:true]",
 		},
 		{
+			text: `qubit[3] q; U(pi, 0, pi) q[1]; bit c = measure q[1];`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ]))))) ;))) <EOF>)",
+			want: "map[c:true]",
+		},
+		{
+			text:   `qubit[3] q; bit c = measure q;`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q)))) ;))) <EOF>)",
+			errMsg: "declaration expression: bit width mismatch",
+		},
+		{
 			text: "int ans = 42;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) ans = (declarationExpression (expression 42)) ;))) <EOF>)",
 			want: "map[ans:42]",
@@ -524,9 +534,8 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
 		}
 
-		qsim := q.New()
 		env := environ.New()
-		v := visitor.New(qsim, env)
+		v := visitor.New(q.New(), env)
 
 		if err := v.Run(tree); err != nil {
 			if err.Error() != c.errMsg {
@@ -810,6 +819,18 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 			},
 		},
 		{
+			text: `qubit[3] q; bit c; U(pi, 0, pi) q[1]; c = measure q[1];`,
+			tree: `(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (measureExpression measure (gateOperand (indexedIdentifier q (indexOperator [ (expression 1) ])))) ;))) <EOF>)`,
+			want: Want{
+				bit: []string{"map[c:true]"},
+			},
+		},
+		{
+			text:   `bit c; c = "10";`,
+			tree:   `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (expression "10") ;))) <EOF>)`,
+			errMsg: `expression: bit width mismatch`,
+		},
+		{
 			text: "bit[1] c; c = true;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) c ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (expression true) ;))) <EOF>)",
 			want: Want{
@@ -926,9 +947,10 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 	}
 
 	cases := []struct {
-		text string
-		tree string
-		want Want
+		text   string
+		tree   string
+		want   Want
+		errMsg string
 	}{
 		{
 			text: `
@@ -942,6 +964,15 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 				bit:   []string{"map[c:true]"},
 				qubit: []string{"[[1][  1]( 1.0000 0.0000i): 1.0000]"},
 			},
+		},
+		{
+			text: `
+				qubit[3] q;
+				bit c;
+				measure q -> c;
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (measureArrowAssignmentStatement (measureExpression measure (gateOperand (indexedIdentifier q))) -> (indexedIdentifier c) ;))) <EOF>)",
+			errMsg: "measure expression: bit width mismatch",
 		},
 		{
 			text: `
@@ -1028,7 +1059,10 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 		v := visitor.New(qsim, env)
 
 		if err := v.Run(tree); err != nil {
-			t.Errorf("got=%v, want no error", err)
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
+			}
+
 			continue
 		}
 
