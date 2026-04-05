@@ -742,7 +742,8 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 
 		if ctx.DeclarationExpression() != nil {
 			x := v.Visit(ctx.DeclarationExpression())
-			if ctx.ScalarType().Designator() != nil {
+			switch {
+			case ctx.ScalarType().Designator() != nil:
 				switch bits := x.(type) {
 				case bool:
 					v.env.SetBitArray(id, []bool{bits})
@@ -753,28 +754,30 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 				default:
 					return fmt.Errorf("declaration expression: %v(%T): %w", x, x, ErrUnexpected)
 				}
-			}
-
-			switch bit := x.(type) {
-			case bool:
-				v.env.SetBit(id, bit)
-				return nil
-			case []bool:
-				v.env.SetBit(id, bit[0])
-				return nil
 			default:
-				return fmt.Errorf("declaration expression: %v(%T): %w", x, x, ErrUnexpected)
+				switch bit := x.(type) {
+				case bool:
+					v.env.SetBit(id, bit)
+					return nil
+				case []bool:
+					v.env.SetBit(id, bit[0])
+					return nil
+				default:
+					return fmt.Errorf("declaration expression: %v(%T): %w", x, x, ErrUnexpected)
+				}
 			}
 		}
 
-		if ctx.ScalarType().Designator() != nil {
+		// default value
+		switch {
+		case ctx.ScalarType().Designator() != nil:
 			size := v.Visit(ctx.ScalarType()).(int64)
 			v.env.SetBitArray(id, make([]bool, int(size)))
 			return nil
+		default:
+			v.env.SetBit(id, false)
+			return nil
 		}
-
-		v.env.SetBit(id, false)
-		return nil
 	default:
 		return fmt.Errorf("scalar type=%s: %w", ctx.ScalarType().GetText(), ErrUnexpected)
 	}
