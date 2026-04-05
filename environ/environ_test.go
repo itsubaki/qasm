@@ -47,6 +47,54 @@ func ExampleEnviron_SetVariable() {
 	// enclosed: map[b:101]
 }
 
+func ExampleEnviron_SetBit() {
+	env := environ.New()
+
+	env.SetBit("a", true)
+	fmt.Println("env:", env.Bit)
+
+	enclosed := env.NewEnclosed()
+	enclosed.SetBit("a", false)
+	fmt.Println("env:", env.Bit)
+	fmt.Println("enclosed:", enclosed.Bit)
+
+	enclosed.SetBit("b", true)
+	enclosed.SetBit("b", false)
+	fmt.Println("env:", env.Bit)
+	fmt.Println("enclosed:", enclosed.Bit)
+
+	// Output:
+	// env: map[a:true]
+	// env: map[a:false]
+	// enclosed: map[]
+	// env: map[a:false]
+	// enclosed: map[b:false]
+}
+
+func ExampleEnviron_SetBitArray() {
+	env := environ.New()
+
+	env.SetBitArray("a", []bool{true, false})
+	fmt.Println("env:", env.BitArray)
+
+	enclosed := env.NewEnclosed()
+	enclosed.SetBitArray("a", []bool{false, true})
+	fmt.Println("env:", env.BitArray)
+	fmt.Println("enclosed:", enclosed.BitArray)
+
+	enclosed.SetBitArray("b", []bool{true, true})
+	enclosed.SetBitArray("b", []bool{false, false})
+	fmt.Println("env:", env.BitArray)
+	fmt.Println("enclosed:", enclosed.BitArray)
+
+	// Output:
+	// env: map[a:[true false]]
+	// env: map[a:[false true]]
+	// enclosed: map[]
+	// env: map[a:[false true]]
+	// enclosed: map[b:[false false]]
+}
+
 func ExampleEnviron_GetConst() {
 	env := environ.New()
 	env.Const["c0"] = 42
