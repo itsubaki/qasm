@@ -537,12 +537,7 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 			v.env.SetBit(operand, m)
 			return nil
 		case []bool:
-			if len(m) != 1 {
-				return fmt.Errorf("measure expression: %w", ErrBitWidthMismatch)
-			}
-
-			v.env.SetBit(operand, m[0])
-			return nil
+			return fmt.Errorf("measure expression: %w", ErrBitWidthMismatch)
 		}
 	}
 
