@@ -627,6 +627,11 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 			want: "map[q0:[0] q1:[1 2] q3:[3 4 5] q4:[6]]",
 		},
 		{
+			text:   "qubit[1.1] q;",
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 1.1) ])) q ;))) <EOF>)",
+			errMsg: "qubit[1.1]: unexpected",
+		},
+		{
 			text:   "qubit q; qubit q;",
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) <EOF>)",
 			errMsg: "identifier=q: already declared",
