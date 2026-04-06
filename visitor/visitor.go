@@ -1318,7 +1318,10 @@ func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) any {
 }
 
 func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) any {
-	qubit := v.Visit(ctx.Expression()).([]q.Qubit)
+	qubit, ok := v.Visit(ctx.Expression()).([]q.Qubit)
+	if !ok {
+		return fmt.Errorf("%v: %w", ctx.Expression().GetText(), ErrUnexpected)
+	}
 
 	var result []q.Qubit
 	for _, x := range ctx.IndexOperator().AllExpression() {
@@ -1379,7 +1382,12 @@ func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) a
 	var index []int64
 	for _, op := range ctx.AllIndexOperator() {
 		for _, val := range v.Visit(op).([]any) {
-			index = append(index, val.(int64))
+			idx, ok := val.(int64)
+			if !ok {
+				return fmt.Errorf("cast %v to int64: %w", val, ErrUnexpected)
+			}
+
+			index = append(index, idx)
 		}
 	}
 
@@ -1396,7 +1404,12 @@ func (v *Visitor) VisitGateModifier(ctx *parser.GateModifierContext) any {
 
 func (v *Visitor) VisitScalarType(ctx *parser.ScalarTypeContext) any {
 	if ctx.Designator() != nil {
-		return v.Visit(ctx.Designator()).(int64)
+		val, ok := v.Visit(ctx.Designator()).(int64)
+		if !ok {
+			return fmt.Errorf("%v: %w", ctx.Designator().GetText(), ErrUnexpected)
+		}
+
+		return val
 	}
 
 	return int64(1)
@@ -1404,7 +1417,12 @@ func (v *Visitor) VisitScalarType(ctx *parser.ScalarTypeContext) any {
 
 func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) any {
 	if ctx.Designator() != nil {
-		return v.Visit(ctx.Designator()).(int64)
+		val, ok := v.Visit(ctx.Designator()).(int64)
+		if !ok {
+			return fmt.Errorf("%v: %w", ctx.Designator().GetText(), ErrUnexpected)
+		}
+
+		return val
 	}
 
 	return int64(1)
