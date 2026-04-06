@@ -318,13 +318,17 @@ func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) any {
 func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, error) {
 	var params []float64
 	for _, e := range v.Visit(xlist).([]any) {
+		if err, ok := e.(error); ok && err != nil {
+			return nil, err
+		}
+
 		switch val := e.(type) {
 		case float64:
 			params = append(params, val)
 		case int64:
 			params = append(params, float64(val))
 		default:
-			return nil, fmt.Errorf("invalid param '%T(%v)'", e, val)
+			return nil, fmt.Errorf("invalid param '%T(%v)'", val, val)
 		}
 	}
 
