@@ -3476,6 +3476,55 @@ func TestVisitor_VisitQubitType(t *testing.T) {
 	}
 }
 
+func TestVisitor_VisitRangeExpression(t *testing.T) {
+	cases := []struct {
+		text   string
+		tree   string
+		want   []int64
+		errMsg string
+	}{
+		{
+			text:   "for int i in [true:9] { }",
+			tree:   "(program (statementOrScope (statement (forStatement for (scalarType int) i in [ (rangeExpression (expression true) : (expression 9)) ] (statementOrScope (scope { }))))) <EOF>)",
+			errMsg: "int64(true): unexpected type: bool",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		x := tree.StatementOrScope(0).
+			Statement().
+			ForStatement().
+			RangeExpression()
+
+		ctx, ok := x.(*parser.RangeExpressionContext)
+		if !ok {
+			t.Fatalf("range expression type=%T", x)
+		}
+
+		v := visitor.New(q.New(), environ.New())
+		result := v.VisitRangeExpression(ctx)
+		if err, ok := result.(error); ok {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
+			}
+
+			continue
+		}
+
+		if fmt.Sprintf("%v", result) != fmt.Sprintf("%v", c.want) {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
 func TestVisitor_VisitArrayType(t *testing.T) {
 	cases := []struct {
 		text   string
