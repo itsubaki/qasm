@@ -1296,10 +1296,9 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) any {
 	var list []int64
 	for _, x := range ctx.AllExpression() {
-		visited := v.Visit(x)
-		val, err := value.New(visited).Int64()
+		val, err := value.New(v.Visit(x)).Int64()
 		if err != nil {
-			return fmt.Errorf("int64(%v): %w", visited, err)
+			return fmt.Errorf("int64(%v): %w", x.GetText(), err)
 		}
 
 		list = append(list, val.Value().(int64))

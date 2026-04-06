@@ -1205,7 +1205,7 @@ func TestVisitor_VisitMeasureExpression(t *testing.T) {
 			}
 		}
 
-		got := v.Visit(statements[len(statements)-1].
+		x := v.Visit(statements[len(statements)-1].
 			Statement().
 			MeasureArrowAssignmentStatement().
 			MeasureExpression(),
@@ -1213,23 +1213,65 @@ func TestVisitor_VisitMeasureExpression(t *testing.T) {
 
 		switch want := c.want.(type) {
 		case bool:
-			bit, ok := got.(bool)
+			bit, ok := x.(bool)
 			if !ok {
-				t.Fatalf("got=%T, want bool", got)
+				t.Fatalf("got=%T, want bool", x)
 			}
 
 			if bit != want {
 				t.Fatalf("got=%v, want=%v", bit, want)
 			}
 		case []bool:
-			bits, ok := got.([]bool)
+			bits, ok := x.([]bool)
 			if !ok {
-				t.Fatalf("got=%T, want []bool", got)
+				t.Fatalf("got=%T, want []bool", x)
 			}
 
 			if fmt.Sprintf("%v", bits) != fmt.Sprintf("%v", want) {
 				t.Fatalf("got=%v, want=%v", bits, want)
 			}
+		}
+	}
+}
+
+func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
+		{
+			text: `
+				int a = 1;
+				bit c = measure a;
+			`,
+			errMsg: "operand=a: invalid operand",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		statements := p.Program().AllStatementOrScope()
+
+		v := visitor.New(q.New(), environ.New())
+		if err := v.Run(statements[0]); err != nil {
+			t.Fatalf("got=%v, want no error", err)
+		}
+
+		x := v.Visit(statements[1].
+			Statement().
+			ClassicalDeclarationStatement().
+			DeclarationExpression().
+			MeasureExpression(),
+		)
+
+		err, ok := x.(error)
+		if !ok {
+			t.Fatalf("got=%T, want error", x)
+		}
+
+		if err.Error() != c.errMsg {
+			t.Fatalf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
@@ -3262,6 +3304,55 @@ func TestVisitor_VisitIndexedIdentifier(t *testing.T) {
 		}
 
 		if fmt.Sprintf("%v", result) != fmt.Sprintf("%v", c.want) {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
+func TestVisitor_VisitIndexExpression(t *testing.T) {
+	cases := []struct {
+		text   string
+		tree   string
+		want   string
+		errMsg string
+	}{
+		{
+			text:   "int a = 1; a[0];",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (expressionStatement (expression (expression a) (indexOperator [ (expression 0) ])) ;))) <EOF>)",
+			errMsg: "a: unexpected",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		tree := p.Program()
+		if tree.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
+		}
+
+		x := tree.StatementOrScope(1).
+			Statement().
+			ExpressionStatement().
+			Expression()
+
+		ctx, ok := x.(*parser.IndexExpressionContext)
+		if !ok {
+			t.Fatalf("index expression type=%T", x)
+		}
+
+		v := visitor.New(q.New(), environ.New())
+		result := v.VisitIndexExpression(ctx)
+		if err, ok := result.(error); ok {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
+			}
+
+			continue
+		}
+
+		if fmt.Sprintf("%v", result) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
 	}
