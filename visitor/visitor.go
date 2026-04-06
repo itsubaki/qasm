@@ -29,6 +29,7 @@ var (
 	ErrFunctionNotFound   = errors.New("function not found")
 	ErrTooManyQubits      = errors.New("too many qubits")
 	ErrBitWidthMismatch   = errors.New("bit width mismatch")
+	ErrInvalidOperand     = errors.New("invalid operand")
 	ErrUnexpected         = errors.New("unexpected")
 	ErrNotImplemented     = errors.New("not implemented")
 )
@@ -73,14 +74,14 @@ func (v *Visitor) VisitTerminal(node antlr.TerminalNode) any {
 }
 
 func (v *Visitor) VisitErrorNode(node antlr.ErrorNode) any {
-	return fmt.Errorf("%s: %w", node.GetText(), ErrUnexpected)
+	return fmt.Errorf("%v: %w", node.GetText(), ErrUnexpected)
 }
 
 func (v *Visitor) VisitChildren(node antlr.RuleNode) any {
 	for _, c := range node.GetChildren() {
 		tree, ok := c.(antlr.ParseTree)
 		if !ok {
-			return fmt.Errorf("unexpected child type: %T: %w", c, ErrUnexpected)
+			return fmt.Errorf("unexpected child(%T): %w", c, ErrUnexpected)
 		}
 
 		if err := v.Run(tree); err != nil {
@@ -343,7 +344,7 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix,
 	if ctx.GPHASE() != nil {
 		params, err := v.Params(ctx.ExpressionList())
 		if err != nil {
-			return nil, false, fmt.Errorf("params: %w", err)
+			return nil, false, err
 		}
 
 		// u 2x2
@@ -357,7 +358,7 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix,
 		// params
 		params, err := v.Params(ctx.ExpressionList())
 		if err != nil {
-			return nil, false, fmt.Errorf("params: %w", err)
+			return nil, false, err
 		}
 
 		// u 2x2
@@ -385,7 +386,7 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 	if ctx.ExpressionList() != nil {
 		params, err := v.Params(ctx.ExpressionList())
 		if err != nil {
-			return fmt.Errorf("params: %w", err)
+			return err
 		}
 
 		for i, p := range g.Params {
@@ -395,12 +396,11 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 
 	// qargs
 	if ctx.GateOperandList() != nil {
-		visited := v.Visit(ctx.GateOperandList())
-		if err, ok := visited.(error); ok {
-			return err
+		qargs, ok := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		if !ok {
+			return fmt.Errorf("operand=%v: %w", ctx.GateOperandList().GetText(), ErrInvalidOperand)
 		}
 
-		qargs := visited.([][]q.Qubit)
 		for i, id := range g.QArgs {
 			enclosed.env.Qubit[id] = qargs[i]
 		}
@@ -411,7 +411,7 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 		call := s.Statement().GateCallStatement().(*parser.GateCallStatementContext)
 		result := enclosed.VisitGateCallStatement(call)
 		if err, ok := result.(error); ok && err != nil {
-			return fmt.Errorf("gate call (i=%d): %w", i, err)
+			return fmt.Errorf("gate call[%d]: %w", i, err)
 		}
 	}
 
@@ -439,12 +439,11 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		// U(pi/2, 0, pi) c[0], c[1];
 		// ctrl @ U(pi, 0, pi) c, t;
 		// ctrl @ U(pi, 0, pi) c[0], t;
-		visited := v.Visit(ctx.GateOperandList())
-		if err, ok := visited.(error); ok {
-			return err
+		qargs, ok := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		if !ok {
+			return fmt.Errorf("operand=%v: %w", ctx.GateOperandList().GetText(), ErrInvalidOperand)
 		}
 
-		qargs := visited.([][]q.Qubit)
 		var ctrl, neg []q.Qubit
 		var cursor int
 		for _, mod := range ctx.AllGateModifier() {
@@ -455,12 +454,22 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 				// NOTE: pow is not implemented with control modifier
 				return fmt.Errorf("pow with control modifier is not implemented: %w", ErrNotImplemented)
 			case mod.CTRL() != nil:
-				for range v.Visit(mod).(int64) {
+				n, ok := v.Visit(mod).(int64)
+				if !ok {
+					return fmt.Errorf("%v: %w", mod.GetText(), ErrUnexpected)
+				}
+
+				for range n {
 					ctrl = append(ctrl, qargs[cursor]...)
 					cursor++
 				}
 			case mod.NEGCTRL() != nil:
-				for range v.Visit(mod).(int64) {
+				n, ok := v.Visit(mod).(int64)
+				if !ok {
+					return fmt.Errorf("%v: %w", mod.GetText(), ErrUnexpected)
+				}
+
+				for range n {
 					ctrl = append(ctrl, qargs[cursor]...)
 					neg = append(neg, qargs[cursor]...)
 					cursor++
@@ -484,7 +493,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		case mod.POW() != nil:
 			p, err := value.New(v.Visit(mod)).Float64()
 			if err != nil {
-				return fmt.Errorf("cast to float64: %w", err)
+				return fmt.Errorf("%v: %w", mod.GetText(), err)
 			}
 
 			u = Pow(u, p.Value().(float64))
@@ -496,12 +505,11 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	if ctx.GateOperandList() != nil {
 		// qubit q0; qubit q1; U q0, q1;
 		// qubit[2] q; U q;
-		visited := v.Visit(ctx.GateOperandList())
-		if err, ok := visited.(error); ok {
-			return err
+		operand, ok := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
+		if !ok {
+			return fmt.Errorf("operand=%v: %w", ctx.GateOperandList().GetText(), ErrInvalidOperand)
 		}
 
-		operand := visited.([][]q.Qubit)
 		for _, o := range operand {
 			qargs = append(qargs, o...)
 		}
@@ -552,7 +560,7 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 			v.env.SetBit(operand, m)
 			return nil
 		case []bool:
-			return fmt.Errorf("measure expression: %w", ErrBitWidthMismatch)
+			return fmt.Errorf("bit length=%d: %w", len(m), ErrBitWidthMismatch)
 		}
 	}
 
@@ -601,7 +609,7 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 			return nil
 		case []bool:
 			if len(bit) != 1 {
-				return fmt.Errorf("expression: %w", ErrBitWidthMismatch)
+				return fmt.Errorf("bit length=%d: %w", len(bit), ErrBitWidthMismatch)
 			}
 
 			v.env.SetBit(operand, bit[0])
@@ -614,7 +622,11 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 }
 
 func (v *Visitor) VisitResetStatement(ctx *parser.ResetStatementContext) any {
-	qargs := v.Visit(ctx.GateOperand()).([]q.Qubit)
+	qargs, ok := v.Visit(ctx.GateOperand()).([]q.Qubit)
+	if !ok {
+		return fmt.Errorf("operand=%v: %w", ctx.GateOperand().GetText(), ErrInvalidOperand)
+	}
+
 	v.qsim.Reset(qargs...)
 	return nil
 }
@@ -771,7 +783,7 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 					v.env.SetBitArray(id, bits)
 					return nil
 				default:
-					return fmt.Errorf("declaration expression: %v(%T): %w", x, x, ErrUnexpected)
+					return fmt.Errorf("declaration=%v(%T): %w", x, x, ErrUnexpected)
 				}
 			default:
 				switch bit := x.(type) {
@@ -780,13 +792,13 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 					return nil
 				case []bool:
 					if len(bit) != 1 {
-						return fmt.Errorf("declaration expression: %w", ErrBitWidthMismatch)
+						return fmt.Errorf("declaration length=%d: %w", len(bit), ErrBitWidthMismatch)
 					}
 
 					v.env.SetBit(id, bit[0])
 					return nil
 				default:
-					return fmt.Errorf("declaration expression: %v(%T): %w", x, x, ErrUnexpected)
+					return fmt.Errorf("declaration=%v(%T): %w", x, x, ErrUnexpected)
 				}
 			}
 		}
@@ -919,7 +931,7 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 		s := v.Visit(ctx.DecimalIntegerLiteral()).(string)
 		lit, err := strconv.ParseInt(s, 10, 64)
 		if err != nil {
-			return fmt.Errorf("parse int: s=%s: %w", s, err)
+			return fmt.Errorf("parse int=%s: %w", s, err)
 		}
 
 		return lit
@@ -927,7 +939,7 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 		s := v.Visit(ctx.HexIntegerLiteral()).(string)
 		lit, err := strconv.ParseInt(s, 0, 64)
 		if err != nil {
-			return fmt.Errorf("parse int: s=%s: %w", s, err)
+			return fmt.Errorf("parse int=%s: %w", s, err)
 		}
 
 		return lit
@@ -935,7 +947,7 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 		s := v.Visit(ctx.FloatLiteral()).(string)
 		lit, err := strconv.ParseFloat(s, 64)
 		if err != nil {
-			return fmt.Errorf("parse float: s=%s: %w", s, err)
+			return fmt.Errorf("parse float=%s: %w", s, err)
 		}
 
 		return lit
@@ -943,7 +955,7 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 		s := v.Visit(ctx.BooleanLiteral()).(string)
 		lit, err := strconv.ParseBool(s)
 		if err != nil {
-			return fmt.Errorf("parse bool: s=%s: %w", s, err)
+			return fmt.Errorf("parse bool=%s: %w", s, err)
 		}
 
 		return lit
@@ -968,21 +980,21 @@ func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) any {
 	case ctx.ScalarType().INT() != nil:
 		v, err := value.New(val).Int()
 		if err != nil {
-			return fmt.Errorf("cast to int: %w", err)
+			return fmt.Errorf("int(%v): %w", val, err)
 		}
 
 		return v.Value()
 	case ctx.ScalarType().UINT() != nil:
 		v, err := value.New(val).UInt()
 		if err != nil {
-			return fmt.Errorf("cast to uint: %w", err)
+			return fmt.Errorf("uint(%v): %w", val, err)
 		}
 
 		return v.Value()
 	case ctx.ScalarType().FLOAT() != nil:
 		v, err := value.New(val).Float64()
 		if err != nil {
-			return fmt.Errorf("cast to float: %w", err)
+			return fmt.Errorf("float64(%v): %w", val, err)
 		}
 
 		return v.Value()
@@ -999,7 +1011,7 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 	if ctx.PLUS() != nil {
 		v, err := a.Add(b)
 		if err != nil {
-			return fmt.Errorf("add: %w", err)
+			return fmt.Errorf("%v+%v: %w", left, right, err)
 		}
 
 		return v.Value()
@@ -1008,7 +1020,7 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 	if ctx.MINUS() != nil {
 		v, err := a.Sub(b)
 		if err != nil {
-			return fmt.Errorf("sub: %w", err)
+			return fmt.Errorf("%v-%v: %w", left, right, err)
 		}
 
 		return v.Value()
@@ -1025,7 +1037,7 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 	if ctx.ASTERISK() != nil {
 		w, err := a.Mul(b)
 		if err != nil {
-			return fmt.Errorf("mul: %w", err)
+			return fmt.Errorf("%v*%v: %w", left, right, err)
 		}
 
 		return w.Value()
@@ -1034,7 +1046,7 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 	if ctx.SLASH() != nil {
 		w, err := a.Div(b)
 		if err != nil {
-			return fmt.Errorf("div: %w", err)
+			return fmt.Errorf("%v/%v: %w", left, right, err)
 		}
 
 		return w.Value()
@@ -1043,7 +1055,7 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 	if ctx.PERCENT() != nil {
 		w, err := a.Mod(b)
 		if err != nil {
-			return fmt.Errorf("mod: %w", err)
+			return fmt.Errorf("%v%%%v: %w", left, right, err)
 		}
 
 		return w.Value()
@@ -1062,14 +1074,14 @@ func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext)
 	case "==":
 		w, err := a.Eq(b)
 		if err != nil {
-			return fmt.Errorf("eq: %w", err)
+			return fmt.Errorf("%v==%v: %w", left, right, err)
 		}
 
 		return w.Value()
 	case "!=":
 		w, err := a.NotEq(b)
 		if err != nil {
-			return fmt.Errorf("not eq: %w", err)
+			return fmt.Errorf("%v!=%v: %w", left, right, err)
 		}
 
 		return w.Value()
@@ -1088,28 +1100,28 @@ func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionCont
 	case "<":
 		w, err := a.LessThan(b)
 		if err != nil {
-			return fmt.Errorf("less than: %w", err)
+			return fmt.Errorf("%v<%v: %w", left, right, err)
 		}
 
 		return w.Value()
 	case "<=":
 		w, err := a.LessThanOrEqual(b)
 		if err != nil {
-			return fmt.Errorf("less than or equal: %w", err)
+			return fmt.Errorf("%v<=%v: %w", left, right, err)
 		}
 
 		return w.Value()
 	case ">":
 		w, err := a.GreaterThan(b)
 		if err != nil {
-			return fmt.Errorf("greater than: %w", err)
+			return fmt.Errorf("%v>%v: %w", left, right, err)
 		}
 
 		return w.Value()
 	case ">=":
 		w, err := a.GreaterThanOrEqual(b)
 		if err != nil {
-			return fmt.Errorf("greater than or equal: %w", err)
+			return fmt.Errorf("%v>=%v: %w", left, right, err)
 		}
 
 		return w.Value()
@@ -1124,21 +1136,21 @@ func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) any {
 	case ctx.MINUS() != nil:
 		w, err := value.New(x).Negative()
 		if err != nil {
-			return fmt.Errorf("negate: %w", err)
+			return fmt.Errorf("negate(%v): %w", x, err)
 		}
 
 		return w.Value()
 	case ctx.EXCLAMATION_POINT() != nil:
 		w, err := value.New(x).BoolNot()
 		if err != nil {
-			return fmt.Errorf("boolean not: %w", err)
+			return fmt.Errorf("!%v: %w", x, err)
 		}
 
 		return w.Value()
 	case ctx.TILDE() != nil:
 		w, err := value.New(x).BitNot()
 		if err != nil {
-			return fmt.Errorf("bitwise not: %w", err)
+			return fmt.Errorf("~%v: %w", x, err)
 		}
 
 		return w.Value()
@@ -1154,7 +1166,7 @@ func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) any {
 
 	w, err := a.Pow(b)
 	if err != nil {
-		return fmt.Errorf("pow: %w", err)
+		return fmt.Errorf("%v**%v: %w", base, exp, err)
 	}
 
 	return w.Value()
@@ -1284,9 +1296,10 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) any {
 	var list []int64
 	for _, x := range ctx.AllExpression() {
-		val, err := value.New(v.Visit(x)).Int64()
+		visited := v.Visit(x)
+		val, err := value.New(visited).Int64()
 		if err != nil {
-			return fmt.Errorf("cast to int64: %w", err)
+			return fmt.Errorf("int64(%v): %w", visited, err)
 		}
 
 		list = append(list, val.Value().(int64))
@@ -1322,7 +1335,11 @@ func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) any {
 }
 
 func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) any {
-	qargs := v.Visit(ctx.GateOperand()).([]q.Qubit)
+	qargs, ok := v.Visit(ctx.GateOperand()).([]q.Qubit)
+	if !ok {
+		return fmt.Errorf("operand=%v: %w", ctx.GateOperand().GetText(), ErrInvalidOperand)
+	}
+
 	v.qsim.Measure(qargs...)
 
 	var bits []bool
@@ -1410,7 +1427,7 @@ func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
 		case 64:
 			return make([]int64, size)
 		default:
-			return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
+			return fmt.Errorf("bit size=%d: %w", bits, ErrUnexpected)
 		}
 
 	case scalar.UINT() != nil:
@@ -1425,7 +1442,7 @@ func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
 		case 64:
 			return make([]uint64, size)
 		default:
-			return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
+			return fmt.Errorf("bit size=%d: %w", bits, ErrUnexpected)
 		}
 
 	case scalar.FLOAT() != nil:
@@ -1436,7 +1453,7 @@ func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
 		case 64:
 			return make([]float64, size)
 		default:
-			return fmt.Errorf("invalid bit size=%d: %w", bits, ErrUnexpected)
+			return fmt.Errorf("bit size=%d: %w", bits, ErrUnexpected)
 		}
 	case scalar.BOOL() != nil:
 		return make([]bool, size)
@@ -1514,12 +1531,12 @@ func (v *Visitor) VisitIdentifierList(ctx *parser.IdentifierListContext) any {
 func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
 	var list [][]q.Qubit
 	for _, o := range ctx.AllGateOperand() {
-		visited := v.Visit(o)
-		if err, ok := visited.(error); ok {
-			return err
+		operand, ok := v.Visit(o).([]q.Qubit)
+		if !ok {
+			return fmt.Errorf("operand=%v: %w", o.GetText(), ErrInvalidOperand)
 		}
 
-		list = append(list, visited.([]q.Qubit))
+		list = append(list, operand)
 	}
 
 	return list

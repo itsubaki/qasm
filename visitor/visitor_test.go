@@ -416,7 +416,7 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		{
 			text:   `qubit[3] q; bit c = measure q;`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q)))) ;))) <EOF>)",
-			errMsg: "declaration expression: bit width mismatch",
+			errMsg: "declaration length=3: bit width mismatch",
 		},
 		{
 			text: "int ans = 42;",
@@ -566,7 +566,7 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		{
 			text:   `bit[8] a = 3.14;`,
 			tree:   `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 8) ])) a = (declarationExpression (expression 3.14)) ;))) <EOF>)`,
-			errMsg: "declaration expression: 3.14(float64): unexpected",
+			errMsg: "declaration=3.14(float64): unexpected",
 		},
 	}
 
@@ -886,7 +886,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 		{
 			text:   `bit c; c = "10";`,
 			tree:   `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (expression "10") ;))) <EOF>)`,
-			errMsg: `expression: bit width mismatch`,
+			errMsg: `bit length=2: bit width mismatch`,
 		},
 		{
 			text: "bit[1] c; c = true;",
@@ -1030,7 +1030,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 				measure q -> c;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (measureArrowAssignmentStatement (measureExpression measure (gateOperand (indexedIdentifier q))) -> (indexedIdentifier c) ;))) <EOF>)",
-			errMsg: "measure expression: bit width mismatch",
+			errMsg: "bit length=3: bit width mismatch",
 		},
 		{
 			text: `
@@ -2188,7 +2188,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				gphase(true);
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement gphase ( (expressionList (expression true)) ) ;))) <EOF>)",
-			errMsg: "builtin: params: param=true(bool): unexpected",
+			errMsg: "builtin: param=true(bool): unexpected",
 		},
 		{
 			text: `
@@ -2196,7 +2196,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				U(true, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression true) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "builtin: params: param=true(bool): unexpected",
+			errMsg: "builtin: param=true(bool): unexpected",
 		},
 		{
 			text: `
@@ -2212,7 +2212,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				U(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "operand=q: qubit not found",
+			errMsg: "operand=q: invalid operand",
 		},
 	}
 
@@ -2600,7 +2600,7 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				pow(true) @ U(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression true) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "cast to float64: unexpected type: bool",
+			errMsg: "pow(true)@: unexpected type: bool",
 		},
 		{
 			text: `
