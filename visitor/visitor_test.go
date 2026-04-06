@@ -568,6 +568,11 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			tree:   `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 8) ])) a = (declarationExpression (expression 3.14)) ;))) <EOF>)`,
 			errMsg: `assign 3.14(float64) to "a"`,
 		},
+		{
+			text:   `bit a = 3.14;`,
+			tree:   `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a = (declarationExpression (expression 3.14)) ;))) <EOF>)`,
+			errMsg: `assign 3.14(float64) to "a"`,
+		},
 	}
 
 	for _, c := range cases {
