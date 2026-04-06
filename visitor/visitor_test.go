@@ -1276,6 +1276,46 @@ func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
 	}
 }
 
+func TestVisitor_VisitResetStatement(t *testing.T) {
+	cases := []struct {
+		text   string
+		tree   string
+		errMsg string
+	}{
+		{
+			text:   "int a = 1; reset a;",
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (resetStatement reset (gateOperand (indexedIdentifier a)) ;))) <EOF>)",
+			errMsg: "operand=a: invalid operand",
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		program := p.Program()
+		statements := program.AllStatementOrScope()
+
+		if program.ToStringTree(nil, p) != c.tree {
+			t.Errorf("got=%v, want=%v", program.ToStringTree(nil, p), c.tree)
+		}
+
+		v := visitor.New(q.New(), environ.New())
+		if err := v.Run(statements[0]); err != nil {
+			t.Fatalf("got=%v, want no error", err)
+		}
+
+		x := v.Visit(statements[1].Statement().ResetStatement())
+		err, ok := x.(error)
+		if !ok {
+			t.Fatalf("got=%T, want error", x)
+		}
+
+		if err.Error() != c.errMsg {
+			t.Fatalf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
 func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
 	cases := []struct {
 		text string
