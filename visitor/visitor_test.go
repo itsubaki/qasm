@@ -40,43 +40,6 @@ func Example_comment() {
 	// end;
 }
 
-func ExampleVisitor_index() {
-	text := `
-	OPENQASM 3.0;
-	include "../testdata/stdgates.qasm";
-
-	qubit q0;
-	qubit[2] q1;
-	qubit[2] q2;
-
-	x q1;
-	h q2;
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	qsim := q.New()
-	env := environ.New()
-	v := visitor.New(qsim, env)
-
-	if err := v.Run(p.Program()); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	qstate := qsim.Qubit().State(env.Index()...)
-	for _, s := range qstate {
-		fmt.Println(s)
-	}
-
-	// Output:
-	// [0 11 00][  0   3   0]( 0.5000 0.0000i): 0.2500
-	// [0 11 01][  0   3   1]( 0.5000 0.0000i): 0.2500
-	// [0 11 10][  0   3   2]( 0.5000 0.0000i): 0.2500
-	// [0 11 11][  0   3   3]( 0.5000 0.0000i): 0.2500
-}
-
 func ExampleVisitor_Run() {
 	text := `
 	OPENQASM 3.0;
@@ -345,7 +308,7 @@ func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 			continue
 		}
 
-		if len(env.Const) > 0 && fmt.Sprintf("%v", env.Const) != c.want {
+		if fmt.Sprintf("%v", env.Const) != c.want {
 			t.Errorf("got=%v, want=%v", env.Const, c.want)
 		}
 	}
@@ -586,7 +549,6 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 
 		env := environ.New()
 		v := visitor.New(q.New(), env)
-
 		if err := v.Run(tree); err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
@@ -652,10 +614,8 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
 		}
 
-		qsim := q.New()
 		env := environ.New()
-		v := visitor.New(qsim, env)
-
+		v := visitor.New(q.New(), env)
 		if err := v.Run(tree); err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
@@ -721,10 +681,8 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
 		}
 
-		qsim := q.New()
 		env := environ.New()
-		v := visitor.New(qsim, env)
-
+		v := visitor.New(q.New(), env)
 		if err := v.Run(tree); err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
@@ -792,10 +750,8 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
 		}
 
-		qsim := q.New()
 		env := environ.New()
-		v := visitor.New(qsim, env)
-
+		v := visitor.New(q.New(), env)
 		if err := v.Run(tree); err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
@@ -963,7 +919,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 			continue
 		}
 
-		if len(c.want.bit) != 0 {
+		if len(c.want.bit) > 0 {
 			var found bool
 			for _, w := range c.want.bit {
 				if fmt.Sprintf("%v", env.Bit) == w {
@@ -980,7 +936,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 			}
 		}
 
-		if len(c.want.qubit) != 0 {
+		if len(c.want.qubit) > 0 {
 			var found bool
 			for _, w := range c.want.qubit {
 				if fmt.Sprintf("%v", qsim.State()) == w {
@@ -993,7 +949,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 			}
 		}
 
-		if len(c.want.variable) != 0 {
+		if len(c.want.variable) > 0 {
 			var found bool
 			for _, w := range c.want.variable {
 				if fmt.Sprintf("%v", env.Variable) == w {
@@ -1138,7 +1094,6 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 		qsim := q.New()
 		env := environ.New()
 		v := visitor.New(qsim, env)
-
 		if err := v.Run(tree); err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
@@ -1147,7 +1102,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 			continue
 		}
 
-		if len(c.want.bit) != 0 {
+		if len(c.want.bit) > 0 {
 			var found bool
 			for _, w := range c.want.bit {
 				if fmt.Sprintf("%v", env.Bit) == w {
@@ -1164,7 +1119,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 			}
 		}
 
-		if len(c.want.qubit) != 0 {
+		if len(c.want.qubit) > 0 {
 			var found bool
 			for _, w := range c.want.qubit {
 				if fmt.Sprintf("%v", qsim.State()) == w {
@@ -1538,10 +1493,8 @@ func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
 		}
 
-		qsim := q.New()
 		env := environ.New()
-		v := visitor.New(qsim, env)
-
+		v := visitor.New(q.New(), env)
 		result := v.Visit(tree)
 		if err, ok := result.(error); ok && err != nil {
 			if err.Error() != c.errMsg {
@@ -1746,11 +1699,7 @@ func TestVisitor_VisitLogicalOrExpression(t *testing.T) {
 			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
 		}
 
-		qsim := q.New()
-		env := environ.New()
-		v := visitor.New(qsim, env)
-
-		result := v.Visit(tree)
+		result := visitor.New(q.New(), environ.New()).Visit(tree)
 		if result.(bool) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1852,11 +1801,7 @@ func TestVisitor_VisitBitwiseOrExpression(t *testing.T) {
 			t.Errorf("got=%v, want=%v", tree.ToStringTree(nil, p), c.tree)
 		}
 
-		qsim := q.New()
-		env := environ.New()
-		v := visitor.New(qsim, env)
-
-		result := v.Visit(tree)
+		result := visitor.New(q.New(), environ.New()).Visit(tree)
 		if result.(int64) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -2916,7 +2861,7 @@ func TestVisitor_VisitIfStatement(t *testing.T) {
 			continue
 		}
 
-		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -2987,7 +2932,7 @@ func TestVisitor_VisitForStatement(t *testing.T) {
 			continue
 		}
 
-		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -3031,7 +2976,7 @@ func TestVisitor_VisitBreakStatement(t *testing.T) {
 			continue
 		}
 
-		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -3075,7 +3020,7 @@ func TestVisitor_VisitContinueStatement(t *testing.T) {
 			continue
 		}
 
-		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -3175,7 +3120,7 @@ func TestVisitor_VisitWhileStatement(t *testing.T) {
 			continue
 		}
 
-		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -3262,7 +3207,7 @@ func TestVisitor_VisitSwitchStatement(t *testing.T) {
 			continue
 		}
 
-		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -3361,7 +3306,7 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 			continue
 		}
 
-		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -3745,7 +3690,7 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 			continue
 		}
 
-		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
@@ -3784,7 +3729,7 @@ func TestVisitor_VisitArrayLiteral(t *testing.T) {
 			continue
 		}
 
-		if len(c.want) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+		if fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
 		}
 	}
