@@ -891,7 +891,7 @@ func TestVisitor_VisitResetStatement(t *testing.T) {
 		},
 		{
 			text:   "int a = 1; reset a;",
-			errMsg: `operand "a": invalid operand`,
+			errMsg: `invalid operand "a"`,
 		},
 	}
 
@@ -1640,7 +1640,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				qubit t;
 				ctrl @ U(pi, 0, pi) a, t;
 			`,
-			errMsg: `operand "a,t": invalid operand`,
+			errMsg: `invalid operand "a,t"`,
 		},
 		{
 			text: `
@@ -1660,7 +1660,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		},
 		{
 			text:   `U(pi, 0, pi) q;`,
-			errMsg: `operand "q": invalid operand`,
+			errMsg: `invalid operand "q"`,
 		},
 	}
 
@@ -1699,7 +1699,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		},
 		{
 			text:   `qubit[2] q; myg(pi, 0, pi) q;`,
-			errMsg: `use gate "myg": undefined`,
+			errMsg: `gate "myg": undefined`,
 		},
 		{
 			text: `
@@ -1772,7 +1772,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				int a = 1;
 				myg a;
 			`,
-			errMsg: `operand "a": invalid operand`,
+			errMsg: `invalid operand "a"`,
 		},
 		{
 			text: `
@@ -1780,7 +1780,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				qubit q;
 				myg q;
 			`,
-			errMsg: `gate call[0]: use gate "myx": undefined`,
+			errMsg: `gate call[0]: gate "myx": undefined`,
 		},
 		{
 			text: `
@@ -2131,7 +2131,7 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 				qubit q;
 				xm(q);
 			`,
-			errMsg: `use subroutine "xm": undefined`,
+			errMsg: `subroutine "xm": undefined`,
 		},
 		{
 			text:   "def f(qubit q) -> bit { return 1; } def f(qubit q) -> bit { return 0; }",
@@ -2596,7 +2596,7 @@ func TestVisitor_VisitIndexExpression(t *testing.T) {
 	}{
 		{
 			text:   "int a = 1; a[0];",
-			errMsg: `operand "a": invalid operand`,
+			errMsg: `invalid operand "a"`,
 		},
 	}
 
@@ -2962,7 +2962,7 @@ func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
 	}{
 		{
 			text:   "int a = 1; bit c = measure a;",
-			errMsg: `operand "a": invalid operand`,
+			errMsg: `invalid operand "a"`,
 		},
 	}
 
