@@ -22,8 +22,8 @@ import (
 var (
 	ErrAlreadyDeclared = errors.New("already declared")
 	ErrUndefined       = errors.New("undefined")
-	ErrTooManyQubits   = errors.New("too many qubits")
 	ErrInvalidOperand  = errors.New("invalid operand")
+	ErrTooManyQubits   = errors.New("too many qubits")
 	ErrNotImplemented  = errors.New("not implemented")
 )
 
