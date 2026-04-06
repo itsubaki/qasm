@@ -3216,6 +3216,26 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 			want: "map[a:42]",
 		},
 		{
+			text: "bool a = true; int b = int(a);",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a = (declarationExpression (expression true)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) b = (declarationExpression (expression (scalarType int) ( (expression a) ))) ;))) <EOF>)",
+			want: "map[a:true b:int(true): unexpected type: bool]",
+		},
+		{
+			text: "bool a = true; uint b = uint(a);",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a = (declarationExpression (expression true)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType uint) b = (declarationExpression (expression (scalarType uint) ( (expression a) ))) ;))) <EOF>)",
+			want: "map[a:true b:uint(true): unexpected type: bool]",
+		},
+		{
+			text: "bool a = true; float b = float(a);",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a = (declarationExpression (expression true)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType float) b = (declarationExpression (expression (scalarType float) ( (expression a) ))) ;))) <EOF>)",
+			want: "map[a:true b:float64(true): unexpected type: bool]",
+		},
+		{
+			text: "bool a = bool(1);",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a = (declarationExpression (expression (scalarType bool) ( (expression 1) ))) ;))) <EOF>)",
+			want: "map[a:scalar type=bool: unexpected]",
+		},
+		{
 			text: "int[32] a = 42;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int (designator [ (expression 32) ])) a = (declarationExpression (expression 42)) ;))) <EOF>)",
 			want: "map[a:42]",
