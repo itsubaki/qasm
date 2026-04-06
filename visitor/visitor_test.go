@@ -2256,6 +2256,24 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		},
 		{
 			text: `
+				qubit c;
+				qubit t;
+				ctrl(true) @ U(pi, 0, pi) c, t;
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) c ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) t ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl ( (expression true) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier c)) , (gateOperand (indexedIdentifier t))) ;))) <EOF>)",
+			errMsg: "ctrl(true)@: unexpected",
+		},
+		{
+			text: `
+				qubit c;
+				qubit t;
+				negctrl(true) @ U(pi, 0, pi) c, t;
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) c ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) t ;))) (statementOrScope (statement (gateCallStatement (gateModifier negctrl ( (expression true) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier c)) , (gateOperand (indexedIdentifier t))) ;))) <EOF>)",
+			errMsg: "negctrl(true)@: unexpected",
+		},
+		{
+			text: `
 				U(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
