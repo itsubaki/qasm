@@ -24,7 +24,6 @@ var (
 	ErrUndefined       = errors.New("undefined")
 	ErrTooManyQubits   = errors.New("too many qubits")
 	ErrInvalidOperand  = errors.New("invalid operand")
-	ErrUnexpected      = errors.New("unexpected")
 	ErrNotImplemented  = errors.New("not implemented")
 )
 
@@ -68,7 +67,7 @@ func (v *Visitor) VisitTerminal(node antlr.TerminalNode) any {
 }
 
 func (v *Visitor) VisitErrorNode(node antlr.ErrorNode) any {
-	return fmt.Errorf("%v: %w", node.GetText(), ErrUnexpected)
+	return node.GetText()
 }
 
 func (v *Visitor) VisitChildren(node antlr.RuleNode) any {
@@ -1022,7 +1021,7 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 		return v.Value()
 	}
 
-	return fmt.Errorf("unexpected operator=%q: %w", ctx.GetText(), ErrUnexpected)
+	return fmt.Errorf("unsupported operator %q", ctx.GetText())
 }
 
 func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpressionContext) any {
@@ -1315,7 +1314,7 @@ func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) any {
 func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) any {
 	qubit, ok := v.Visit(ctx.Expression()).([]q.Qubit)
 	if !ok {
-		return fmt.Errorf("%v: %w", ctx.Expression().GetText(), ErrUnexpected)
+		return fmt.Errorf("operand %q: %w", ctx.Expression().GetText(), ErrInvalidOperand)
 	}
 
 	var result []q.Qubit

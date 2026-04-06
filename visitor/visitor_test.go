@@ -297,7 +297,7 @@ func ExampleVisitor_VisitErrorNode() {
 	fmt.Println(v.VisitErrorNode(antlr.NewErrorNodeImpl(token)))
 
 	// Output:
-	// something went wrong: unexpected
+	// something went wrong
 }
 
 func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
@@ -3405,7 +3405,7 @@ func TestVisitor_VisitIndexExpression(t *testing.T) {
 		{
 			text:   "int a = 1; a[0];",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (expressionStatement (expression (expression a) (indexOperator [ (expression 0) ])) ;))) <EOF>)",
-			errMsg: "a: unexpected",
+			errMsg: `operand "a": invalid operand`,
 		},
 	}
 
