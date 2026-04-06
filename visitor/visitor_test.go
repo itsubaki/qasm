@@ -2247,6 +2247,15 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		},
 		{
 			text: `
+				int a = 1;
+				qubit t;
+				ctrl @ U(pi, 0, pi) a, t;
+			`,
+			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) t ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier a)) , (gateOperand (indexedIdentifier t))) ;))) <EOF>)",
+			errMsg: "operand=a,t: invalid operand",
+		},
+		{
+			text: `
 				U(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
