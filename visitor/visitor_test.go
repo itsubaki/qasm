@@ -137,6 +137,42 @@ func ExampleVisitor_VisitErrorNode() {
 	// something went wrong
 }
 
+func TestVisitor_VisitChildren(t *testing.T) {
+	cases := []struct {
+		text   string
+		want   string
+		errMsg string
+	}{
+		{
+			text: "OPENQASM 3.0; const int a = 42;",
+			want: "map[a:42]",
+		},
+		{
+			text:   "const int a = 42; const int a = 43;",
+			errMsg: `declare const "a": already declared`,
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		env := environ.New()
+		result := visitor.New(q.New(), env).VisitChildren(p.Program())
+		if err, ok := result.(error); ok && err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
+			}
+
+			continue
+		}
+
+		if fmt.Sprintf("%v", env.Const) != c.want {
+			t.Errorf("got=%v, want=%v", env.Const, c.want)
+		}
+	}
+}
+
 func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 	cases := []struct {
 		text   string
