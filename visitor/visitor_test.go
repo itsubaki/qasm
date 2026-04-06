@@ -141,37 +141,6 @@ func ExampleVisitor_VisitVersion() {
 	// 3.0
 }
 
-func ExampleVisitor_VisitResetStatement() {
-	text := `
-	qubit q;
-	U(pi/2, 0, pi) q;
-	reset q;
-	`
-
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	tree := p.Program()
-	fmt.Println(tree.ToStringTree(nil, p))
-
-	qsim := q.New()
-	env := environ.New()
-	v := visitor.New(qsim, env)
-
-	if err := v.Run(tree); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	for _, s := range qsim.State() {
-		fmt.Println(s)
-	}
-
-	// Output:
-	// (program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (resetStatement reset (gateOperand (indexedIdentifier q)) ;))) <EOF>)
-	// [0][  0]( 1.0000 0.0000i): 1.0000
-}
-
 func ExampleVisitor_VisitIncludeStatement() {
 	text := `
 	include "../testdata/stdgates.qasm";
@@ -1245,8 +1214,20 @@ func TestVisitor_VisitResetStatement(t *testing.T) {
 	cases := []struct {
 		text   string
 		tree   string
+		want   []string
 		errMsg string
 	}{
+		{
+			text: `
+				qubit q;
+				U(pi/2, 0, pi) q;
+				reset q;
+			`,
+			tree: "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (resetStatement reset (gateOperand (indexedIdentifier q)) ;))) <EOF>)",
+			want: []string{
+				"[0][  0]( 1.0000 0.0000i): 1.0000",
+			},
+		},
 		{
 			text:   "int a = 1; reset a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (resetStatement reset (gateOperand (indexedIdentifier a)) ;))) <EOF>)",
@@ -1258,25 +1239,25 @@ func TestVisitor_VisitResetStatement(t *testing.T) {
 		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
 		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 		program := p.Program()
-		statements := program.AllStatementOrScope()
 
 		if program.ToStringTree(nil, p) != c.tree {
 			t.Errorf("got=%v, want=%v", program.ToStringTree(nil, p), c.tree)
 		}
 
-		v := visitor.New(q.New(), environ.New())
-		if err := v.Run(statements[0]); err != nil {
-			t.Fatalf("got=%v, want no error", err)
+		qsim := q.New()
+		v := visitor.New(qsim, environ.New())
+		if err := v.Run(program); err != nil {
+			if err.Error() != c.errMsg {
+				t.Fatalf("got=%v, want=%v", err, c.errMsg)
+			}
+
+			continue
 		}
 
-		x := v.Visit(statements[1].Statement().ResetStatement())
-		err, ok := x.(error)
-		if !ok {
-			t.Fatalf("got=%T, want error", x)
-		}
-
-		if err.Error() != c.errMsg {
-			t.Fatalf("got=%v, want=%v", err, c.errMsg)
+		for i, s := range qsim.State() {
+			if s.String() != c.want[i] {
+				t.Fatalf("got=%v, want=%v", s.String(), c.want[i])
+			}
 		}
 	}
 }
