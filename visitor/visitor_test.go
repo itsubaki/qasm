@@ -119,7 +119,7 @@ func ExampleVisitor_Run_error() {
 	}
 
 	// Output:
-	// identifier=a: already declared
+	// declare const "a": already declared
 }
 
 func ExampleVisitor_VisitChildren() {
@@ -260,7 +260,7 @@ func ExampleVisitor_VisitIncludeStatement_invalid() {
 
 	// Output:
 	// (program (statementOrScope (statement (includeStatement include "../testdata/invalid.qasm" ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement h (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)
-	// include: identifier=invalid: identifier not found
+	// include: literal "invalid": undefined
 }
 
 func ExampleVisitor_VisitIncludeStatement_fileNotFound() {
@@ -320,7 +320,7 @@ func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 		{
 			text:   "const int a = 42; const int a = 43;",
 			tree:   "(program (statementOrScope (statement (constDeclarationStatement const (scalarType int) a = (declarationExpression (expression 42)) ;))) (statementOrScope (statement (constDeclarationStatement const (scalarType int) a = (declarationExpression (expression 43)) ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare const "a": already declared`,
 		},
 	}
 
@@ -416,7 +416,7 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		{
 			text:   `qubit[3] q; bit c = measure q;`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c = (declarationExpression (measureExpression measure (gateOperand (indexedIdentifier q)))) ;))) <EOF>)",
-			errMsg: "declaration length=3: bit width mismatch",
+			errMsg: "assign 3 bits to a single bit",
 		},
 		{
 			text: "int ans = 42;",
@@ -506,67 +506,67 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		{
 			text:   "float a = 1; float a = 0;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType float) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType float) a = (declarationExpression (expression 0)) ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare float "a": already declared`,
 		},
 		{
 			text:   "int a = 1; int a = 0;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 0)) ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare int "a": already declared`,
 		},
 		{
 			text:   "uint a = 1; uint a = 0;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType uint) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType uint) a = (declarationExpression (expression 0)) ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare uint "a": already declared`,
 		},
 		{
 			text:   "bool a = true; bool a = false;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a = (declarationExpression (expression true)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a = (declarationExpression (expression false)) ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare bool "a": already declared`,
 		},
 		{
 			text:   "bit a; bool a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare bool "a": already declared`,
 		},
 		{
 			text:   "bit[1] a; bool a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare bool "a": already declared`,
 		},
 		{
 			text:   "bit a; bit a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare bit "a": already declared`,
 		},
 		{
 			text:   "int a = 1; bit a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare bit "a": already declared`,
 		},
 		{
 			text:   "bit[1] a; bit a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare bit "a": already declared`,
 		},
 		{
 			text:   "angle[4] a; angle[4] a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare angle "a": already declared`,
 		},
 		{
 			text:   "bit a; angle[4] a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare angle "a": already declared`,
 		},
 		{
 			text:   "bit[1] a; angle[4] a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 1) ])) a ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 4) ])) a ;))) <EOF>)",
-			errMsg: "identifier=a: already declared",
+			errMsg: `declare angle "a": already declared`,
 		},
 		{
 			text:   `bit[8] a = 3.14;`,
 			tree:   `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit (designator [ (expression 8) ])) a = (declarationExpression (expression 3.14)) ;))) <EOF>)`,
-			errMsg: "declaration=3.14(float64): unexpected",
+			errMsg: `assign 3.14(float64) to "a"`,
 		},
 	}
 
@@ -629,12 +629,12 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 		{
 			text:   "qubit[1.1] q;",
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 1.1) ])) q ;))) <EOF>)",
-			errMsg: "qubit[1.1]: unexpected",
+			errMsg: `size must be an integer "qubit[1.1]"`,
 		},
 		{
 			text:   "qubit q; qubit q;",
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) <EOF>)",
-			errMsg: "identifier=q: already declared",
+			errMsg: `declare qubit "q": already declared`,
 		},
 	}
 
@@ -703,7 +703,7 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 				let q = q[1:4];
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 5) ])) q ;))) (statementOrScope (statement (aliasDeclarationStatement let q = (aliasExpression (expression (expression q) (indexOperator [ (rangeExpression (expression 1) : (expression 4)) ]))) ;))) <EOF>)",
-			errMsg: "identifier=q: already declared",
+			errMsg: `declare alias "q": already declared`,
 		},
 	}
 
@@ -754,7 +754,7 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 		{
 			text:   "qreg q; qreg q;",
 			tree:   "(program (statementOrScope (statement (oldStyleDeclarationStatement qreg q ;))) (statementOrScope (statement (oldStyleDeclarationStatement qreg q ;))) <EOF>)",
-			errMsg: "identifier=q: already declared",
+			errMsg: `declare qreg "q": already declared`,
 		},
 		{
 			text: "creg c;",
@@ -769,12 +769,12 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 		{
 			text:   "creg c; creg c;",
 			tree:   "(program (statementOrScope (statement (oldStyleDeclarationStatement creg c ;))) (statementOrScope (statement (oldStyleDeclarationStatement creg c ;))) <EOF>)",
-			errMsg: "identifier=c: already declared",
+			errMsg: `declare creg "c": already declared`,
 		},
 		{
 			text:   "bit c; creg c;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (oldStyleDeclarationStatement creg c ;))) <EOF>)",
-			errMsg: "identifier=c: already declared",
+			errMsg: `declare creg "c": already declared`,
 		},
 	}
 
@@ -891,7 +891,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 		{
 			text:   `bit c; c = "10";`,
 			tree:   `(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (expression "10") ;))) <EOF>)`,
-			errMsg: `bit length=2: bit width mismatch`,
+			errMsg: `assign 2 bits to a single bit`,
 		},
 		{
 			text: "bit[1] c; c = true;",
@@ -933,7 +933,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 				c = measure q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (measureExpression measure (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "operand=c: bit not found",
+			errMsg: `operand "c": undefined`,
 		},
 	}
 
@@ -1035,7 +1035,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 				measure q -> c;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 3) ])) q ;))) (statementOrScope (statement (classicalDeclarationStatement (scalarType bit) c ;))) (statementOrScope (statement (measureArrowAssignmentStatement (measureExpression measure (gateOperand (indexedIdentifier q))) -> (indexedIdentifier c) ;))) <EOF>)",
-			errMsg: "bit length=3: bit width mismatch",
+			errMsg: "assign 3 bits to a single bit",
 		},
 		{
 			text: `
@@ -1249,7 +1249,7 @@ func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
 				int a = 1;
 				bit c = measure a;
 			`,
-			errMsg: "operand=a: invalid operand",
+			errMsg: `operand "a": invalid operand`,
 		},
 	}
 
@@ -1290,7 +1290,7 @@ func TestVisitor_VisitResetStatement(t *testing.T) {
 		{
 			text:   "int a = 1; reset a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (resetStatement reset (gateOperand (indexedIdentifier a)) ;))) <EOF>)",
-			errMsg: "operand=a: invalid operand",
+			errMsg: `operand "a": invalid operand`,
 		},
 	}
 
@@ -2231,7 +2231,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				gphase(true);
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement gphase ( (expressionList (expression true)) ) ;))) <EOF>)",
-			errMsg: "builtin: param=true(bool): unexpected",
+			errMsg: "invalid param 'bool(true)'",
 		},
 		{
 			text: `
@@ -2239,7 +2239,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				U(true, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression true) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "builtin: param=true(bool): unexpected",
+			errMsg: "invalid param 'bool(true)'",
 		},
 		{
 			text: `
@@ -2257,7 +2257,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				ctrl @ U(pi, 0, pi) a, t;
 			`,
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) t ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier a)) , (gateOperand (indexedIdentifier t))) ;))) <EOF>)",
-			errMsg: "operand=a,t: invalid operand",
+			errMsg: `operand "a,t": invalid operand`,
 		},
 		{
 			text: `
@@ -2266,7 +2266,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				ctrl(true) @ U(pi, 0, pi) c, t;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) c ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) t ;))) (statementOrScope (statement (gateCallStatement (gateModifier ctrl ( (expression true) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier c)) , (gateOperand (indexedIdentifier t))) ;))) <EOF>)",
-			errMsg: "ctrl(true)@: unexpected",
+			errMsg: `apply "ctrl(true)@"`,
 		},
 		{
 			text: `
@@ -2275,14 +2275,14 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				negctrl(true) @ U(pi, 0, pi) c, t;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) c ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) t ;))) (statementOrScope (statement (gateCallStatement (gateModifier negctrl ( (expression true) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier c)) , (gateOperand (indexedIdentifier t))) ;))) <EOF>)",
-			errMsg: "negctrl(true)@: unexpected",
+			errMsg: `apply "negctrl(true)@"`,
 		},
 		{
 			text: `
 				U(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "operand=q: invalid operand",
+			errMsg: `operand "q": invalid operand`,
 		},
 	}
 
@@ -2328,7 +2328,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				gate u q { }
 			`,
 			tree:   "(program (statementOrScope (statement (gateStatement gate u (identifierList q) (scope { })))) (statementOrScope (statement (gateStatement gate u (identifierList q) (scope { })))) <EOF>)",
-			errMsg: "identifier=u: already declared",
+			errMsg: `declare gate "u": already declared`,
 		},
 		{
 			text: `
@@ -2336,7 +2336,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				myg(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement myg ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "user-defined gate call: identifier=myg: gate not found",
+			errMsg: `use gate "myg": undefined`,
 		},
 		{
 			text: `
@@ -2407,7 +2407,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				myg a;
 			`,
 			tree:   "(program (statementOrScope (statement (gateStatement gate myg (identifierList q) (scope { })))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (gateCallStatement myg (gateOperandList (gateOperand (indexedIdentifier a))) ;))) <EOF>)",
-			errMsg: "user-defined gate call: operand=a: invalid operand",
+			errMsg: `operand "a": invalid operand`,
 		},
 		{
 			text: `
@@ -2416,7 +2416,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				inv @ u(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier inv @) u ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "user-defined gate call: modifier is not implemented in user-defined gate call: not implemented",
+			errMsg: "modifier is not implemented in user-defined: not implemented",
 		},
 		// not implemented.
 		// {
@@ -2675,7 +2675,7 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				pow(true) @ U(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement (gateModifier pow ( (expression true) ) @) U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "pow(true)@: unexpected type: bool",
+			errMsg: `apply "pow(true)@": unexpected type: bool`,
 		},
 		{
 			text: `
@@ -2806,12 +2806,12 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 				xm(q);
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (expressionStatement (expression xm ( (expressionList (expression q)) )) ;))) <EOF>)",
-			errMsg: "identifier=xm: function not found",
+			errMsg: `use subroutine "xm": undefined`,
 		},
 		{
 			text:   "def f(qubit q) -> bit { return 1; } def f(qubit q) -> bit { return 0; }",
 			tree:   "(program (statementOrScope (statement (defStatement def f ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q)) ) (returnSignature -> (scalarType bit)) (scope { (statementOrScope (statement (returnStatement return (expression 1) ;))) })))) (statementOrScope (statement (defStatement def f ( (argumentDefinitionList (argumentDefinition (qubitType qubit) q)) ) (returnSignature -> (scalarType bit)) (scope { (statementOrScope (statement (returnStatement return (expression 0) ;))) })))) <EOF>)",
-			errMsg: "identifier=f: already declared",
+			errMsg: `declare subroutine "f": already declared`,
 		},
 	}
 
@@ -3292,7 +3292,7 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 		{
 			text: "bool a = bool(1);",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType bool) a = (declarationExpression (expression (scalarType bool) ( (expression 1) ))) ;))) <EOF>)",
-			want: "map[a:scalar type=bool: unexpected]",
+			want: `map[a:unsupported scalar type "bool"]`,
 		},
 		{
 			text: "int[32] a = 42;",
@@ -3349,7 +3349,7 @@ func TestVisitor_VisitIndexedIdentifier(t *testing.T) {
 				U(pi, 0, pi) q[1.1];
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q (indexOperator [ (expression 1.1) ])))) ;))) <EOF>)",
-			errMsg: "cast 1.1 to int64: unexpected",
+			errMsg: `index must be an integer '1.1'`,
 		},
 	}
 
@@ -3454,7 +3454,7 @@ func TestVisitor_VisitScalarType(t *testing.T) {
 		{
 			text:   "angle[1.1] a;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (scalarType angle (designator [ (expression 1.1) ])) a ;))) <EOF>)",
-			errMsg: "[1.1]: unexpected",
+			errMsg: `size must be an integer "[1.1]"`,
 		},
 	}
 
@@ -3513,7 +3513,7 @@ func TestVisitor_VisitQubitType(t *testing.T) {
 		{
 			text:   "qubit[1.1] q;",
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 1.1) ])) q ;))) <EOF>)",
-			errMsg: "[1.1]: unexpected",
+			errMsg: `size must be an integer "[1.1]"`,
 		},
 	}
 
@@ -3636,7 +3636,7 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 		{
 			text: "array[int[11], 5] aa;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType int (designator [ (expression 11) ])) , (expressionList (expression 5)) ]) aa ;))) <EOF>)",
-			want: "map[aa:bit size=11: unexpected]",
+			want: "map[aa:unsupported bit size 11]",
 		},
 		{
 			text: "array[uint[8], 5] aa;",
@@ -3661,7 +3661,7 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 		{
 			text: "array[uint[11], 5] aa;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType uint (designator [ (expression 11) ])) , (expressionList (expression 5)) ]) aa ;))) <EOF>)",
-			want: "map[aa:bit size=11: unexpected]",
+			want: "map[aa:unsupported bit size 11]",
 		},
 		{
 			text: "array[float[32], 3] aa;",
@@ -3676,12 +3676,12 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 		{
 			text: "array[float[11], 5] aa;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType float (designator [ (expression 11) ])) , (expressionList (expression 5)) ]) aa ;))) <EOF>)",
-			want: "map[aa:bit size=11: unexpected]",
+			want: "map[aa:unsupported bit size 11]",
 		},
 		{
 			text: "array[angle[4], 3] aa;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType angle (designator [ (expression 4) ])) , (expressionList (expression 3)) ]) aa ;))) <EOF>)",
-			want: "map[aa:scalar type=angle[4]: unexpected]",
+			want: `map[aa:unsupported scalar type "angle[4]"]`,
 		},
 		{
 			text: "array[bool, 3] aa;",
@@ -3691,7 +3691,7 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 		{
 			text:   "array[int[64], 5] aa;array[float[64], 5] aa;",
 			tree:   "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType int (designator [ (expression 64) ])) , (expressionList (expression 5)) ]) aa ;))) (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType float (designator [ (expression 64) ])) , (expressionList (expression 5)) ]) aa ;))) <EOF>)",
-			errMsg: "identifier=aa: already declared",
+			errMsg: `declare array "aa": already declared`,
 		},
 	}
 
