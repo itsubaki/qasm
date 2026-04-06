@@ -2424,6 +2424,15 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		},
 		{
 			text: `
+				gate myg q { myx q; }
+				qubit q;
+				myg q;
+			`,
+			tree:   "(program (statementOrScope (statement (gateStatement gate myg (identifierList q) (scope { (statementOrScope (statement (gateCallStatement myx (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement myg (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			errMsg: `gate call[0]: use gate "myx": undefined`,
+		},
+		{
+			text: `
 				gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
 				qubit q;
 				inv @ u(pi, 0, pi) q;
