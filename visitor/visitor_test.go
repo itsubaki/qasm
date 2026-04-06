@@ -2397,6 +2397,15 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		},
 		{
 			text: `
+				gate myg q { }
+				int a = 1;
+				myg a;
+			`,
+			tree:   "(program (statementOrScope (statement (gateStatement gate myg (identifierList q) (scope { })))) (statementOrScope (statement (classicalDeclarationStatement (scalarType int) a = (declarationExpression (expression 1)) ;))) (statementOrScope (statement (gateCallStatement myg (gateOperandList (gateOperand (indexedIdentifier a))) ;))) <EOF>)",
+			errMsg: "user-defined gate call: operand=a: invalid operand",
+		},
+		{
+			text: `
 				gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
 				qubit q;
 				inv @ u(pi, 0, pi) q;
