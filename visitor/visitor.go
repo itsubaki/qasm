@@ -20,13 +20,18 @@ import (
 )
 
 var (
-	ErrAlreadyDeclared  = errors.New("already declared")
-	ErrNotFound         = errors.New("not found")
-	ErrTooManyQubits    = errors.New("too many qubits")
-	ErrBitWidthMismatch = errors.New("bit width mismatch")
-	ErrInvalidOperand   = errors.New("invalid operand")
-	ErrUnexpected       = errors.New("unexpected")
-	ErrNotImplemented   = errors.New("not implemented")
+	ErrAlreadyDeclared    = errors.New("already declared")
+	ErrIdentifierNotFound = errors.New("identifier not found")
+	ErrQubitNotFound      = errors.New("qubit not found")
+	ErrBitNotFound        = errors.New("bit not found")
+	ErrVariableNotFound   = errors.New("variable not found")
+	ErrGateNotFound       = errors.New("gate not found")
+	ErrFunctionNotFound   = errors.New("function not found")
+	ErrTooManyQubits      = errors.New("too many qubits")
+	ErrBitWidthMismatch   = errors.New("bit width mismatch")
+	ErrInvalidOperand     = errors.New("invalid operand")
+	ErrUnexpected         = errors.New("unexpected")
+	ErrNotImplemented     = errors.New("not implemented")
 )
 
 type Visitor struct {
@@ -373,7 +378,7 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 	id := v.Visit(ctx.Identifier()).(string)
 	g, ok := v.env.GetGate(id)
 	if !ok {
-		return fmt.Errorf("identifier=%s: %w", id, ErrNotFound)
+		return fmt.Errorf("identifier=%s: %w", id, ErrGateNotFound)
 	}
 
 	// params
@@ -559,7 +564,7 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 		}
 	}
 
-	return fmt.Errorf("operand=%s: %w", operand, ErrNotFound)
+	return fmt.Errorf("operand=%s: %w", operand, ErrBitNotFound)
 }
 
 func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) any {
@@ -925,7 +930,7 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 			return lit
 		}
 
-		return fmt.Errorf("identifier=%s: %w", s, ErrNotFound)
+		return fmt.Errorf("identifier=%s: %w", s, ErrIdentifierNotFound)
 	case ctx.DecimalIntegerLiteral() != nil:
 		s := v.Visit(ctx.DecimalIntegerLiteral()).(string)
 		lit, err := strconv.ParseInt(s, 10, 64)
@@ -1279,7 +1284,7 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 	default:
 		routine, ok := v.env.GetSubroutine(id)
 		if !ok {
-			return fmt.Errorf("identifier=%s: %w", id, ErrNotFound)
+			return fmt.Errorf("identifier=%s: %w", id, ErrFunctionNotFound)
 		}
 
 		enclosed := v.Enclosed()
@@ -1501,7 +1506,7 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 
 	qb, ok := v.env.GetQubit(operand)
 	if !ok {
-		return fmt.Errorf("operand=%s: %w", operand, ErrNotFound)
+		return fmt.Errorf("operand=%s: %w", operand, ErrQubitNotFound)
 	}
 
 	index := v.Visit(id).([]int64)

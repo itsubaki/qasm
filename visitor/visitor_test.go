@@ -260,7 +260,7 @@ func ExampleVisitor_VisitIncludeStatement_invalid() {
 
 	// Output:
 	// (program (statementOrScope (statement (includeStatement include "../testdata/invalid.qasm" ;))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement h (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)
-	// include: identifier=invalid: not found
+	// include: identifier=invalid: identifier not found
 }
 
 func ExampleVisitor_VisitIncludeStatement_fileNotFound() {
@@ -933,7 +933,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 				c = measure q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement U ( (expressionList (expression (expression pi) / (expression 2.0)) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) (statementOrScope (statement (assignmentStatement (indexedIdentifier c) = (measureExpression measure (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "operand=c: not found",
+			errMsg: "operand=c: bit not found",
 		},
 	}
 
@@ -2336,7 +2336,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				myg(pi, 0, pi) q;
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit (designator [ (expression 2) ])) q ;))) (statementOrScope (statement (gateCallStatement myg ( (expressionList (expression pi) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
-			errMsg: "user-defined gate call: identifier=myg: not found",
+			errMsg: "user-defined gate call: identifier=myg: gate not found",
 		},
 		{
 			text: `
@@ -2806,7 +2806,7 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 				xm(q);
 			`,
 			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (expressionStatement (expression xm ( (expressionList (expression q)) )) ;))) <EOF>)",
-			errMsg: "identifier=xm: not found",
+			errMsg: "identifier=xm: function not found",
 		},
 		{
 			text:   "def f(qubit q) -> bit { return 1; } def f(qubit q) -> bit { return 0; }",
