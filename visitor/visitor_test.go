@@ -22,29 +22,18 @@ func Example_comment() {
 	end;
 	`
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	v := visitor.New(q.New(), environ.New())
-	fmt.Println(v.Visit(p.Program()))
+	fmt.Println(visitor.Visit(text))
 
 	// Output:
-	// end;
+	// end; <nil>
 }
 
 func ExampleVisitor_Run() {
-	text := `
-	OPENQASM 3.0;
-	`
+	text := "OPENQASM 3.0;"
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	env := environ.New()
-	v := visitor.New(q.New(), env)
-	if err := v.Run(p.Program()); err != nil {
-		fmt.Println(err)
-		return
+	_, env, err := visitor.Run(text)
+	if err != nil {
+		panic(err)
 	}
 
 	fmt.Println(env.Version)
@@ -59,11 +48,7 @@ func ExampleVisitor_Run_error() {
 	const int a = 43;
 	`
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	v := visitor.New(q.New(), environ.New())
-	if err := v.Run(p.Program()); err != nil {
+	if _, _, err := visitor.Run(text); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -80,14 +65,9 @@ func ExampleVisitor_VisitChildren() {
 	U(pi/2, 0, pi) q;
 	`
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	qsim := q.New()
-	v := visitor.New(qsim, environ.New())
-	if err, ok := v.VisitChildren(p.Program()).(error); ok && err != nil {
-		fmt.Println(err)
-		return
+	qsim, _, err := visitor.Run(text)
+	if err != nil {
+		panic(err)
 	}
 
 	for _, s := range qsim.State() {
@@ -100,18 +80,11 @@ func ExampleVisitor_VisitChildren() {
 }
 
 func ExampleVisitor_VisitVersion() {
-	text := `
-	OPENQASM 3.0;
-	`
+	text := "OPENQASM 3.0;"
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	env := environ.New()
-	v := visitor.New(q.New(), env)
-	if err := v.Run(p.Program()); err != nil {
-		fmt.Println(err)
-		return
+	_, env, err := visitor.Run(text)
+	if err != nil {
+		panic(err)
 	}
 
 	fmt.Println(env.Version)
@@ -121,18 +94,11 @@ func ExampleVisitor_VisitVersion() {
 }
 
 func ExampleVisitor_VisitIncludeStatement() {
-	text := `
-	include "../testdata/stdgates.qasm";
-	`
+	text := `include "../testdata/stdgates.qasm";`
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	env := environ.New()
-	v := visitor.New(q.New(), env)
-	if err := v.Run(p.Program()); err != nil {
-		fmt.Println(err)
-		return
+	_, env, err := visitor.Run(text)
+	if err != nil {
+		panic(err)
 	}
 
 	fmt.Println(slices.Sorted(maps.Keys(env.Gate)))
@@ -148,11 +114,7 @@ func ExampleVisitor_VisitIncludeStatement_invalid() {
 	h q;
 	`
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	v := visitor.New(q.New(), environ.New())
-	if err := v.Run(p.Program()); err != nil {
+	if _, _, err := visitor.Run(text); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -162,16 +124,11 @@ func ExampleVisitor_VisitIncludeStatement_invalid() {
 }
 
 func ExampleVisitor_VisitIncludeStatement_fileNotFound() {
-	text := `
-	include "file_not_found.qasm";
-	`
+	text := `include "file_not_found.qasm";`
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-	v := visitor.New(q.New(), environ.New())
-	if err := v.Run(p.Program()); err != nil {
+	if _, _, err := visitor.Run(text); err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	// Output:
@@ -210,12 +167,8 @@ func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -410,12 +363,8 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -466,12 +415,8 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -510,12 +455,8 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -566,17 +507,17 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
+		}
+
+		if len(env.Qubit) > 0 && fmt.Sprintf("%v", env.Qubit) != c.want {
+			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
 		}
 
 		if len(env.Bit) > 0 && fmt.Sprintf("%v", env.Bit) != c.want {
@@ -585,10 +526,6 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 
 		if len(env.BitArray) > 0 && fmt.Sprintf("%v", env.BitArray) != c.want {
 			t.Errorf("got=%v, want=%v", env.BitArray, c.want)
-		}
-
-		if len(env.Qubit) > 0 && fmt.Sprintf("%v", env.Qubit) != c.want {
-			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
 		}
 	}
 }
@@ -703,18 +640,26 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		qsim := q.New()
-		env := environ.New()
-		v := visitor.New(qsim, env)
-		if err := v.Run(p.Program()); err != nil {
+		qsim, env, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
+		}
+
+		if len(c.want.qubit) > 0 {
+			var found bool
+			for _, w := range c.want.qubit {
+				if fmt.Sprintf("%v", qsim.State()) == w {
+					found = true
+				}
+			}
+
+			if !found {
+				t.Errorf("got=%v, want=%v", qsim.State(), c.want.qubit)
+			}
 		}
 
 		if len(c.want.bit) > 0 {
@@ -731,19 +676,6 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 
 			if !found {
 				t.Errorf("got=%v/%v, want=%v", env.Bit, env.BitArray, c.want.bit)
-			}
-		}
-
-		if len(c.want.qubit) > 0 {
-			var found bool
-			for _, w := range c.want.qubit {
-				if fmt.Sprintf("%v", qsim.State()) == w {
-					found = true
-				}
-			}
-
-			if !found {
-				t.Errorf("got=%v, want=%v", qsim.State(), c.want.qubit)
 			}
 		}
 
@@ -873,18 +805,26 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		qsim := q.New()
-		env := environ.New()
-		v := visitor.New(qsim, env)
-		if err := v.Run(p.Program()); err != nil {
+		qsim, env, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
+		}
+
+		if len(c.want.qubit) > 0 {
+			var found bool
+			for _, w := range c.want.qubit {
+				if fmt.Sprintf("%v", qsim.State()) == w {
+					found = true
+				}
+			}
+
+			if !found {
+				t.Errorf("got=%v, want=%v", qsim.State(), c.want.qubit)
+			}
 		}
 
 		if len(c.want.bit) > 0 {
@@ -902,123 +842,6 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 			if !found {
 				t.Errorf("got=%v/%v, want=%v", env.Bit, env.BitArray, c.want.bit)
 			}
-		}
-
-		if len(c.want.qubit) > 0 {
-			var found bool
-			for _, w := range c.want.qubit {
-				if fmt.Sprintf("%v", qsim.State()) == w {
-					found = true
-				}
-			}
-
-			if !found {
-				t.Errorf("got=%v, want=%v", qsim.State(), c.want.qubit)
-			}
-		}
-	}
-}
-
-func TestVisitor_VisitMeasureExpression(t *testing.T) {
-	cases := []struct {
-		text string
-		want any
-	}{
-		{
-			text: `
-				qubit q;
-				U(pi, 0, pi) q;
-				measure q;
-			`,
-			want: true,
-		},
-		{
-			text: `
-				qubit[2] q;
-				U(pi, 0, pi) q[0];
-				U(pi, 0, pi) q[1];
-				measure q;
-			`,
-			want: []bool{true, true},
-		},
-	}
-
-	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-		statements := p.Program().AllStatementOrScope()
-
-		v := visitor.New(q.New(), environ.New())
-		for _, s := range statements[:len(statements)-1] {
-			if err := v.Run(s); err != nil {
-				t.Fatalf("got=%v, want no error", err)
-			}
-		}
-
-		x := v.Visit(statements[len(statements)-1].
-			Statement().
-			MeasureArrowAssignmentStatement().
-			MeasureExpression(),
-		)
-
-		switch want := c.want.(type) {
-		case bool:
-			bit, ok := x.(bool)
-			if !ok {
-				t.Fatalf("got=%T, want bool", x)
-			}
-
-			if bit != want {
-				t.Fatalf("got=%v, want=%v", bit, want)
-			}
-		case []bool:
-			bits, ok := x.([]bool)
-			if !ok {
-				t.Fatalf("got=%T, want []bool", x)
-			}
-
-			if fmt.Sprintf("%v", bits) != fmt.Sprintf("%v", want) {
-				t.Fatalf("got=%v, want=%v", bits, want)
-			}
-		}
-	}
-}
-
-func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
-	cases := []struct {
-		text   string
-		errMsg string
-	}{
-		{
-			text:   "int a = 1; bit c = measure a;",
-			errMsg: `operand "a": invalid operand`,
-		},
-	}
-
-	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-		statements := p.Program().AllStatementOrScope()
-
-		v := visitor.New(q.New(), environ.New())
-		if err := v.Run(statements[0]); err != nil {
-			t.Fatalf("got=%v, want no error", err)
-		}
-
-		x := v.Visit(statements[1].
-			Statement().
-			ClassicalDeclarationStatement().
-			DeclarationExpression().
-			MeasureExpression(),
-		)
-
-		err, ok := x.(error)
-		if !ok {
-			t.Fatalf("got=%T, want error", x)
-		}
-
-		if err.Error() != c.errMsg {
-			t.Fatalf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
@@ -1046,12 +869,8 @@ func TestVisitor_VisitResetStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		qsim := q.New()
-		v := visitor.New(qsim, environ.New())
-		if err := v.Run(p.Program()); err != nil {
+		qsim, _, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Fatalf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -1151,10 +970,11 @@ func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if fmt.Sprintf("%v", result) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1230,11 +1050,8 @@ func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
-		if err, ok := result.(error); ok && err != nil {
+		result, err := visitor.Visit(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -1260,10 +1077,11 @@ func TestVisitor_VisitParenthesisExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if fmt.Sprintf("%v", result) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1326,13 +1144,9 @@ func TestVisitor_VisitCallExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
-		if err, ok := result.(error); ok && err != nil {
-			t.Errorf("got=%v, want no error", err)
-			continue
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
 		}
 
 		if fmt.Sprintf("%v", result) != c.want {
@@ -1357,10 +1171,11 @@ func TestVisitor_VisitPowerExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if fmt.Sprintf("%v", result) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1391,10 +1206,11 @@ func TestVisitor_VisitLogicalOrExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if result.(bool) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1425,10 +1241,11 @@ func TestVisitor_VisitLogicalAndExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if result.(bool) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1447,10 +1264,11 @@ func TestVisitor_VisitBitwiseAndExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if result.(int64) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1469,10 +1287,11 @@ func TestVisitor_VisitBitwiseOrExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if result.(int64) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1491,10 +1310,11 @@ func TestVisitor_VisitBitwiseXorExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if result.(int64) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1521,10 +1341,11 @@ func TestVisitor_VisitBitshiftExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if result.(int64) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1615,10 +1436,11 @@ func TestVisitor_VisitEqualityExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if result.(bool) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1657,10 +1479,11 @@ func TestVisitor_VisitUnaryExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if result.(bool) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1691,10 +1514,11 @@ func TestVisitor_VisitComparisonExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Fail()
+		}
 
-		result := visitor.New(q.New(), environ.New()).Visit(p.Program())
 		if fmt.Sprintf("%v", result) != c.want {
 			t.Errorf("got=%v, want=%v", result, c.want)
 		}
@@ -1814,12 +1638,8 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		qsim := q.New()
-		v := visitor.New(qsim, environ.New())
-		if err := v.Run(p.Program()); err != nil {
+		qsim, _, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -2072,12 +1892,8 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		qsim := q.New()
-		v := visitor.New(qsim, environ.New())
-		if err := v.Run(p.Program()); err != nil {
+		qsim, _, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -2234,12 +2050,8 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		qsim := q.New()
-		v := visitor.New(qsim, environ.New())
-		if err := v.Run(p.Program()); err != nil {
+		qsim, _, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -2301,12 +2113,8 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -2347,14 +2155,9 @@ func TestVisitor_VisitIfStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
-			t.Errorf("got=%v, want no error", err)
-			continue
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Fail()
 		}
 
 		if fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2408,14 +2211,9 @@ func TestVisitor_VisitForStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
-			t.Errorf("got=%v, want no error", err)
-			continue
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Fail()
 		}
 
 		if fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2445,14 +2243,9 @@ func TestVisitor_VisitBreakStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
-			t.Errorf("got=%v, want no error", err)
-			continue
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Fail()
 		}
 
 		if fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2482,14 +2275,9 @@ func TestVisitor_VisitContinueStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
-			t.Errorf("got=%v, want no error", err)
-			continue
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Fail()
 		}
 
 		if fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2571,14 +2359,9 @@ func TestVisitor_VisitWhileStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
-			t.Errorf("got=%v, want no error", err)
-			continue
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Fail()
 		}
 
 		if fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2648,14 +2431,9 @@ func TestVisitor_VisitSwitchStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
-			t.Errorf("got=%v, want no error", err)
-			continue
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Fail()
 		}
 
 		if fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2725,17 +2503,9 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
-			continue
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Fail()
 		}
 
 		if fmt.Sprintf("%v", env.Variable) != c.want {
@@ -3050,12 +2820,8 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -3082,12 +2848,8 @@ func TestVisitor_VisitArrayLiteral(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		env := environ.New()
-		v := visitor.New(q.New(), env)
-		if err := v.Run(p.Program()); err != nil {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
@@ -3097,6 +2859,110 @@ func TestVisitor_VisitArrayLiteral(t *testing.T) {
 
 		if fmt.Sprintf("%v", env.Variable) != c.want {
 			t.Errorf("got=%v, want=%v", env.Variable, c.want)
+		}
+	}
+}
+
+func TestVisitor_VisitMeasureExpression(t *testing.T) {
+	cases := []struct {
+		text string
+		want any
+	}{
+		{
+			text: `
+				qubit q;
+				U(pi, 0, pi) q;
+				measure q;
+			`,
+			want: true,
+		},
+		{
+			text: `
+				qubit[2] q;
+				U(pi, 0, pi) q[0];
+				U(pi, 0, pi) q[1];
+				measure q;
+			`,
+			want: []bool{true, true},
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		statements := p.Program().AllStatementOrScope()
+
+		v := visitor.New(q.New(), environ.New())
+		for _, s := range statements[:len(statements)-1] {
+			if err := v.Run(s); err != nil {
+				t.Fatalf("got=%v, want no error", err)
+			}
+		}
+
+		x := v.Visit(statements[len(statements)-1].
+			Statement().
+			MeasureArrowAssignmentStatement().
+			MeasureExpression(),
+		)
+
+		switch want := c.want.(type) {
+		case bool:
+			bit, ok := x.(bool)
+			if !ok {
+				t.Fatalf("got=%T, want bool", x)
+			}
+
+			if bit != want {
+				t.Fatalf("got=%v, want=%v", bit, want)
+			}
+		case []bool:
+			bits, ok := x.([]bool)
+			if !ok {
+				t.Fatalf("got=%T, want []bool", x)
+			}
+
+			if fmt.Sprintf("%v", bits) != fmt.Sprintf("%v", want) {
+				t.Fatalf("got=%v, want=%v", bits, want)
+			}
+		}
+	}
+}
+
+func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
+		{
+			text:   "int a = 1; bit c = measure a;",
+			errMsg: `operand "a": invalid operand`,
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+		statements := p.Program().AllStatementOrScope()
+
+		v := visitor.New(q.New(), environ.New())
+		if err := v.Run(statements[0]); err != nil {
+			t.Fatalf("got=%v, want no error", err)
+		}
+
+		x := v.Visit(statements[1].
+			Statement().
+			ClassicalDeclarationStatement().
+			DeclarationExpression().
+			MeasureExpression(),
+		)
+
+		err, ok := x.(error)
+		if !ok {
+			t.Fatalf("got=%T, want error", x)
+		}
+
+		if err.Error() != c.errMsg {
+			t.Fatalf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }

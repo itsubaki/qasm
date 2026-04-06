@@ -46,6 +46,32 @@ func New(qsim *q.Q, env *environ.Environ, opt ...Option) *Visitor {
 	return v
 }
 
+func Run(text string) (*q.Q, *environ.Environ, error) {
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	qsim := q.New()
+	env := environ.New()
+	v := New(qsim, env)
+	if err := v.Run(p.Program()); err != nil {
+		return nil, nil, err
+	}
+
+	return qsim, env, nil
+}
+
+func Visit(text string) (any, error) {
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+	result := New(q.New(), environ.New()).Visit(p.Program())
+	if err, ok := result.(error); ok && err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (v *Visitor) Enclosed() *Visitor {
 	return New(v.qsim, v.env.NewEnclosed())
 }
