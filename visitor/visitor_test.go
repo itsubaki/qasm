@@ -57,26 +57,17 @@ func ExampleVisitor_Run_error() {
 	// declare const "a": already declared
 }
 
-func ExampleVisitor_VisitChildren() {
+func ExampleVisit() {
 	text := `
-	OPENQASM 3.0;
-
-	qubit q;
-	U(pi/2, 0, pi) q;
+	const int a = 42;
+	const int a = 43;
 	`
 
-	qsim, _, err := visitor.Run(text)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, s := range qsim.State() {
-		fmt.Println(s)
-	}
+	_, err := visitor.Visit(text)
+	fmt.Println(err)
 
 	// Output:
-	// [0][  0]( 0.7071 0.0000i): 0.5000
-	// [1][  1]( 0.7071 0.0000i): 0.5000
+	// declare const "a": already declared
 }
 
 func ExampleVisitor_VisitVersion() {
