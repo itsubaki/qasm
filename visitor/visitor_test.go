@@ -2415,6 +2415,15 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		},
 		{
 			text: `
+				gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
+				qubit q;
+				u(a, 0, pi) q;
+			`,
+			tree:   "(program (statementOrScope (statement (gateStatement gate u ( (identifierList p0 , p1 , p2) ) (identifierList q) (scope { (statementOrScope (statement (gateCallStatement U ( (expressionList (expression p0) , (expression p1) , (expression p2)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) })))) (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement u ( (expressionList (expression a) , (expression 0) , (expression pi)) ) (gateOperandList (gateOperand (indexedIdentifier q))) ;))) <EOF>)",
+			errMsg: `literal "a": undefined`,
+		},
+		{
+			text: `
 				gate myg q { }
 				int a = 1;
 				myg a;
