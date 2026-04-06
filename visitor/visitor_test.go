@@ -3634,6 +3634,11 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 			want: "map[aa:[0 0 0 0 0]]",
 		},
 		{
+			text: "array[int[11], 5] aa;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType int (designator [ (expression 11) ])) , (expressionList (expression 5)) ]) aa ;))) <EOF>)",
+			want: "map[aa:bit size=11: unexpected]",
+		},
+		{
 			text: "array[uint[8], 5] aa;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType uint (designator [ (expression 8) ])) , (expressionList (expression 5)) ]) aa ;))) <EOF>)",
 			want: "map[aa:[0 0 0 0 0]]",
@@ -3654,6 +3659,11 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 			want: "map[aa:[0 0 0]]",
 		},
 		{
+			text: "array[uint[11], 5] aa;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType uint (designator [ (expression 11) ])) , (expressionList (expression 5)) ]) aa ;))) <EOF>)",
+			want: "map[aa:bit size=11: unexpected]",
+		},
+		{
 			text: "array[float[32], 3] aa;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType float (designator [ (expression 32) ])) , (expressionList (expression 3)) ]) aa ;))) <EOF>)",
 			want: "map[aa:[0 0 0]]",
@@ -3662,6 +3672,11 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 			text: "array[float[64], 3] aa;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType float (designator [ (expression 64) ])) , (expressionList (expression 3)) ]) aa ;))) <EOF>)",
 			want: "map[aa:[0 0 0]]",
+		},
+		{
+			text: "array[float[11], 5] aa;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType float (designator [ (expression 11) ])) , (expressionList (expression 5)) ]) aa ;))) <EOF>)",
+			want: "map[aa:bit size=11: unexpected]",
 		},
 		{
 			text: "array[angle[4], 3] aa;",
