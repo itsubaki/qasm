@@ -3664,6 +3664,11 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 			want: "map[aa:[0 0 0]]",
 		},
 		{
+			text: "array[angle[4], 3] aa;",
+			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType angle (designator [ (expression 4) ])) , (expressionList (expression 3)) ]) aa ;))) <EOF>)",
+			want: "map[aa:scalar type=angle[4]: unexpected]",
+		},
+		{
 			text: "array[bool, 3] aa;",
 			tree: "(program (statementOrScope (statement (classicalDeclarationStatement (arrayType array [ (scalarType bool) , (expressionList (expression 3)) ]) aa ;))) <EOF>)",
 			want: "map[aa:[false false false]]",
