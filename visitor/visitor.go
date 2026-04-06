@@ -21,7 +21,7 @@ import (
 
 var (
 	ErrAlreadyDeclared = errors.New("already declared")
-	ErrUndefined       = errors.New("undefined")
+	ErrUndeclared      = errors.New("undeclared")
 	ErrTooManyQubits   = errors.New("too many qubits")
 	ErrNotImplemented  = errors.New("not implemented")
 )
@@ -398,7 +398,7 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 	id := v.Visit(ctx.Identifier()).(string)
 	g, ok := v.env.GetGate(id)
 	if !ok {
-		return fmt.Errorf("gate %q: %w", id, ErrUndefined)
+		return fmt.Errorf("gate %q: %w", id, ErrUndeclared)
 	}
 
 	// params
@@ -584,7 +584,7 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 		}
 	}
 
-	return fmt.Errorf("operand %q: %w", operand, ErrUndefined)
+	return fmt.Errorf("operand %q: %w", operand, ErrUndeclared)
 }
 
 func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) any {
@@ -950,7 +950,7 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 			return lit
 		}
 
-		return fmt.Errorf("literal %q: %w", s, ErrUndefined)
+		return fmt.Errorf("literal %q: %w", s, ErrUndeclared)
 	case ctx.DecimalIntegerLiteral() != nil:
 		s := v.Visit(ctx.DecimalIntegerLiteral()).(string)
 		lit, err := strconv.ParseInt(s, 10, 64)
@@ -1304,7 +1304,7 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 	default:
 		routine, ok := v.env.GetSubroutine(id)
 		if !ok {
-			return fmt.Errorf("subroutine %q: %w", id, ErrUndefined)
+			return fmt.Errorf("subroutine %q: %w", id, ErrUndeclared)
 		}
 
 		enclosed := v.Enclosed()
@@ -1526,7 +1526,7 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 
 	qb, ok := v.env.GetQubit(operand)
 	if !ok {
-		return fmt.Errorf("operand %q: %w", operand, ErrUndefined)
+		return fmt.Errorf("operand %q: %w", operand, ErrUndeclared)
 	}
 
 	index := v.Visit(id).([]int64)

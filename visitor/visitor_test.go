@@ -111,7 +111,7 @@ func ExampleVisitor_VisitIncludeStatement_invalid() {
 	}
 
 	// Output:
-	// include: literal "invalid": undefined
+	// include: literal "invalid": undeclared
 }
 
 func ExampleVisitor_VisitIncludeStatement_fileNotFound() {
@@ -662,7 +662,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 				U(pi/2.0, 0, pi) q;
 				c = measure q;
 			`,
-			errMsg: `operand "c": undefined`,
+			errMsg: `operand "c": undeclared`,
 		},
 	}
 
@@ -1620,7 +1620,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		},
 		{
 			text:   `qubit q; gphase(a);`,
-			errMsg: `literal "a": undefined`,
+			errMsg: `literal "a": undeclared`,
 		},
 		{
 			text:   `qubit[2] q; U(true, 0, pi) q;`,
@@ -1699,7 +1699,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		},
 		{
 			text:   `qubit[2] q; myg(pi, 0, pi) q;`,
-			errMsg: `gate "myg": undefined`,
+			errMsg: `gate "myg": undeclared`,
 		},
 		{
 			text: `
@@ -1764,7 +1764,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				qubit q;
 				u(a, 0, pi) q;
 			`,
-			errMsg: `literal "a": undefined`,
+			errMsg: `literal "a": undeclared`,
 		},
 		{
 			text: `
@@ -1780,7 +1780,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				qubit q;
 				myg q;
 			`,
-			errMsg: `gate call[0]: gate "myx": undefined`,
+			errMsg: `gate call[0]: gate "myx": undeclared`,
 		},
 		{
 			text: `
@@ -2131,7 +2131,7 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 				qubit q;
 				xm(q);
 			`,
-			errMsg: `subroutine "xm": undefined`,
+			errMsg: `subroutine "xm": undeclared`,
 		},
 		{
 			text:   "def f(qubit q) -> bit { return 1; } def f(qubit q) -> bit { return 0; }",
