@@ -2240,6 +2240,14 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		},
 		{
 			text: `
+				qubit q;
+				gphase(a);
+			`,
+			tree:   "(program (statementOrScope (statement (quantumDeclarationStatement (qubitType qubit) q ;))) (statementOrScope (statement (gateCallStatement gphase ( (expressionList (expression a)) ) ;))) <EOF>)",
+			errMsg: `literal "a": undefined`,
+		},
+		{
+			text: `
 				qubit[2] q;
 				U(true, 0, pi) q;
 			`,
