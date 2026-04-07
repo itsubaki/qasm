@@ -12,7 +12,7 @@ type SyntaxError struct {
 	Message string
 }
 
-func (e *SyntaxError) Error() string {
+func (e SyntaxError) Error() string {
 	return fmt.Sprintf("%d:%d: %s", e.Line, e.Column, e.Message)
 }
 
