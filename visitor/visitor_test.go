@@ -913,10 +913,103 @@ func TestVisitor_VisitResetStatement(t *testing.T) {
 	}
 }
 
+func TestVisitor_VisitAdditiveExpression(t *testing.T) {
+	cases := []struct {
+		text   string
+		want   string
+		errMsg string
+	}{
+		{
+			text: "1 + 3;",
+			want: "4",
+		},
+		{
+			text: "1.1 + 3;",
+			want: "4.1",
+		},
+		{
+			text: "1.0 - 3;",
+			want: "-2",
+		},
+		{
+			text: "1 - 3.1;",
+			want: "-2.1",
+		},
+		{
+			text: "1.3 - 3.1;",
+			want: "-1.8",
+		},
+		{
+			text: "int(1.5)+int(2.5);",
+			want: "3",
+		},
+		{
+			text: "int(1.5)-int(2.5);",
+			want: "-1",
+		},
+		{
+			text: "int(2.5)+1;",
+			want: "3",
+		},
+		{
+			text: "int(2.5)+1.5;",
+			want: "3.5",
+		},
+		{
+			text: "1+int(2.5);",
+			want: "3",
+		},
+		{
+			text: "1.5+int(2.5);",
+			want: "3.5",
+		},
+		{
+			text: "int(2.5)-1;",
+			want: "1",
+		},
+		{
+			text: "int(2.5)-1.5;",
+			want: "0.5",
+		},
+		{
+			text: "1-int(2.5);",
+			want: "-1",
+		},
+		{
+			text: "1.5-int(2.5);",
+			want: "-0.5",
+		},
+		{
+			text:   "9.0 + foobar(1);",
+			errMsg: `subroutine "foobar": undeclared`,
+		},
+		{
+			text:   "foobar(1) + 9.0;",
+			errMsg: `subroutine "foobar": undeclared`,
+		},
+	}
+
+	for _, c := range cases {
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
+			}
+
+			continue
+		}
+
+		if fmt.Sprintf("%v", result) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
 func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
 	cases := []struct {
-		text string
-		want string
+		text   string
+		want   string
+		errMsg string
 	}{
 		{
 			text: "1 * 3;",
@@ -994,85 +1087,13 @@ func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
 			text: "9.0 / int(3);",
 			want: "3",
 		},
-	}
-
-	for _, c := range cases {
-		result, err := visitor.Visit(c.text)
-		if err != nil {
-			t.Fail()
-		}
-
-		if fmt.Sprintf("%v", result) != c.want {
-			t.Errorf("got=%v, want=%v", result, c.want)
-		}
-	}
-}
-
-func TestVisitor_VisitAdditiveExpression(t *testing.T) {
-	cases := []struct {
-		text   string
-		want   string
-		errMsg string
-	}{
 		{
-			text: "1 + 3;",
-			want: "4",
+			text:   "9.0 / foobar(1);",
+			errMsg: `subroutine "foobar": undeclared`,
 		},
 		{
-			text: "1.1 + 3;",
-			want: "4.1",
-		},
-		{
-			text: "1.0 - 3;",
-			want: "-2",
-		},
-		{
-			text: "1 - 3.1;",
-			want: "-2.1",
-		},
-		{
-			text: "1.3 - 3.1;",
-			want: "-1.8",
-		},
-		{
-			text: "int(1.5)+int(2.5);",
-			want: "3",
-		},
-		{
-			text: "int(1.5)-int(2.5);",
-			want: "-1",
-		},
-		{
-			text: "int(2.5)+1;",
-			want: "3",
-		},
-		{
-			text: "int(2.5)+1.5;",
-			want: "3.5",
-		},
-		{
-			text: "1+int(2.5);",
-			want: "3",
-		},
-		{
-			text: "1.5+int(2.5);",
-			want: "3.5",
-		},
-		{
-			text: "int(2.5)-1;",
-			want: "1",
-		},
-		{
-			text: "int(2.5)-1.5;",
-			want: "0.5",
-		},
-		{
-			text: "1-int(2.5);",
-			want: "-1",
-		},
-		{
-			text: "1.5-int(2.5);",
-			want: "-0.5",
+			text:   "foobar(1) / 9.0;",
+			errMsg: `subroutine "foobar": undeclared`,
 		},
 	}
 
@@ -1080,7 +1101,7 @@ func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 		result, err := visitor.Visit(c.text)
 		if err != nil {
 			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
+				t.Fatalf("got=%v, want=%v", err, c.errMsg)
 			}
 
 			continue
@@ -1184,8 +1205,9 @@ func TestVisitor_VisitCallExpression(t *testing.T) {
 
 func TestVisitor_VisitPowerExpression(t *testing.T) {
 	cases := []struct {
-		text string
-		want string
+		text   string
+		want   string
+		errMsg string
 	}{
 		{
 			text: "2**3;",
@@ -1195,12 +1217,24 @@ func TestVisitor_VisitPowerExpression(t *testing.T) {
 			text: "2**0.5;",
 			want: "1.4142135623730951",
 		},
+		{
+			text:   "foobar**0.5;",
+			errMsg: `literal "foobar": undeclared`,
+		},
+		{
+			text:   "2**foobar;",
+			errMsg: `literal "foobar": undeclared`,
+		},
 	}
 
 	for _, c := range cases {
 		result, err := visitor.Visit(c.text)
 		if err != nil {
-			t.Fail()
+			if err.Error() != c.errMsg {
+				t.Fatalf("got=%v, want=%v", err, c.errMsg)
+			}
+
+			continue
 		}
 
 		if fmt.Sprintf("%v", result) != c.want {
@@ -1381,8 +1415,9 @@ func TestVisitor_VisitBitshiftExpression(t *testing.T) {
 
 func TestVisitor_VisitEqualityExpression(t *testing.T) {
 	cases := []struct {
-		text string
-		want bool
+		text   string
+		want   bool
+		errMsg string
 	}{
 		{
 			text: "10.0 == 2.0 * 5;",
@@ -1460,12 +1495,24 @@ func TestVisitor_VisitEqualityExpression(t *testing.T) {
 			text: "float(5.5) != int(3);",
 			want: true,
 		},
+		{
+			text:   "foobar == 3;",
+			errMsg: `literal "foobar": undeclared`,
+		},
+		{
+			text:   "3 == foobar;",
+			errMsg: `literal "foobar": undeclared`,
+		},
 	}
 
 	for _, c := range cases {
 		result, err := visitor.Visit(c.text)
 		if err != nil {
-			t.Fail()
+			if err.Error() != c.errMsg {
+				t.Fatalf("got=%v, want=%v", err, c.errMsg)
+			}
+
+			continue
 		}
 
 		if result.(bool) != c.want {
@@ -1476,8 +1523,9 @@ func TestVisitor_VisitEqualityExpression(t *testing.T) {
 
 func TestVisitor_VisitUnaryExpression(t *testing.T) {
 	cases := []struct {
-		text string
-		want bool
+		text   string
+		want   bool
+		errMsg string
 	}{
 		{
 			text: "!false;",
@@ -1503,12 +1551,20 @@ func TestVisitor_VisitUnaryExpression(t *testing.T) {
 			text: "~5 == -6;",
 			want: true,
 		},
+		{
+			text:   "-foobar;",
+			errMsg: `literal "foobar": undeclared`,
+		},
 	}
 
 	for _, c := range cases {
 		result, err := visitor.Visit(c.text)
 		if err != nil {
-			t.Fail()
+			if err.Error() != c.errMsg {
+				t.Fatalf("got=%v, want=%v", err, c.errMsg)
+			}
+
+			continue
 		}
 
 		if result.(bool) != c.want {
@@ -1519,8 +1575,9 @@ func TestVisitor_VisitUnaryExpression(t *testing.T) {
 
 func TestVisitor_VisitComparisonExpression(t *testing.T) {
 	cases := []struct {
-		text string
-		want string
+		text   string
+		want   string
+		errMsg string
 	}{
 		{
 			text: "2.0 < 3;",
@@ -1538,12 +1595,24 @@ func TestVisitor_VisitComparisonExpression(t *testing.T) {
 			text: "2 >= 3;",
 			want: "false",
 		},
+		{
+			text:   "foobar > 3;",
+			errMsg: `literal "foobar": undeclared`,
+		},
+		{
+			text:   "3 < foobar;",
+			errMsg: `literal "foobar": undeclared`,
+		},
 	}
 
 	for _, c := range cases {
 		result, err := visitor.Visit(c.text)
 		if err != nil {
-			t.Fail()
+			if err.Error() != c.errMsg {
+				t.Fatalf("got=%v, want=%v", err, c.errMsg)
+			}
+
+			continue
 		}
 
 		if fmt.Sprintf("%v", result) != c.want {

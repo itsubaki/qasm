@@ -1029,7 +1029,15 @@ func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) any {
 
 func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
+	if err, ok := left.(error); ok && err != nil {
+		return err
+	}
+
 	right := v.Visit(ctx.Expression(1))
+	if err, ok := right.(error); ok && err != nil {
+		return err
+	}
+
 	a, b := value.New(left), value.New(right)
 
 	if ctx.PLUS() != nil {
@@ -1055,7 +1063,15 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 
 func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
+	if err, ok := left.(error); ok && err != nil {
+		return err
+	}
+
 	right := v.Visit(ctx.Expression(1))
+	if err, ok := right.(error); ok && err != nil {
+		return err
+	}
+
 	a, b := value.New(left), value.New(right)
 
 	if ctx.ASTERISK() != nil {
@@ -1090,10 +1106,18 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 
 func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
-	right := v.Visit(ctx.Expression(1))
-	a, b := value.New(left), value.New(right)
+	if err, ok := left.(error); ok && err != nil {
+		return err
+	}
 
+	right := v.Visit(ctx.Expression(1))
+	if err, ok := right.(error); ok && err != nil {
+		return err
+	}
+
+	a, b := value.New(left), value.New(right)
 	op := v.Visit(ctx.EqualityOperator()).(string)
+
 	switch op {
 	case "==":
 		w, err := a.Eq(b)
@@ -1116,10 +1140,18 @@ func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext)
 
 func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
-	right := v.Visit(ctx.Expression(1))
-	a, b := value.New(left), value.New(right)
+	if err, ok := left.(error); ok && err != nil {
+		return err
+	}
 
+	right := v.Visit(ctx.Expression(1))
+	if err, ok := right.(error); ok && err != nil {
+		return err
+	}
+
+	a, b := value.New(left), value.New(right)
 	op := v.Visit(ctx.ComparisonOperator()).(string)
+
 	switch op {
 	case "<":
 		w, err := a.LessThan(b)
@@ -1156,6 +1188,10 @@ func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionCont
 
 func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) any {
 	x := v.Visit(ctx.Expression())
+	if err, ok := x.(error); ok && err != nil {
+		return err
+	}
+
 	switch {
 	case ctx.MINUS() != nil:
 		w, err := value.New(x).Negative()
@@ -1185,7 +1221,15 @@ func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) any {
 
 func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) any {
 	base := v.Visit(ctx.Expression(0))
+	if err, ok := base.(error); ok && err != nil {
+		return err
+	}
+
 	exp := v.Visit(ctx.Expression(1))
+	if err, ok := exp.(error); ok && err != nil {
+		return err
+	}
+
 	a, b := value.New(base), value.New(exp)
 
 	w, err := a.Pow(b)
@@ -1194,21 +1238,6 @@ func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) any {
 	}
 
 	return w.Value()
-}
-
-func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext) any {
-	op := v.Visit(ctx.BitshiftOperator()).(string)
-	result := v.Visit(ctx.AllExpression()[0]).(int64)
-	for _, x := range ctx.AllExpression()[1:] {
-		switch op {
-		case "<<":
-			result = result << v.Visit(x).(int64)
-		case ">>":
-			result = result >> v.Visit(x).(int64)
-		}
-	}
-
-	return result
 }
 
 func (v *Visitor) VisitLogicalAndExpression(ctx *parser.LogicalAndExpressionContext) any {
@@ -1255,6 +1284,21 @@ func (v *Visitor) VisitBitwiseXorExpression(ctx *parser.BitwiseXorExpressionCont
 	result := v.Visit(ctx.AllExpression()[0]).(int64)
 	for _, x := range ctx.AllExpression()[1:] {
 		result = result ^ v.Visit(x).(int64)
+	}
+
+	return result
+}
+
+func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext) any {
+	op := v.Visit(ctx.BitshiftOperator()).(string)
+	result := v.Visit(ctx.AllExpression()[0]).(int64)
+	for _, x := range ctx.AllExpression()[1:] {
+		switch op {
+		case "<<":
+			result = result << v.Visit(x).(int64)
+		case ">>":
+			result = result >> v.Visit(x).(int64)
+		}
 	}
 
 	return result
