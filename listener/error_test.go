@@ -20,9 +20,9 @@ qubit q0 q1;
 
 	_ = p.Program()
 	for _, e := range errListener.Errors {
-		fmt.Println(e)
+		fmt.Println(e.Error())
 	}
 
 	// Output:
-	// syntax error at line:3:9: extraneous input 'q1' expecting ';'
+	// 3:9: extraneous input 'q1' expecting ';'
 }
