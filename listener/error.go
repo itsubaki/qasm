@@ -12,13 +12,13 @@ type SyntaxError struct {
 	Message string
 }
 
-func (e SyntaxError) Error() string {
+func (e *SyntaxError) Error() string {
 	return fmt.Sprintf("%d:%d: %s", e.Line, e.Column, e.Message)
 }
 
 type ErrorListener struct {
 	antlr.DefaultErrorListener
-	Errors []SyntaxError
+	Errors []*SyntaxError
 }
 
 func (l *ErrorListener) SyntaxError(
@@ -29,7 +29,7 @@ func (l *ErrorListener) SyntaxError(
 	msg string,
 	_ antlr.RecognitionException,
 ) {
-	l.Errors = append(l.Errors, SyntaxError{
+	l.Errors = append(l.Errors, &SyntaxError{
 		Line:    line,
 		Column:  column,
 		Message: msg,

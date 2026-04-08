@@ -19,8 +19,8 @@ qubit q0 q1;
 	errListener := listener.NewErrorListener(l, p)
 
 	_ = p.Program()
-	for _, e := range errListener.Errors {
-		fmt.Println(e.Error())
+	for _, err := range errListener.Errors {
+		fmt.Println(err)
 	}
 
 	// Output:
