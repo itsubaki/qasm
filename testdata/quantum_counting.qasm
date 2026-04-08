@@ -72,5 +72,5 @@ for int i in [0:n-1] {
 inv_qft(c);
 
 // bit m = measure c;
-// 011: phi=0.3750, theta=2.3562, M=2.3431
-// 101: phi=0.6250, theta=3.9270, M=2.3431
+// 011: phi=0.3750, theta=0.7854; M=2.3431
+// 101: phi=0.6250, theta=0.7854; M=2.3431
