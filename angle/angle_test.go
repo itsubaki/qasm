@@ -25,7 +25,7 @@ func ExampleAngle() {
 	// 3.141592653589793(8,1000)
 }
 
-func TestMod(t *testing.T) {
+func TestMod2Pi(t *testing.T) {
 	cases := []struct {
 		radian float64
 		want   float64
