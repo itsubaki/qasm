@@ -516,12 +516,8 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 				return fmt.Errorf("apply %q: %w", mod.GetText(), err)
 			}
 
-			w, err := Pow2x2(u, p.Value().(float64))
-			if err != nil {
-				return fmt.Errorf("apply %q: %w", mod.GetText(), err)
-			}
-
-			u = w
+			// u is builtin gate, so Pow2x2 is used.
+			u = Pow2x2(u, p.Value().(float64))
 		}
 	}
 
