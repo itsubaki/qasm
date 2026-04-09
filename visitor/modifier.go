@@ -1,6 +1,7 @@
 package visitor
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/itsubaki/q/math/matrix"
@@ -25,11 +26,17 @@ func ReversedModifier(ctx parser.IGateCallStatementContext) []parser.IGateModifi
 	return modifier
 }
 
-func Pow(u *matrix.Matrix, p float64) *matrix.Matrix {
+// Pow2x2 returns u**p for 2x2 matrix u and float p.
+// If p is negative, returns (u-dagger)**p.
+func Pow2x2(u *matrix.Matrix, p float64) (*matrix.Matrix, error) {
+	if u.Rows != 2 || u.Cols != 2 {
+		return nil, fmt.Errorf("unsupported matrix size %dx%d", u.Rows, u.Cols)
+	}
+
 	if p < 0 {
 		p, u = -p, u.Dagger()
 	}
 
 	// TODO: support float type
-	return matrix.ApplyN(u, int(p))
+	return matrix.ApplyN(u, int(p)), nil
 }

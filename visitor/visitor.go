@@ -516,7 +516,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 				return fmt.Errorf("apply %q: %w", mod.GetText(), err)
 			}
 
-			u = Pow(u, p.Value().(float64))
+			w, err := Pow2x2(u, p.Value().(float64))
+			if err != nil {
+				return fmt.Errorf("apply %q: %w", mod.GetText(), err)
+			}
+
+			u = w
 		}
 	}
 
