@@ -391,8 +391,8 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix,
 
 func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) error {
 	if len(ctx.AllGateModifier()) > 0 {
-		// NOTE: modifier is not implemented in user-defined
-		return fmt.Errorf("modifier is not implemented in user-defined: %w", ErrNotImplemented)
+		// NOTE: modifier is not implemented in user-defined call
+		return fmt.Errorf("user-defined call with modifier: %w", ErrNotImplemented)
 	}
 
 	id := v.Visit(ctx.Identifier()).(string)
@@ -472,7 +472,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 				u = u.Dagger()
 			case mod.POW() != nil:
 				// NOTE: pow is not implemented with control modifier
-				return fmt.Errorf("pow with control modifier is not implemented: %w", ErrNotImplemented)
+				return fmt.Errorf("pow with control modifier: %w", ErrNotImplemented)
 			case mod.CTRL() != nil:
 				n, ok := v.Visit(mod).(int64)
 				if !ok {

@@ -1701,7 +1701,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				U(pi/2, 0, pi) q[0];
 				ctrl @ pow(2) @ U(pi, 0, pi) q[0], q[1];
 			`,
-			errMsg: "pow with control modifier is not implemented: not implemented",
+			errMsg: "pow with control modifier: not implemented",
 		},
 		{
 			text: `
@@ -1857,7 +1857,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				qubit q;
 				inv @ u(pi, 0, pi) q;
 			`,
-			errMsg: "modifier is not implemented in user-defined: not implemented",
+			errMsg: "user-defined call with modifier: not implemented",
 		},
 		// not implemented.
 		// {
