@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.1
-	github.com/itsubaki/q v0.0.11-0.20260405013445-e7ca0594ef3b
+	github.com/itsubaki/q v0.0.11-0.20260410093247-18ccf2f20050
 )
 
-require golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
+require golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
