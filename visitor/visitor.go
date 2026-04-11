@@ -211,11 +211,11 @@ func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) any
 
 	program, err := qparser.Parse(string(text))
 	if err != nil {
-		return fmt.Errorf("include: %w", err)
+		return fmt.Errorf("include %s: %w", path, err)
 	}
 
 	if err := v.Run(program); err != nil {
-		return fmt.Errorf("include: %w", err)
+		return fmt.Errorf("include %s: %w", path, err)
 	}
 
 	return nil

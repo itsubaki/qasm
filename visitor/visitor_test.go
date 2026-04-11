@@ -42,34 +42,6 @@ func ExampleVisitor_Run() {
 	// 3.0
 }
 
-func ExampleVisitor_Run_error() {
-	text := `
-	const int a = 42;
-	const int a = 43;
-	`
-
-	if _, _, err := visitor.Run(text); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// Output:
-	// declare const "a": already declared
-}
-
-func ExampleVisit() {
-	text := `
-	const int a = 42;
-	const int a = 43;
-	`
-
-	_, err := visitor.Visit(text)
-	fmt.Println(err)
-
-	// Output:
-	// declare const "a": already declared
-}
-
 func ExampleVisitor_VisitVersion() {
 	text := "OPENQASM 3.0;"
 
@@ -98,34 +70,6 @@ func ExampleVisitor_VisitIncludeStatement() {
 	// [cx h i x y z]
 }
 
-func ExampleVisitor_VisitIncludeStatement_invalid() {
-	text := `
-	include "../testdata/invalid.qasm";
-	qubit q;
-	h q;
-	`
-
-	if _, _, err := visitor.Run(text); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// Output:
-	// include: literal "invalid": undeclared
-}
-
-func ExampleVisitor_VisitIncludeStatement_fileNotFound() {
-	text := `include "file_not_found.qasm";`
-
-	if _, _, err := visitor.Run(text); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// Output:
-	// read file file_not_found.qasm: open file_not_found.qasm: no such file or directory
-}
-
 func ExampleVisitor_VisitErrorNode() {
 	token := &antlr.BaseToken{}
 	token.SetText("something went wrong")
@@ -135,6 +79,91 @@ func ExampleVisitor_VisitErrorNode() {
 
 	// Output:
 	// something went wrong
+}
+
+func TestRun(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
+		{
+			text:   "const int a = 42; const int a = 42;",
+			errMsg: `declare const "a": already declared`,
+		},
+		{
+			text:   "qubit[ q;",
+			errMsg: "1:8: mismatched input ';' expecting ']'",
+		},
+	}
+
+	for _, c := range cases {
+		_, _, err := visitor.Run(c.text)
+		if err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%q, want=%q", err.Error(), c.errMsg)
+			}
+
+			continue
+		}
+	}
+}
+
+func TestVisit(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
+		{
+			text:   "const int a = 42; const int a = 42;",
+			errMsg: `declare const "a": already declared`,
+		},
+		{
+			text:   "qubit[ q;",
+			errMsg: "1:8: mismatched input ';' expecting ']'",
+		},
+	}
+
+	for _, c := range cases {
+		_, err := visitor.Visit(c.text)
+		if err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%q, want=%q", err.Error(), c.errMsg)
+			}
+
+			continue
+		}
+	}
+}
+
+func TestVisitor_VisitIncludeStatement(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
+		{
+			text:   `include "../testdata/invalid.qasm"; qubit q; h q;`,
+			errMsg: `include ../testdata/invalid.qasm: literal "invalid": undeclared`,
+		},
+		{
+			text:   `include "../testdata/invalid_syntax.qasm";`,
+			errMsg: `include ../testdata/invalid_syntax.qasm: 1:8: mismatched input ';' expecting ']'`,
+		},
+		{
+			text:   `include "file_not_found.qasm";`,
+			errMsg: `read file file_not_found.qasm: open file_not_found.qasm: no such file or directory`,
+		},
+	}
+
+	for _, c := range cases {
+		_, _, err := visitor.Run(c.text)
+		if err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%q, want=%q", err.Error(), c.errMsg)
+			}
+
+			continue
+		}
+	}
 }
 
 func TestVisitor_VisitChildren(t *testing.T) {
