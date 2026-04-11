@@ -16,7 +16,7 @@ import (
 	"github.com/itsubaki/qasm/angle"
 	"github.com/itsubaki/qasm/environ"
 	"github.com/itsubaki/qasm/gen/parser"
-	qparser "github.com/itsubaki/qasm/parser"
+	xparser "github.com/itsubaki/qasm/parser"
 	"github.com/itsubaki/qasm/value"
 )
 
@@ -47,7 +47,7 @@ func New(qsim *q.Q, env *environ.Environ, opt ...Option) *Visitor {
 }
 
 func Run(text string) (*q.Q, *environ.Environ, error) {
-	program, err := qparser.Parse(text)
+	program, err := xparser.Parse(text)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -63,7 +63,7 @@ func Run(text string) (*q.Q, *environ.Environ, error) {
 }
 
 func Visit(text string) (any, error) {
-	program, err := qparser.Parse(text)
+	program, err := xparser.Parse(text)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) any
 		return fmt.Errorf("read file %s: %v", path, err)
 	}
 
-	program, err := qparser.Parse(string(text))
+	program, err := xparser.Parse(string(text))
 	if err != nil {
 		return fmt.Errorf("include %s: %w", path, err)
 	}

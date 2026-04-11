@@ -10,7 +10,9 @@ import (
 func Parse(text string) (parser.IProgramContext, error) {
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-	listener := listener.NewErrorListener(lexer, p)
+	listener := &listener.ErrorListener{}
+	p.RemoveErrorListeners()     // remove default error listeners
+	p.AddErrorListener(listener) // add custom error listener
 
 	program := p.Program()
 	if len(listener.Errors) > 0 {
@@ -24,7 +26,9 @@ func Parse(text string) (parser.IProgramContext, error) {
 func StringTree(text string) (string, error) {
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-	listener := listener.NewErrorListener(lexer, p)
+	listener := &listener.ErrorListener{}
+	p.RemoveErrorListeners()     // remove default error listeners
+	p.AddErrorListener(listener) // add custom error listener
 
 	program := p.Program()
 	if len(listener.Errors) > 0 {

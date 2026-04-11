@@ -24,7 +24,10 @@ func Format(text string) (string, error) {
 	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	p := parser.Newqasm3Parser(stream)
-	listener := listener.NewErrorListener(p)
+
+	listener := &listener.ErrorListener{}
+	p.RemoveErrorListeners()     // remove default error listeners
+	p.AddErrorListener(listener) // add custom error listener
 
 	tree := p.Program()
 	if len(listener.Errors) > 0 {

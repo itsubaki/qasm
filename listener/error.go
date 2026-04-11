@@ -35,12 +35,3 @@ func (l *ErrorListener) SyntaxError(
 		Message: msg,
 	})
 }
-
-func NewErrorListener(r ...antlr.Recognizer) *ErrorListener {
-	listener := &ErrorListener{}
-	for _, v := range r {
-		v.AddErrorListener(listener)
-	}
-
-	return listener
-}
