@@ -11,11 +11,9 @@ import (
 	"slices"
 	"syscall"
 
-	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/environ"
-	"github.com/itsubaki/qasm/gen/parser"
-	"github.com/itsubaki/qasm/listener"
+	"github.com/itsubaki/qasm/parser"
 	"github.com/itsubaki/qasm/scan"
 	"github.com/itsubaki/qasm/visitor"
 )
@@ -39,7 +37,9 @@ func main() {
 			os.Exit(1)
 		}
 
-		Lex(text)
+		for _, token := range parser.Lex(text) {
+			fmt.Println(token)
+		}
 	case parse:
 		text, err := Read(filepath)
 		if err != nil {
@@ -47,7 +47,13 @@ func main() {
 			os.Exit(1)
 		}
 
-		Parse(text)
+		tree, err := parser.StringTree(text)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+		fmt.Println(tree)
 	case repl:
 		REPL(top)
 	default:
@@ -57,13 +63,9 @@ func main() {
 			os.Exit(1)
 		}
 
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-		errListener := listener.NewErrorListener(lexer, p)
-
-		program := p.Program()
-		if len(errListener.Errors) > 0 {
-			fmt.Fprintln(os.Stderr, errListener.Errors[0])
+		program, err := parser.Parse(text)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 
@@ -107,21 +109,6 @@ func Read(filepath string) (string, error) {
 	}
 
 	return text, nil
-}
-
-func Lex(text string) {
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	for _, token := range lexer.GetAllTokens() {
-		fmt.Println(token)
-	}
-}
-
-func Parse(text string) {
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-	tree := p.Program()
-
-	fmt.Println(tree.ToStringTree(nil, p))
 }
 
 func REPL(top int) {
@@ -180,13 +167,9 @@ func REPL(top int) {
 				continue
 			}
 
-			lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-			p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-			errListener := listener.NewErrorListener(lexer, p)
-
-			program := p.Program()
-			if len(errListener.Errors) > 0 {
-				fmt.Fprintln(os.Stderr, errListener.Errors[0])
+			program, err := parser.Parse(text)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
 				os.Exit(1)
 			}
 

@@ -3,10 +3,9 @@ package visitor_test
 import (
 	"fmt"
 
-	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/environ"
-	"github.com/itsubaki/qasm/gen/parser"
+	"github.com/itsubaki/qasm/parser"
 	"github.com/itsubaki/qasm/visitor"
 )
 
@@ -17,10 +16,13 @@ func ExampleWithMaxQubits() {
 		visitor.WithMaxQubits(5),
 	)
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(`qubit[10] q;`))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+	program, err := parser.Parse(`qubit[10] q;`)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	if err := v.Run(p.Program()); err != nil {
+	if err := v.Run(program); err != nil {
 		fmt.Println(err)
 	}
 
@@ -35,10 +37,13 @@ func ExampleWithMaxQubits_oldstyle() {
 		visitor.WithMaxQubits(5),
 	)
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(`qreg q[10];`))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+	program, err := parser.Parse(`qreg q[10];`)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	if err := v.Run(p.Program()); err != nil {
+	if err := v.Run(program); err != nil {
 		fmt.Println(err)
 	}
 
@@ -54,10 +59,13 @@ func ExampleWithMaxQubits_unlimited() {
 		visitor.WithMaxQubits(0),
 	)
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(`qubit[10] q;`))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+	program, err := parser.Parse(`qubit[10] q;`)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	if err := v.Run(p.Program()); err != nil {
+	if err := v.Run(program); err != nil {
 		fmt.Println(err)
 	}
 

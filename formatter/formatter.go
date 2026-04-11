@@ -3,6 +3,7 @@ package formatter
 import (
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/qasm/gen/parser"
+	"github.com/itsubaki/qasm/listener"
 )
 
 type Formatter struct {
@@ -17,6 +18,22 @@ func New(tokens *antlr.CommonTokenStream) *Formatter {
 		rewriter:                antlr.NewTokenStreamRewriter(tokens),
 		programName:             "default",
 	}
+}
+
+func Format(text string) (string, error) {
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+	p := parser.Newqasm3Parser(stream)
+	listener := listener.NewErrorListener(p)
+
+	tree := p.Program()
+	if len(listener.Errors) > 0 {
+		return "", listener.Errors[0]
+	}
+
+	f := New(stream)
+	antlr.ParseTreeWalkerDefault.Walk(f, tree)
+	return f.Format(), nil
 }
 
 func (f *Formatter) ExitVersion(ctx *parser.VersionContext) {

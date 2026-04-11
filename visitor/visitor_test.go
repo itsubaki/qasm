@@ -123,7 +123,7 @@ func ExampleVisitor_VisitIncludeStatement_fileNotFound() {
 	}
 
 	// Output:
-	// read file=file_not_found.qasm: open file_not_found.qasm: no such file or directory
+	// read file file_not_found.qasm: open file_not_found.qasm: no such file or directory
 }
 
 func ExampleVisitor_VisitErrorNode() {

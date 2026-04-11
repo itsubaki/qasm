@@ -16,6 +16,7 @@ import (
 	"github.com/itsubaki/qasm/angle"
 	"github.com/itsubaki/qasm/environ"
 	"github.com/itsubaki/qasm/gen/parser"
+	qparser "github.com/itsubaki/qasm/parser"
 	"github.com/itsubaki/qasm/value"
 )
 
@@ -46,13 +47,15 @@ func New(qsim *q.Q, env *environ.Environ, opt ...Option) *Visitor {
 }
 
 func Run(text string) (*q.Q, *environ.Environ, error) {
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+	program, err := qparser.Parse(text)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	qsim := q.New()
 	env := environ.New()
 	v := New(qsim, env)
-	if err := v.Run(p.Program()); err != nil {
+	if err := v.Run(program); err != nil {
 		return nil, nil, err
 	}
 
@@ -60,10 +63,12 @@ func Run(text string) (*q.Q, *environ.Environ, error) {
 }
 
 func Visit(text string) (any, error) {
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+	program, err := qparser.Parse(text)
+	if err != nil {
+		return nil, err
+	}
 
-	result := New(q.New(), environ.New()).Visit(p.Program())
+	result := New(q.New(), environ.New()).Visit(program)
 	if err, ok := result.(error); ok && err != nil {
 		return nil, err
 	}
@@ -201,13 +206,15 @@ func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) any
 	path := strings.Trim(v.Visit(ctx.StringLiteral()).(string), "\"")
 	text, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("read file=%s: %v", path, err)
+		return fmt.Errorf("read file %s: %v", path, err)
 	}
 
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(string(text)))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+	program, err := qparser.Parse(string(text))
+	if err != nil {
+		return fmt.Errorf("include: %w", err)
+	}
 
-	if err := v.Run(p.Program()); err != nil {
+	if err := v.Run(program); err != nil {
 		return fmt.Errorf("include: %w", err)
 	}
 
