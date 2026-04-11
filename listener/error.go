@@ -37,12 +37,6 @@ func (l *ErrorListener) SyntaxError(
 }
 
 func NewErrorListener(r ...antlr.Recognizer) *ErrorListener {
-	// remove default error listeners
-	for _, v := range r {
-		v.RemoveErrorListeners()
-	}
-
-	// add custom error listener
 	listener := &ErrorListener{}
 	for _, v := range r {
 		v.AddErrorListener(listener)

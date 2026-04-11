@@ -61,16 +61,15 @@ func main() {
 		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 		errListener := listener.NewErrorListener(lexer, p)
 
-		qsim := q.New()
-		env := environ.New()
-		v := visitor.New(qsim, env)
-
-		// parse
 		program := p.Program()
 		if len(errListener.Errors) > 0 {
 			fmt.Fprintln(os.Stderr, errListener.Errors[0])
 			os.Exit(1)
 		}
+
+		qsim := q.New()
+		env := environ.New()
+		v := visitor.New(qsim, env)
 
 		if err := v.Run(program); err != nil {
 			fmt.Fprintln(os.Stderr, err)
