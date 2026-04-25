@@ -85,6 +85,11 @@ func TestPow2x2_compose(t *testing.T) {
 			a:  0.5,
 			b:  -0.5,
 		},
+		{
+			in: gate.U(0.8, math.Pi, math.Pi),
+			a:  0.49,
+			b:  0.51,
+		},
 	}
 
 	for _, c := range cases {
