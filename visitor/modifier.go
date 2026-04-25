@@ -1,8 +1,11 @@
 package visitor
 
 import (
+	"math"
+	"math/cmplx"
 	"slices"
 
+	"github.com/itsubaki/q/math/epsilon"
 	"github.com/itsubaki/q/math/matrix"
 	"github.com/itsubaki/qasm/gen/parser"
 )
@@ -21,17 +24,41 @@ func ReversedModifier(ctx parser.IGateCallStatementContext) []parser.IGateModifi
 	modifier := make([]parser.IGateModifierContext, len(ctx.AllGateModifier()))
 	copy(modifier, ctx.AllGateModifier())
 	slices.Reverse(modifier)
-
 	return modifier
 }
 
 // Pow2x2 returns u**p for 2x2 matrix u and float p.
 // If p is negative, returns (u-dagger)**p.
-func Pow2x2(u *matrix.Matrix, p float64) *matrix.Matrix {
-	if p < 0 {
-		p, u = -p, u.Dagger()
+func Pow2x2(u *matrix.Matrix, p float64, tol ...float64) *matrix.Matrix {
+	// SU
+	det := u.At(0, 0)*u.At(1, 1) - u.At(0, 1)*u.At(1, 0)
+	phase := cmplx.Sqrt(det)
+	su := u.Mul(1 / phase)
+
+	// theta
+	tr := real(su.Trace())
+	cosTheta := max(min(tr/2, 1), -1)
+	theta := math.Acos(cosTheta)
+	sinTheta := math.Sin(theta)
+
+	// phase**p
+	phaseP := cmplx.Pow(phase, complex(p, 0))
+
+	// if sin(theta) is close to zero, su is close to I or -I.
+	if epsilon.IsZeroF64(sinTheta, tol...) {
+		idp := matrix.Identity(2).Mul(phaseP)
+		if cosTheta > 0 {
+			return idp
+		}
+
+		return idp.Mul(cmplx.Exp(complex(0, p*math.Pi)))
 	}
 
-	// TODO: support float type
-	return matrix.ApplyN(u, int(p))
+	id := matrix.Identity(2)
+	a := su.Sub(su.Dagger()).Mul(complex(0, -0.5/sinTheta))
+
+	// p*theta
+	cos := complex(math.Cos(p*theta), 0)
+	sin := complex(0, math.Sin(p*theta))
+	return id.Mul(cos).Add(a.Mul(sin)).Mul(phaseP)
 }
