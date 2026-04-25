@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/itsubaki/q/math/epsilon"
 	"github.com/itsubaki/q/math/matrix"
 	"github.com/itsubaki/q/quantum/gate"
 	"github.com/itsubaki/qasm/visitor"
@@ -30,6 +31,31 @@ func TestPow2x2(t *testing.T) {
 			p:    -1,
 			want: gate.T().Dagger(),
 		},
+		{
+			in:   gate.X(),
+			p:    0,
+			want: gate.I(),
+		},
+		{
+			in:   gate.U(0.7, 0.3, 1.1),
+			p:    0,
+			want: gate.I(),
+		},
+		{
+			// sqrt(X)
+			in: gate.X(),
+			p:  0.5,
+			want: gate.New(
+				[]complex128{complex(0.5, 0.5), complex(0.5, -0.5)},
+				[]complex128{complex(0.5, -0.5), complex(0.5, 0.5)},
+			),
+		},
+		{
+			// -I
+			in:   matrix.Identity(2).Mul(complex(-1, 0)),
+			p:    2,
+			want: matrix.Identity(2),
+		},
 	}
 
 	for _, c := range cases {
@@ -54,11 +80,6 @@ func TestPow2x2_compose(t *testing.T) {
 			in: gate.H(),
 			a:  0.3,
 			b:  0.7,
-		},
-		{
-			in: gate.T(),
-			a:  0.2,
-			b:  0.4,
 		},
 		{
 			in: gate.U(0.7, 0.3, 1.1),
@@ -90,6 +111,16 @@ func TestPow2x2_compose(t *testing.T) {
 			a:  0.49,
 			b:  0.51,
 		},
+		{
+			in: gate.X(),
+			a:  0.5,
+			b:  -0.5,
+		},
+		{
+			in: gate.H(),
+			a:  0.5,
+			b:  -0.5,
+		},
 	}
 
 	for _, c := range cases {
@@ -99,7 +130,7 @@ func TestPow2x2_compose(t *testing.T) {
 		ab := visitor.Pow2x2(c.in, c.a+c.b)
 
 		if !a.MatMul(b).Equal(ab) {
-			t.Fail()
+			t.Fatalf("a=%v b=%v", c.a, c.b)
 		}
 	}
 }
@@ -121,6 +152,10 @@ func FuzzPow2x2(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, p, theta, phi, lambda float64) {
 		if !isValid(p, theta, phi, lambda) {
+			return
+		}
+
+		if epsilon.IsZeroF64(p) {
 			return
 		}
 

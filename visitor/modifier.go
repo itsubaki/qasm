@@ -24,17 +24,12 @@ func ReversedModifier(ctx parser.IGateCallStatementContext) []parser.IGateModifi
 	modifier := make([]parser.IGateModifierContext, len(ctx.AllGateModifier()))
 	copy(modifier, ctx.AllGateModifier())
 	slices.Reverse(modifier)
-
 	return modifier
 }
 
 // Pow2x2 returns u**p for 2x2 matrix u and float p.
 // If p is negative, returns (u-dagger)**p.
 func Pow2x2(u *matrix.Matrix, p float64, tol ...float64) *matrix.Matrix {
-	if p < 0 {
-		p, u = -p, u.Dagger()
-	}
-
 	// SU
 	det := u.At(0, 0)*u.At(1, 1) - u.At(0, 1)*u.At(1, 0)
 	phase := cmplx.Sqrt(det)
@@ -49,14 +44,14 @@ func Pow2x2(u *matrix.Matrix, p float64, tol ...float64) *matrix.Matrix {
 	// phase**p
 	phaseP := cmplx.Pow(phase, complex(p, 0))
 
-	// If sin(theta) is zero, then u is either I or -I.
+	// if sin(theta) is close to zero, su is close to I or -I.
 	if epsilon.IsZeroF64(sinTheta, tol...) {
+		id := matrix.Identity(2).Mul(phaseP)
 		if cosTheta > 0 {
-			return su.Mul(phaseP)
+			return id
 		}
 
-		id := matrix.Identity(2)
-		return id.Mul(complex(math.Cos(p*math.Pi), 0)).Mul(phaseP)
+		return id.Mul(cmplx.Exp(complex(0, p*math.Pi)))
 	}
 
 	id := matrix.Identity(2)

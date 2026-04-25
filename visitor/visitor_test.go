@@ -1706,6 +1706,16 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 			},
 		},
 		{
+			text: `
+				qubit[2] q;
+				pow(0.5) @ U(pi, 0, pi) q[0];
+				pow(0.5) @ U(pi, 0, pi) q[0];
+			`,
+			want: []string{
+				"[10][  2]( 1.0000 0.0000i): 1.0000",
+			},
+		},
+		{
 			text: `qubit[2] q; pow(3) @ U(pi/2, 0, pi) q[0];`,
 			want: []string{
 				"[00][  0]( 0.7071 0.0000i): 0.5000",
