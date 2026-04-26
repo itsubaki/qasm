@@ -45,12 +45,12 @@ func Pow2x2(u *matrix.Matrix, p float64, tol ...float64) *matrix.Matrix {
 
 	// if sin(theta) is close to zero, su is close to I or -I.
 	if epsilon.IsZeroF64(sinTheta, tol...) {
-		id := matrix.Identity(2).Mul(phaseP)
+		idp := matrix.Identity(2).Mul(phaseP)
 		if cosTheta > 0 {
-			return id
+			return idp
 		}
 
-		return id.Mul(cmplx.Exp(complex(0, p*math.Pi)))
+		return idp.Mul(cmplx.Exp(complex(0, p*math.Pi)))
 	}
 
 	id := matrix.Identity(2)
@@ -59,6 +59,5 @@ func Pow2x2(u *matrix.Matrix, p float64, tol ...float64) *matrix.Matrix {
 	// p*theta
 	cos := complex(math.Cos(p*theta), 0)
 	sin := complex(0, math.Sin(p*theta))
-
 	return id.Mul(cos).Add(a.Mul(sin)).Mul(phaseP)
 }
