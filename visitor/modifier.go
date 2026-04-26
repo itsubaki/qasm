@@ -10,6 +10,7 @@ import (
 	"github.com/itsubaki/qasm/gen/parser"
 )
 
+// HasControlModifier returns true if the gate call statement has control modifiers.
 func HasControlModifier(ctx parser.IGateCallStatementContext) bool {
 	for _, mod := range ctx.AllGateModifier() {
 		if mod.CTRL() != nil || mod.NEGCTRL() != nil {
@@ -20,6 +21,7 @@ func HasControlModifier(ctx parser.IGateCallStatementContext) bool {
 	return false
 }
 
+// ReversedModifier returns the modifiers in reversed order.
 func ReversedModifier(ctx parser.IGateCallStatementContext) []parser.IGateModifierContext {
 	modifier := make([]parser.IGateModifierContext, len(ctx.AllGateModifier()))
 	copy(modifier, ctx.AllGateModifier())
