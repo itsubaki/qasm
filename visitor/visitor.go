@@ -1242,7 +1242,7 @@ func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) any {
 
 	w, err := a.Pow(b)
 	if err != nil {
-		return fmt.Errorf("%v**%v: %w", base, exp, err)
+		return fmt.Errorf("%v^%v: %w", base, exp, err)
 	}
 
 	return w.Value()

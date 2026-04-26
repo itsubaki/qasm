@@ -2152,7 +2152,7 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 			},
 		},
 		{
-			// sx**2 = x
+			// sx^2 = x
 			text: `
 				qubit q;
 				pow(2.0) @ U(pi/2, -pi/2, pi/2) q;

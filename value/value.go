@@ -174,7 +174,7 @@ func (v *Value) Pow(w *Value) (*Value, error) {
 		return New(math.Pow(left, b.v.(float64))), nil
 	}
 
-	return nil, fmt.Errorf("unexpected %T ** %T", a.v, b.v)
+	return nil, fmt.Errorf("unexpected %T^%T", a.v, b.v)
 }
 
 func (v *Value) Eq(w *Value) (*Value, error) {

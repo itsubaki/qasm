@@ -1,6 +1,6 @@
 package value
 
-// Pow returns a**r, the base-a exponential of r.
+// Pow returns a^r, the base-a exponential of r.
 func Pow[T int | int64](a, r T) T {
 	if a == 0 {
 		return 0
