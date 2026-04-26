@@ -5,7 +5,7 @@
 [![tests](https://github.com/itsubaki/qasm/workflows/tests/badge.svg)](https://github.com/itsubaki/qasm/actions)
 [![codecov](https://codecov.io/gh/itsubaki/qasm/branch/main/graph/badge.svg?token=94KAQTK9KT)](https://codecov.io/gh/itsubaki/qasm)
 
-Quantum computing simulator with OpenQASM.
+Quantum computing simulator for OpenQASM.
 
 ## Installation
 
