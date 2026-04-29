@@ -21,12 +21,13 @@ import (
 func main() {
 	var filepath string
 	var top int
-	var repl, lex, parse bool
+	var repl, lex, parse, verbose bool
 	flag.StringVar(&filepath, "f", "", "filepath")
 	flag.IntVar(&top, "top", -1, "top results")
 	flag.BoolVar(&repl, "repl", false, "REPL(read-eval-print loop) mode")
 	flag.BoolVar(&lex, "lex", false, "Lex the input into a sequence of tokens")
 	flag.BoolVar(&parse, "parse", false, "Parse the input and convert it into an AST (abstract syntax tree)")
+	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
 	flag.Parse()
 
 	switch {
@@ -83,13 +84,15 @@ func main() {
 			fmt.Println(s)
 		}
 
-		fmt.Printf("%-10s: %v\n", "const", env.Const)
-		fmt.Printf("%-10s: %v\n", "variable", env.Variable)
-		fmt.Printf("%-10s: %v\n", "bit", env.Bit)
-		fmt.Printf("%-10s: %v\n", "bit[]", env.BitArray)
-		fmt.Printf("%-10s: %v\n", "qubit", env.Qubit)
-		fmt.Printf("%-10s: %v\n", "gate", slices.Sorted(maps.Keys(env.Gate)))
-		fmt.Printf("%-10s: %v\n", "subroutine", slices.Sorted(maps.Keys(env.Subroutine)))
+		if verbose {
+			fmt.Printf("%-10s: %v\n", "const", env.Const)
+			fmt.Printf("%-10s: %v\n", "variable", env.Variable)
+			fmt.Printf("%-10s: %v\n", "bit", env.Bit)
+			fmt.Printf("%-10s: %v\n", "bit[]", env.BitArray)
+			fmt.Printf("%-10s: %v\n", "qubit", env.Qubit)
+			fmt.Printf("%-10s: %v\n", "gate", slices.Sorted(maps.Keys(env.Gate)))
+			fmt.Printf("%-10s: %v\n", "subroutine", slices.Sorted(maps.Keys(env.Subroutine)))
+		}
 	}
 }
 
