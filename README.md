@@ -24,6 +24,8 @@ Usage of qasm:
         Parse the input and convert it into an AST (abstract syntax tree)
   -repl
         REPL(read-eval-print loop) mode
+  -verbose
+        Enable verbose output
 ```
 
 ## Examples
