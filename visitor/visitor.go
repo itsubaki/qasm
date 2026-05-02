@@ -1581,7 +1581,11 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 		return fmt.Errorf("operand %q: %w", operand, ErrUndeclared)
 	}
 
-	index := v.Visit(id).([]int64)
+	index, ok := v.Visit(id).([]int64)
+	if !ok {
+		return fmt.Errorf("invalid identifier %q", id.GetText())
+	}
+
 	if len(index) == 0 {
 		return qb
 	}
