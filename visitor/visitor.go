@@ -423,11 +423,12 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 
 	// qargs
 	if ctx.GateOperandList() != nil {
-		qargs, ok := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
-		if !ok {
-			return fmt.Errorf("invalid operand %q", ctx.GateOperandList().GetText())
+		result := v.Visit(ctx.GateOperandList())
+		if err, ok := result.(error); ok && err != nil {
+			return err
 		}
 
+		qargs := result.([][]q.Qubit)
 		for i, id := range g.QArgs {
 			enclosed.env.Qubit[id] = qargs[i]
 		}
@@ -466,10 +467,11 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		// U(pi/2, 0, pi) c[0], c[1];
 		// ctrl @ U(pi, 0, pi) c, t;
 		// ctrl @ U(pi, 0, pi) c[0], t;
-		qargs, ok := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
-		if !ok {
-			return fmt.Errorf("invalid operand %q", ctx.GateOperandList().GetText())
+		result := v.Visit(ctx.GateOperandList())
+		if err, ok := result.(error); ok && err != nil {
+			return err
 		}
+		qargs := result.([][]q.Qubit)
 
 		var ctrl, neg []q.Qubit
 		var cursor int
@@ -533,11 +535,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	if ctx.GateOperandList() != nil {
 		// qubit q0; qubit q1; U q0, q1;
 		// qubit[2] q; U q;
-		operand, ok := v.Visit(ctx.GateOperandList()).([][]q.Qubit)
-		if !ok {
-			return fmt.Errorf("invalid operand %q", ctx.GateOperandList().GetText())
+		result := v.Visit(ctx.GateOperandList())
+		if err, ok := result.(error); ok && err != nil {
+			return err
 		}
 
+		operand := result.([][]q.Qubit)
 		for _, o := range operand {
 			qargs = append(qargs, o...)
 		}
@@ -650,12 +653,12 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 }
 
 func (v *Visitor) VisitResetStatement(ctx *parser.ResetStatementContext) any {
-	qargs, ok := v.Visit(ctx.GateOperand()).([]q.Qubit)
-	if !ok {
-		return fmt.Errorf("invalid operand %q", ctx.GateOperand().GetText())
+	result := v.Visit(ctx.GateOperand())
+	if err, ok := result.(error); ok && err != nil {
+		return err
 	}
 
-	v.qsim.Reset(qargs...)
+	v.qsim.Reset(result.([]q.Qubit)...)
 	return nil
 }
 
@@ -1413,11 +1416,12 @@ func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) any {
 }
 
 func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) any {
-	qargs, ok := v.Visit(ctx.GateOperand()).([]q.Qubit)
-	if !ok {
-		return fmt.Errorf("invalid operand %q", ctx.GateOperand().GetText())
+	result := v.Visit(ctx.GateOperand())
+	if err, ok := result.(error); ok && err != nil {
+		return err
 	}
 
+	qargs := result.([]q.Qubit)
 	v.qsim.Measure(qargs...)
 
 	var bits []bool
@@ -1578,14 +1582,15 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 
 	qb, ok := v.env.GetQubit(operand)
 	if !ok {
-		return fmt.Errorf("operand %q: %w", operand, ErrUndeclared)
+		return fmt.Errorf("qubit %q: %w", operand, ErrUndeclared)
 	}
 
-	index, ok := v.Visit(id).([]int64)
-	if !ok {
-		return fmt.Errorf("invalid identifier %q", id.GetText())
+	result := v.Visit(id)
+	if err, ok := result.(error); ok && err != nil {
+		return err
 	}
 
+	index := v.Visit(id).([]int64)
 	if len(index) == 0 {
 		return qb
 	}
@@ -1628,12 +1633,12 @@ func (v *Visitor) VisitIdentifierList(ctx *parser.IdentifierListContext) any {
 func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
 	var list [][]q.Qubit
 	for _, o := range ctx.AllGateOperand() {
-		operand, ok := v.Visit(o).([]q.Qubit)
-		if !ok {
-			return fmt.Errorf("invalid operand %q", o.GetText())
+		result := v.Visit(o)
+		if err, ok := result.(error); ok && err != nil {
+			return err
 		}
 
-		list = append(list, operand)
+		list = append(list, result.([]q.Qubit))
 	}
 
 	return list

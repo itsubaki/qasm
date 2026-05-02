@@ -94,6 +94,10 @@ func TestRun(t *testing.T) {
 			text:   "qubit[ q;",
 			errMsg: "1:8: mismatched input ';' expecting ']'",
 		},
+		{
+			text:   "qubit[2] q; U(pi/2.0, 0, pi) q[1.1];",
+			errMsg: `index must be an integer '1.1'`,
+		},
 	}
 
 	for _, c := range cases {
@@ -920,7 +924,7 @@ func TestVisitor_VisitResetStatement(t *testing.T) {
 		},
 		{
 			text:   "int a = 1; reset a;",
-			errMsg: `invalid operand "a"`,
+			errMsg: `qubit "a": undeclared`,
 		},
 	}
 
@@ -1748,7 +1752,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				qubit t;
 				ctrl @ U(pi, 0, pi) a, t;
 			`,
-			errMsg: `invalid operand "a,t"`,
+			errMsg: `qubit "a": undeclared`,
 		},
 		{
 			text: `
@@ -1768,7 +1772,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		},
 		{
 			text:   `U(pi, 0, pi) q;`,
-			errMsg: `invalid operand "q"`,
+			errMsg: `qubit "q": undeclared`,
 		},
 	}
 
@@ -1880,7 +1884,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				int a = 1;
 				myg a;
 			`,
-			errMsg: `invalid operand "a"`,
+			errMsg: `qubit "a": undeclared`,
 		},
 		{
 			text: `
@@ -3070,7 +3074,7 @@ func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
 	}{
 		{
 			text:   "int a = 1; bit c = measure a;",
-			errMsg: `invalid operand "a"`,
+			errMsg: `qubit "a": undeclared`,
 		},
 	}
 
