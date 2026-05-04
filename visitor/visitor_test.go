@@ -2186,6 +2186,17 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				"[11][  3]( 0.7071 0.0000i): 0.5000",
 			},
 		},
+		{
+			text: `
+				qubit[2] q;
+				U(pi/2, 0, pi) q[0];
+				ctrl @ inv @ U(pi, 0, pi) q[0], q[1];
+			`,
+			want: []string{
+				"[00][  0]( 0.7071 0.0000i): 0.5000",
+				"[11][  3]( 0.7071 0.0000i): 0.5000",
+			},
+		},
 	}
 
 	for _, c := range cases {
