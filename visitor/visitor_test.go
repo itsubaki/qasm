@@ -1740,14 +1740,6 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		},
 		{
 			text: `
-				qubit[2] q;
-				U(pi/2, 0, pi) q[0];
-				ctrl @ pow(2) @ U(pi, 0, pi) q[0], q[1];
-			`,
-			errMsg: "pow with control modifier: not implemented",
-		},
-		{
-			text: `
 				int a = 1;
 				qubit t;
 				ctrl @ U(pi, 0, pi) a, t;
@@ -2143,6 +2135,20 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 			},
 		},
 		{
+			text: `qubit q; inv @ pow(0.5) @ U(0.3, 1.1, 2.7) q;`,
+			want: []string{
+				"[0][  0]( 0.9958 0.0040i): 0.9915",
+				"[1][  1]( 0.0905-0.0164i): 0.0085",
+			},
+		},
+		{
+			text: `qubit q; pow(0.5) @ inv @ U(0.3, 1.1, 2.7) q;`,
+			want: []string{
+				"[0][  0]( 0.9958 0.0040i): 0.9915",
+				"[1][  1]( 0.0905-0.0164i): 0.0085",
+			},
+		},
+		{
 			text: `
 				qubit[3] q;
 				U(pi/2.0, 0, pi) q[0], q[1];
@@ -2196,6 +2202,35 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				"[00][  0]( 0.7071 0.0000i): 0.5000",
 				"[11][  3]( 0.7071 0.0000i): 0.5000",
 			},
+		},
+		{
+			text: `
+				qubit[2] q;
+				U(pi/2, 0, pi) q[0];
+				ctrl @ pow(2) @ U(pi/2, -pi/2, pi/2) q[0], q[1];
+			`,
+			want: []string{
+				"[00][  0]( 0.7071 0.0000i): 0.5000",
+				"[11][  3]( 0.0000-0.7071i): 0.5000",
+			},
+		},
+		{
+			// not implemented
+			text: `
+				qubit[2] q;
+				U(pi/2, 0, pi) q[0];
+				pow(2) @ ctrl @ U(pi/2, -pi/2, pi/2) q[0], q[1];
+			`,
+			errMsg: "pow applied after ctrl: not implemented",
+		},
+		{
+			// not implemented
+			text: `
+				qubit[2] q;
+				U(pi/2, 0, pi) q[0];
+				pow(2) @ negctrl @ U(pi/2, -pi/2, pi/2) q[0], q[1];
+			`,
+			errMsg: "pow applied after negctrl: not implemented",
 		},
 	}
 

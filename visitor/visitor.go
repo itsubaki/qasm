@@ -447,6 +447,32 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 }
 
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
+	// NOTE: control modifier with pow modifier is not implemented.
+	var hasPow bool
+	for _, mod := range ctx.AllGateModifier() {
+		switch {
+		case mod.POW() != nil:
+			hasPow = true
+		case mod.CTRL() != nil:
+			if !hasPow {
+				// ctrl @ pow @ U;
+				continue
+			}
+
+			// pow @ ctrl @ U;
+			return fmt.Errorf("pow applied after ctrl: %w", ErrNotImplemented)
+		case mod.NEGCTRL() != nil:
+			if !hasPow {
+				// negctrl @ pow @ U;
+				continue
+			}
+
+			// pow @ negctrl @ U;
+			return fmt.Errorf("pow applied after negctrl: %w", ErrNotImplemented)
+		}
+	}
+
+	// builtin gate
 	u, ok, err := v.Builtin(ctx)
 	if err != nil {
 		return err
@@ -460,6 +486,23 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		return nil
 	}
 
+	// inv and pow modifiers
+	for _, mod := range ctx.AllGateModifier() {
+		switch {
+		case mod.INV() != nil:
+			u = u.Dagger()
+		case mod.POW() != nil:
+			p, err := value.New(v.Visit(mod)).Float64()
+			if err != nil {
+				return fmt.Errorf("apply %q: %w", mod.GetText(), err)
+			}
+
+			// u is builtin gate, so Pow2x2 is used.
+			u = Pow2x2(u, p.Value().(float64))
+		}
+	}
+
+	// control modifiers
 	if HasControlModifier(ctx) {
 		// qubit[2] c;
 		// qubit t;
@@ -477,11 +520,6 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		var cursor int
 		for _, mod := range ctx.AllGateModifier() {
 			switch {
-			case mod.INV() != nil:
-				u = u.Dagger()
-			case mod.POW() != nil:
-				// NOTE: pow is not implemented with control modifier
-				return fmt.Errorf("pow with control modifier: %w", ErrNotImplemented)
 			case mod.CTRL() != nil:
 				n, ok := v.Visit(mod).(int64)
 				if !ok {
@@ -512,22 +550,6 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		target := qargs[len(qargs)-1]
 		v.qsim.Controlled(u, ctrl, target)
 		return nil
-	}
-
-	// no control modifier
-	for _, mod := range ReversedModifier(ctx) {
-		switch {
-		case mod.INV() != nil:
-			u = u.Dagger()
-		case mod.POW() != nil:
-			p, err := value.New(v.Visit(mod)).Float64()
-			if err != nil {
-				return fmt.Errorf("apply %q: %w", mod.GetText(), err)
-			}
-
-			// u is builtin gate, so Pow2x2 is used.
-			u = Pow2x2(u, p.Value().(float64))
-		}
 	}
 
 	// qargs

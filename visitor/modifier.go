@@ -3,7 +3,6 @@ package visitor
 import (
 	"math"
 	"math/cmplx"
-	"slices"
 
 	"github.com/itsubaki/q/math/epsilon"
 	"github.com/itsubaki/q/math/matrix"
@@ -19,14 +18,6 @@ func HasControlModifier(ctx parser.IGateCallStatementContext) bool {
 	}
 
 	return false
-}
-
-// ReversedModifier returns the modifiers in reversed order.
-func ReversedModifier(ctx parser.IGateCallStatementContext) []parser.IGateModifierContext {
-	modifier := make([]parser.IGateModifierContext, len(ctx.AllGateModifier()))
-	copy(modifier, ctx.AllGateModifier())
-	slices.Reverse(modifier)
-	return modifier
 }
 
 // Pow2x2 returns u^p for 2x2 matrix u and float p.
