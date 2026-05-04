@@ -1,6 +1,7 @@
 package visitor
 
 import (
+	"fmt"
 	"math"
 	"math/cmplx"
 
@@ -8,6 +9,31 @@ import (
 	"github.com/itsubaki/q/math/matrix"
 	"github.com/itsubaki/qasm/gen/parser"
 )
+
+// NotImplementedOrder returns an error if the order of modifiers is not implemented.
+func NotImplementedOrder(ctx *parser.GateCallStatementContext) error {
+	var pow bool
+	for _, mod := range ctx.AllGateModifier() {
+		switch {
+		case mod.POW() != nil:
+			pow = true
+		case mod.CTRL() != nil:
+			if !pow {
+				continue
+			}
+
+			return fmt.Errorf("pow applied after ctrl: %w", ErrNotImplemented)
+		case mod.NEGCTRL() != nil:
+			if !pow {
+				continue
+			}
+
+			return fmt.Errorf("pow applied after negctrl: %w", ErrNotImplemented)
+		}
+	}
+
+	return nil
+}
 
 // HasControlModifier returns true if the gate call statement has control modifiers.
 func HasControlModifier(ctx parser.IGateCallStatementContext) bool {

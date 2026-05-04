@@ -447,29 +447,9 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 }
 
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
-	// NOTE: control modifier with pow modifier is not implemented.
-	var hasPow bool
-	for _, mod := range ctx.AllGateModifier() {
-		switch {
-		case mod.POW() != nil:
-			hasPow = true
-		case mod.CTRL() != nil:
-			if !hasPow {
-				// ctrl @ pow @ U;
-				continue
-			}
-
-			// pow @ ctrl @ U;
-			return fmt.Errorf("pow applied after ctrl: %w", ErrNotImplemented)
-		case mod.NEGCTRL() != nil:
-			if !hasPow {
-				// negctrl @ pow @ U;
-				continue
-			}
-
-			// pow @ negctrl @ U;
-			return fmt.Errorf("pow applied after negctrl: %w", ErrNotImplemented)
-		}
+	// NOTE: The "pow@ ctrl@" and "pow@ negctrl@" modifier orders are not supported.
+	if err := NotImplementedOrder(ctx); err != nil {
+		return err
 	}
 
 	// builtin gate
