@@ -12,6 +12,7 @@ import (
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/q/math/matrix"
+	"github.com/itsubaki/q/math/number"
 	"github.com/itsubaki/q/quantum/gate"
 	"github.com/itsubaki/qasm/angle"
 	"github.com/itsubaki/qasm/environ"
@@ -1428,7 +1429,10 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) a
 
 	var bits []bool
 	for _, q := range qargs {
-		bits = append(bits, v.qsim.State(q)[0].Int()[0] == 1)
+		binary := v.qsim.State(q)[0].BinaryString()[0]
+		intv := number.MustParseInt(binary)
+
+		bits = append(bits, intv == 1)
 	}
 
 	if len(bits) == 1 {
