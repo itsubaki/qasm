@@ -88,7 +88,7 @@ func TestRun(t *testing.T) {
 	}{
 		{
 			text:   "const int a = 42; const int a = 42;",
-			errMsg: `declare const "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "qubit[ q;",
@@ -119,7 +119,7 @@ func TestVisit(t *testing.T) {
 	}{
 		{
 			text:   "const int a = 42; const int a = 42;",
-			errMsg: `declare const "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "qubit[ q;",
@@ -146,7 +146,7 @@ func TestVisitor_VisitIncludeStatement(t *testing.T) {
 	}{
 		{
 			text:   `include "../testdata/invalid.qasm"; qubit q; h q;`,
-			errMsg: `include ../testdata/invalid.qasm: literal "invalid": undeclared`,
+			errMsg: `include ../testdata/invalid.qasm: undefined "invalid"`,
 		},
 		{
 			text:   `include "../testdata/invalid_syntax.qasm";`,
@@ -182,7 +182,7 @@ func TestVisitor_VisitChildren(t *testing.T) {
 		},
 		{
 			text:   "const int a = 42; const int a = 43;",
-			errMsg: `declare const "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 	}
 
@@ -222,7 +222,7 @@ func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 		},
 		{
 			text:   "const int a = 42; const int a = 43;",
-			errMsg: `declare const "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 	}
 
@@ -366,51 +366,51 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		},
 		{
 			text:   "float a = 1; float a = 0;",
-			errMsg: `declare float "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "int a = 1; int a = 0;",
-			errMsg: `declare int "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "uint a = 1; uint a = 0;",
-			errMsg: `declare uint "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "bool a = true; bool a = false;",
-			errMsg: `declare bool "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "bit a; bool a;",
-			errMsg: `declare bool "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "bit[1] a; bool a;",
-			errMsg: `declare bool "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "bit a; bit a;",
-			errMsg: `declare bit "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "int a = 1; bit a;",
-			errMsg: `declare bit "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "bit[1] a; bit a;",
-			errMsg: `declare bit "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "angle[4] a; angle[4] a;",
-			errMsg: `declare angle "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "bit a; angle[4] a;",
-			errMsg: `declare angle "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   "bit[1] a; angle[4] a;",
-			errMsg: `declare angle "a": already declared`,
+			errMsg: `"a" redeclared`,
 		},
 		{
 			text:   `bit[8] a = 3.14;`,
@@ -470,7 +470,7 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 		},
 		{
 			text:   "qubit q; qubit q;",
-			errMsg: `declare qubit "q": already declared`,
+			errMsg: `"q" redeclared`,
 		},
 	}
 
@@ -510,7 +510,7 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 		},
 		{
 			text:   "qubit[5] q; let q = q[1:4];",
-			errMsg: `declare alias "q": already declared`,
+			errMsg: `"q" redeclared`,
 		},
 	}
 
@@ -546,7 +546,7 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 		},
 		{
 			text:   "qreg q; qreg q;",
-			errMsg: `declare qreg "q": already declared`,
+			errMsg: `"q" redeclared`,
 		},
 		{
 			text: "creg c;",
@@ -558,11 +558,11 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 		},
 		{
 			text:   "creg c; creg c;",
-			errMsg: `declare creg "c": already declared`,
+			errMsg: `"c" redeclared`,
 		},
 		{
 			text:   "bit c; creg c;",
-			errMsg: `declare creg "c": already declared`,
+			errMsg: `"c" redeclared`,
 		},
 	}
 
@@ -695,7 +695,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 				U(pi/2.0, 0, pi) q;
 				c = measure q;
 			`,
-			errMsg: `operand "c": undeclared`,
+			errMsg: `undefined "c"`,
 		},
 	}
 
@@ -924,7 +924,7 @@ func TestVisitor_VisitResetStatement(t *testing.T) {
 		},
 		{
 			text:   "int a = 1; reset a;",
-			errMsg: `qubit "a": undeclared`,
+			errMsg: `undefined "a"`,
 		},
 	}
 
@@ -1014,11 +1014,11 @@ func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 		},
 		{
 			text:   "9.0 + foobar(1);",
-			errMsg: `subroutine "foobar": undeclared`,
+			errMsg: `undefined "foobar"`,
 		},
 		{
 			text:   "foobar(1) + 9.0;",
-			errMsg: `subroutine "foobar": undeclared`,
+			errMsg: `undefined "foobar"`,
 		},
 	}
 
@@ -1122,11 +1122,11 @@ func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
 		},
 		{
 			text:   "9.0 / foobar(1);",
-			errMsg: `subroutine "foobar": undeclared`,
+			errMsg: `undefined "foobar"`,
 		},
 		{
 			text:   "foobar(1) / 9.0;",
-			errMsg: `subroutine "foobar": undeclared`,
+			errMsg: `undefined "foobar"`,
 		},
 	}
 
@@ -1252,11 +1252,11 @@ func TestVisitor_VisitPowerExpression(t *testing.T) {
 		},
 		{
 			text:   "foobar**0.5;",
-			errMsg: `literal "foobar": undeclared`,
+			errMsg: `undefined "foobar"`,
 		},
 		{
 			text:   "2**foobar;",
-			errMsg: `literal "foobar": undeclared`,
+			errMsg: `undefined "foobar"`,
 		},
 	}
 
@@ -1530,11 +1530,11 @@ func TestVisitor_VisitEqualityExpression(t *testing.T) {
 		},
 		{
 			text:   "foobar == 3;",
-			errMsg: `literal "foobar": undeclared`,
+			errMsg: `undefined "foobar"`,
 		},
 		{
 			text:   "3 == foobar;",
-			errMsg: `literal "foobar": undeclared`,
+			errMsg: `undefined "foobar"`,
 		},
 	}
 
@@ -1586,7 +1586,7 @@ func TestVisitor_VisitUnaryExpression(t *testing.T) {
 		},
 		{
 			text:   "-foobar;",
-			errMsg: `literal "foobar": undeclared`,
+			errMsg: `undefined "foobar"`,
 		},
 	}
 
@@ -1630,11 +1630,11 @@ func TestVisitor_VisitComparisonExpression(t *testing.T) {
 		},
 		{
 			text:   "foobar > 3;",
-			errMsg: `literal "foobar": undeclared`,
+			errMsg: `undefined "foobar"`,
 		},
 		{
 			text:   "3 < foobar;",
-			errMsg: `literal "foobar": undeclared`,
+			errMsg: `undefined "foobar"`,
 		},
 	}
 
@@ -1732,7 +1732,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		},
 		{
 			text:   `qubit q; gphase(a);`,
-			errMsg: `literal "a": undeclared`,
+			errMsg: `undefined "a"`,
 		},
 		{
 			text:   `qubit[2] q; U(true, 0, pi) q;`,
@@ -1744,7 +1744,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				qubit t;
 				ctrl @ U(pi, 0, pi) a, t;
 			`,
-			errMsg: `qubit "a": undeclared`,
+			errMsg: `undefined "a"`,
 		},
 		{
 			text: `
@@ -1764,7 +1764,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		},
 		{
 			text:   `U(pi, 0, pi) q;`,
-			errMsg: `qubit "q": undeclared`,
+			errMsg: `undefined "q"`,
 		},
 	}
 
@@ -1799,11 +1799,11 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				gate u q { }
 				gate u q { }
 			`,
-			errMsg: `declare gate "u": already declared`,
+			errMsg: `"u" redeclared`,
 		},
 		{
 			text:   `qubit[2] q; myg(pi, 0, pi) q;`,
-			errMsg: `gate "myg": undeclared`,
+			errMsg: `undefined "myg"`,
 		},
 		{
 			text: `
@@ -1868,7 +1868,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				qubit q;
 				u(a, 0, pi) q;
 			`,
-			errMsg: `literal "a": undeclared`,
+			errMsg: `undefined "a"`,
 		},
 		{
 			text: `
@@ -1876,7 +1876,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				int a = 1;
 				myg a;
 			`,
-			errMsg: `qubit "a": undeclared`,
+			errMsg: `undefined "a"`,
 		},
 		{
 			text: `
@@ -1884,7 +1884,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				qubit q;
 				myg q;
 			`,
-			errMsg: `gate call[0]: gate "myx": undeclared`,
+			errMsg: `gate call[0]: undefined "myx"`,
 		},
 		{
 			text: `
@@ -2289,11 +2289,11 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 				qubit q;
 				xm(q);
 			`,
-			errMsg: `subroutine "xm": undeclared`,
+			errMsg: `undefined "xm"`,
 		},
 		{
 			text:   "def f(qubit q) -> bit { return 1; } def f(qubit q) -> bit { return 0; }",
-			errMsg: `declare subroutine "f": already declared`,
+			errMsg: `"f" redeclared`,
 		},
 	}
 
@@ -3000,7 +3000,7 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 		},
 		{
 			text:   "array[int[64], 5] aa;array[float[64], 5] aa;",
-			errMsg: `declare array "aa": already declared`,
+			errMsg: `"aa" redeclared`,
 		},
 	}
 
@@ -3120,7 +3120,7 @@ func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
 	}{
 		{
 			text:   "int a = 1; bit c = measure a;",
-			errMsg: `qubit "a": undeclared`,
+			errMsg: `undefined "a"`,
 		},
 	}
 

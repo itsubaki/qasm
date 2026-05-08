@@ -22,10 +22,8 @@ import (
 )
 
 var (
-	ErrAlreadyDeclared = errors.New("already declared")
-	ErrUndeclared      = errors.New("undeclared")
-	ErrTooManyQubits   = errors.New("too many qubits")
-	ErrNotImplemented  = errors.New("not implemented")
+	ErrTooManyQubits  = errors.New("too many qubits")
+	ErrNotImplemented = errors.New("not implemented")
 )
 
 type Visitor struct {
@@ -326,7 +324,7 @@ func (v *Visitor) VisitReturnStatement(ctx *parser.ReturnStatementContext) any {
 func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) any {
 	name := v.Visit(ctx.Identifier()).(string)
 	if _, ok := v.env.GetGate(name); ok {
-		return fmt.Errorf("declare gate %q: %w", name, ErrAlreadyDeclared)
+		return fmt.Errorf("%q redeclared", name)
 	}
 
 	var params, qargs []string
@@ -406,7 +404,7 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 	id := v.Visit(ctx.Identifier()).(string)
 	g, ok := v.env.GetGate(id)
 	if !ok {
-		return fmt.Errorf("gate %q: %w", id, ErrUndeclared)
+		return fmt.Errorf("undefined %q", id)
 	}
 
 	// params
@@ -598,7 +596,7 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 		}
 	}
 
-	return fmt.Errorf("operand %q: %w", operand, ErrUndeclared)
+	return fmt.Errorf("undefined %q", operand)
 }
 
 func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) any {
@@ -668,7 +666,7 @@ func (v *Visitor) VisitResetStatement(ctx *parser.ResetStatementContext) any {
 func (v *Visitor) VisitConstDeclarationStatement(ctx *parser.ConstDeclarationStatementContext) any {
 	id := v.Visit(ctx.Identifier()).(string)
 	if _, ok := v.env.GetConst(id); ok {
-		return fmt.Errorf("declare const %q: %w", id, ErrAlreadyDeclared)
+		return fmt.Errorf("%q redeclared", id)
 	}
 
 	v.env.Const[id] = v.Visit(ctx.DeclarationExpression())
@@ -678,7 +676,7 @@ func (v *Visitor) VisitConstDeclarationStatement(ctx *parser.ConstDeclarationSta
 func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclarationStatementContext) any {
 	id := v.Visit(ctx.Identifier()).(string)
 	if _, ok := v.env.GetQubit(id); ok {
-		return fmt.Errorf("declare qubit %q: %w", id, ErrAlreadyDeclared)
+		return fmt.Errorf("%q redeclared", id)
 	}
 
 	size, ok := v.Visit(ctx.QubitType()).(int64)
@@ -700,7 +698,7 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 	case ctx.ArrayType() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetVariable(id); ok {
-			return fmt.Errorf("declare array %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if ctx.DeclarationExpression() != nil {
@@ -713,7 +711,7 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 	case ctx.ScalarType().INT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetVariable(id); ok {
-			return fmt.Errorf("declare int %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if ctx.DeclarationExpression() != nil {
@@ -726,7 +724,7 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 	case ctx.ScalarType().UINT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetVariable(id); ok {
-			return fmt.Errorf("declare uint %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if ctx.DeclarationExpression() != nil {
@@ -739,7 +737,7 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 	case ctx.ScalarType().FLOAT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetVariable(id); ok {
-			return fmt.Errorf("declare float %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if ctx.DeclarationExpression() != nil {
@@ -752,15 +750,15 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 	case ctx.ScalarType().BOOL() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetBit(id); ok {
-			return fmt.Errorf("declare bool %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if _, ok := v.env.GetBitArray(id); ok {
-			return fmt.Errorf("declare bool %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if _, ok := v.env.GetVariable(id); ok {
-			return fmt.Errorf("declare bool %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if ctx.DeclarationExpression() != nil {
@@ -773,15 +771,15 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 	case ctx.ScalarType().ANGLE() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetBit(id); ok {
-			return fmt.Errorf("declare angle %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if _, ok := v.env.GetBitArray(id); ok {
-			return fmt.Errorf("declare angle %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if _, ok := v.env.GetVariable(id); ok {
-			return fmt.Errorf("declare angle %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if ctx.DeclarationExpression() != nil {
@@ -798,15 +796,15 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 	case ctx.ScalarType().BIT() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetVariable(id); ok {
-			return fmt.Errorf("declare bit %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if _, ok := v.env.GetBit(id); ok {
-			return fmt.Errorf("declare bit %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if _, ok := v.env.GetBitArray(id); ok {
-			return fmt.Errorf("declare bit %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if ctx.DeclarationExpression() != nil {
@@ -859,7 +857,7 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) any {
 	name := v.Visit(ctx.Identifier()).(string)
 	if _, ok := v.env.GetSubroutine(name); ok {
-		return fmt.Errorf("declare subroutine %q: %w", name, ErrAlreadyDeclared)
+		return fmt.Errorf("%q redeclared", name)
 	}
 
 	args := v.Visit(ctx.ArgumentDefinitionList()).([]any)
@@ -886,7 +884,7 @@ func (v *Visitor) VisitDefStatement(ctx *parser.DefStatementContext) any {
 func (v *Visitor) VisitAliasDeclarationStatement(ctx *parser.AliasDeclarationStatementContext) any {
 	id := v.Visit(ctx.Identifier()).(string)
 	if _, ok := v.env.GetQubit(id); ok {
-		return fmt.Errorf("declare alias %q: %w", id, ErrAlreadyDeclared)
+		return fmt.Errorf("%q redeclared", id)
 	}
 
 	alias := v.Visit(ctx.AliasExpression()).([]q.Qubit)
@@ -899,7 +897,7 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 	case ctx.QREG() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetQubit(id); ok {
-			return fmt.Errorf("declare qreg %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		var size int64 = 1
@@ -917,11 +915,11 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 	case ctx.CREG() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetBit(id); ok {
-			return fmt.Errorf("declare creg %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		if _, ok := v.env.GetBitArray(id); ok {
-			return fmt.Errorf("declare creg %q: %w", id, ErrAlreadyDeclared)
+			return fmt.Errorf("%q redeclared", id)
 		}
 
 		var size int64 = 1
@@ -964,7 +962,7 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 			return lit
 		}
 
-		return fmt.Errorf("literal %q: %w", s, ErrUndeclared)
+		return fmt.Errorf("undefined %q", s)
 	case ctx.DecimalIntegerLiteral() != nil:
 		s := v.Visit(ctx.DecimalIntegerLiteral()).(string)
 		lit, err := strconv.ParseInt(s, 10, 64)
@@ -1362,7 +1360,7 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 	default:
 		routine, ok := v.env.GetSubroutine(id)
 		if !ok {
-			return fmt.Errorf("subroutine %q: %w", id, ErrUndeclared)
+			return fmt.Errorf("undefined %q", id)
 		}
 
 		enclosed := v.Enclosed()
@@ -1588,7 +1586,7 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 
 	qb, ok := v.env.GetQubit(operand)
 	if !ok {
-		return fmt.Errorf("qubit %q: %w", operand, ErrUndeclared)
+		return fmt.Errorf("undefined %q", operand)
 	}
 
 	result := v.Visit(id)
