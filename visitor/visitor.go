@@ -106,7 +106,7 @@ func (v *Visitor) VisitChildren(node antlr.RuleNode) any {
 			return fmt.Errorf("unsupported parse tree %T", c)
 		}
 
-		if err := v.Run(tree); err != nil {
+		if err, ok := v.Visit(tree).(error); ok && err != nil {
 			return err
 		}
 	}
@@ -1594,7 +1594,7 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 		return err
 	}
 
-	index := v.Visit(id).([]int64)
+	index := result.([]int64)
 	if len(index) == 0 {
 		return qb
 	}

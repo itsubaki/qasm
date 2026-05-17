@@ -33,3 +33,6 @@ lex:
 parse:
 	cat testdata/bell.qasm | go run main.go -parse
 
+.PHONY: svg
+svg:
+	cat testdata/bell.qasm | go run main.go -svg

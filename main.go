@@ -15,18 +15,20 @@ import (
 	"github.com/itsubaki/qasm/environ"
 	"github.com/itsubaki/qasm/parser"
 	"github.com/itsubaki/qasm/scan"
+	renderer "github.com/itsubaki/qasm/svg"
 	"github.com/itsubaki/qasm/visitor"
 )
 
 func main() {
 	var filepath string
 	var top int
-	var repl, lex, parse, verbose bool
+	var repl, lex, parse, svg, verbose bool
 	flag.StringVar(&filepath, "f", "", "filepath")
 	flag.IntVar(&top, "top", -1, "top results")
 	flag.BoolVar(&repl, "repl", false, "REPL(read-eval-print loop) mode")
 	flag.BoolVar(&lex, "lex", false, "Lex the input into a sequence of tokens")
 	flag.BoolVar(&parse, "parse", false, "Parse the input and convert it into an AST (abstract syntax tree)")
+	flag.BoolVar(&svg, "svg", false, "Render the circuit as an SVG")
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
 	flag.Parse()
 
@@ -57,6 +59,20 @@ func main() {
 		fmt.Println(tree)
 	case repl:
 		REPL(top)
+	case svg:
+		text, err := Read(filepath)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+		diagram, err := renderer.SVG(text, renderer.DefaultConfig)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+		fmt.Println(diagram)
 	default:
 		text, err := Read(filepath)
 		if err != nil {

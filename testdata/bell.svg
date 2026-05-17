@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 296 160" width="296" height="160">
+    <style>
+        .gate-label {
+            font-family: ui-monospace, monospace;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .qubit-label {
+            font-family: ui-monospace, monospace;
+            font-size: 13px;
+            font-weight: 500;
+        }
+    </style>
+    <line x1="80" y1="42" x2="272" y2="42" stroke="#4b5563" stroke-width="2" />
+    <text x="68" y="47" text-anchor="end" fill="#4b5563" font-family="monospace" font-size="13" font-weight="500">q[0]</text>
+    <line x1="80" y1="98" x2="272" y2="98" stroke="#4b5563" stroke-width="2" />
+    <text x="68" y="103" text-anchor="end" fill="#4b5563" font-family="monospace" font-size="13" font-weight="500">q[1]</text>
+    <rect x="88" y="24" width="40" height="36" rx="4" fill="#1f2937" stroke="#0ea5e9" stroke-width="2" />
+    <text x="108" y="46" text-anchor="middle" fill="#e5e7eb" class="gate-label" font-size="14">H</text>
+    <line x1="164" y1="42" x2="164" y2="98" stroke="#0ea5e9" stroke-width="2" />
+    <circle cx="164" cy="42" r="6" fill="#0ea5e9" />
+    <rect x="144" y="80" width="40" height="36" rx="4" fill="#1f2937" stroke="#0ea5e9" stroke-width="2" />
+    <text x="164" y="102" text-anchor="middle" fill="#e5e7eb" class="gate-label" font-size="14">X</text>
+    <rect x="200" y="24" width="40" height="36" rx="4" fill="#1f2937" stroke="#10b981" stroke-width="2" />
+    <path d="M 210 46 A 10 10 0 0 1 230 46" fill="none" stroke="#10b981" stroke-width="2" />
+    <line x1="220" y1="46" x2="226" y2="36" stroke="#10b981" stroke-width="2" />
+    <rect x="200" y="80" width="40" height="36" rx="4" fill="#1f2937" stroke="#10b981" stroke-width="2" />
+    <path d="M 210 102 A 10 10 0 0 1 230 102" fill="none" stroke="#10b981" stroke-width="2" />
+    <line x1="220" y1="102" x2="226" y2="92" stroke="#10b981" stroke-width="2" />
+</svg>
