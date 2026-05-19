@@ -63,11 +63,12 @@ func Render(layout *Layout, config Config) string {
 		for _, op := range layer.Ops {
 			switch o := op.(type) {
 			case *Gate:
-				// control wires
+				// wires
 				for _, c := range o.Controls {
-					cy := config.WireStartY + c*config.WireGap
 					for _, t := range o.Targets {
+						cy := config.WireStartY + c*config.WireGap
 						ty := config.WireStartY + t*config.WireGap
+
 						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#0ea5e9" stroke-width="2" />`,
 							x+config.OpWidth/2, cy,
 							x+config.OpWidth/2, ty,
@@ -79,7 +80,7 @@ func Render(layout *Layout, config Config) string {
 					}
 				}
 
-				// targets
+				// operation box
 				minY, maxY := o.Targets[0], o.Targets[0]
 				for _, t := range o.Targets {
 					minY, maxY = min(minY, t), max(maxY, t)
@@ -105,6 +106,25 @@ func Render(layout *Layout, config Config) string {
 			case *Measurement:
 				// wires
 				for _, w := range o.Wire {
+					for _, t := range o.Target {
+						cy := config.WireStartY + w*config.WireGap
+						ty := config.WireStartY + t*config.WireGap
+
+						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#10b981" stroke-width="2" />`,
+							x+config.OpWidth/2, cy+config.OpHeight/2,
+							x+config.OpWidth/2, ty-4,
+						)
+
+						fmt.Fprintf(&b, `<polygon points="%d,%d %d,%d %d,%d" fill="#10b981" />`,
+							x+config.OpWidth/2, ty,
+							x+config.OpWidth/2-4, ty-6,
+							x+config.OpWidth/2+4, ty-6,
+						)
+					}
+				}
+
+				// operation box
+				for _, w := range o.Wire {
 					y := config.WireStartY + w*config.WireGap
 					fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="#1f2937" stroke="#10b981" stroke-width="2" />`,
 						x, y-config.OpHeight/2,
@@ -122,23 +142,6 @@ func Render(layout *Layout, config Config) string {
 					)
 				}
 
-				// targets
-				for _, t := range o.Target {
-					for _, w := range o.Wire {
-						cy := config.WireStartY + w*config.WireGap
-						ty := config.WireStartY + t*config.WireGap
-						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#10b981" stroke-width="2" />`,
-							x+config.OpWidth/2, cy+config.OpHeight/2,
-							x+config.OpWidth/2, ty-4,
-						)
-
-						fmt.Fprintf(&b, `<polygon points="%d,%d %d,%d %d,%d" fill="#10b981" />`,
-							x+config.OpWidth/2, ty,
-							x+config.OpWidth/2-4, ty-6,
-							x+config.OpWidth/2+4, ty-6,
-						)
-					}
-				}
 			case *Barrier:
 				fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" />`,
 					x+config.OpWidth/2, config.WireStartY-config.OpHeight/2,
