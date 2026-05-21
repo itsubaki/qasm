@@ -56,7 +56,7 @@ func main() {
 
 		fmt.Println(tree)
 	case repl:
-		REPL(top)
+		REPL()
 	default:
 		text, err := Read(filepath)
 		if err != nil {
@@ -114,7 +114,7 @@ func Read(filepath string) (string, error) {
 	return text, nil
 }
 
-func REPL(top int) {
+func REPL() {
 	sigint := make(chan os.Signal, 2)
 	signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
 
@@ -153,7 +153,7 @@ func REPL(top int) {
 			case ":print", ":p":
 				fmt.Println("--- STATE ---")
 				states := qsim.Qubit().State(env.Index()...)
-				for _, s := range q.Top(states, top) {
+				for _, s := range q.Top(states, -1) {
 					fmt.Println(s)
 				}
 
