@@ -38,28 +38,35 @@ Usage of qasm:
 
 ```shell
 % qasm -repl
->> OPENQASM 3.0;
->> 
->> qubit[2] q;
-[00] ( 1.0000 0.0000i): 1.0000
->> U(pi/2, 0, pi) q[0];
-[00] ( 0.7071 0.0000i): 0.5000
-[10] ( 0.7071 0.0000i): 0.5000
->> ctrl @ U(pi, 0, pi) q[0], q[1];
+qasm> OPENQASM 3.0;
+qasm> 
+qasm> qubit[2] q;
+qasm> U(pi/2, 0, pi) q[0];
+qasm> ctrl @ U(pi, 0, pi) q[0], q[1];
+qasm> :print
+--- STATE ---
 [00] ( 0.7071 0.0000i): 0.5000
 [11] ( 0.7071 0.0000i): 0.5000
+--- ENVIRONMENT ---
+const     : map[]
+variable  : map[]
+bit       : map[]
+bit[]     : map[]
+qubit     : map[q:[0 1]]
+gate      : []
+subroutine: []
 ```
 
 ```shell
 % qasm -repl
->> OPENQASM 3.0;
->> 
->> const float ratio = pi;
->> 
->> int n = 2;
->> if (n > 0) { n = n*ratio; }
->>
->> print;
+qasm> OPENQASM 3.0;
+qasm> 
+qasm> const float ratio = pi;
+qasm> int n = 2;
+qasm> if (n > 0) { n = n*ratio; }
+qasm> :print
+--- STATE ---
+--- ENVIRONMENT ---
 const     : map[ratio:3.141592653589793]
 variable  : map[n:6.283185307179586]
 bit       : map[]

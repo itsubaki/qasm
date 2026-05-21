@@ -130,9 +130,9 @@ func REPL(top int) {
 	env := environ.New()
 	v := visitor.New(qsim, env)
 
-	fmt.Println(">> OPENQASM 3.0;")
+	fmt.Println("qasm> OPENQASM 3.0;")
 	for {
-		fmt.Printf(">> ")
+		fmt.Printf("qasm> ")
 
 		select {
 		case <-sigint:
@@ -142,16 +142,22 @@ func REPL(top int) {
 				continue
 			}
 
-			if text == "exit;" || text == "quit;" {
+			switch text {
+			case ":exit", ":quit", ":q":
 				return
-			}
-
-			if text == "print;" {
+			case ":reset", ":r":
+				qsim = q.New()
+				env = environ.New()
+				v = visitor.New(qsim, env)
+				continue
+			case ":print", ":p":
+				fmt.Println("--- STATE ---")
 				states := qsim.Qubit().State(env.Index()...)
 				for _, s := range q.Top(states, top) {
 					fmt.Println(s)
 				}
 
+				fmt.Println("--- ENVIRONMENT ---")
 				fmt.Printf("%-10s: %v\n", "const", env.Const)
 				fmt.Printf("%-10s: %v\n", "variable", env.Variable)
 				fmt.Printf("%-10s: %v\n", "bit", env.Bit)
@@ -159,31 +165,18 @@ func REPL(top int) {
 				fmt.Printf("%-10s: %v\n", "qubit", env.Qubit)
 				fmt.Printf("%-10s: %v\n", "gate", slices.Sorted(maps.Keys(env.Gate)))
 				fmt.Printf("%-10s: %v\n", "subroutine", slices.Sorted(maps.Keys(env.Subroutine)))
-
-				continue
-			}
-
-			if text == "clear;" {
-				qsim = q.New()
-				env = environ.New()
-				v = visitor.New(qsim, env)
 				continue
 			}
 
 			program, err := parser.Parse(text)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				os.Exit(1)
+				fmt.Println(err)
+				continue
 			}
 
 			if err := v.Run(program); err != nil {
 				fmt.Println(err)
 				continue
-			}
-
-			states := qsim.Qubit().State(env.Index()...)
-			for _, s := range q.Top(states, top) {
-				fmt.Println(s)
 			}
 		}
 	}
