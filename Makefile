@@ -33,6 +33,9 @@ lex:
 parse:
 	cat testdata/bell.qasm | go run main.go -parse
 
+validate:
+	cat testdata/invalid_syntax.qasm | go run main.go -validate
+
 .PHONY: svg
 svg:
 	cat testdata/bell.qasm | go run main.go -svg

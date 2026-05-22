@@ -22,14 +22,15 @@ import (
 func main() {
 	var filepath string
 	var top int
-	var repl, lex, parse, svg, verbose bool
+	var repl, lex, parse, validate, svg, verbose bool
 	flag.StringVar(&filepath, "f", "", "filepath")
 	flag.IntVar(&top, "top", -1, "top results")
 	flag.BoolVar(&repl, "repl", false, "REPL(read-eval-print loop) mode")
 	flag.BoolVar(&lex, "lex", false, "Lex the input into a sequence of tokens")
 	flag.BoolVar(&parse, "parse", false, "Parse the input and convert it into an AST (abstract syntax tree)")
+	flag.BoolVar(&validate, "validate", false, "Validate the input without executing it")
 	flag.BoolVar(&svg, "svg", false, "Render the circuit as an SVG")
-	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
+  flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
 	flag.Parse()
 
 	switch {
@@ -57,6 +58,17 @@ func main() {
 		}
 
 		fmt.Println(tree)
+	case validate:
+		text, err := Read(filepath)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+		if _, err := parser.Parse(text); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	case repl:
 		REPL()
 	case svg:
