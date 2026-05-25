@@ -1445,11 +1445,11 @@ func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) any {
 
 func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) any {
 	var index []int64
-	for _, ops := range ctx.AllIndexOperator() {
-		for _, op := range v.Visit(ops).([]any) {
-			idx, ok := op.(int64)
+	for _, operator := range ctx.AllIndexOperator() {
+		for _, o := range v.Visit(operator).([]any) {
+			idx, ok := o.(int64)
 			if !ok {
-				return fmt.Errorf("index must be an integer '%v'", op)
+				return fmt.Errorf("index must be an integer '%v'", o)
 			}
 
 			index = append(index, idx)
@@ -1637,15 +1637,15 @@ const (
 
 // contains returns true if the result contains substrings.
 func contains(result any, substrings ...string) bool {
-	switch val := result.(type) {
+	switch v := result.(type) {
 	case string:
 		for _, s := range substrings {
-			if strings.Contains(val, s) {
+			if strings.Contains(v, s) {
 				return true
 			}
 		}
 	case []any:
-		for _, r := range val {
+		for _, r := range v {
 			if contains(r, substrings...) {
 				return true
 			}
