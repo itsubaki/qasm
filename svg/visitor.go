@@ -150,20 +150,31 @@ func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
 }
 
 func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
-	id := ctx.IndexedIdentifier()
-	index, err := unwrap[[]int64](v.Visit(id))
+	qargs, err := unwrap[string](v.Visit(ctx.IndexedIdentifier().Identifier()))
 	if err != nil {
 		return err
 	}
 
-	qargs, err := unwrap[string](v.Visit(id.Identifier()))
+	// q or q[0]
+	index, err := unwrap[[]int64](v.Visit(ctx.IndexedIdentifier()))
 	if err != nil {
 		return err
 	}
 
+	// h q;
+	ids := []string{qargs}
+	if len(index) > 0 {
+		// h q[0];
+		ids = make([]string, 0, len(index))
+		for _, i := range index {
+			ids = append(ids, fmt.Sprintf("%s[%d]", qargs, i))
+		}
+	}
+
+	// wire id -> wire index
 	var operand []int
-	for _, i := range index {
-		operand = append(operand, v.wire[fmt.Sprintf("%s[%d]", qargs, i)])
+	for _, id := range ids {
+		operand = append(operand, v.wire[id])
 	}
 
 	return operand
@@ -248,17 +259,17 @@ func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) any {
 func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) any {
 	switch {
 	case ctx.DecimalIntegerLiteral() != nil:
-		lit, err := unwrap[string](v.Visit(ctx.DecimalIntegerLiteral()))
+		s, err := unwrap[string](v.Visit(ctx.DecimalIntegerLiteral()))
 		if err != nil {
 			return err
 		}
 
-		value, err := strconv.ParseInt(lit, 10, 64)
+		lit, err := strconv.ParseInt(s, 10, 64)
 		if err != nil {
-			return fmt.Errorf("parse int %q: %w", lit, err)
+			return fmt.Errorf("parse int %q: %w", s, err)
 		}
 
-		return value
+		return lit
 	default:
 		return fmt.Errorf("unsupported literal %q", ctx.GetText())
 	}
