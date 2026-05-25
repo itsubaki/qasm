@@ -30,7 +30,7 @@ func main() {
 	flag.BoolVar(&parse, "parse", false, "Parse the input and convert it into an AST (abstract syntax tree)")
 	flag.BoolVar(&validate, "validate", false, "Validate the input without executing it")
 	flag.BoolVar(&svg, "svg", false, "Render the circuit as an SVG")
-  flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
+	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
 	flag.Parse()
 
 	switch {
@@ -69,8 +69,6 @@ func main() {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-	case repl:
-		REPL()
 	case svg:
 		text, err := Read(filepath)
 		if err != nil {
@@ -85,6 +83,8 @@ func main() {
 		}
 
 		fmt.Println(diagram)
+	case repl:
+		REPL()
 	default:
 		text, err := Read(filepath)
 		if err != nil {
