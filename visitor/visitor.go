@@ -595,9 +595,8 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 		return v.MeasureAssignment(ctx.IndexedIdentifier(), ctx.MeasureExpression())
 	}
 
-	id := ctx.IndexedIdentifier()
-	operand := v.Visit(id.Identifier()).(string)
-	index := v.Visit(id).([]int64)
+	operand := v.Visit(ctx.IndexedIdentifier().Identifier()).(string)
+	index := v.Visit(ctx.IndexedIdentifier()).([]int64)
 	x := v.Visit(ctx.Expression())
 
 	if bits, ok := v.env.GetBitArray(operand); ok {
