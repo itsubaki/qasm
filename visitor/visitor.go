@@ -1563,15 +1563,13 @@ func (v *Visitor) VisitArgumentDefinition(ctx *parser.ArgumentDefinitionContext)
 }
 
 func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
-	id := ctx.IndexedIdentifier()
-	operand := v.Visit(id.Identifier()).(string)
-
+	operand := v.Visit(ctx.IndexedIdentifier().Identifier()).(string)
 	qb, ok := v.env.GetQubit(operand)
 	if !ok {
 		return fmt.Errorf("undefined %q", operand)
 	}
 
-	result := v.Visit(id)
+	result := v.Visit(ctx.IndexedIdentifier())
 	if err, ok := result.(error); ok && err != nil {
 		return err
 	}
