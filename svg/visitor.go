@@ -187,12 +187,12 @@ func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) a
 		}
 
 		for _, o := range op {
-			i, err := unwrap[int64](o)
+			idx, err := unwrap[int64](o)
 			if err != nil {
 				return err
 			}
 
-			index = append(index, i)
+			index = append(index, idx)
 		}
 	}
 

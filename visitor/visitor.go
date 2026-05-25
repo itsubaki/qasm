@@ -101,21 +101,6 @@ func (v *Visitor) VisitErrorNode(node antlr.ErrorNode) any {
 	return node.GetText()
 }
 
-func (v *Visitor) VisitChildren(node antlr.RuleNode) any {
-	for _, c := range node.GetChildren() {
-		tree, ok := c.(antlr.ParseTree)
-		if !ok {
-			return fmt.Errorf("unsupported parse tree %T", c)
-		}
-
-		if err, ok := v.Visit(tree).(error); ok && err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) any {
 	if ctx.Version() != nil {
 		v.env.Version = v.Visit(ctx.Version()).(string)
@@ -1462,12 +1447,12 @@ func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) a
 	var index []int64
 	for _, ops := range ctx.AllIndexOperator() {
 		for _, op := range v.Visit(ops).([]any) {
-			i, ok := op.(int64)
+			idx, ok := op.(int64)
 			if !ok {
 				return fmt.Errorf("index must be an integer '%v'", op)
 			}
 
-			index = append(index, i)
+			index = append(index, idx)
 		}
 	}
 
