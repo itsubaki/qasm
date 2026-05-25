@@ -180,19 +180,19 @@ func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) any {
 
 func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) any {
 	var index []int64
-	for _, ops := range ctx.AllIndexOperator() {
-		op, err := unwrap[[]any](v.Visit(ops))
+	for _, operator := range ctx.AllIndexOperator() {
+		op, err := unwrap[[]any](v.Visit(operator))
 		if err != nil {
 			return err
 		}
 
 		for _, o := range op {
-			i, err := unwrap[int64](o)
+			idx, err := unwrap[int64](o)
 			if err != nil {
 				return err
 			}
 
-			index = append(index, i)
+			index = append(index, idx)
 		}
 	}
 
