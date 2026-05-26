@@ -30,6 +30,10 @@ func TestVisitor_Build(t *testing.T) {
 		errMsg string
 	}{
 		{
+			text:   `qubit[3] q; ctrl(2) @ x q[0], q[1], q[2];`,
+			hasErr: false,
+		},
+		{
 			text:   `qubit[2] q; {x a;}`,
 			hasErr: false,
 		},
