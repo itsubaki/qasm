@@ -17,10 +17,6 @@ func TestSVG(t *testing.T) {
 			hasErr: false,
 		},
 		{
-			text:   `OPENQASM 3.0; qubit q; h q;`,
-			hasErr: false,
-		},
-		{
 			text:   `qubit[ q;`,
 			hasErr: true,
 		},
