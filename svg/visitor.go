@@ -207,7 +207,7 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 	}
 
 	ids := []string{id}
-	if size > 1 {
+	if size > 0 {
 		ids = make([]string, 0, size)
 		for i := range size {
 			ids = append(ids, fmt.Sprintf("%s[%d]", id, i))
