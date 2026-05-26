@@ -4,7 +4,6 @@ gate h q { U(pi/2.0, 0, pi) q; }
 gate x q { U(pi, 0, pi) q; }
 
 qubit[2] q;
-qubit a;
 bit[2] c;
 
 reset q;

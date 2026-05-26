@@ -3,6 +3,7 @@ package svg
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/itsubaki/qasm/gen/parser"
@@ -127,11 +128,42 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		return err
 	}
 
-	// TODO: modifier
-	// TODO: support control modifier
+	// modifiers
+	var ctrls []int
+	for _, mod := range ctx.AllGateModifier() {
+		switch {
+		case mod.CTRL() != nil:
+			n, err := cast[int64](v.Visit(mod))
+			if err != nil {
+				return err
+			}
+
+			for i := range n {
+				ctrls = append(ctrls, int(i))
+			}
+		}
+	}
+
+	// controlled
+	ctrlSet := make(map[int]struct{})
+	for _, c := range ctrls {
+		ctrlSet[c] = struct{}{}
+	}
+
+	var targets []int
+	for i := range qargs {
+		if _, ok := ctrlSet[qargs[i]]; ok {
+			continue
+		}
+
+		targets = append(targets, qargs[i])
+	}
+
+	// append
 	v.circuit.Ops = append(v.circuit.Ops, &Gate{
-		Name:    g,
-		Targets: qargs,
+		Name:     strings.ToUpper(g),
+		Controls: ctrls,
+		Targets:  targets,
 	})
 
 	return nil
@@ -169,6 +201,14 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 	}
 
 	return v.wire[qargs]
+}
+
+func (v *Visitor) VisitGateModifier(ctx *parser.GateModifierContext) any {
+	if ctx.Expression() != nil {
+		return v.Visit(ctx.Expression())
+	}
+
+	return int64(1)
 }
 
 func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) any {
