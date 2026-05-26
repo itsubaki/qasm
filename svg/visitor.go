@@ -202,25 +202,30 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 		return err
 	}
 
-	// q or q[0]
 	index, err := cast[[]int64](v.Visit(ctx.IndexedIdentifier()))
 	if err != nil {
 		return err
 	}
 
-	if len(index) > 0 {
-		// h q[0];
+	if len(index) == 1 {
+		// q[0]
 		return []int{v.wire[fmt.Sprintf("%s[%d]", qargs, index[0])]}
 	}
 
+	// q or q[0], q[1], ...
 	var wireIDs []int
-	for i := 0; ; i++ {
+	for i := range index {
 		w, ok := v.wire[fmt.Sprintf("%s[%d]", qargs, i)]
 		if !ok {
 			break
 		}
 
 		wireIDs = append(wireIDs, w)
+	}
+
+	if len(wireIDs) == 0 {
+		// q
+		return []int{v.wire[qargs]}
 	}
 
 	return wireIDs
