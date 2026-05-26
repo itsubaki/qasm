@@ -71,6 +71,21 @@ func TestVisitor_Build(t *testing.T) {
 			hasErr: true,
 			errMsg: `"c" redeclared`,
 		},
+		{
+			text:   `measure q;`,
+			hasErr: true,
+			errMsg: `undefined "q"`,
+		},
+		{
+			text:   `qubit[x] q;`,
+			hasErr: true,
+			errMsg: `unsupported literal "x"`,
+		},
+		{
+			text:   `bit[x] c;`,
+			hasErr: true,
+			errMsg: `unsupported literal "x"`,
+		},
 	}
 
 	for _, c := range cases {
