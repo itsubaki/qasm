@@ -134,12 +134,12 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 }
 
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
-	qargs, err := cast[[]int](v.Visit(ctx.GateOperandList()))
+	g, err := cast[string](v.Visit(ctx.Identifier()))
 	if err != nil {
 		return err
 	}
 
-	g, err := cast[string](v.Visit(ctx.Identifier()))
+	qargs, err := cast[[]int](v.Visit(ctx.GateOperandList()))
 	if err != nil {
 		return err
 	}
