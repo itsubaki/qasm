@@ -38,4 +38,4 @@ validate:
 
 .PHONY: svg
 svg:
-	cat testdata/bell.qasm | go run main.go -svg
+	cat testdata/bell_svg.qasm | go run main.go -svg > test.svg

@@ -5,14 +5,12 @@ import (
 	"strconv"
 
 	"github.com/antlr4-go/antlr/v4"
-	"github.com/itsubaki/qasm/environ"
 	"github.com/itsubaki/qasm/gen/parser"
 )
 
 type Visitor struct {
 	*parser.Baseqasm3ParserVisitor
 	circuit *Circuit
-	env     *environ.Environ
 	wire    map[string]int
 }
 
@@ -20,7 +18,6 @@ func NewVisitor() *Visitor {
 	return &Visitor{
 		Baseqasm3ParserVisitor: &parser.Baseqasm3ParserVisitor{},
 		circuit:                &Circuit{},
-		env:                    environ.New(),
 		wire:                   make(map[string]int),
 	}
 }
@@ -31,6 +28,19 @@ func (v *Visitor) Build(tree antlr.ParseTree) (*Circuit, error) {
 	}
 
 	return v.circuit, nil
+}
+
+func (v *Visitor) Add(wireID string) error {
+	if _, ok := v.wire[wireID]; ok {
+		return fmt.Errorf("wire %q already exists", wireID)
+	}
+
+	v.wire[wireID] = len(v.circuit.Wires)
+	v.circuit.Wires = append(v.circuit.Wires, Wire{
+		Name: wireID,
+	})
+
+	return nil
 }
 
 func (v *Visitor) Visit(tree antlr.ParseTree) any {
@@ -203,7 +213,7 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 	}
 
 	ids := []string{id}
-	if size > 0 {
+	if size > 1 {
 		ids = make([]string, 0, size)
 		for i := range size {
 			ids = append(ids, fmt.Sprintf("%s[%d]", id, i))
@@ -211,14 +221,9 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 	}
 
 	for _, id := range ids {
-		if _, ok := v.wire[id]; ok {
-			return fmt.Errorf("wire %q already exists", id)
+		if err := v.Add(id); err != nil {
+			return err
 		}
-
-		v.wire[id] = len(v.circuit.Wires)
-		v.circuit.Wires = append(v.circuit.Wires, Wire{
-			Name: id,
-		})
 	}
 
 	return nil
@@ -235,6 +240,40 @@ func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) any {
 	}
 
 	return int64(1)
+}
+
+func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclarationStatementContext) any {
+	switch {
+	case ctx.ScalarType().BIT() != nil:
+		id, err := cast[string](v.Visit(ctx.Identifier()))
+		if err != nil {
+			return err
+		}
+
+		switch {
+		case ctx.ScalarType().Designator() != nil:
+			size, err := cast[int64](v.Visit(ctx.ScalarType()))
+			if err != nil {
+				return err
+			}
+
+			for i := range size {
+				if err := v.Add(fmt.Sprintf("%s[%d]", id, i)); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		default:
+			if err := v.Add(id); err != nil {
+				return err
+			}
+
+			return nil
+		}
+	}
+
+	return nil
 }
 
 func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) any {
@@ -254,6 +293,19 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 	default:
 		return fmt.Errorf("unsupported literal %q", ctx.GetText())
 	}
+}
+
+func (v *Visitor) VisitScalarType(ctx *parser.ScalarTypeContext) any {
+	if ctx.Designator() != nil {
+		val, err := cast[int64](v.Visit(ctx.Designator()))
+		if err != nil {
+			return err
+		}
+
+		return val
+	}
+
+	return int64(1)
 }
 
 func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) any {
