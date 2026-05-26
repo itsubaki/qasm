@@ -21,11 +21,19 @@ func TestSVG(t *testing.T) {
 			hasErr: false,
 		},
 		{
+			text:   `qubit[2] q; bit[2] c; bit b;`,
+			hasErr: false,
+		},
+		{
 			text:   `qubit q; h q;`,
 			hasErr: false,
 		},
 		{
 			text:   `qubit[ q;`,
+			hasErr: true,
+		},
+		{
+			text:   `qubit q; x a;`,
 			hasErr: true,
 		},
 	}
