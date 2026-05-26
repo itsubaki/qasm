@@ -209,13 +209,20 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 
 	if len(index) == 1 {
 		// h q[0]
-		return []int{v.wire[fmt.Sprintf("%s[%d]", qargs, index[0])]}
+		wireID := fmt.Sprintf("%s[%d]", qargs, index[0])
+		w, ok := v.wire[wireID]
+		if !ok {
+			return fmt.Errorf("undefined %q", wireID)
+		}
+
+		return []int{w}
 	}
 
 	// qubit[2] q; h q;
 	var wireIDs []int
 	for i := 0; ; i++ {
-		w, ok := v.wire[fmt.Sprintf("%s[%d]", qargs, i)]
+		wireID := fmt.Sprintf("%s[%d]", qargs, i)
+		w, ok := v.wire[wireID]
 		if !ok {
 			break
 		}
@@ -225,7 +232,12 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 
 	if len(wireIDs) == 0 {
 		// qubit q; h q;
-		return []int{v.wire[qargs]}
+		wireID, ok := v.wire[qargs]
+		if !ok {
+			return fmt.Errorf("undefined %q", qargs)
+		}
+
+		return []int{wireID}
 	}
 
 	return wireIDs

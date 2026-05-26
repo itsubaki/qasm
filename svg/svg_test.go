@@ -17,6 +17,14 @@ func TestSVG(t *testing.T) {
 			hasErr: false,
 		},
 		{
+			text:   `qubit[2] q; {x a;}`,
+			hasErr: false,
+		},
+		{
+			text:   `qubit q; h q;`,
+			hasErr: false,
+		},
+		{
 			text:   `qubit[ q;`,
 			hasErr: true,
 		},
@@ -24,12 +32,13 @@ func TestSVG(t *testing.T) {
 
 	for _, c := range cases {
 		diagram, err := svg.SVG(c.text, svg.DefaultConfig)
-		if err != nil {
-			if c.hasErr {
-				continue
-			}
+		if c.hasErr && err != nil {
+			continue
+		}
 
-			t.Errorf("unexpected error: %v", err)
+		if err != nil {
+			t.Errorf("got error = %v", err)
+			continue
 		}
 
 		got := fmt.Sprintf("%s ... %s", diagram[:4], diagram[len(diagram)-6:])

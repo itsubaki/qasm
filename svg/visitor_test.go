@@ -2,10 +2,25 @@ package svg_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/itsubaki/qasm/svg"
 )
+
+func ExampleVisitor_Add() {
+	v := svg.NewVisitor()
+	if err := v.Add("q"); err != nil {
+		panic(err)
+	}
+
+	if err := v.Add("q"); err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// wire "q" already exists
+}
 
 func Test_cast(t *testing.T) {
 	cases := []struct {
