@@ -115,6 +115,23 @@ func (v *Visitor) VisitStatement(ctx *parser.StatementContext) any {
 	return fmt.Errorf("unsupported statement %q", ctx.GetText())
 }
 
+func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) any {
+	wire, err := cast[int](v.Visit(ctx.GateOperand()))
+	if err != nil {
+		return err
+	}
+
+	v.circuit.Ops = append(v.circuit.Ops, &Measurement{
+		Wire: []int{wire},
+	})
+
+	return nil
+}
+
+func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) any {
+	return v.Visit(ctx.MeasureExpression())
+}
+
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
 	// qargs
 	qargs, err := cast[[]int](v.Visit(ctx.GateOperandList()))
