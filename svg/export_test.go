@@ -1,3 +1,3 @@
 package svg
 
-var UnwrapInt = unwrap[int]
+var CastInt = cast[int]

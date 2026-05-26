@@ -106,13 +106,13 @@ func (v *Visitor) VisitStatement(ctx *parser.StatementContext) any {
 
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
 	// qargs
-	qargs, err := unwrap[[]int](v.Visit(ctx.GateOperandList()))
+	qargs, err := cast[[]int](v.Visit(ctx.GateOperandList()))
 	if err != nil {
 		return err
 	}
 
 	// gate
-	g, err := unwrap[string](v.Visit(ctx.Identifier()))
+	g, err := cast[string](v.Visit(ctx.Identifier()))
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
 	var list []int
 	for _, operand := range ctx.AllGateOperand() {
-		op, err := unwrap[int](v.Visit(operand))
+		op, err := cast[int](v.Visit(operand))
 		if err != nil {
 			return err
 		}
@@ -142,13 +142,13 @@ func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
 }
 
 func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
-	qargs, err := unwrap[string](v.Visit(ctx.IndexedIdentifier().Identifier()))
+	qargs, err := cast[string](v.Visit(ctx.IndexedIdentifier().Identifier()))
 	if err != nil {
 		return err
 	}
 
 	// q or q[0]
-	index, err := unwrap[[]int64](v.Visit(ctx.IndexedIdentifier()))
+	index, err := cast[[]int64](v.Visit(ctx.IndexedIdentifier()))
 	if err != nil {
 		return err
 	}
@@ -173,13 +173,13 @@ func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) any {
 func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) any {
 	var index []int64
 	for _, operator := range ctx.AllIndexOperator() {
-		op, err := unwrap[[]any](v.Visit(operator))
+		op, err := cast[[]any](v.Visit(operator))
 		if err != nil {
 			return err
 		}
 
 		for _, o := range op {
-			idx, err := unwrap[int64](o)
+			idx, err := cast[int64](o)
 			if err != nil {
 				return err
 			}
@@ -192,16 +192,12 @@ func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) a
 }
 
 func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclarationStatementContext) any {
-	id, err := unwrap[string](v.Visit(ctx.Identifier()))
+	id, err := cast[string](v.Visit(ctx.Identifier()))
 	if err != nil {
 		return err
 	}
 
-	if _, ok := v.wire[id]; ok {
-		return fmt.Errorf("wire %q already exists", id)
-	}
-
-	size, err := unwrap[int64](v.Visit(ctx.QubitType()))
+	size, err := cast[int64](v.Visit(ctx.QubitType()))
 	if err != nil {
 		return err
 	}
@@ -215,6 +211,10 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 	}
 
 	for _, id := range ids {
+		if _, ok := v.wire[id]; ok {
+			return fmt.Errorf("wire %q already exists", id)
+		}
+
 		v.wire[id] = len(v.circuit.Wires)
 		v.circuit.Wires = append(v.circuit.Wires, Wire{
 			Name: id,
@@ -226,7 +226,7 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 
 func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) any {
 	if ctx.Designator() != nil {
-		val, err := unwrap[int64](v.Visit(ctx.Designator()))
+		val, err := cast[int64](v.Visit(ctx.Designator()))
 		if err != nil {
 			return err
 		}
@@ -240,7 +240,7 @@ func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) any {
 func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) any {
 	switch {
 	case ctx.DecimalIntegerLiteral() != nil:
-		s, err := unwrap[string](v.Visit(ctx.DecimalIntegerLiteral()))
+		s, err := cast[string](v.Visit(ctx.DecimalIntegerLiteral()))
 		if err != nil {
 			return err
 		}
@@ -260,7 +260,7 @@ func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) any {
 	return v.Visit(ctx.Expression())
 }
 
-func unwrap[T any](result any) (T, error) {
+func cast[T any](result any) (T, error) {
 	if err, ok := result.(error); ok && err != nil {
 		var zero T
 		return zero, err

@@ -7,7 +7,7 @@ import (
 	"github.com/itsubaki/qasm/svg"
 )
 
-func Test_unwrap(t *testing.T) {
+func Test_cast(t *testing.T) {
 	cases := []struct {
 		result any
 		want   any
@@ -31,7 +31,7 @@ func Test_unwrap(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got, err := svg.UnwrapInt(c.result)
+		got, err := svg.CastInt(c.result)
 		if err != nil {
 			if c.hasErr {
 				continue
