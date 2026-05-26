@@ -481,8 +481,8 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 		qargs := result.([][]q.Qubit)
 
-		var ctrl, neg []q.Qubit
 		var cursor int
+		var ctrl, neg []q.Qubit
 		for _, mod := range ctx.AllGateModifier() {
 			switch {
 			case mod.CTRL() != nil:

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	xparser "github.com/itsubaki/qasm/parser"
 	"github.com/itsubaki/qasm/svg"
 )
 
@@ -19,7 +20,78 @@ func ExampleVisitor_Add() {
 	}
 
 	// Output:
-	// wire "q" already exists
+	// "q" redeclared
+}
+
+func TestVisitor_Build(t *testing.T) {
+	cases := []struct {
+		text   string
+		hasErr bool
+		errMsg string
+	}{
+		{
+			text:   `qubit[2] q; {x a;}`,
+			hasErr: false,
+		},
+		{
+			text:   `qubit[2] q; bit[2] c; bit b;`,
+			hasErr: false,
+		},
+		{
+			text:   `qubit q; h q;`,
+			hasErr: false,
+		},
+		{
+			text:   `qubit q; x a;`,
+			hasErr: true,
+			errMsg: `undefined "a"`,
+		},
+		{
+			text:   `qubit[2] q; ctrl(a) @ x q[0], q[1];`,
+			hasErr: true,
+			errMsg: `unsupported literal "a"`,
+		},
+		{
+			text:   `qubit[2] q; h a[0];`,
+			hasErr: true,
+			errMsg: `undefined "a[0]"`,
+		},
+		{
+			text:   `qubit[2] q; qubit[2] q;`,
+			hasErr: true,
+			errMsg: `"q[0]" redeclared`,
+		},
+		{
+			text:   `bit[2] c; bit[2] c;`,
+			hasErr: true,
+			errMsg: `"c[0]" redeclared`,
+		},
+		{
+			text:   `bit c; bit c;`,
+			hasErr: true,
+			errMsg: `"c" redeclared`,
+		},
+	}
+
+	for _, c := range cases {
+		program, err := xparser.Parse(c.text)
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = svg.NewVisitor().Build(program)
+		if c.hasErr && err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got = %v, want = %v", err, c.errMsg)
+			}
+
+			continue
+		}
+
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+	}
 }
 
 func Test_cast(t *testing.T) {
@@ -47,12 +119,12 @@ func Test_cast(t *testing.T) {
 
 	for _, c := range cases {
 		got, err := svg.CastInt(c.result)
-		if err != nil {
-			if c.hasErr {
-				continue
-			}
+		if c.hasErr && err != nil {
+			continue
+		}
 
-			t.Errorf("got error = %v", err)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
 			continue
 		}
 

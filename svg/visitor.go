@@ -33,7 +33,7 @@ func (v *Visitor) Build(tree antlr.ParseTree) (*Circuit, error) {
 
 func (v *Visitor) Add(wireID string) error {
 	if _, ok := v.wire[wireID]; ok {
-		return fmt.Errorf("wire %q already exists", wireID)
+		return fmt.Errorf("%q redeclared", wireID)
 	}
 
 	v.wire[wireID] = len(v.circuit.Wires)
@@ -144,6 +144,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		return err
 	}
 
+	var cursor int
 	var ctrls []int
 	for _, mod := range ctx.AllGateModifier() {
 		switch {
@@ -153,8 +154,9 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 				return err
 			}
 
-			for i := range n {
-				ctrls = append(ctrls, int(i))
+			for range n {
+				ctrls = append(ctrls, cursor)
+				cursor++
 			}
 		}
 	}
