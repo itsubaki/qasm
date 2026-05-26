@@ -116,36 +116,34 @@ func (v *Visitor) VisitStatement(ctx *parser.StatementContext) any {
 }
 
 func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) any {
-	wire, err := cast[int](v.Visit(ctx.GateOperand()))
+	wire, err := cast[[]int](v.Visit(ctx.GateOperand()))
 	if err != nil {
 		return err
 	}
 
 	v.circuit.Ops = append(v.circuit.Ops, &Measurement{
-		Wire: []int{wire},
+		Wire: wire,
 	})
 
 	return nil
 }
 
 func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) any {
+	// TODO: support assignment
 	return v.Visit(ctx.MeasureExpression())
 }
 
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
-	// qargs
 	qargs, err := cast[[]int](v.Visit(ctx.GateOperandList()))
 	if err != nil {
 		return err
 	}
 
-	// gate
 	g, err := cast[string](v.Visit(ctx.Identifier()))
 	if err != nil {
 		return err
 	}
 
-	// modifiers
 	var ctrls []int
 	for _, mod := range ctx.AllGateModifier() {
 		switch {
@@ -161,7 +159,6 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 	}
 
-	// controlled
 	ctrlSet := make(map[int]struct{})
 	for _, c := range ctrls {
 		ctrlSet[c] = struct{}{}
@@ -176,7 +173,6 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		targets = append(targets, qargs[i])
 	}
 
-	// append
 	v.circuit.Ops = append(v.circuit.Ops, &Gate{
 		Name:     strings.ToUpper(g),
 		Controls: ctrls,
@@ -187,17 +183,17 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 }
 
 func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
-	var list []int
+	var wireIDs []int
 	for _, operand := range ctx.AllGateOperand() {
-		op, err := cast[int](v.Visit(operand))
+		op, err := cast[[]int](v.Visit(operand))
 		if err != nil {
 			return err
 		}
 
-		list = append(list, op)
+		wireIDs = append(wireIDs, op...)
 	}
 
-	return list
+	return wireIDs
 }
 
 func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
@@ -214,10 +210,20 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 
 	if len(index) > 0 {
 		// h q[0];
-		qargs = fmt.Sprintf("%s[%d]", qargs, index[0])
+		return []int{v.wire[fmt.Sprintf("%s[%d]", qargs, index[0])]}
 	}
 
-	return v.wire[qargs]
+	var wireIDs []int
+	for i := 0; ; i++ {
+		w, ok := v.wire[fmt.Sprintf("%s[%d]", qargs, i)]
+		if !ok {
+			break
+		}
+
+		wireIDs = append(wireIDs, w)
+	}
+
+	return wireIDs
 }
 
 func (v *Visitor) VisitGateModifier(ctx *parser.GateModifierContext) any {
@@ -259,7 +265,7 @@ func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) a
 }
 
 func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclarationStatementContext) any {
-	id, err := cast[string](v.Visit(ctx.Identifier()))
+	wireID, err := cast[string](v.Visit(ctx.Identifier()))
 	if err != nil {
 		return err
 	}
@@ -269,16 +275,16 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 		return err
 	}
 
-	ids := []string{id}
+	wireIDs := []string{wireID}
 	if size > 1 {
-		ids = make([]string, 0, size)
+		wireIDs = make([]string, 0, size)
 		for i := range size {
-			ids = append(ids, fmt.Sprintf("%s[%d]", id, i))
+			wireIDs = append(wireIDs, fmt.Sprintf("%s[%d]", wireID, i))
 		}
 	}
 
-	for _, id := range ids {
-		if err := v.Add(id); err != nil {
+	for _, wireID := range wireIDs {
+		if err := v.Add(wireID); err != nil {
 			return err
 		}
 	}
@@ -302,7 +308,7 @@ func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) any {
 func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclarationStatementContext) any {
 	switch {
 	case ctx.ScalarType().BIT() != nil:
-		id, err := cast[string](v.Visit(ctx.Identifier()))
+		wireID, err := cast[string](v.Visit(ctx.Identifier()))
 		if err != nil {
 			return err
 		}
@@ -315,14 +321,14 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 			}
 
 			for i := range size {
-				if err := v.Add(fmt.Sprintf("%s[%d]", id, i)); err != nil {
+				if err := v.Add(fmt.Sprintf("%s[%d]", wireID, i)); err != nil {
 					return err
 				}
 			}
 
 			return nil
 		default:
-			if err := v.Add(id); err != nil {
+			if err := v.Add(wireID); err != nil {
 				return err
 			}
 
