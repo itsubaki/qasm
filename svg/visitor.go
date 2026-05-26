@@ -26,7 +26,7 @@ func NewVisitor() *Visitor {
 }
 
 func (v *Visitor) Build(tree antlr.ParseTree) (*Circuit, error) {
-	if err := isError(v.Visit(tree)); err != nil {
+	if err, ok := v.Visit(tree).(error); ok && err != nil {
 		return nil, err
 	}
 
@@ -106,7 +106,7 @@ func (v *Visitor) VisitStatement(ctx *parser.StatementContext) any {
 
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
 	// qargs
-	qargs, err := unwrap[[][]int](v.Visit(ctx.GateOperandList()))
+	qargs, err := unwrap[[]int](v.Visit(ctx.GateOperandList()))
 	if err != nil {
 		return err
 	}
@@ -119,26 +119,18 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 
 	// TODO: modifier
 	// TODO: support control modifier
-	if len(qargs) == 1 {
-		v.circuit.Ops = append(v.circuit.Ops, &Gate{
-			Name:    g,
-			Targets: qargs[0],
-		})
-	} else {
-		v.circuit.Ops = append(v.circuit.Ops, &Gate{
-			Name:     g,
-			Controls: qargs[0],
-			Targets:  qargs[1],
-		})
-	}
+	v.circuit.Ops = append(v.circuit.Ops, &Gate{
+		Name:    g,
+		Targets: qargs,
+	})
 
 	return nil
 }
 
 func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
-	var list [][]int
+	var list []int
 	for _, operand := range ctx.AllGateOperand() {
-		op, err := unwrap[[]int](v.Visit(operand))
+		op, err := unwrap[int](v.Visit(operand))
 		if err != nil {
 			return err
 		}
@@ -161,23 +153,12 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 		return err
 	}
 
-	// h q;
-	ids := []string{qargs}
 	if len(index) > 0 {
 		// h q[0];
-		ids = make([]string, 0, len(index))
-		for _, i := range index {
-			ids = append(ids, fmt.Sprintf("%s[%d]", qargs, i))
-		}
+		qargs = fmt.Sprintf("%s[%d]", qargs, index[0])
 	}
 
-	// wire id -> wire index
-	var operand []int
-	for _, id := range ids {
-		operand = append(operand, v.wire[id])
-	}
-
-	return operand
+	return v.wire[qargs]
 }
 
 func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) any {
@@ -277,14 +258,6 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 
 func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) any {
 	return v.Visit(ctx.Expression())
-}
-
-func isError(result any) error {
-	if err, ok := result.(error); ok && err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func unwrap[T any](result any) (T, error) {

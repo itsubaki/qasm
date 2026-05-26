@@ -7,32 +7,6 @@ import (
 	"github.com/itsubaki/qasm/svg"
 )
 
-func Test_isError(t *testing.T) {
-	cases := []struct {
-		result any
-		hasErr bool
-	}{
-		{
-			result: errors.New("something went wrong"),
-			hasErr: true,
-		},
-		{
-			result: "not an error",
-			hasErr: false,
-		},
-	}
-
-	for _, c := range cases {
-		if err := svg.IsError(c.result); err != nil {
-			if c.hasErr {
-				continue
-			}
-
-			t.Errorf("got error = %v", err)
-		}
-	}
-}
-
 func Test_unwrap(t *testing.T) {
 	cases := []struct {
 		result any

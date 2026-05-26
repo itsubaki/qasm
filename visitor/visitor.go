@@ -179,7 +179,6 @@ func (v *Visitor) VisitScope(ctx *parser.ScopeContext) any {
 	for _, s := range ctx.AllStatementOrScope() {
 		result := enclosed.Visit(s)
 		list = append(list, result)
-
 		if contains(result, Break, Continue) {
 			return list
 		}

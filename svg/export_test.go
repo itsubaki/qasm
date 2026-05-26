@@ -1,6 +1,3 @@
 package svg
 
-var (
-	IsError   = isError
-	UnwrapInt = unwrap[int]
-)
+var UnwrapInt = unwrap[int]
