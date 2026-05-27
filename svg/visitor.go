@@ -430,6 +430,13 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 
 func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) any {
 	switch {
+	case ctx.Identifier() != nil:
+		lit, err := cast[string](v.Visit(ctx.Identifier()))
+		if err != nil {
+			return err
+		}
+
+		return lit
 	case ctx.DecimalIntegerLiteral() != nil:
 		s, err := cast[string](v.Visit(ctx.DecimalIntegerLiteral()))
 		if err != nil {
@@ -462,6 +469,71 @@ func (v *Visitor) VisitScalarType(ctx *parser.ScalarTypeContext) any {
 
 func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) any {
 	return v.Visit(ctx.Expression())
+}
+
+func (v *Visitor) VisitExpressionStatement(ctx *parser.ExpressionStatementContext) any {
+	return v.Visit(ctx.Expression())
+}
+
+func (v *Visitor) VisitExpressionList(ctx *parser.ExpressionListContext) any {
+	var list []any
+	for _, x := range ctx.AllExpression() {
+		list = append(list, v.Visit(x))
+	}
+
+	return list
+}
+
+func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
+	id, err := cast[string](v.Visit(ctx.Identifier()))
+	if err != nil {
+		return err
+	}
+
+	qargs, err := cast[[]any](v.Visit(ctx.ExpressionList()))
+	if err != nil {
+		return err
+	}
+
+	for i := range qargs {
+		qarg, err := cast[string](qargs[i])
+		if err != nil {
+			return err
+		}
+
+		var wireIDs []int
+		for i := 0; ; i++ {
+			wireID := fmt.Sprintf("%s[%d]", qarg, i)
+			w, ok := v.wire[wireID]
+			if !ok {
+				break
+			}
+
+			wireIDs = append(wireIDs, w)
+		}
+
+		if len(wireIDs) > 0 {
+			v.circuit.Ops = append(v.circuit.Ops, &Subroutine{
+				Name:    strings.ToUpper(id),
+				Targets: wireIDs,
+			})
+
+			return nil
+		}
+
+		wireID, ok := v.wire[fmt.Sprintf("%s", qarg[0])]
+		if !ok {
+			return fmt.Errorf("undefined %q", qarg[0])
+		}
+
+		v.circuit.Ops = append(v.circuit.Ops, &Subroutine{
+			Name:    strings.ToUpper(id),
+			Targets: []int{wireID},
+		})
+
+	}
+
+	return nil
 }
 
 func (v *Visitor) VisitBarrierStatement(ctx *parser.BarrierStatementContext) any {

@@ -103,6 +103,30 @@ func Render(layout *Layout, config Config) string {
 					x+config.OpWidth/2, centerY+config.OpHeight/2-13,
 					o.Name,
 				)
+			case *Subroutine:
+				// operation box
+				minY, maxY := o.Targets[0], o.Targets[0]
+				for _, t := range o.Targets {
+					minY, maxY = min(minY, t), max(maxY, t)
+				}
+
+				topY := config.WireStartY + minY*config.WireGap
+				bottomY := config.WireStartY + maxY*config.WireGap
+				centerY := (topY + bottomY) / 2
+				height := (bottomY - topY) + config.OpHeight
+
+				fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="#1f2937" stroke="#0ea5e9" stroke-width="2" />`,
+					x,
+					centerY-height/2,
+					config.OpWidth,
+					height,
+					config.OpRX,
+				)
+
+				fmt.Fprintf(&b, `<text x="%d" y="%d" text-anchor="middle" fill="#e5e7eb" class="gate-label">%s</text>`,
+					x+config.OpWidth/2, centerY+config.OpHeight/2-13,
+					o.Name,
+				)
 			case *Measurement:
 				// wires
 				for _, w := range o.Wire {
@@ -141,7 +165,6 @@ func Render(layout *Layout, config Config) string {
 						x+26, y-10,
 					)
 				}
-
 			case *Barrier:
 				fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" />`,
 					x+config.OpWidth/2, config.WireStartY-config.OpHeight/2,

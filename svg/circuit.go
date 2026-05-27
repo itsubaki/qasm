@@ -31,6 +31,15 @@ func (g *Gate) Wires() []int {
 	return wires
 }
 
+type Subroutine struct {
+	Name    string `json:"name"`
+	Targets []int  `json:"targets,omitempty"`
+}
+
+func (s *Subroutine) Wires() []int {
+	return s.Targets
+}
+
 type Measurement struct {
 	Wire   []int `json:"wire"`
 	Target []int `json:"target,omitempty"`

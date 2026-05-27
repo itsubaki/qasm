@@ -1311,7 +1311,6 @@ func (v *Visitor) VisitDeclarationExpression(ctx *parser.DeclarationExpressionCo
 
 func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 	args := v.Visit(ctx.ExpressionList()).([]any)
-
 	id := v.Visit(ctx.Identifier()).(string)
 	switch id {
 	case "sin":
