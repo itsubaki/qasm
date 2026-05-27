@@ -21,7 +21,7 @@ func ExampleGate_Wires() {
 
 func ExampleSubroutine_Wires() {
 	s := &svg.Subroutine{
-		Name:    "my_subroutine",
+		Name:    "qft",
 		Targets: []int{0, 1},
 	}
 

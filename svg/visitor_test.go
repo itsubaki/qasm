@@ -34,7 +34,27 @@ func TestVisitor_Build(t *testing.T) {
 			hasErr: false,
 		},
 		{
-			text:   `qubit[2] q; {x a;}`,
+			text:   `qubit[2] q; oracle(q);`,
+			hasErr: false,
+		},
+		{
+			text:   `qubit q; oracle(q);`,
+			hasErr: false,
+		},
+		{
+			text:   `qubit q; barrier q;`,
+			hasErr: false,
+		},
+		{
+			text:   `qubit q; {x a;}`,
+			hasErr: false,
+		},
+		{
+			text:   `qubit q; bit c; measure q -> c;`,
+			hasErr: false,
+		},
+		{
+			text:   `qubit[2] q; bit[2] c; measure q; measure q -> c; measure q[0] -> c[0];`,
 			hasErr: false,
 		},
 		{
@@ -53,7 +73,7 @@ func TestVisitor_Build(t *testing.T) {
 		{
 			text:   `qubit[2] q; ctrl(a) @ x q[0], q[1];`,
 			hasErr: true,
-			errMsg: `unsupported literal "a"`,
+			errMsg: `unexpected type string`,
 		},
 		{
 			text:   `qubit[2] q; h a[0];`,
@@ -83,12 +103,12 @@ func TestVisitor_Build(t *testing.T) {
 		{
 			text:   `qubit[x] q;`,
 			hasErr: true,
-			errMsg: `unsupported literal "x"`,
+			errMsg: `unexpected type string`,
 		},
 		{
 			text:   `bit[x] c;`,
 			hasErr: true,
-			errMsg: `unsupported literal "x"`,
+			errMsg: `unexpected type string`,
 		},
 	}
 
