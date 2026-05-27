@@ -1719,10 +1719,6 @@ func (v *Visitor) VisitCalibrationGrammarStatement(ctx *parser.CalibrationGramma
 	return fmt.Errorf("VisitCalibrationGrammarStatement: %w", ErrNotImplemented)
 }
 
-func (v *Visitor) VisitBarrierStatement(ctx *parser.BarrierStatementContext) any {
-	return fmt.Errorf("VisitBarrierStatement: %w", ErrNotImplemented)
-}
-
 func (v *Visitor) VisitBoxStatement(ctx *parser.BoxStatementContext) any {
 	return fmt.Errorf("VisitBoxStatement: %w", ErrNotImplemented)
 }

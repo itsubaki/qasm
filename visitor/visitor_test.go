@@ -3140,7 +3140,6 @@ func TestVisitor_unimplemented(t *testing.T) {
 		{name: "VisitCalStatement", err: v.VisitCalStatement(&parser.CalStatementContext{}).(error)},
 		{name: "VisitDefcalStatement", err: v.VisitDefcalStatement(&parser.DefcalStatementContext{}).(error)},
 		{name: "VisitCalibrationGrammarStatement", err: v.VisitCalibrationGrammarStatement(&parser.CalibrationGrammarStatementContext{}).(error)},
-		{name: "VisitBarrierStatement", err: v.VisitBarrierStatement(&parser.BarrierStatementContext{}).(error)},
 		{name: "VisitBoxStatement", err: v.VisitBoxStatement(&parser.BoxStatementContext{}).(error)},
 		{name: "VisitDelayStatement", err: v.VisitDelayStatement(&parser.DelayStatementContext{}).(error)},
 	}

@@ -116,21 +116,90 @@ func (v *Visitor) VisitStatement(ctx *parser.StatementContext) any {
 }
 
 func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) any {
-	wire, err := cast[[]int](v.Visit(ctx.GateOperand()))
+	wireIDs, err := cast[[]int](v.Visit(ctx.GateOperand()))
 	if err != nil {
 		return err
 	}
 
-	v.circuit.Ops = append(v.circuit.Ops, &Measurement{
-		Wire: wire,
-	})
-
-	return nil
+	return wireIDs
 }
 
 func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) any {
-	// TODO: support assignment
-	return v.Visit(ctx.MeasureExpression())
+	wireIDs, err := cast[[]int](v.Visit(ctx.MeasureExpression()))
+	if err != nil {
+		return err
+	}
+
+	if ctx.IndexedIdentifier() == nil {
+		// measure q;
+		v.circuit.Ops = append(v.circuit.Ops, &Measurement{
+			Wire: wireIDs,
+		})
+
+		return nil
+	}
+
+	index, err := cast[[]int64](v.Visit(ctx.IndexedIdentifier()))
+	if err != nil {
+		return err
+	}
+
+	cargs, err := cast[string](v.Visit(ctx.IndexedIdentifier().Identifier()))
+	if err != nil {
+		return err
+	}
+
+	if len(index) == 1 {
+		// measure q[0] -> c[0]
+		targetID := fmt.Sprintf("%s[%d]", cargs, index[0])
+		w, ok := v.wire[targetID]
+		if !ok {
+			return fmt.Errorf("undefined %q", targetID)
+		}
+
+		v.circuit.Ops = append(v.circuit.Ops, &Measurement{
+			Wire:   wireIDs,
+			Target: []int{w},
+		})
+
+		return nil
+	}
+
+	var targetIDs []int
+	for i := 0; ; i++ {
+		wireID := fmt.Sprintf("%s[%d]", cargs, i)
+		w, ok := v.wire[wireID]
+		if !ok {
+			break
+		}
+
+		targetIDs = append(targetIDs, w)
+	}
+
+	if len(targetIDs) > 0 {
+		// qubit[2] q; bit[2] c; measure q -> c;
+		for i := range wireIDs {
+			v.circuit.Ops = append(v.circuit.Ops, &Measurement{
+				Wire:   []int{wireIDs[i]},
+				Target: []int{targetIDs[i]},
+			})
+		}
+
+		return nil
+	}
+
+	// qubit q; bit c; measure q -> c;
+	targetID, ok := v.wire[cargs]
+	if !ok {
+		return fmt.Errorf("undefined %q", cargs)
+	}
+
+	v.circuit.Ops = append(v.circuit.Ops, &Measurement{
+		Wire:   wireIDs,
+		Target: []int{targetID},
+	})
+
+	return nil
 }
 
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
@@ -232,17 +301,18 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 		wireIDs = append(wireIDs, w)
 	}
 
-	if len(wireIDs) == 0 {
-		// qubit q; h q;
-		wireID, ok := v.wire[qargs]
-		if !ok {
-			return fmt.Errorf("undefined %q", qargs)
-		}
-
-		return []int{wireID}
+	if len(wireIDs) > 0 {
+		// qubit[2] q; h q;
+		return wireIDs
 	}
 
-	return wireIDs
+	// qubit q; h q;
+	wireID, ok := v.wire[qargs]
+	if !ok {
+		return fmt.Errorf("undefined %q", qargs)
+	}
+
+	return []int{wireID}
 }
 
 func (v *Visitor) VisitGateModifier(ctx *parser.GateModifierContext) any {
@@ -392,6 +462,11 @@ func (v *Visitor) VisitScalarType(ctx *parser.ScalarTypeContext) any {
 
 func (v *Visitor) VisitDesignator(ctx *parser.DesignatorContext) any {
 	return v.Visit(ctx.Expression())
+}
+
+func (v *Visitor) VisitBarrierStatement(ctx *parser.BarrierStatementContext) any {
+	v.circuit.Ops = append(v.circuit.Ops, &Barrier{})
+	return nil
 }
 
 func cast[T any](result any) (T, error) {
