@@ -44,6 +44,10 @@ jobs:
         run: |
           make parse
 
+      - name: SVG
+        run: |
+          make svg
+
       - name: Shor's algorithm
         run: |
           make shor
