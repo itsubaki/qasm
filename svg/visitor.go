@@ -521,9 +521,9 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 			return nil
 		}
 
-		wireID, ok := v.wire[fmt.Sprintf("%s", qarg[0])]
+		wireID, ok := v.wire[qarg]
 		if !ok {
-			return fmt.Errorf("undefined %q", qarg[0])
+			return fmt.Errorf("undefined %q", qarg)
 		}
 
 		v.circuit.Ops = append(v.circuit.Ops, &Subroutine{
