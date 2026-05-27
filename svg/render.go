@@ -115,7 +115,7 @@ func Render(layout *Layout, config Config) string {
 				centerY := (topY + bottomY) / 2
 				height := (bottomY - topY) + config.OpHeight
 
-				fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="#1f2937" stroke="#0ea5e9" stroke-width="2" />`,
+				fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="#1f2937" stroke="#8b5cf6" stroke-width="2" />`,
 					x,
 					centerY-height/2,
 					config.OpWidth,
