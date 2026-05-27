@@ -224,7 +224,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			}
 
 			for range n {
-				ctrls = append(ctrls, cursor)
+				ctrls = append(ctrls, qargs[cursor])
 				cursor++
 			}
 		}
