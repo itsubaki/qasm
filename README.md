@@ -24,6 +24,8 @@ Usage of qasm:
         Parse the input and convert it into an AST (abstract syntax tree)
   -repl
         REPL(read-eval-print loop) mode
+  -svg
+        Render the circuit as an SVG
   -validate
         Validate the input without executing it
   -verbose
