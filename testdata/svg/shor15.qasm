@@ -14,7 +14,6 @@ reset a;
 
 h q;
 x a[3];
-barrier q;
 
 // modexp
 cx q[0], a[1];
@@ -25,7 +24,6 @@ cx        a[0], a[2];
 cx        a[3], a[1];
 ccx q[1], a[1], a[3];
 cx        a[3], a[1];
-barrier q;
 
 // inv_qft
 h q[2];
@@ -34,7 +32,6 @@ h q[1];
 cr(-pi/4) q[2], q[0];
 cr(-pi/2) q[1], q[0];
 h q[0];
-barrier q;
 
 measure q;
 
