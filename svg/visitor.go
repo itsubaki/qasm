@@ -515,6 +515,7 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 			return err
 		}
 
+		var localWireIDs []int
 		for i := 0; ; i++ {
 			wireID := fmt.Sprintf("%s[%d]", qarg, i)
 			w, ok := v.wire[wireID]
@@ -522,23 +523,12 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 				break
 			}
 
-			wireIDs = append(wireIDs, w)
+			localWireIDs = append(localWireIDs, w)
 		}
-	}
 
-	if len(wireIDs) > 0 {
-		v.circuit.Ops = append(v.circuit.Ops, &Subroutine{
-			Name:    strings.ToUpper(id),
-			Targets: wireIDs,
-		})
-
-		return nil
-	}
-
-	for i := range qargs {
-		qarg, err := cast[string](qargs[i])
-		if err != nil {
-			return err
+		if len(localWireIDs) > 0 {
+			wireIDs = append(wireIDs, localWireIDs...)
+			continue
 		}
 
 		wireID, ok := v.wire[qarg]
@@ -546,12 +536,13 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 			return fmt.Errorf("undefined %q", qarg)
 		}
 
-		v.circuit.Ops = append(v.circuit.Ops, &Subroutine{
-			Name:    strings.ToUpper(id),
-			Targets: []int{wireID},
-		})
-
+		wireIDs = append(wireIDs, wireID)
 	}
+
+	v.circuit.Ops = append(v.circuit.Ops, &Subroutine{
+		Name:    strings.ToUpper(id),
+		Targets: wireIDs,
+	})
 
 	return nil
 }
