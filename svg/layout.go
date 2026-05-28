@@ -99,22 +99,19 @@ func NewLayout(circuit *Circuit) *Layout {
 			continue
 		}
 
-		var placed bool
-		for i := len(layout.Layers) - 1; i >= 0; i-- {
-			if layout.Layers[i].Conflicts(cur) {
-				continue
-			}
-
-			layout.Layers[i].Add(cur)
-			placed = true
-			break
-		}
-
-		if placed {
+		last := len(layout.Layers) - 1
+		if last < 0 {
+			// if there are no layers yet, create the first layer
+			layout.NewLayer([]Op{cur}, false)
 			continue
 		}
 
-		layout.NewLayer([]Op{cur}, false)
+		if layout.Layers[last].Conflicts(cur) {
+			layout.NewLayer([]Op{cur}, false)
+			continue
+		}
+
+		layout.Layers[last].Add(cur)
 	}
 
 	return layout
