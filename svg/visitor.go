@@ -508,13 +508,13 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 		return err
 	}
 
+	var wireIDs []int
 	for i := range qargs {
 		qarg, err := cast[string](qargs[i])
 		if err != nil {
 			return err
 		}
 
-		var wireIDs []int
 		for i := 0; ; i++ {
 			wireID := fmt.Sprintf("%s[%d]", qarg, i)
 			w, ok := v.wire[wireID]
@@ -524,14 +524,21 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 
 			wireIDs = append(wireIDs, w)
 		}
+	}
 
-		if len(wireIDs) > 0 {
-			v.circuit.Ops = append(v.circuit.Ops, &Subroutine{
-				Name:    strings.ToUpper(id),
-				Targets: wireIDs,
-			})
+	if len(wireIDs) > 0 {
+		v.circuit.Ops = append(v.circuit.Ops, &Subroutine{
+			Name:    strings.ToUpper(id),
+			Targets: wireIDs,
+		})
 
-			return nil
+		return nil
+	}
+
+	for i := range qargs {
+		qarg, err := cast[string](qargs[i])
+		if err != nil {
+			return err
 		}
 
 		wireID, ok := v.wire[qarg]

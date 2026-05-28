@@ -30,4 +30,4 @@ oryxBuildBinary
 .antlr
 
 # svg
-test.svg
+*.svg

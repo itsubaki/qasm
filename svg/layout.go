@@ -87,6 +87,11 @@ func NewLayout(circuit *Circuit) *Layout {
 			continue
 		}
 
+		if s, ok := cur.(*Subroutine); ok && len(s.Targets) > 0 {
+			layout.NewLayer([]Op{cur})
+			continue
+		}
+
 		// arrow measurements must be in their own layer
 		if m, ok := cur.(*Measurement); ok && len(m.Target) > 0 {
 			layout.NewLayer([]Op{cur})
