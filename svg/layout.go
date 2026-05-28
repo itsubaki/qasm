@@ -13,7 +13,7 @@ func (l *Layout) NewLayer(ops []Op, separated ...bool) {
 		}
 	}
 
-	sep := true
+	var sep bool
 	if len(separated) > 0 {
 		sep = separated[0]
 	}
@@ -83,36 +83,36 @@ func NewLayout(circuit *Circuit) *Layout {
 	for _, cur := range circuit.Ops {
 		// controlled gates must be in their own layer
 		if g, ok := cur.(*Gate); ok && len(g.Controls) > 0 {
-			layout.NewLayer([]Op{cur})
+			layout.NewLayer([]Op{cur}, true)
 			continue
 		}
 
 		if s, ok := cur.(*Subroutine); ok && len(s.Targets) > 0 {
-			layout.NewLayer([]Op{cur})
+			layout.NewLayer([]Op{cur}, true)
 			continue
 		}
 
 		// arrow measurements must be in their own layer
 		if m, ok := cur.(*Measurement); ok && len(m.Target) > 0 {
-			layout.NewLayer([]Op{cur})
+			layout.NewLayer([]Op{cur}, true)
 			continue
 		}
 
 		// barriers must be in their own layer
 		if _, ok := cur.(*Barrier); ok {
-			layout.NewLayer([]Op{cur})
+			layout.NewLayer([]Op{cur}, true)
 			continue
 		}
 
 		last := len(layout.Layers) - 1
 		if last < 0 {
 			// if there are no layers yet, create the first layer
-			layout.NewLayer([]Op{cur}, false)
+			layout.NewLayer([]Op{cur})
 			continue
 		}
 
 		if layout.Layers[last].Conflicts(cur) {
-			layout.NewLayer([]Op{cur}, false)
+			layout.NewLayer([]Op{cur})
 			continue
 		}
 
