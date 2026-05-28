@@ -1,0 +1,40 @@
+OPENQASM 3.0;
+
+gate x q { U(pi, 0, pi) q; }
+gate h q { U(pi/2.0, 0, pi) q; }
+gate cx c, t { ctrl @ U(pi, 0, pi) c, t; }
+gate ccx c0, c1, t { ctrl(2) @ U(pi, 0, pi) c0, c1, t; }
+gate cr(theta) c, t { ctrl @ U(0, 0, theta) c, t; }
+
+// N=15, a=7
+qubit[3] q;
+qubit[4] a;
+reset q;
+reset a;
+
+h q;
+x a[3];
+barrier q;
+
+// modexp
+cx q[0], a[1];
+cx q[0], a[2];
+cx        a[0], a[2];
+ccx q[1], a[2], a[0];
+cx        a[0], a[2];
+cx        a[3], a[1];
+ccx q[1], a[1], a[3];
+cx        a[3], a[1];
+barrier q;
+
+// inv_qft
+h q[2];
+cr(-pi/2) q[2], q[1];
+h q[1];
+cr(-pi/4) q[2], q[0];
+cr(-pi/2) q[1], q[0];
+h q[0];
+barrier q;
+
+measure q;
+
