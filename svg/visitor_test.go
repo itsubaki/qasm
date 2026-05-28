@@ -34,7 +34,7 @@ func TestVisitor_Build(t *testing.T) {
 			hasErr: false,
 		},
 		{
-			text:   `qubit[2] q; oracle(q);`,
+			text:   `qubit[2] q; cx q[0], q[1]; oracle(q);`,
 			hasErr: false,
 		},
 		{

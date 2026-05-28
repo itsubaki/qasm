@@ -141,10 +141,3 @@ func ExampleNewLayout() {
 	// Output:
 	// [{q0} {q1} {q2} {q3} {c0} {c1}]
 }
-
-func ExampleLayer_CompatibleWith() {
-	fmt.Println((&svg.Layer{}).CompatibleWith(&svg.Barrier{}))
-
-	// Output:
-	// false
-}

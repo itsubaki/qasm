@@ -39,30 +39,26 @@ func (l *Layer) Add(op Op) {
 	l.Ops = append(l.Ops, op)
 }
 
-func (l *Layer) Conflicts(wire []int) bool {
-	for _, w := range wire {
-		if l.Wires[w] {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (l *Layer) CompatibleWith(cur Op) bool {
+func (l *Layer) Conflicts(cur Op) bool {
 	if l.separated {
-		return false
+		return true
 	}
 
 	if _, ok := cur.(*Barrier); ok {
-		return false
+		return true
+	}
+
+	for _, w := range cur.Wires() {
+		if l.Wires[w] {
+			return true
+		}
 	}
 
 	// measurements must be in a separate layer from non-measurements
 	if _, ok := cur.(*Measurement); ok {
 		for _, m := range l.Ops {
 			if _, ok := m.(*Measurement); !ok {
-				return false
+				return true
 			}
 		}
 	}
@@ -70,12 +66,12 @@ func (l *Layer) CompatibleWith(cur Op) bool {
 	if _, ok := cur.(*Measurement); !ok {
 		for _, m := range l.Ops {
 			if _, ok := m.(*Measurement); ok {
-				return false
+				return true
 			}
 		}
 	}
 
-	return true
+	return false
 }
 
 func NewLayout(circuit *Circuit) *Layout {
@@ -105,11 +101,7 @@ func NewLayout(circuit *Circuit) *Layout {
 
 		var placed bool
 		for i := len(layout.Layers) - 1; i >= 0; i-- {
-			if !layout.Layers[i].CompatibleWith(cur) {
-				break
-			}
-
-			if layout.Layers[i].Conflicts(cur.Wires()) {
+			if layout.Layers[i].Conflicts(cur) {
 				continue
 			}
 

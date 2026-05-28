@@ -203,7 +203,7 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 }
 
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
-	g, err := cast[string](v.Visit(ctx.Identifier()))
+	gate, err := cast[string](v.Visit(ctx.Identifier()))
 	if err != nil {
 		return err
 	}
@@ -213,6 +213,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		return err
 	}
 
+	// ctrl(n) @ h q0, q1,...;
 	var cursor int
 	var ctrls []int
 	for _, mod := range ctx.AllGateModifier() {
@@ -230,6 +231,18 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 	}
 
+	// cccx
+	var g strings.Builder
+	for _, s := range gate {
+		if s == 'c' {
+			ctrls = append(ctrls, qargs[cursor])
+			cursor++
+			continue
+		}
+
+		g.WriteString(string(s))
+	}
+
 	ctrlSet := make(map[int]struct{})
 	for _, c := range ctrls {
 		ctrlSet[c] = struct{}{}
@@ -245,7 +258,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	}
 
 	v.circuit.Ops = append(v.circuit.Ops, &Gate{
-		Name:     strings.ToUpper(g),
+		Name:     strings.ToUpper(g.String()),
 		Controls: ctrls,
 		Targets:  targets,
 	})
