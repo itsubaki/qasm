@@ -105,8 +105,8 @@ func Render(layout *Layout, config Config) string {
 				)
 			case *Subroutine:
 				// operation box
-				minY, maxY := o.Targets[0], o.Targets[0]
-				for _, t := range o.Targets {
+				minY, maxY := o.Wire[0], o.Wire[0]
+				for _, t := range o.Wire {
 					minY, maxY = min(minY, t), max(maxY, t)
 				}
 
@@ -130,7 +130,7 @@ func Render(layout *Layout, config Config) string {
 			case *Measurement:
 				// wires
 				for _, w := range o.Wire {
-					for _, t := range o.Target {
+					for _, t := range o.Targets {
 						cy := config.WireStartY + w*config.WireGap
 						ty := config.WireStartY + t*config.WireGap
 

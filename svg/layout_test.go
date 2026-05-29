@@ -53,7 +53,7 @@ func ExampleNewLayout() {
 				Wire: []int{
 					0,
 				},
-				Target: []int{
+				Targets: []int{
 					4,
 				},
 			},
@@ -61,7 +61,7 @@ func ExampleNewLayout() {
 				Wire: []int{
 					1,
 				},
-				Target: []int{
+				Targets: []int{
 					5,
 				},
 			},
@@ -111,7 +111,7 @@ func ExampleNewLayout() {
 				Wire: []int{
 					0,
 				},
-				Target: []int{
+				Targets: []int{
 					5,
 				},
 			},

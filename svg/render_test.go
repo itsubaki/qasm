@@ -25,12 +25,12 @@ func ExampleRender() {
 			},
 			&svg.Barrier{},
 			&svg.Subroutine{
-				Name:    "oracle",
-				Targets: []int{0, 1},
+				Name: "oracle",
+				Wire: []int{0, 1},
 			},
 			&svg.Measurement{
-				Wire:   []int{0},
-				Target: []int{2},
+				Wire:    []int{0},
+				Targets: []int{2},
 			},
 		},
 	}

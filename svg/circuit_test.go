@@ -21,8 +21,8 @@ func ExampleGate_Wires() {
 
 func ExampleSubroutine_Wires() {
 	s := &svg.Subroutine{
-		Name:    "qft",
-		Targets: []int{0, 1},
+		Name: "qft",
+		Wire: []int{0, 1},
 	}
 
 	fmt.Println(s.Wires())
@@ -38,8 +38,8 @@ func ExampleMeasurement_Wires() {
 	fmt.Println(m.Wires())
 
 	m01 := &svg.Measurement{
-		Wire:   []int{0},
-		Target: []int{1},
+		Wire:    []int{0},
+		Targets: []int{1},
 	}
 	fmt.Println(m01.Wires())
 

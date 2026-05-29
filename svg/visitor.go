@@ -158,8 +158,8 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 		}
 
 		v.circuit.Ops = append(v.circuit.Ops, &Measurement{
-			Wire:   wireIDs,
-			Target: []int{w},
+			Wire:    wireIDs,
+			Targets: []int{w},
 		})
 
 		return nil
@@ -180,8 +180,8 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 		// qubit[2] q; bit[2] c; measure q -> c;
 		for i := range wireIDs {
 			v.circuit.Ops = append(v.circuit.Ops, &Measurement{
-				Wire:   []int{wireIDs[i]},
-				Target: []int{targetIDs[i]},
+				Wire:    []int{wireIDs[i]},
+				Targets: []int{targetIDs[i]},
 			})
 		}
 
@@ -195,8 +195,8 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 	}
 
 	v.circuit.Ops = append(v.circuit.Ops, &Measurement{
-		Wire:   wireIDs,
-		Target: []int{targetID},
+		Wire:    wireIDs,
+		Targets: []int{targetID},
 	})
 
 	return nil
@@ -540,8 +540,8 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 	}
 
 	v.circuit.Ops = append(v.circuit.Ops, &Subroutine{
-		Name:    strings.ToUpper(id),
-		Targets: wireIDs,
+		Name: strings.ToUpper(id),
+		Wire: wireIDs,
 	})
 
 	return nil

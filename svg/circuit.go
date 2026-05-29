@@ -32,28 +32,30 @@ func (g *Gate) Wires() []int {
 }
 
 type Subroutine struct {
-	Name    string `json:"name"`
-	Targets []int  `json:"targets,omitempty"`
+	Name string `json:"name"`
+	Wire []int  `json:"wire,omitempty"`
 }
 
 func (s *Subroutine) Wires() []int {
-	return s.Targets
+	return s.Wire
 }
 
 type Measurement struct {
-	Wire   []int `json:"wire"`
-	Target []int `json:"target,omitempty"`
+	Wire    []int `json:"wire"`
+	Targets []int `json:"targets,omitempty"`
 }
 
 func (m *Measurement) Wires() []int {
 	var wires []int
 	wires = append(wires, m.Wire...)
-	wires = append(wires, m.Target...)
+	wires = append(wires, m.Targets...)
 	return wires
 }
 
-type Barrier struct{}
+type Barrier struct {
+	Wire []int `json:"wires"`
+}
 
 func (b *Barrier) Wires() []int {
-	return nil
+	return b.Wire
 }
