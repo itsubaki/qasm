@@ -548,7 +548,15 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 }
 
 func (v *Visitor) VisitBarrierStatement(ctx *parser.BarrierStatementContext) any {
-	v.circuit.Ops = append(v.circuit.Ops, &Barrier{})
+	qargs, err := cast[[]int](v.Visit(ctx.GateOperandList()))
+	if err != nil {
+		return err
+	}
+
+	v.circuit.Ops = append(v.circuit.Ops, &Barrier{
+		Wire: qargs,
+	})
+
 	return nil
 }
 
