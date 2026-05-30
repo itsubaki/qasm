@@ -23,7 +23,9 @@ func ExampleRender() {
 				Controls: []int{0},
 				Targets:  []int{1},
 			},
-			&svg.Barrier{},
+			&svg.Barrier{
+				Wire: []int{0, 1},
+			},
 			&svg.Subroutine{
 				Name: "oracle",
 				Wire: []int{0, 1},
