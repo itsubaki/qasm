@@ -166,10 +166,13 @@ func Render(layout *Layout, config Config) string {
 					)
 				}
 			case *Barrier:
-				fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" />`,
-					x+config.OpWidth/2, config.WireStartY-config.OpHeight/2,
-					x+config.OpWidth/2, config.WireStartY+(len(layout.Wires)-1)*config.WireGap+config.OpHeight/2,
-				)
+				for _, w := range o.Wire {
+					y := config.WireStartY + w*config.WireGap
+					fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" />`,
+						x+config.OpWidth/2, y-config.OpHeight/2,
+						x+config.OpWidth/2, y+config.OpHeight/2,
+					)
+				}
 			}
 		}
 
