@@ -2,6 +2,7 @@ package svg
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -166,12 +167,29 @@ func Render(layout *Layout, config Config) string {
 					)
 				}
 			case *Barrier:
-				for _, w := range o.Wire {
-					y := config.WireStartY + w*config.WireGap
-					fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" />`,
-						x+config.OpWidth/2, y-config.OpHeight/2,
-						x+config.OpWidth/2, y+config.OpHeight/2,
-					)
+				wires := make([]int, len(o.Wire))
+				copy(wires, o.Wire)
+				sort.Ints(wires)
+
+				start, prev := wires[0], wires[0]
+				for i := 1; i <= len(wires); i++ {
+					if i == len(wires) || wires[i] != prev+1 {
+						y1 := config.WireStartY + start*config.WireGap
+						y2 := config.WireStartY + prev*config.WireGap
+
+						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" />`,
+							x+config.OpWidth/2, y1-config.OpHeight/2,
+							x+config.OpWidth/2, y2+config.OpHeight/2,
+						)
+
+						if i < len(wires) {
+							start, prev = wires[i], wires[i]
+						}
+
+						continue
+					}
+
+					prev = wires[i]
 				}
 			}
 		}

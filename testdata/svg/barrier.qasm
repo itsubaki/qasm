@@ -11,4 +11,5 @@ barrier a;
 barrier q, a;
 barrier q[0];
 barrier q[0], q[1];
+barrier q[0], q[2];
 barrier q[0], a;
