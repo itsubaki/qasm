@@ -44,10 +44,6 @@ func (l *Layer) Conflicts(cur Op) bool {
 		return true
 	}
 
-	if _, ok := cur.(*Barrier); ok {
-		return true
-	}
-
 	for _, w := range cur.Wires() {
 		if l.Wires[w] {
 			return true

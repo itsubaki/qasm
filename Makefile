@@ -48,6 +48,7 @@ svg:
 	go run main.go -svg < testdata/deutsch_jozsa_balanced.qasm    > testdata/deutsch_jozsa_balanced.svg
 	go run main.go -svg < testdata/deutsch_jozsa_constant.qasm    > testdata/deutsch_jozsa_constant.svg
 	go run main.go -svg < testdata/error_correction.qasm          > testdata/error_correction.svg
+	go run main.go -svg < testdata/grover.qasm                    > testdata/grover.svg
 	go run main.go -svg < testdata/qft.qasm                       > testdata/qft.svg
 	go run main.go -svg < testdata/qsp.qasm                       > testdata/qsp.svg
 	go run main.go -svg < testdata/quantum_teleportation.qasm     > testdata/quantum_teleportation.svg

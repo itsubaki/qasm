@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/itsubaki/qasm/environ"
 	xparser "github.com/itsubaki/qasm/parser"
 	"github.com/itsubaki/qasm/svg"
 )
 
 func ExampleVisitor_Add() {
-	v := svg.NewVisitor()
+	v := svg.NewVisitor(environ.New())
 	if err := v.Add("q"); err != nil {
 		panic(err)
 	}
@@ -66,6 +67,10 @@ func TestVisitor_Build(t *testing.T) {
 			hasErr: false,
 		},
 		{
+			text:   `const int n = 3; qubit[n] q;`,
+			hasErr: false,
+		},
+		{
 			text:   `qubit q; x a;`,
 			hasErr: true,
 			errMsg: `undefined "a"`,
@@ -73,7 +78,7 @@ func TestVisitor_Build(t *testing.T) {
 		{
 			text:   `qubit[2] q; ctrl(a) @ x q[0], q[1];`,
 			hasErr: true,
-			errMsg: `unexpected type string`,
+			errMsg: `undefined "a"`,
 		},
 		{
 			text:   `qubit[2] q; h a[0];`,
@@ -103,12 +108,12 @@ func TestVisitor_Build(t *testing.T) {
 		{
 			text:   `qubit[x] q;`,
 			hasErr: true,
-			errMsg: `unexpected type string`,
+			errMsg: `undefined "x"`,
 		},
 		{
 			text:   `bit[x] c;`,
 			hasErr: true,
-			errMsg: `unexpected type string`,
+			errMsg: `undefined "x"`,
 		},
 	}
 
@@ -118,7 +123,7 @@ func TestVisitor_Build(t *testing.T) {
 			panic(err)
 		}
 
-		_, err = svg.NewVisitor().Build(program)
+		_, err = svg.Build(program)
 		if c.hasErr && err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got = %v, want = %v", err, c.errMsg)

@@ -6,21 +6,28 @@ import (
 	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
+	"github.com/itsubaki/qasm/environ"
 	"github.com/itsubaki/qasm/gen/parser"
 )
 
 type Visitor struct {
 	*parser.Baseqasm3ParserVisitor
+	env     *environ.Environ
 	circuit *Circuit
 	wire    map[string]int
 }
 
-func NewVisitor() *Visitor {
+func NewVisitor(env *environ.Environ) *Visitor {
 	return &Visitor{
 		Baseqasm3ParserVisitor: &parser.Baseqasm3ParserVisitor{},
+		env:                    env,
 		circuit:                &Circuit{},
 		wire:                   make(map[string]int),
 	}
+}
+
+func Build(tree antlr.ParseTree) (*Circuit, error) {
+	return NewVisitor(environ.New()).Build(tree)
 }
 
 func (v *Visitor) Build(tree antlr.ParseTree) (*Circuit, error) {
@@ -409,6 +416,19 @@ func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) any {
 
 func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclarationStatementContext) any {
 	switch {
+	case ctx.ScalarType().INT() != nil:
+		id := v.Visit(ctx.Identifier()).(string)
+		if _, ok := v.env.GetVariable(id); ok {
+			return fmt.Errorf("%q redeclared", id)
+		}
+
+		if ctx.DeclarationExpression() != nil {
+			v.env.SetVariable(id, v.Visit(ctx.DeclarationExpression()))
+			return nil
+		}
+
+		v.env.SetVariable(id, int(0))
+		return nil
 	case ctx.ScalarType().BIT() != nil:
 		wireID, err := cast[string](v.Visit(ctx.Identifier()))
 		if err != nil {
@@ -441,15 +461,45 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 	return nil
 }
 
+func (v *Visitor) VisitDeclarationExpression(ctx *parser.DeclarationExpressionContext) any {
+	if ctx.MeasureExpression() != nil {
+		return v.Visit(ctx.MeasureExpression())
+	}
+
+	if ctx.ArrayLiteral() != nil {
+		return v.Visit(ctx.ArrayLiteral())
+	}
+
+	return v.Visit(ctx.Expression())
+}
+
 func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) any {
 	switch {
 	case ctx.Identifier() != nil:
-		lit, err := cast[string](v.Visit(ctx.Identifier()))
+		s, err := cast[string](v.Visit(ctx.Identifier()))
 		if err != nil {
 			return err
 		}
 
-		return lit
+		if lit, ok := v.env.GetConst(s); ok {
+			return lit
+		}
+
+		// wire
+		if _, ok := v.wire[s]; ok {
+			return s
+		}
+
+		for i := 0; ; i++ {
+			id := fmt.Sprintf("%s[%d]", s, i)
+			if _, ok := v.wire[id]; ok {
+				return s
+			} else {
+				break
+			}
+		}
+
+		return fmt.Errorf("undefined %q", s)
 	case ctx.DecimalIntegerLiteral() != nil:
 		s, err := cast[string](v.Visit(ctx.DecimalIntegerLiteral()))
 		if err != nil {
@@ -557,6 +607,16 @@ func (v *Visitor) VisitBarrierStatement(ctx *parser.BarrierStatementContext) any
 		Wire: qargs,
 	})
 
+	return nil
+}
+
+func (v *Visitor) VisitConstDeclarationStatement(ctx *parser.ConstDeclarationStatementContext) any {
+	id := v.Visit(ctx.Identifier()).(string)
+	if _, ok := v.env.GetConst(id); ok {
+		return fmt.Errorf("%q redeclared", id)
+	}
+
+	v.env.Const[id] = v.Visit(ctx.DeclarationExpression())
 	return nil
 }
 

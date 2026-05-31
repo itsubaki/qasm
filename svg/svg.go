@@ -8,7 +8,7 @@ func SVG(text string, config Config) (string, error) {
 		return "", err
 	}
 
-	circuit, err := NewVisitor().Build(program)
+	circuit, err := Build(program)
 	if err != nil {
 		return "", err
 	}

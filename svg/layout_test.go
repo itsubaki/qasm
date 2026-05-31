@@ -123,7 +123,9 @@ func ExampleNewLayout() {
 				Name:    "H",
 				Targets: []int{3},
 			},
-			&svg.Barrier{},
+			&svg.Barrier{
+				Wire: []int{0, 1, 2, 3},
+			},
 			&svg.Gate{
 				Name:    "X",
 				Targets: []int{0},
