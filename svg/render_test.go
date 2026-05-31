@@ -26,6 +26,9 @@ func ExampleRender() {
 			&svg.Barrier{
 				Wire: []int{0, 1},
 			},
+			&svg.Barrier{
+				Wire: []int{0, 2},
+			},
 			&svg.Subroutine{
 				Name: "oracle",
 				Wire: []int{0, 1},
