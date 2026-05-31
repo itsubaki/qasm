@@ -41,6 +41,7 @@ svg:
 	go run main.go -svg < testdata/svg/barrier.qasm               > testdata/svg/barrier.svg
 	go run main.go -svg < testdata/svg/bell.qasm                  > testdata/svg/bell.svg
 	go run main.go -svg < testdata/svg/ghz.qasm                   > testdata/svg/ghz.svg
+	go run main.go -svg < testdata/svg/grover.qasm                > testdata/svg/grover.svg
 	go run main.go -svg < testdata/svg/inv_qft.qasm               > testdata/svg/inv_qft.svg
 	go run main.go -svg < testdata/svg/quantum_teleportation.qasm > testdata/svg/quantum_teleportation.svg
 	go run main.go -svg < testdata/svg/shor15.qasm                > testdata/svg/shor15.svg
