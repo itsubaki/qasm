@@ -462,7 +462,6 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 			return lit
 		}
 
-		// wire
 		if _, ok := v.GetWire(s); ok {
 			return s
 		}
@@ -533,28 +532,12 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 			return err
 		}
 
-		var localWireIDs []int
-		for i := 0; ; i++ {
-			wireID := fmt.Sprintf("%s[%d]", qarg, i)
-			w, ok := v.wire[wireID]
-			if !ok {
-				break
-			}
-
-			localWireIDs = append(localWireIDs, w)
-		}
-
-		if len(localWireIDs) > 0 {
-			wireIDs = append(wireIDs, localWireIDs...)
-			continue
-		}
-
-		wireID, ok := v.wire[qarg]
+		ids, ok := v.GetWire(qarg)
 		if !ok {
 			return fmt.Errorf("undefined %q", qarg)
 		}
 
-		wireIDs = append(wireIDs, wireID)
+		wireIDs = append(wireIDs, ids...)
 	}
 
 	v.circuit.Ops = append(v.circuit.Ops, &Subroutine{
