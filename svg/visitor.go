@@ -38,7 +38,7 @@ func (v *Visitor) Build(tree antlr.ParseTree) (*Circuit, error) {
 	return v.circuit, nil
 }
 
-func (v *Visitor) Add(wireID string) error {
+func (v *Visitor) AddWire(wireID string) error {
 	if _, ok := v.wire[wireID]; ok {
 		return fmt.Errorf("%q redeclared", wireID)
 	}
@@ -49,6 +49,40 @@ func (v *Visitor) Add(wireID string) error {
 	})
 
 	return nil
+}
+
+func (v *Visitor) GetWire(wireID string, index ...int64) ([]int, bool) {
+	if len(index) > 0 {
+		id := fmt.Sprintf("%s[%d]", wireID, index[0])
+		if w, ok := v.wire[id]; ok {
+			return []int{w}, true
+		}
+	}
+
+	if w, ok := v.wire[wireID]; ok {
+		// q -> q;
+		// q[0] -> q[0];
+		return []int{w}, true
+	}
+
+	var wireIDs []int
+	for i := 0; ; i++ {
+		id := fmt.Sprintf("%s[%d]", wireID, i)
+		w, ok := v.wire[id]
+		if !ok {
+			break
+		}
+
+		wireIDs = append(wireIDs, w)
+	}
+
+	if len(wireIDs) > 0 {
+		// q -> q[0], q[1], ...;
+		return wireIDs, true
+	}
+
+	// not found
+	return nil, false
 }
 
 func (v *Visitor) Visit(tree antlr.ParseTree) any {
@@ -156,35 +190,12 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 		return err
 	}
 
-	if len(index) == 1 {
-		// measure q[0] -> c[0]
-		targetID := fmt.Sprintf("%s[%d]", cargs, index[0])
-		w, ok := v.wire[targetID]
-		if !ok {
-			return fmt.Errorf("undefined %q", targetID)
-		}
-
-		v.circuit.Ops = append(v.circuit.Ops, &Measurement{
-			Wire:    wireIDs,
-			Targets: []int{w},
-		})
-
-		return nil
+	targetIDs, ok := v.GetWire(cargs, index...)
+	if !ok {
+		return fmt.Errorf("undefined %q", cargs)
 	}
 
-	var targetIDs []int
-	for i := 0; ; i++ {
-		wireID := fmt.Sprintf("%s[%d]", cargs, i)
-		w, ok := v.wire[wireID]
-		if !ok {
-			break
-		}
-
-		targetIDs = append(targetIDs, w)
-	}
-
-	if len(targetIDs) > 0 {
-		// qubit[2] q; bit[2] c; measure q -> c;
+	if len(targetIDs) > 1 {
 		for i := range wireIDs {
 			v.circuit.Ops = append(v.circuit.Ops, &Measurement{
 				Wire:    []int{wireIDs[i]},
@@ -195,15 +206,9 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 		return nil
 	}
 
-	// qubit q; bit c; measure q -> c;
-	targetID, ok := v.wire[cargs]
-	if !ok {
-		return fmt.Errorf("undefined %q", cargs)
-	}
-
 	v.circuit.Ops = append(v.circuit.Ops, &Measurement{
 		Wire:    wireIDs,
-		Targets: []int{targetID},
+		Targets: targetIDs,
 	})
 
 	return nil
@@ -298,41 +303,13 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 		return err
 	}
 
-	if len(index) == 1 {
-		// h q[0]
-		wireID := fmt.Sprintf("%s[%d]", qargs, index[0])
-		w, ok := v.wire[wireID]
-		if !ok {
-			return fmt.Errorf("undefined %q", wireID)
-		}
-
-		return []int{w}
-	}
-
-	// qubit[2] q; h q;
-	var wireIDs []int
-	for i := 0; ; i++ {
-		wireID := fmt.Sprintf("%s[%d]", qargs, i)
-		w, ok := v.wire[wireID]
-		if !ok {
-			break
-		}
-
-		wireIDs = append(wireIDs, w)
-	}
-
-	if len(wireIDs) > 0 {
-		// qubit[2] q; h q;
-		return wireIDs
-	}
-
-	// qubit q; h q;
-	wireID, ok := v.wire[qargs]
+	wireIDs, ok := v.GetWire(qargs, index...)
 	if !ok {
 		return fmt.Errorf("undefined %q", qargs)
 	}
 
-	return []int{wireID}
+	return wireIDs
+
 }
 
 func (v *Visitor) VisitGateModifier(ctx *parser.GateModifierContext) any {
@@ -393,7 +370,7 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 	}
 
 	for _, wireID := range wireIDs {
-		if err := v.Add(wireID); err != nil {
+		if err := v.AddWire(wireID); err != nil {
 			return err
 		}
 	}
@@ -443,14 +420,14 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 			}
 
 			for i := range size {
-				if err := v.Add(fmt.Sprintf("%s[%d]", wireID, i)); err != nil {
+				if err := v.AddWire(fmt.Sprintf("%s[%d]", wireID, i)); err != nil {
 					return err
 				}
 			}
 
 			return nil
 		default:
-			if err := v.Add(wireID); err != nil {
+			if err := v.AddWire(wireID); err != nil {
 				return err
 			}
 
@@ -486,17 +463,8 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 		}
 
 		// wire
-		if _, ok := v.wire[s]; ok {
+		if _, ok := v.GetWire(s); ok {
 			return s
-		}
-
-		for i := 0; ; i++ {
-			id := fmt.Sprintf("%s[%d]", s, i)
-			if _, ok := v.wire[id]; ok {
-				return s
-			} else {
-				break
-			}
 		}
 
 		return fmt.Errorf("undefined %q", s)

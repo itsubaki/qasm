@@ -10,13 +10,13 @@ import (
 	"github.com/itsubaki/qasm/svg"
 )
 
-func ExampleVisitor_Add() {
+func ExampleVisitor_AddWire() {
 	v := svg.NewVisitor(environ.New())
-	if err := v.Add("q"); err != nil {
+	if err := v.AddWire("q"); err != nil {
 		panic(err)
 	}
 
-	if err := v.Add("q"); err != nil {
+	if err := v.AddWire("q"); err != nil {
 		fmt.Println(err)
 	}
 
@@ -93,7 +93,7 @@ func TestVisitor_Build(t *testing.T) {
 		{
 			text:   `qubit[2] q; h a[0];`,
 			hasErr: true,
-			errMsg: `undefined "a[0]"`,
+			errMsg: `undefined "a"`,
 		},
 		{
 			text:   `qubit[2] q; qubit[2] q;`,
