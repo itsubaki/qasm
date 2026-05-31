@@ -71,6 +71,16 @@ func TestVisitor_Build(t *testing.T) {
 			hasErr: false,
 		},
 		{
+			text:   `int x = 1; int x = 2;`,
+			hasErr: true,
+			errMsg: `"x" redeclared`,
+		},
+		{
+			text:   `const int x = 1; const int x = 2;`,
+			hasErr: true,
+			errMsg: `"x" redeclared`,
+		},
+		{
 			text:   `qubit q; x a;`,
 			hasErr: true,
 			errMsg: `undefined "a"`,
