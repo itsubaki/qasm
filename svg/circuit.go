@@ -19,15 +19,15 @@ type Op interface {
 }
 
 type Gate struct {
-	Name     string `json:"name"`
-	Controls []int  `json:"controls,omitempty"`
-	Targets  []int  `json:"targets,omitempty"`
+	Name    string `json:"name"`
+	Control []int  `json:"control,omitempty"`
+	Target  []int  `json:"target,omitempty"`
 }
 
 func (g *Gate) Wires() []int {
 	var wires []int
-	wires = append(wires, g.Controls...)
-	wires = append(wires, g.Targets...)
+	wires = append(wires, g.Control...)
+	wires = append(wires, g.Target...)
 	return wires
 }
 
@@ -41,19 +41,19 @@ func (s *Subroutine) Wires() []int {
 }
 
 type Measurement struct {
-	Wire    []int `json:"wire"`
-	Targets []int `json:"targets,omitempty"`
+	Wire   []int `json:"wire"`
+	Target []int `json:"target,omitempty"`
 }
 
 func (m *Measurement) Wires() []int {
 	var wires []int
 	wires = append(wires, m.Wire...)
-	wires = append(wires, m.Targets...)
+	wires = append(wires, m.Target...)
 	return wires
 }
 
 type Barrier struct {
-	Wire []int `json:"wires"`
+	Wire []int `json:"wire"`
 }
 
 func (b *Barrier) Wires() []int {

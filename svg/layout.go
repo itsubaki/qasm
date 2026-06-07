@@ -78,7 +78,7 @@ func NewLayout(circuit *Circuit) *Layout {
 
 	for _, cur := range circuit.Ops {
 		// controlled gates must be in their own layer
-		if g, ok := cur.(*Gate); ok && len(g.Controls) > 0 {
+		if g, ok := cur.(*Gate); ok && len(g.Control) > 0 {
 			layout.NewLayer([]Op{cur}, true)
 			continue
 		}
@@ -89,7 +89,7 @@ func NewLayout(circuit *Circuit) *Layout {
 		}
 
 		// arrow measurements must be in their own layer
-		if m, ok := cur.(*Measurement); ok && len(m.Targets) > 0 {
+		if m, ok := cur.(*Measurement); ok && len(m.Target) > 0 {
 			layout.NewLayer([]Op{cur}, true)
 			continue
 		}

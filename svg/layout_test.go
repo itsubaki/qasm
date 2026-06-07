@@ -18,42 +18,42 @@ func ExampleNewLayout() {
 		},
 		Ops: []svg.Op{
 			&svg.Gate{
-				Name:    "H",
-				Targets: []int{1},
+				Name:   "H",
+				Target: []int{1},
+			},
+			&svg.Gate{
+				Name:   "X",
+				Target: []int{0},
 			},
 			&svg.Gate{
 				Name:    "X",
-				Targets: []int{0},
+				Control: []int{1},
+				Target:  []int{2},
 			},
 			&svg.Gate{
-				Name:     "X",
-				Controls: []int{1},
-				Targets:  []int{2},
+				Name:    "X",
+				Control: []int{0},
+				Target:  []int{1},
 			},
 			&svg.Gate{
-				Name:     "X",
-				Controls: []int{0},
-				Targets:  []int{1},
+				Name:   "H",
+				Target: []int{0},
 			},
 			&svg.Gate{
-				Name:    "H",
-				Targets: []int{0},
+				Name:    "U",
+				Control: []int{2, 0},
+				Target:  []int{1},
 			},
 			&svg.Gate{
-				Name:     "U",
-				Controls: []int{2, 0},
-				Targets:  []int{1},
-			},
-			&svg.Gate{
-				Name:     "QFT",
-				Controls: []int{0},
-				Targets:  []int{1, 2, 3},
+				Name:    "QFT",
+				Control: []int{0},
+				Target:  []int{1, 2, 3},
 			},
 			&svg.Measurement{
 				Wire: []int{
 					0,
 				},
-				Targets: []int{
+				Target: []int{
 					4,
 				},
 			},
@@ -61,7 +61,7 @@ func ExampleNewLayout() {
 				Wire: []int{
 					1,
 				},
-				Targets: []int{
+				Target: []int{
 					5,
 				},
 			},
@@ -81,21 +81,21 @@ func ExampleNewLayout() {
 				},
 			},
 			&svg.Gate{
-				Name:    "H",
-				Targets: []int{1},
+				Name:   "H",
+				Target: []int{1},
 			},
 			&svg.Gate{
-				Name:    "H",
-				Targets: []int{0},
+				Name:   "H",
+				Target: []int{0},
 			},
 			&svg.Gate{
-				Name:     "QFT",
-				Controls: []int{3},
-				Targets:  []int{0, 1, 2},
+				Name:    "QFT",
+				Control: []int{3},
+				Target:  []int{0, 1, 2},
 			},
 			&svg.Gate{
-				Name:    "H",
-				Targets: []int{0},
+				Name:   "H",
+				Target: []int{0},
 			},
 			&svg.Measurement{
 				Wire: []int{
@@ -111,28 +111,28 @@ func ExampleNewLayout() {
 				Wire: []int{
 					0,
 				},
-				Targets: []int{
+				Target: []int{
 					5,
 				},
 			},
 			&svg.Gate{
-				Name:    "X",
-				Targets: []int{2},
+				Name:   "X",
+				Target: []int{2},
 			},
 			&svg.Gate{
-				Name:    "H",
-				Targets: []int{3},
+				Name:   "H",
+				Target: []int{3},
 			},
 			&svg.Barrier{
 				Wire: []int{0, 1, 2, 3},
 			},
 			&svg.Gate{
-				Name:    "X",
-				Targets: []int{0},
+				Name:   "X",
+				Target: []int{0},
 			},
 			&svg.Gate{
-				Name:    "H",
-				Targets: []int{1},
+				Name:   "H",
+				Target: []int{1},
 			},
 		},
 	}

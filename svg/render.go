@@ -65,8 +65,8 @@ func Render(layout *Layout, config Config) string {
 			switch o := op.(type) {
 			case *Gate:
 				// wires
-				for _, c := range o.Controls {
-					for _, t := range o.Targets {
+				for _, c := range o.Control {
+					for _, t := range o.Target {
 						cy := config.WireStartY + c*config.WireGap
 						ty := config.WireStartY + t*config.WireGap
 
@@ -82,8 +82,8 @@ func Render(layout *Layout, config Config) string {
 				}
 
 				// operation box
-				minY, maxY := o.Targets[0], o.Targets[0]
-				for _, t := range o.Targets {
+				minY, maxY := o.Target[0], o.Target[0]
+				for _, t := range o.Target {
 					minY, maxY = min(minY, t), max(maxY, t)
 				}
 
@@ -131,7 +131,7 @@ func Render(layout *Layout, config Config) string {
 			case *Measurement:
 				// wires
 				for _, w := range o.Wire {
-					for _, t := range o.Targets {
+					for _, t := range o.Target {
 						cy := config.WireStartY + w*config.WireGap
 						ty := config.WireStartY + t*config.WireGap
 

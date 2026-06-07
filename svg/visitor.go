@@ -198,8 +198,8 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 	if len(targetIDs) > 1 {
 		for i := range wireIDs {
 			v.circuit.Ops = append(v.circuit.Ops, &Measurement{
-				Wire:    []int{wireIDs[i]},
-				Targets: []int{targetIDs[i]},
+				Wire:   []int{wireIDs[i]},
+				Target: []int{targetIDs[i]},
 			})
 		}
 
@@ -207,8 +207,8 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 	}
 
 	v.circuit.Ops = append(v.circuit.Ops, &Measurement{
-		Wire:    wireIDs,
-		Targets: targetIDs,
+		Wire:   wireIDs,
+		Target: targetIDs,
 	})
 
 	return nil
@@ -270,9 +270,9 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	}
 
 	v.circuit.Ops = append(v.circuit.Ops, &Gate{
-		Name:     strings.ToUpper(g.String()),
-		Controls: ctrls,
-		Targets:  targets,
+		Name:    strings.ToUpper(g.String()),
+		Control: ctrls,
+		Target:  targets,
 	})
 
 	return nil

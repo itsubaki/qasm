@@ -15,13 +15,13 @@ func ExampleRender() {
 		},
 		Ops: []svg.Op{
 			&svg.Gate{
-				Name:    "H",
-				Targets: []int{0},
+				Name:   "H",
+				Target: []int{0},
 			},
 			&svg.Gate{
-				Name:     "CNOT",
-				Controls: []int{0},
-				Targets:  []int{1},
+				Name:    "CNOT",
+				Control: []int{0},
+				Target:  []int{1},
 			},
 			&svg.Barrier{
 				Wire: []int{0, 1},
@@ -34,8 +34,8 @@ func ExampleRender() {
 				Wire: []int{0, 1},
 			},
 			&svg.Measurement{
-				Wire:    []int{0},
-				Targets: []int{2},
+				Wire:   []int{0},
+				Target: []int{2},
 			},
 		},
 	}

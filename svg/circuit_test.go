@@ -8,9 +8,9 @@ import (
 
 func ExampleGate_Wires() {
 	g := &svg.Gate{
-		Name:     "CNOT",
-		Controls: []int{0},
-		Targets:  []int{1},
+		Name:    "CNOT",
+		Control: []int{0},
+		Target:  []int{1},
 	}
 
 	fmt.Println(g.Wires())
@@ -38,8 +38,8 @@ func ExampleMeasurement_Wires() {
 	fmt.Println(m.Wires())
 
 	m01 := &svg.Measurement{
-		Wire:    []int{0},
-		Targets: []int{1},
+		Wire:   []int{0},
+		Target: []int{1},
 	}
 	fmt.Println(m01.Wires())
 

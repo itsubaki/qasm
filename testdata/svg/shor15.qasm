@@ -16,8 +16,11 @@ h q;
 x a[3];
 
 // modexp
+barrier q, a;
 cx q[0], a[1];
 cx q[0], a[2];
+
+barrier q, a;
 cx        a[0], a[2];
 ccx q[1], a[2], a[0];
 cx        a[0], a[2];
@@ -26,6 +29,7 @@ ccx q[1], a[1], a[3];
 cx        a[3], a[1];
 
 // inv_qft
+barrier q, a;
 h q[2];
 cr(-pi/2) q[2], q[1];
 h q[1];
