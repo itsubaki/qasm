@@ -38,6 +38,10 @@ func Render(layout *Layout, config Config) string {
 		width, height,
 	)
 
+	fmt.Fprintf(&b, `<rect x="0" y="0" width="%d" height="%d" fill="#0d1117"/>`,
+		width, height,
+	)
+
 	// style
 	b.WriteString(`<style>`)
 	fmt.Fprintf(&b, `.gate-label { font-family: ui-monospace, monospace; font-size: %dpx; font-weight: 600; }`, config.FontSize)
@@ -82,28 +86,23 @@ func Render(layout *Layout, config Config) string {
 				}
 
 				// operation box
-				minY, maxY := o.Target[0], o.Target[0]
 				for _, t := range o.Target {
-					minY, maxY = min(minY, t), max(maxY, t)
+					y := config.WireStartY + t*config.WireGap
+
+					fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="#1f2937" stroke="#0ea5e9" stroke-width="2"/>`,
+						x,
+						y-config.OpHeight/2,
+						config.OpWidth,
+						config.OpHeight,
+						config.OpRX,
+					)
+
+					fmt.Fprintf(&b, `<text x="%d" y="%d" text-anchor="middle" fill="#e5e7eb" class="gate-label">%s</text>`,
+						x+config.OpWidth/2,
+						y+config.OpHeight/2-13,
+						o.Name,
+					)
 				}
-
-				topY := config.WireStartY + minY*config.WireGap
-				bottomY := config.WireStartY + maxY*config.WireGap
-				centerY := (topY + bottomY) / 2
-				height := (bottomY - topY) + config.OpHeight
-
-				fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="#1f2937" stroke="#0ea5e9" stroke-width="2" />`,
-					x,
-					centerY-height/2,
-					config.OpWidth,
-					height,
-					config.OpRX,
-				)
-
-				fmt.Fprintf(&b, `<text x="%d" y="%d" text-anchor="middle" fill="#e5e7eb" class="gate-label">%s</text>`,
-					x+config.OpWidth/2, centerY+config.OpHeight/2-13,
-					o.Name,
-				)
 			case *Subroutine:
 				// operation box
 				minY, maxY := o.Wire[0], o.Wire[0]
