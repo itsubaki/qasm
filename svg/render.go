@@ -38,6 +38,10 @@ func Render(layout *Layout, config Config) string {
 		width, height,
 	)
 
+	fmt.Fprintf(&b, `<rect x="0" y="0" width="%d" height="%d" fill="#0d1117"/>`,
+		width, height,
+	)
+
 	// style
 	b.WriteString(`<style>`)
 	fmt.Fprintf(&b, `.gate-label { font-family: ui-monospace, monospace; font-size: %dpx; font-weight: 600; }`, config.FontSize)
