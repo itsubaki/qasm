@@ -14,6 +14,7 @@ type Config struct {
 	OpHeight   int
 	OpRX       int
 	FontSize   int
+	Theme      Theme
 }
 
 var DefaultConfig = Config{
@@ -24,6 +25,7 @@ var DefaultConfig = Config{
 	OpHeight:   36,
 	OpRX:       8,
 	FontSize:   13,
+	Theme:      Paper,
 }
 
 func Render(layout *Layout, config Config) string {
@@ -38,8 +40,9 @@ func Render(layout *Layout, config Config) string {
 		width, height,
 	)
 
-	fmt.Fprintf(&b, `<rect x="0" y="0" width="%d" height="%d" fill="#0d1117"/>`,
+	fmt.Fprintf(&b, `<rect x="0" y="0" width="%d" height="%d" fill="%s"/>`,
 		width, height,
+		config.Theme.Background,
 	)
 
 	// style
@@ -51,13 +54,15 @@ func Render(layout *Layout, config Config) string {
 	// wires
 	for i, w := range layout.Wires {
 		y := config.WireStartY + i*config.WireGap
-		fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#4b5563" stroke-width="2" />`,
+		fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="%s" stroke-width="2" />`,
 			config.WireStartX, y,
 			width, y,
+			config.Theme.Wire,
 		)
 
-		fmt.Fprintf(&b, `<text x="%d" y="%d" text-anchor="end" fill="#4b5563" class="wire-label">%s</text>`,
+		fmt.Fprintf(&b, `<text x="%d" y="%d" text-anchor="end" fill="%s" class="wire-label">%s</text>`,
 			config.WireStartX-8, y+5,
+			config.Theme.WireLabel,
 			w.Name,
 		)
 	}
@@ -74,13 +79,15 @@ func Render(layout *Layout, config Config) string {
 						cy := config.WireStartY + c*config.WireGap
 						ty := config.WireStartY + t*config.WireGap
 
-						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#0ea5e9" stroke-width="2" />`,
+						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="%s" stroke-width="2" />`,
 							x+config.OpWidth/2, cy,
 							x+config.OpWidth/2, ty,
+							config.Theme.GateStroke,
 						)
 
-						fmt.Fprintf(&b, `<circle cx="%d" cy="%d" r="6" fill="#0ea5e9" />`,
+						fmt.Fprintf(&b, `<circle cx="%d" cy="%d" r="6" fill="%s" />`,
 							x+config.OpWidth/2, cy,
+							config.Theme.GateStroke,
 						)
 					}
 				}
@@ -89,17 +96,20 @@ func Render(layout *Layout, config Config) string {
 				for _, t := range o.Target {
 					y := config.WireStartY + t*config.WireGap
 
-					fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="#1f2937" stroke="#0ea5e9" stroke-width="2"/>`,
+					fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="%s" stroke="%s" stroke-width="2"/>`,
 						x,
 						y-config.OpHeight/2,
 						config.OpWidth,
 						config.OpHeight,
 						config.OpRX,
+						config.Theme.GateFill,
+						config.Theme.GateStroke,
 					)
 
-					fmt.Fprintf(&b, `<text x="%d" y="%d" text-anchor="middle" fill="#e5e7eb" class="gate-label">%s</text>`,
+					fmt.Fprintf(&b, `<text x="%d" y="%d" text-anchor="middle" fill="%s" class="gate-label">%s</text>`,
 						x+config.OpWidth/2,
 						y+config.OpHeight/2-13,
+						config.Theme.Text,
 						o.Name,
 					)
 				}
@@ -115,16 +125,19 @@ func Render(layout *Layout, config Config) string {
 				centerY := (topY + bottomY) / 2
 				height := (bottomY - topY) + config.OpHeight
 
-				fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="#1f2937" stroke="#8b5cf6" stroke-width="2" />`,
+				fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="%s" stroke="%s" stroke-width="2" />`,
 					x,
 					centerY-height/2,
 					config.OpWidth,
 					height,
 					config.OpRX,
+					config.Theme.SubFill,
+					config.Theme.SubStroke,
 				)
 
-				fmt.Fprintf(&b, `<text x="%d" y="%d" text-anchor="middle" fill="#e5e7eb" class="gate-label">%s</text>`,
+				fmt.Fprintf(&b, `<text x="%d" y="%d" text-anchor="middle" fill="%s" class="gate-label">%s</text>`,
 					x+config.OpWidth/2, centerY+config.OpHeight/2-13,
+					config.Theme.Text,
 					o.Name,
 				)
 			case *Measurement:
@@ -134,15 +147,17 @@ func Render(layout *Layout, config Config) string {
 						cy := config.WireStartY + w*config.WireGap
 						ty := config.WireStartY + t*config.WireGap
 
-						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#10b981" stroke-width="2" />`,
+						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="%s" stroke-width="2" />`,
 							x+config.OpWidth/2, cy+config.OpHeight/2,
 							x+config.OpWidth/2, ty-4,
+							config.Theme.MeasureStroke,
 						)
 
-						fmt.Fprintf(&b, `<polygon points="%d,%d %d,%d %d,%d" fill="#10b981" />`,
+						fmt.Fprintf(&b, `<polygon points="%d,%d %d,%d %d,%d" fill="%s" />`,
 							x+config.OpWidth/2, ty,
 							x+config.OpWidth/2-4, ty-6,
 							x+config.OpWidth/2+4, ty-6,
+							config.Theme.MeasureStroke,
 						)
 					}
 				}
@@ -150,19 +165,23 @@ func Render(layout *Layout, config Config) string {
 				// operation box
 				for _, w := range o.Wire {
 					y := config.WireStartY + w*config.WireGap
-					fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="#1f2937" stroke="#10b981" stroke-width="2" />`,
+					fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="%s" stroke="%s" stroke-width="2" />`,
 						x, y-config.OpHeight/2,
 						config.OpWidth, config.OpHeight, config.OpRX,
+						config.Theme.MeasureFill,
+						config.Theme.MeasureStroke,
 					)
 
-					fmt.Fprintf(&b, `<path d="M %d %d A 10 10 0 0 1 %d %d" fill="none" stroke="#10b981" stroke-width="2" />`,
+					fmt.Fprintf(&b, `<path d="M %d %d A 10 10 0 0 1 %d %d" fill="none" stroke="%s" stroke-width="2" />`,
 						x+10, y,
 						x+30, y,
+						config.Theme.MeasureStroke,
 					)
 
-					fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#10b981" stroke-width="2" />`,
+					fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="%s" stroke-width="2" />`,
 						x+20, y,
 						x+26, y-10,
+						config.Theme.MeasureStroke,
 					)
 				}
 			case *Barrier:
@@ -176,9 +195,10 @@ func Render(layout *Layout, config Config) string {
 						y1 := config.WireStartY + start*config.WireGap
 						y2 := config.WireStartY + prev*config.WireGap
 
-						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" />`,
+						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="%s" stroke-width="2" stroke-dasharray="4 2" />`,
 							x+config.OpWidth/2, y1-config.OpHeight/2,
 							x+config.OpWidth/2, y2+config.OpHeight/2,
+							config.Theme.BarrierStroke,
 						)
 
 						if i < len(wires) {
