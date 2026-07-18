@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"strings"
 
 	"maps"
 	"os"
@@ -23,6 +24,7 @@ func main() {
 	var filepath string
 	var top int
 	var repl, lex, parse, validate, svg, verbose bool
+	var theme string
 	flag.StringVar(&filepath, "f", "", "filepath")
 	flag.IntVar(&top, "top", -1, "top results")
 	flag.BoolVar(&repl, "repl", false, "REPL(read-eval-print loop) mode")
@@ -31,6 +33,7 @@ func main() {
 	flag.BoolVar(&validate, "validate", false, "Validate the input without executing it")
 	flag.BoolVar(&svg, "svg", false, "Render the circuit as an SVG")
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
+	flag.StringVar(&theme, "theme", "paper", "SVG theme (paper/dark)")
 	flag.Parse()
 
 	switch {
@@ -76,7 +79,15 @@ func main() {
 			os.Exit(1)
 		}
 
-		diagram, err := renderer.SVG(text, renderer.DefaultConfig)
+		config := renderer.DefaultConfig
+		switch strings.ToLower(theme) {
+		case "paper":
+			config.Theme = renderer.Paper
+		case "dark":
+			config.Theme = renderer.Dark
+		}
+
+		diagram, err := renderer.SVG(text, config)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
