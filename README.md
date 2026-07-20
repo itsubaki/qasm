@@ -25,6 +25,8 @@ Usage of qasm:
         REPL(read-eval-print loop) mode
   -svg
         Render the circuit as an SVG
+  -theme string
+        SVG theme (paper/dark) (default "paper")
   -validate
         Validate the input without executing it
   -verbose
