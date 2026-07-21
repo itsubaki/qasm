@@ -28,7 +28,7 @@ var Paper = Theme{
 	BarrierStroke: "#000000",
 }
 
-var Dark = Theme{
+var Cyber = Theme{
 	Background:    "#0d1117",
 	Wire:          "#4b5563",
 	WireLabel:     "#4b5563",

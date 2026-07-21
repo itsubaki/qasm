@@ -26,7 +26,7 @@ Usage of qasm:
   -svg
         Render the circuit as an SVG
   -theme string
-        SVG theme (paper/dark) (default "paper")
+        SVG theme (paper/cyber) (default "paper")
   -validate
         Validate the input without executing it
   -verbose
@@ -81,7 +81,7 @@ subroutine: []
 ```
 
 ```shell
-% qasm -svg --theme dark < testdata/svg/shor15.qasm > testdata/svg/shor15.svg
+% qasm -svg --theme cyber < testdata/svg/shor15.qasm > testdata/svg/shor15.svg
 ```
 
 ![circuit](https://raw.githubusercontent.com/itsubaki/qasm/refs/heads/images/testdata/svg/shor15.svg)

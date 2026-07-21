@@ -33,7 +33,7 @@ func main() {
 	flag.BoolVar(&validate, "validate", false, "Validate the input without executing it")
 	flag.BoolVar(&svg, "svg", false, "Render the circuit as an SVG")
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
-	flag.StringVar(&theme, "theme", "paper", "SVG theme (paper/dark)")
+	flag.StringVar(&theme, "theme", "paper", "SVG theme (paper/cyber)")
 	flag.Parse()
 
 	switch {
@@ -83,8 +83,8 @@ func main() {
 		switch strings.ToLower(theme) {
 		case "paper":
 			config.Theme = renderer.Paper
-		case "dark":
-			config.Theme = renderer.Dark
+		case "cyber":
+			config.Theme = renderer.Cyber
 		}
 
 		diagram, err := renderer.SVG(text, config)
