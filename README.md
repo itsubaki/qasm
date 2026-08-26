@@ -48,6 +48,7 @@ qasm>
 qasm> qubit[2] q;
 qasm> U(pi/2, 0, pi) q[0];
 qasm> ctrl @ U(pi, 0, pi) q[0], q[1];
+qasm> 
 qasm> :print
 --- STATE ---
 [00] ( 0.7071 0.0000i): 0.5000
@@ -69,6 +70,7 @@ qasm>
 qasm> const float ratio = pi;
 qasm> int n = 2;
 qasm> if (n > 0) { n = n*ratio; }
+qasm> 
 qasm> :print
 --- STATE ---
 --- ENVIRONMENT ---
