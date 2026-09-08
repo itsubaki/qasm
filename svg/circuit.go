@@ -2,8 +2,14 @@ package svg
 
 var (
 	_ Op = (*Gate)(nil)
+	_ Op = (*Subroutine)(nil)
 	_ Op = (*Measurement)(nil)
+	_ Op = (*Barrier)(nil)
 )
+
+type Op interface {
+	Wires() []int
+}
 
 type Circuit struct {
 	Wires []Wire `json:"wires"`
@@ -12,10 +18,6 @@ type Circuit struct {
 
 type Wire struct {
 	Name string `json:"name"`
-}
-
-type Op interface {
-	Wires() []int
 }
 
 type Gate struct {
