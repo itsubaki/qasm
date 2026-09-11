@@ -4,21 +4,22 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"strings"
 )
 
 func Text(r io.Reader) (string, error) {
 	scanner := bufio.NewScanner(r)
 
-	var text string
+	var text strings.Builder
 	for scanner.Scan() {
-		text += scanner.Text() + "\n"
+		text.WriteString(scanner.Text() + "\n")
 	}
 
 	if err := scanner.Err(); err != nil {
 		return "", fmt.Errorf("scan: %w", err)
 	}
 
-	return text, nil
+	return text.String(), nil
 }
 
 func MustText(r io.Reader) string {
