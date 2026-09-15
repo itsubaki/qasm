@@ -43,19 +43,10 @@ validate:
 
 .PHONY: svg
 svg:
-	go run main.go -svg < testdata/svg/barrier.qasm               > testdata/svg/barrier.svg
-	go run main.go -svg < testdata/svg/bell.qasm                  > testdata/svg/bell.svg
-	go run main.go -svg < testdata/svg/ghz.qasm                   > testdata/svg/ghz.svg
-	go run main.go -svg < testdata/svg/grover.qasm                > testdata/svg/grover.svg
-	go run main.go -svg < testdata/svg/inv_qft.qasm               > testdata/svg/inv_qft.svg
-	go run main.go -svg < testdata/svg/quantum_teleportation.qasm > testdata/svg/quantum_teleportation.svg
-	go run main.go -svg < testdata/svg/shor15.qasm                > testdata/svg/shor15.svg
-	go run main.go -svg < testdata/bell.qasm                      > testdata/bell.svg
-	go run main.go -svg < testdata/deutsch_jozsa_balanced.qasm    > testdata/deutsch_jozsa_balanced.svg
-	go run main.go -svg < testdata/deutsch_jozsa_constant.qasm    > testdata/deutsch_jozsa_constant.svg
-	go run main.go -svg < testdata/error_correction.qasm          > testdata/error_correction.svg
-	go run main.go -svg < testdata/grover.qasm                    > testdata/grover.svg
-	go run main.go -svg < testdata/qft.qasm                       > testdata/qft.svg
-	go run main.go -svg < testdata/qsp.qasm                       > testdata/qsp.svg
-	go run main.go -svg < testdata/quantum_teleportation.qasm     > testdata/quantum_teleportation.svg
-	go run main.go -svg < testdata/shor15.qasm                    > testdata/shor15.svg
+	go run main.go -svg --theme cyber < testdata/svg/barrier.qasm               > testdata/svg/barrier.svg
+	go run main.go -svg --theme cyber < testdata/svg/bell.qasm                  > testdata/svg/bell.svg
+	go run main.go -svg --theme cyber < testdata/svg/ghz.qasm                   > testdata/svg/ghz.svg
+	go run main.go -svg --theme cyber < testdata/svg/grover.qasm                > testdata/svg/grover.svg
+	go run main.go -svg --theme cyber < testdata/svg/inv_qft.qasm               > testdata/svg/inv_qft.svg
+	go run main.go -svg --theme cyber < testdata/svg/quantum_teleportation.qasm > testdata/svg/quantum_teleportation.svg
+	go run main.go -svg --theme cyber < testdata/svg/shor15.qasm                > testdata/svg/shor15.svg

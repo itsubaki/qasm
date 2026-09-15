@@ -243,18 +243,6 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 	}
 
-	// cccx
-	var g strings.Builder
-	for _, s := range gate {
-		if s == 'c' {
-			ctrls = append(ctrls, qargs[cursor])
-			cursor++
-			continue
-		}
-
-		g.WriteString(string(s))
-	}
-
 	ctrlSet := make(map[int]struct{})
 	for _, c := range ctrls {
 		ctrlSet[c] = struct{}{}
@@ -270,7 +258,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	}
 
 	v.circuit.Ops = append(v.circuit.Ops, &Gate{
-		Name:    strings.ToUpper(g.String()),
+		Name:    strings.ToUpper(gate),
 		Control: ctrls,
 		Target:  targets,
 	})
