@@ -383,7 +383,7 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix,
 
 func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) error {
 	if len(ctx.AllGateModifier()) > 0 {
-		// NOTE: User-defined gate calls do not support modifiers.
+		// NOTE: Modifiers on user-defined gate calls are not implemented yet.
 		return fmt.Errorf("user-defined call with modifier: %w", ErrNotImplemented)
 	}
 
