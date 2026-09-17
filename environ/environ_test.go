@@ -50,18 +50,18 @@ func ExampleEnviron_SetVariable() {
 func ExampleEnviron_SetBit() {
 	env := environ.New()
 
-	env.SetBit("a", true)
-	fmt.Println("env:", env.Bit)
+	env.SetClBit("a", true)
+	fmt.Println("env:", env.ClBit)
 
 	enclosed := env.NewEnclosed()
-	enclosed.SetBit("a", false)
-	fmt.Println("env:", env.Bit)
-	fmt.Println("enclosed:", enclosed.Bit)
+	enclosed.SetClBit("a", false)
+	fmt.Println("env:", env.ClBit)
+	fmt.Println("enclosed:", enclosed.ClBit)
 
-	enclosed.SetBit("b", true)
-	enclosed.SetBit("b", false)
-	fmt.Println("env:", env.Bit)
-	fmt.Println("enclosed:", enclosed.Bit)
+	enclosed.SetClBit("b", true)
+	enclosed.SetClBit("b", false)
+	fmt.Println("env:", env.ClBit)
+	fmt.Println("enclosed:", enclosed.ClBit)
 
 	// Output:
 	// env: map[a:true]
@@ -74,18 +74,18 @@ func ExampleEnviron_SetBit() {
 func ExampleEnviron_SetBitArray() {
 	env := environ.New()
 
-	env.SetBitArray("a", []bool{true, false})
-	fmt.Println("env:", env.BitArray)
+	env.SetClBitArray("a", []bool{true, false})
+	fmt.Println("env:", env.ClBitArray)
 
 	enclosed := env.NewEnclosed()
-	enclosed.SetBitArray("a", []bool{false, true})
-	fmt.Println("env:", env.BitArray)
-	fmt.Println("enclosed:", enclosed.BitArray)
+	enclosed.SetClBitArray("a", []bool{false, true})
+	fmt.Println("env:", env.ClBitArray)
+	fmt.Println("enclosed:", enclosed.ClBitArray)
 
-	enclosed.SetBitArray("b", []bool{true, true})
-	enclosed.SetBitArray("b", []bool{false, false})
-	fmt.Println("env:", env.BitArray)
-	fmt.Println("enclosed:", enclosed.BitArray)
+	enclosed.SetClBitArray("b", []bool{true, true})
+	enclosed.SetClBitArray("b", []bool{false, false})
+	fmt.Println("env:", env.ClBitArray)
+	fmt.Println("enclosed:", enclosed.ClBitArray)
 
 	// Output:
 	// env: map[a:[true false]]
@@ -148,14 +148,14 @@ func ExampleEnviron_GetQubit() {
 
 func ExampleEnviron_GetBit() {
 	env := environ.New()
-	env.Bit["c"] = true
+	env.ClBit["c"] = true
 
 	enclosed := env.NewEnclosed()
-	enclosed.Bit["d"] = false
+	enclosed.ClBit["d"] = false
 
-	fmt.Println(enclosed.GetBit("not found"))
-	fmt.Println(enclosed.GetBit("c"))
-	fmt.Println(enclosed.GetBit("d"))
+	fmt.Println(enclosed.GetClBit("not found"))
+	fmt.Println(enclosed.GetClBit("c"))
+	fmt.Println(enclosed.GetClBit("d"))
 
 	// Output:
 	// false false
@@ -165,14 +165,14 @@ func ExampleEnviron_GetBit() {
 
 func ExampleEnviron_GetBitArray() {
 	env := environ.New()
-	env.BitArray["c"] = []bool{true, false}
+	env.ClBitArray["c"] = []bool{true, false}
 
 	enclosed := env.NewEnclosed()
-	enclosed.BitArray["d"] = []bool{false, true}
+	enclosed.ClBitArray["d"] = []bool{false, true}
 
-	fmt.Println(enclosed.GetBitArray("not found"))
-	fmt.Println(enclosed.GetBitArray("c"))
-	fmt.Println(enclosed.GetBitArray("d"))
+	fmt.Println(enclosed.GetClBitArray("not found"))
+	fmt.Println(enclosed.GetClBitArray("c"))
+	fmt.Println(enclosed.GetClBitArray("d"))
 
 	// Output:
 	// [] false

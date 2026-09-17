@@ -396,12 +396,12 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			continue
 		}
 
-		if len(env.Bit) > 0 && fmt.Sprintf("%v", env.Bit) != c.want {
-			t.Errorf("got=%v, want=%v", env.Bit, c.want)
+		if len(env.ClBit) > 0 && fmt.Sprintf("%v", env.ClBit) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClBit, c.want)
 		}
 
-		if len(env.BitArray) > 0 && fmt.Sprintf("%v", env.BitArray) != c.want {
-			t.Errorf("got=%v, want=%v", env.BitArray, c.want)
+		if len(env.ClBitArray) > 0 && fmt.Sprintf("%v", env.ClBitArray) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClBitArray, c.want)
 		}
 
 		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
@@ -544,12 +544,12 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
 		}
 
-		if len(env.Bit) > 0 && fmt.Sprintf("%v", env.Bit) != c.want {
-			t.Errorf("got=%v, want=%v", env.Bit, c.want)
+		if len(env.ClBit) > 0 && fmt.Sprintf("%v", env.ClBit) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClBit, c.want)
 		}
 
-		if len(env.BitArray) > 0 && fmt.Sprintf("%v", env.BitArray) != c.want {
-			t.Errorf("got=%v, want=%v", env.BitArray, c.want)
+		if len(env.ClBitArray) > 0 && fmt.Sprintf("%v", env.ClBitArray) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClBitArray, c.want)
 		}
 	}
 }
@@ -689,17 +689,17 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 		if len(c.want.bit) > 0 {
 			var found bool
 			for _, w := range c.want.bit {
-				if fmt.Sprintf("%v", env.Bit) == w {
+				if fmt.Sprintf("%v", env.ClBit) == w {
 					found = true
 				}
 
-				if fmt.Sprintf("%v", env.BitArray) == w {
+				if fmt.Sprintf("%v", env.ClBitArray) == w {
 					found = true
 				}
 			}
 
 			if !found {
-				t.Errorf("got=%v/%v, want=%v", env.Bit, env.BitArray, c.want.bit)
+				t.Errorf("got=%v/%v, want=%v", env.ClBit, env.ClBitArray, c.want.bit)
 			}
 		}
 
@@ -854,17 +854,17 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 		if len(c.want.bit) > 0 {
 			var found bool
 			for _, w := range c.want.bit {
-				if fmt.Sprintf("%v", env.Bit) == w {
+				if fmt.Sprintf("%v", env.ClBit) == w {
 					found = true
 				}
 
-				if fmt.Sprintf("%v", env.BitArray) == w {
+				if fmt.Sprintf("%v", env.ClBitArray) == w {
 					found = true
 				}
 			}
 
 			if !found {
-				t.Errorf("got=%v/%v, want=%v", env.Bit, env.BitArray, c.want.bit)
+				t.Errorf("got=%v/%v, want=%v", env.ClBit, env.ClBitArray, c.want.bit)
 			}
 		}
 	}
@@ -2271,12 +2271,12 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 			continue
 		}
 
-		if len(env.Bit) > 0 && fmt.Sprintf("%v", env.Bit) != c.want {
-			t.Errorf("got=%v, want=%v", env.Bit, c.want)
+		if len(env.ClBit) > 0 && fmt.Sprintf("%v", env.ClBit) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClBit, c.want)
 		}
 
-		if len(env.BitArray) > 0 && fmt.Sprintf("%v", env.BitArray) != c.want {
-			t.Errorf("got=%v, want=%v", env.BitArray, c.want)
+		if len(env.ClBitArray) > 0 && fmt.Sprintf("%v", env.ClBitArray) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClBitArray, c.want)
 		}
 	}
 }

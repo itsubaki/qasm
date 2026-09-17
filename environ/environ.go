@@ -11,8 +11,8 @@ type Environ struct {
 	Variable   map[string]any
 	QubitOrder []string
 	Qubit      map[string][]q.Qubit
-	BitArray   map[string][]bool
-	Bit        map[string]bool
+	ClBit      map[string]bool
+	ClBitArray map[string][]bool
 	Gate       map[string]*Gate
 	Subroutine map[string]*Subroutine
 	Outer      *Environ
@@ -37,8 +37,8 @@ func New() *Environ {
 		Const:      make(map[string]any),
 		Variable:   make(map[string]any),
 		Qubit:      make(map[string][]q.Qubit),
-		Bit:        make(map[string]bool),
-		BitArray:   make(map[string][]bool),
+		ClBit:      make(map[string]bool),
+		ClBitArray: make(map[string][]bool),
 		Gate:       make(map[string]*Gate),
 		Subroutine: make(map[string]*Subroutine),
 	}
@@ -102,50 +102,50 @@ func (e *Environ) SetQubit(name string, qubits []q.Qubit) {
 	e.QubitOrder = append(e.QubitOrder, name)
 }
 
-func (e *Environ) GetBit(name string) (bool, bool) {
-	if q, ok := e.Bit[name]; ok {
+func (e *Environ) GetClBit(name string) (bool, bool) {
+	if q, ok := e.ClBit[name]; ok {
 		return q, true
 	}
 
 	if e.Outer != nil {
-		return e.Outer.GetBit(name)
+		return e.Outer.GetClBit(name)
 	}
 
 	return false, false
 }
 
-func (e *Environ) SetBit(name string, bit bool) {
+func (e *Environ) SetClBit(name string, bit bool) {
 	for env := e; env != nil; env = env.Outer {
-		if _, ok := env.Bit[name]; ok {
-			env.Bit[name] = bit
+		if _, ok := env.ClBit[name]; ok {
+			env.ClBit[name] = bit
 			return
 		}
 	}
 
-	e.Bit[name] = bit
+	e.ClBit[name] = bit
 }
 
-func (e *Environ) GetBitArray(name string) ([]bool, bool) {
-	if q, ok := e.BitArray[name]; ok {
+func (e *Environ) GetClBitArray(name string) ([]bool, bool) {
+	if q, ok := e.ClBitArray[name]; ok {
 		return q, true
 	}
 
 	if e.Outer != nil {
-		return e.Outer.GetBitArray(name)
+		return e.Outer.GetClBitArray(name)
 	}
 
 	return nil, false
 }
 
-func (e *Environ) SetBitArray(name string, bits []bool) {
+func (e *Environ) SetClBitArray(name string, bits []bool) {
 	for env := e; env != nil; env = env.Outer {
-		if _, ok := env.BitArray[name]; ok {
-			env.BitArray[name] = bits
+		if _, ok := env.ClBitArray[name]; ok {
+			env.ClBitArray[name] = bits
 			return
 		}
 	}
 
-	e.BitArray[name] = bits
+	e.ClBitArray[name] = bits
 }
 
 func (e *Environ) GetGate(name string) (*Gate, bool) {
