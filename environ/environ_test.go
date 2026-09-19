@@ -47,7 +47,7 @@ func ExampleEnviron_SetVariable() {
 	// enclosed: map[b:101]
 }
 
-func ExampleEnviron_SetBit() {
+func ExampleEnviron_SetClBit() {
 	env := environ.New()
 
 	env.SetClBit("a", true)
@@ -71,7 +71,7 @@ func ExampleEnviron_SetBit() {
 	// enclosed: map[b:false]
 }
 
-func ExampleEnviron_SetBitArray() {
+func ExampleEnviron_SetClBitArray() {
 	env := environ.New()
 
 	env.SetClBitArray("a", []bool{true, false})
@@ -146,7 +146,7 @@ func ExampleEnviron_GetQubit() {
 	// [3 4] true
 }
 
-func ExampleEnviron_GetBit() {
+func ExampleEnviron_GetClBit() {
 	env := environ.New()
 	env.ClBit["c"] = true
 
@@ -163,7 +163,7 @@ func ExampleEnviron_GetBit() {
 	// false true
 }
 
-func ExampleEnviron_GetBitArray() {
+func ExampleEnviron_GetClBitArray() {
 	env := environ.New()
 	env.ClBitArray["c"] = []bool{true, false}
 
