@@ -12,7 +12,8 @@ func Text(r io.Reader) (string, error) {
 
 	var text strings.Builder
 	for scanner.Scan() {
-		text.WriteString(scanner.Text() + "\n")
+		text.WriteString(scanner.Text())
+		text.WriteByte('\n')
 	}
 
 	if err := scanner.Err(); err != nil {
