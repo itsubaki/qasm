@@ -31,3 +31,4 @@ oryxBuildBinary
 
 # svg
 *.svg
+!testdata/svg/shor15.svg

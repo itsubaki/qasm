@@ -85,4 +85,4 @@ subroutine: []
 % qasm -svg --theme cyber < testdata/svg/shor15.qasm > testdata/svg/shor15.svg
 ```
 
-![circuit](https://raw.githubusercontent.com/itsubaki/qasm/refs/heads/images/testdata/svg/shor15.svg)
+![circuit](https://raw.githubusercontent.com/itsubaki/qasm/refs/heads/main/testdata/svg/shor15.svg)
