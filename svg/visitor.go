@@ -14,7 +14,7 @@ type Visitor struct {
 	*parser.Baseqasm3ParserVisitor
 	env     *environ.Environ
 	circuit *Circuit
-	wire    map[string]int
+	wireIDs map[string]WireID
 }
 
 func NewVisitor(env *environ.Environ) *Visitor {
@@ -22,7 +22,7 @@ func NewVisitor(env *environ.Environ) *Visitor {
 		Baseqasm3ParserVisitor: &parser.Baseqasm3ParserVisitor{},
 		env:                    env,
 		circuit:                &Circuit{},
-		wire:                   make(map[string]int),
+		wireIDs:                make(map[string]WireID),
 	}
 }
 
@@ -38,37 +38,36 @@ func (v *Visitor) Build(tree antlr.ParseTree) (*Circuit, error) {
 	return v.circuit, nil
 }
 
-func (v *Visitor) AddWire(wireID string) error {
-	if _, ok := v.wire[wireID]; ok {
-		return fmt.Errorf("%q redeclared", wireID)
+func (v *Visitor) AddWire(wire Wire) error {
+	label := wire.Label()
+	if _, ok := v.wireIDs[label]; ok {
+		return fmt.Errorf("%q redeclared", label)
 	}
 
-	v.wire[wireID] = len(v.circuit.Wires)
-	v.circuit.Wires = append(v.circuit.Wires, Wire{
-		Name: wireID,
-	})
-
+	v.wireIDs[label] = WireID(len(v.circuit.Wires))
+	v.circuit.Wires = append(v.circuit.Wires, wire)
 	return nil
 }
 
-func (v *Visitor) GetWire(wireID string, index ...int64) ([]int, bool) {
+func (v *Visitor) GetWireIDs(name string, index ...int64) ([]WireID, bool) {
 	if len(index) > 0 {
-		id := fmt.Sprintf("%s[%d]", wireID, index[0])
-		if w, ok := v.wire[id]; ok {
-			return []int{w}, true
+		id := fmt.Sprintf("%s[%d]", name, index[0])
+		if w, ok := v.wireIDs[id]; ok {
+			return []WireID{w}, true
 		}
+
+		return nil, false
 	}
 
-	if w, ok := v.wire[wireID]; ok {
+	if w, ok := v.wireIDs[name]; ok {
 		// q -> q;
-		// q[0] -> q[0];
-		return []int{w}, true
+		return []WireID{w}, true
 	}
 
-	var wireIDs []int
+	var wireIDs []WireID
 	for i := 0; ; i++ {
-		id := fmt.Sprintf("%s[%d]", wireID, i)
-		w, ok := v.wire[id]
+		id := fmt.Sprintf("%s[%d]", name, i)
+		w, ok := v.wireIDs[id]
 		if !ok {
 			break
 		}
@@ -157,7 +156,7 @@ func (v *Visitor) VisitStatement(ctx *parser.StatementContext) any {
 }
 
 func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) any {
-	wireIDs, err := cast[[]int](v.Visit(ctx.GateOperand()))
+	wireIDs, err := cast[[]WireID](v.Visit(ctx.GateOperand()))
 	if err != nil {
 		return err
 	}
@@ -166,7 +165,7 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) a
 }
 
 func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowAssignmentStatementContext) any {
-	wireIDs, err := cast[[]int](v.Visit(ctx.MeasureExpression()))
+	wireIDs, err := cast[[]WireID](v.Visit(ctx.MeasureExpression()))
 	if err != nil {
 		return err
 	}
@@ -190,7 +189,7 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 		return err
 	}
 
-	targetIDs, ok := v.GetWire(cargs, index...)
+	targetIDs, ok := v.GetWireIDs(cargs, index...)
 	if !ok {
 		return fmt.Errorf("undefined %q", cargs)
 	}
@@ -198,8 +197,8 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 	if len(targetIDs) > 1 {
 		for i := range wireIDs {
 			v.circuit.Ops = append(v.circuit.Ops, &Measurement{
-				Wire:   []int{wireIDs[i]},
-				Target: []int{targetIDs[i]},
+				Wire:   []WireID{wireIDs[i]},
+				Target: []WireID{targetIDs[i]},
 			})
 		}
 
@@ -220,14 +219,14 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		return err
 	}
 
-	qargs, err := cast[[]int](v.Visit(ctx.GateOperandList()))
+	qargs, err := cast[[]WireID](v.Visit(ctx.GateOperandList()))
 	if err != nil {
 		return err
 	}
 
 	// ctrl(n) @ h q0, q1,...;
 	var cursor int
-	var ctrls []int
+	var ctrls []WireID
 	for _, mod := range ctx.AllGateModifier() {
 		switch {
 		case mod.CTRL() != nil:
@@ -243,12 +242,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 	}
 
-	ctrlSet := make(map[int]struct{})
+	ctrlSet := make(map[WireID]struct{})
 	for _, c := range ctrls {
 		ctrlSet[c] = struct{}{}
 	}
 
-	var targets []int
+	var targets []WireID
 	for i := range qargs {
 		if _, ok := ctrlSet[qargs[i]]; ok {
 			continue
@@ -267,9 +266,9 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 }
 
 func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
-	var wireIDs []int
+	var wireIDs []WireID
 	for _, operand := range ctx.AllGateOperand() {
-		op, err := cast[[]int](v.Visit(operand))
+		op, err := cast[[]WireID](v.Visit(operand))
 		if err != nil {
 			return err
 		}
@@ -291,7 +290,7 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 		return err
 	}
 
-	wireIDs, ok := v.GetWire(qargs, index...)
+	wireIDs, ok := v.GetWireIDs(qargs, index...)
 	if !ok {
 		return fmt.Errorf("undefined %q", qargs)
 	}
@@ -339,7 +338,7 @@ func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) a
 }
 
 func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclarationStatementContext) any {
-	wireID, err := cast[string](v.Visit(ctx.Identifier()))
+	name, err := cast[string](v.Visit(ctx.Identifier()))
 	if err != nil {
 		return err
 	}
@@ -349,18 +348,17 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 		return err
 	}
 
-	wireIDs := []string{wireID}
-	if size > 1 {
-		wireIDs = make([]string, 0, size)
-		for i := range size {
-			wireIDs = append(wireIDs, fmt.Sprintf("%s[%d]", wireID, i))
+	if ctx.QubitType().Designator() != nil {
+		for i := range int(size) {
+			if err := v.AddWire(Wire{Name: name, Index: &i}); err != nil {
+				return err
+			}
 		}
+		return nil
 	}
 
-	for _, wireID := range wireIDs {
-		if err := v.AddWire(wireID); err != nil {
-			return err
-		}
+	if err := v.AddWire(Wire{Name: name}); err != nil {
+		return err
 	}
 
 	return nil
@@ -395,7 +393,7 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		v.env.SetVariable(id, int(0))
 		return nil
 	case ctx.ScalarType().BIT() != nil:
-		wireID, err := cast[string](v.Visit(ctx.Identifier()))
+		name, err := cast[string](v.Visit(ctx.Identifier()))
 		if err != nil {
 			return err
 		}
@@ -407,15 +405,15 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 				return err
 			}
 
-			for i := range size {
-				if err := v.AddWire(fmt.Sprintf("%s[%d]", wireID, i)); err != nil {
+			for i := range int(size) {
+				if err := v.AddWire(Wire{Name: name, Index: &i}); err != nil {
 					return err
 				}
 			}
 
 			return nil
 		default:
-			if err := v.AddWire(wireID); err != nil {
+			if err := v.AddWire(Wire{Name: name}); err != nil {
 				return err
 			}
 
@@ -450,7 +448,7 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 			return lit
 		}
 
-		if _, ok := v.GetWire(s); ok {
+		if _, ok := v.GetWireIDs(s); ok {
 			return s
 		}
 
@@ -513,14 +511,14 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 		return err
 	}
 
-	var wireIDs []int
+	var wireIDs []WireID
 	for i := range qargs {
 		qarg, err := cast[string](qargs[i])
 		if err != nil {
 			return err
 		}
 
-		ids, ok := v.GetWire(qarg)
+		ids, ok := v.GetWireIDs(qarg)
 		if !ok {
 			return fmt.Errorf("undefined %q", qarg)
 		}
@@ -537,7 +535,7 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 }
 
 func (v *Visitor) VisitBarrierStatement(ctx *parser.BarrierStatementContext) any {
-	qargs, err := cast[[]int](v.Visit(ctx.GateOperandList()))
+	qargs, err := cast[[]WireID](v.Visit(ctx.GateOperandList()))
 	if err != nil {
 		return err
 	}

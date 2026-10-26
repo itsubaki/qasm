@@ -2,7 +2,7 @@ package svg
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -69,7 +69,7 @@ func Render(layout *Layout, config Config) string {
 			config.WireStartX-8,
 			y+5,
 			config.Theme.WireLabel,
-			w.Name,
+			w.Label(),
 		)
 	}
 
@@ -82,8 +82,8 @@ func Render(layout *Layout, config Config) string {
 				// wires
 				for _, c := range o.Control {
 					for _, t := range o.Target {
-						cy := config.WireStartY + c*config.WireGap
-						ty := config.WireStartY + t*config.WireGap
+						cy := config.WireStartY + int(c)*config.WireGap
+						ty := config.WireStartY + int(t)*config.WireGap
 
 						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="%s" stroke-width="2" />`,
 							x+config.OpWidth/2,
@@ -103,7 +103,7 @@ func Render(layout *Layout, config Config) string {
 
 				// operation box
 				for _, t := range o.Target {
-					y := config.WireStartY + t*config.WireGap
+					y := config.WireStartY + int(t)*config.WireGap
 
 					fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="%s" stroke="%s" stroke-width="2"/>`,
 						x,
@@ -129,8 +129,8 @@ func Render(layout *Layout, config Config) string {
 					minY, maxY = min(minY, t), max(maxY, t)
 				}
 
-				topY := config.WireStartY + minY*config.WireGap
-				bottomY := config.WireStartY + maxY*config.WireGap
+				topY := config.WireStartY + int(minY)*config.WireGap
+				bottomY := config.WireStartY + int(maxY)*config.WireGap
 				centerY := (topY + bottomY) / 2
 				height := (bottomY - topY) + config.OpHeight
 
@@ -154,8 +154,8 @@ func Render(layout *Layout, config Config) string {
 				// wires
 				for _, w := range o.Wire {
 					for _, t := range o.Target {
-						cy := config.WireStartY + w*config.WireGap
-						ty := config.WireStartY + t*config.WireGap
+						cy := config.WireStartY + int(w)*config.WireGap
+						ty := config.WireStartY + int(t)*config.WireGap
 
 						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="%s" stroke-width="2" />`,
 							x+config.OpWidth/2,
@@ -179,7 +179,7 @@ func Render(layout *Layout, config Config) string {
 
 				// operation box
 				for _, w := range o.Wire {
-					y := config.WireStartY + w*config.WireGap
+					y := config.WireStartY + int(w)*config.WireGap
 					fmt.Fprintf(&b, `<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="%s" stroke="%s" stroke-width="2" />`,
 						x,
 						y-config.OpHeight/2,
@@ -207,15 +207,15 @@ func Render(layout *Layout, config Config) string {
 					)
 				}
 			case *Barrier:
-				wires := make([]int, len(o.Wire))
+				wires := make([]WireID, len(o.Wire))
 				copy(wires, o.Wire)
-				sort.Ints(wires)
+				slices.Sort(wires)
 
 				start, prev := wires[0], wires[0]
 				for i := 1; i <= len(wires); i++ {
 					if i == len(wires) || wires[i] != prev+1 {
-						y1 := config.WireStartY + start*config.WireGap
-						y2 := config.WireStartY + prev*config.WireGap
+						y1 := config.WireStartY + int(start)*config.WireGap
+						y2 := config.WireStartY + int(prev)*config.WireGap
 
 						fmt.Fprintf(&b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="%s" stroke-width="2" stroke-dasharray="4 2" />`,
 							x+config.OpWidth/2,
