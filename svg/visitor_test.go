@@ -3,6 +3,7 @@ package svg_test
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/itsubaki/qasm/environ"
@@ -12,16 +13,99 @@ import (
 
 func ExampleVisitor_AddWire() {
 	v := svg.NewVisitor(environ.New())
-	if err := v.AddWire("q"); err != nil {
+	if err := v.AddWire(svg.Wire{Name: "q"}); err != nil {
 		panic(err)
 	}
 
-	if err := v.AddWire("q"); err != nil {
+	if err := v.AddWire(svg.Wire{Name: "q"}); err != nil {
 		fmt.Println(err)
 	}
 
 	// Output:
 	// "q" redeclared
+}
+
+func TestVisitor_WireIDs(t *testing.T) {
+	program, err := xparser.Parse(`
+		qubit ancilla;
+		qubit[2] q;
+		qubit[1] r;
+		bit flag;
+		bit[2] c;
+		bit[1] d;
+		h q[0];
+		ctrl @ x ancilla, q[1];
+		oracle(q);
+		barrier q;
+		measure q -> c;
+		measure r[0] -> d[0];
+		measure ancilla -> flag;
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	v := svg.NewVisitor(environ.New())
+	circuit, err := v.Build(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zero, one := 0, 1
+	wantWires := []svg.Wire{
+		{Name: "ancilla"},
+		{Name: "q", Index: &zero},
+		{Name: "q", Index: &one},
+		{Name: "r", Index: &zero},
+		{Name: "flag"},
+		{Name: "c", Index: &zero},
+		{Name: "c", Index: &one},
+		{Name: "d", Index: &zero},
+	}
+	if !reflect.DeepEqual(circuit.Wires, wantWires) {
+		t.Errorf("wires = %v, want %v", circuit.Wires, wantWires)
+	}
+
+	wantOps := []svg.Op{
+		&svg.Gate{Name: "H", Target: []svg.WireID{1}},
+		&svg.Gate{Name: "X", Control: []svg.WireID{0}, Target: []svg.WireID{2}},
+		&svg.Subroutine{Name: "ORACLE", Wire: []svg.WireID{1, 2}},
+		&svg.Barrier{Wire: []svg.WireID{1, 2}},
+		&svg.Measurement{Wire: []svg.WireID{1}, Target: []svg.WireID{5}},
+		&svg.Measurement{Wire: []svg.WireID{2}, Target: []svg.WireID{6}},
+		&svg.Measurement{Wire: []svg.WireID{3}, Target: []svg.WireID{7}},
+		&svg.Measurement{Wire: []svg.WireID{0}, Target: []svg.WireID{4}},
+	}
+	if !reflect.DeepEqual(circuit.Ops, wantOps) {
+		t.Errorf("ops = %#v, want %#v", circuit.Ops, wantOps)
+	}
+
+	cases := []struct {
+		name  string
+		index []int64
+		want  []svg.WireID
+	}{
+		{name: "ancilla", want: []svg.WireID{0}},
+		{name: "q", want: []svg.WireID{1, 2}},
+		{name: "q", index: []int64{0}, want: []svg.WireID{1}},
+		{name: "r", want: []svg.WireID{3}},
+		{name: "r", index: []int64{0}, want: []svg.WireID{3}},
+		{name: "d", want: []svg.WireID{7}},
+		{name: "q", index: []int64{2}},
+		{name: "q", index: []int64{-1}},
+		{name: "ancilla", index: []int64{0}},
+		{name: "missing"},
+	}
+	for _, c := range cases {
+		got, ok := v.GetWireIDs(c.name, c.index...)
+		if ok != (c.want != nil) || !reflect.DeepEqual(got, c.want) {
+			t.Errorf("GetWireIDs(%q, %v) = %v, %v; want %v, %v", c.name, c.index, got, ok, c.want, c.want != nil)
+		}
+	}
+
+	if err := v.AddWire(svg.Wire{Name: "q", Index: new(int)}); err == nil {
+		t.Error("expected duplicate q[0] to be rejected")
+	}
 }
 
 func TestVisitor_Build(t *testing.T) {

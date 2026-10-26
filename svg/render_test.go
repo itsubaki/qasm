@@ -16,26 +16,26 @@ func ExampleRender() {
 		Ops: []svg.Op{
 			&svg.Gate{
 				Name:   "H",
-				Target: []int{0},
+				Target: []svg.WireID{0},
 			},
 			&svg.Gate{
 				Name:    "CNOT",
-				Control: []int{0},
-				Target:  []int{1},
+				Control: []svg.WireID{0},
+				Target:  []svg.WireID{1},
 			},
 			&svg.Barrier{
-				Wire: []int{0, 1},
+				Wire: []svg.WireID{0, 1},
 			},
 			&svg.Barrier{
-				Wire: []int{0, 2},
+				Wire: []svg.WireID{0, 2},
 			},
 			&svg.Subroutine{
 				Name: "oracle",
-				Wire: []int{0, 1},
+				Wire: []svg.WireID{0, 1},
 			},
 			&svg.Measurement{
-				Wire:   []int{0},
-				Target: []int{2},
+				Wire:   []svg.WireID{0},
+				Target: []svg.WireID{2},
 			},
 		},
 	}

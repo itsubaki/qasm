@@ -6,9 +6,9 @@ type Layout struct {
 }
 
 func (l *Layout) NewLayer(ops []Op, separated ...bool) {
-	wires := make(map[int]bool)
+	wires := make(map[WireID]bool)
 	for _, op := range ops {
-		for _, w := range op.Wires() {
+		for _, w := range op.WireIDs() {
 			wires[w] = true
 		}
 	}
@@ -26,13 +26,13 @@ func (l *Layout) NewLayer(ops []Op, separated ...bool) {
 }
 
 type Layer struct {
-	Wires     map[int]bool `json:"wires"`
-	Ops       []Op         `json:"ops"`
+	Wires     map[WireID]bool `json:"wires"`
+	Ops       []Op            `json:"ops"`
 	separated bool
 }
 
 func (l *Layer) Add(op Op) {
-	for _, w := range op.Wires() {
+	for _, w := range op.WireIDs() {
 		l.Wires[w] = true
 	}
 
@@ -44,7 +44,7 @@ func (l *Layer) Conflicts(cur Op) bool {
 		return true
 	}
 
-	for _, w := range cur.Wires() {
+	for _, w := range cur.WireIDs() {
 		if l.Wires[w] {
 			return true
 		}

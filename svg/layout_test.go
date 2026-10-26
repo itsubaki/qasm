@@ -19,127 +19,134 @@ func ExampleNewLayout() {
 		Ops: []svg.Op{
 			&svg.Gate{
 				Name:   "H",
-				Target: []int{1},
+				Target: []svg.WireID{1},
 			},
 			&svg.Gate{
 				Name:   "X",
-				Target: []int{0},
+				Target: []svg.WireID{0},
 			},
 			&svg.Gate{
 				Name:    "X",
-				Control: []int{1},
-				Target:  []int{2},
+				Control: []svg.WireID{1},
+				Target:  []svg.WireID{2},
 			},
 			&svg.Gate{
 				Name:    "X",
-				Control: []int{0},
-				Target:  []int{1},
+				Control: []svg.WireID{0},
+				Target:  []svg.WireID{1},
 			},
 			&svg.Gate{
 				Name:   "H",
-				Target: []int{0},
+				Target: []svg.WireID{0},
 			},
 			&svg.Gate{
 				Name:    "U",
-				Control: []int{2, 0},
-				Target:  []int{1},
+				Control: []svg.WireID{2, 0},
+				Target:  []svg.WireID{1},
 			},
 			&svg.Gate{
 				Name:    "QFT",
-				Control: []int{0},
-				Target:  []int{1, 2, 3},
+				Control: []svg.WireID{0},
+				Target:  []svg.WireID{1, 2, 3},
 			},
 			&svg.Measurement{
-				Wire: []int{
+				Wire: []svg.WireID{
 					0,
 				},
-				Target: []int{
+				Target: []svg.WireID{
 					4,
 				},
 			},
 			&svg.Measurement{
-				Wire: []int{
+				Wire: []svg.WireID{
 					1,
 				},
-				Target: []int{
+				Target: []svg.WireID{
 					5,
 				},
 			},
 			&svg.Measurement{
-				Wire: []int{
+				Wire: []svg.WireID{
 					0,
 				},
 			},
 			&svg.Measurement{
-				Wire: []int{
+				Wire: []svg.WireID{
 					1, 2,
 				},
 			},
 			&svg.Measurement{
-				Wire: []int{
+				Wire: []svg.WireID{
 					0,
 				},
 			},
 			&svg.Gate{
 				Name:   "H",
-				Target: []int{1},
+				Target: []svg.WireID{1},
 			},
 			&svg.Gate{
 				Name:   "H",
-				Target: []int{0},
+				Target: []svg.WireID{0},
 			},
 			&svg.Gate{
 				Name:    "QFT",
-				Control: []int{3},
-				Target:  []int{0, 1, 2},
+				Control: []svg.WireID{3},
+				Target:  []svg.WireID{0, 1, 2},
 			},
 			&svg.Gate{
 				Name:   "H",
-				Target: []int{0},
+				Target: []svg.WireID{0},
 			},
 			&svg.Measurement{
-				Wire: []int{
+				Wire: []svg.WireID{
 					1,
 				},
 			},
 			&svg.Measurement{
-				Wire: []int{
+				Wire: []svg.WireID{
 					0,
 				},
 			},
 			&svg.Measurement{
-				Wire: []int{
+				Wire: []svg.WireID{
 					0,
 				},
-				Target: []int{
+				Target: []svg.WireID{
 					5,
 				},
 			},
 			&svg.Gate{
 				Name:   "X",
-				Target: []int{2},
+				Target: []svg.WireID{2},
 			},
 			&svg.Gate{
 				Name:   "H",
-				Target: []int{3},
+				Target: []svg.WireID{3},
 			},
 			&svg.Barrier{
-				Wire: []int{0, 1, 2, 3},
+				Wire: []svg.WireID{0, 1, 2, 3},
 			},
 			&svg.Gate{
 				Name:   "X",
-				Target: []int{0},
+				Target: []svg.WireID{0},
 			},
 			&svg.Gate{
 				Name:   "H",
-				Target: []int{1},
+				Target: []svg.WireID{1},
 			},
 		},
 	}
 
 	layout := svg.NewLayout(circuit)
-	fmt.Println(layout.Wires)
+	for _, wire := range layout.Wires {
+		fmt.Println(wire.Label())
+	}
 
 	// Output:
-	// [{q0} {q1} {q2} {q3} {c0} {c1}]
+	// q0
+	// q1
+	// q2
+	// q3
+	// c0
+	// c1
 }

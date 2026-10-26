@@ -6,51 +6,61 @@ import (
 	"github.com/itsubaki/qasm/svg"
 )
 
-func ExampleGate_Wires() {
+func ExampleWire_Label() {
+	index := 0
+	fmt.Println((svg.Wire{Name: "q"}).Label())
+	fmt.Println((svg.Wire{Name: "q", Index: &index}).Label())
+
+	// Output:
+	// q
+	// q[0]
+}
+
+func ExampleGate_WireIDs() {
 	g := &svg.Gate{
 		Name:    "CNOT",
-		Control: []int{0},
-		Target:  []int{1},
+		Control: []svg.WireID{0},
+		Target:  []svg.WireID{1},
 	}
 
-	fmt.Println(g.Wires())
+	fmt.Println(g.WireIDs())
 
 	// Output:
 	// [0 1]
 }
 
-func ExampleSubroutine_Wires() {
+func ExampleSubroutine_WireIDs() {
 	s := &svg.Subroutine{
 		Name: "qft",
-		Wire: []int{0, 1},
+		Wire: []svg.WireID{0, 1},
 	}
 
-	fmt.Println(s.Wires())
+	fmt.Println(s.WireIDs())
 
 	// Output:
 	// [0 1]
 }
 
-func ExampleMeasurement_Wires() {
+func ExampleMeasurement_WireIDs() {
 	m := &svg.Measurement{
-		Wire: []int{0},
+		Wire: []svg.WireID{0},
 	}
-	fmt.Println(m.Wires())
+	fmt.Println(m.WireIDs())
 
 	m01 := &svg.Measurement{
-		Wire:   []int{0},
-		Target: []int{1},
+		Wire:   []svg.WireID{0},
+		Target: []svg.WireID{1},
 	}
-	fmt.Println(m01.Wires())
+	fmt.Println(m01.WireIDs())
 
 	// Output:
 	// [0]
 	// [0 1]
 }
 
-func ExampleBarrier_Wires() {
+func ExampleBarrier_WireIDs() {
 	b := &svg.Barrier{}
-	fmt.Println(b.Wires())
+	fmt.Println(b.WireIDs())
 
 	// Output:
 	// []
