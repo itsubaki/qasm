@@ -18,6 +18,8 @@ Usage of qasm:
         filepath
   -lex
         Lex the input into a sequence of tokens
+  -max-qubits int
+        Maximum number of qubits (0 or less for unlimited)
   -parse
         Parse the input and convert it into an AST (abstract syntax tree)
   -repl

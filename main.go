@@ -22,11 +22,12 @@ import (
 
 func main() {
 	var filepath string
-	var top int
+	var top, maxQubits int
 	var repl, lex, parse, validate, svg, verbose bool
 	var theme string
 	flag.StringVar(&filepath, "f", "", "filepath")
 	flag.IntVar(&top, "top", -1, "top results")
+	flag.IntVar(&maxQubits, "max-qubits", 0, "Maximum number of qubits (0 or less for unlimited)")
 	flag.BoolVar(&repl, "repl", false, "REPL(read-eval-print loop) mode")
 	flag.BoolVar(&lex, "lex", false, "Lex the input into a sequence of tokens")
 	flag.BoolVar(&parse, "parse", false, "Parse the input and convert it into an AST (abstract syntax tree)")
@@ -95,7 +96,7 @@ func main() {
 
 		fmt.Println(diagram)
 	case repl:
-		REPL()
+		REPL(visitor.WithMaxQubits(maxQubits))
 	default:
 		text, err := Read(filepath)
 		if err != nil {
@@ -111,7 +112,7 @@ func main() {
 
 		qsim := q.New()
 		env := environ.New()
-		v := visitor.New(qsim, env)
+		v := visitor.New(qsim, env, visitor.WithMaxQubits(maxQubits))
 
 		if err := v.Run(program); err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -153,21 +154,27 @@ func Read(filepath string) (string, error) {
 	return text, nil
 }
 
-func REPL() {
+func REPL(opts ...visitor.Option) {
 	sigint := make(chan os.Signal, 2)
 	signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
 
 	input := make(chan string)
 	go func() {
+		defer close(input)
+
 		s := bufio.NewScanner(os.Stdin)
 		for s.Scan() {
 			input <- s.Text()
+		}
+
+		if err := s.Err(); err != nil {
+			fmt.Fprintln(os.Stderr, fmt.Errorf("read stdin: %w", err))
 		}
 	}()
 
 	qsim := q.New()
 	env := environ.New()
-	v := visitor.New(qsim, env)
+	v := visitor.New(qsim, env, opts...)
 
 	fmt.Println("qasm> OPENQASM 3.0;")
 	for {
@@ -176,7 +183,11 @@ func REPL() {
 		select {
 		case <-sigint:
 			return
-		case text := <-input:
+		case text, ok := <-input:
+			if !ok {
+				return
+			}
+
 			if len(text) < 1 {
 				continue
 			}
@@ -187,7 +198,7 @@ func REPL() {
 			case ":reset", ":r":
 				qsim = q.New()
 				env = environ.New()
-				v = visitor.New(qsim, env)
+				v = visitor.New(qsim, env, opts...)
 				continue
 			case ":print", ":p":
 				fmt.Println("--- STATE ---")
