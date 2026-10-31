@@ -78,7 +78,7 @@ func Visit(text string) (any, error) {
 }
 
 func (v *Visitor) Enclosed() *Visitor {
-	return New(v.qsim, v.env.NewEnclosed())
+	return New(v.qsim, v.env.NewEnclosed(), WithMaxQubits(v.maxQubits))
 }
 
 func (v *Visitor) Run(tree antlr.ParseTree) error {
