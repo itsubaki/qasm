@@ -12,6 +12,7 @@ import (
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/environ"
 	"github.com/itsubaki/qasm/gen/parser"
+	xparser "github.com/itsubaki/qasm/parser"
 	"github.com/itsubaki/qasm/visitor"
 )
 
@@ -430,7 +431,7 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 		},
 		{
 			text:   "qubit[1.1] q;",
-			errMsg: `size must be an integer "qubit[1.1]"`,
+			errMsg: `size must be an integer "[1.1]"`,
 		},
 		{
 			text:   "qubit q; qubit q;",
@@ -2622,20 +2623,20 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 			want: "map[a:42]",
 		},
 		{
-			text: "bool a = true; int b = int(a);",
-			want: "map[a:true b:int(true): unexpected type: bool]",
+			text:   "bool a = true; int b = int(a);",
+			errMsg: "int(true): unexpected type: bool",
 		},
 		{
-			text: "bool a = true; uint b = uint(a);",
-			want: "map[a:true b:uint(true): unexpected type: bool]",
+			text:   "bool a = true; uint b = uint(a);",
+			errMsg: "uint(true): unexpected type: bool",
 		},
 		{
-			text: "bool a = true; float b = float(a);",
-			want: "map[a:true b:float64(true): unexpected type: bool]",
+			text:   "bool a = true; float b = float(a);",
+			errMsg: "float64(true): unexpected type: bool",
 		},
 		{
-			text: "bool a = bool(1);",
-			want: `map[a:unsupported scalar type "bool"]`,
+			text:   "bool a = bool(1);",
+			errMsg: `unsupported scalar type "bool"`,
 		},
 		{
 			text: "int[32] a = 42;",
@@ -2654,7 +2655,14 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 	for _, c := range cases {
 		_, env, err := visitor.Run(c.text)
 		if err != nil {
-			t.Fail()
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
+			}
+			continue
+		}
+		if c.errMsg != "" {
+			t.Errorf("got=nil error, want=%s", c.errMsg)
+			continue
 		}
 
 		if fmt.Sprintf("%v", env.Variable) != c.want {
@@ -2720,29 +2728,23 @@ func TestVisitor_VisitIndexExpression(t *testing.T) {
 			text:   "int a = 1; a[0];",
 			errMsg: `invalid operand "a"`,
 		},
+		{
+			text:   "a[0];",
+			errMsg: `undefined "a"`,
+		},
 	}
 
 	for _, c := range cases {
-		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
-		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
-
-		x := p.Program().
-			StatementOrScope(1).
-			Statement().
-			ExpressionStatement().
-			Expression()
-
-		ctx, ok := x.(*parser.IndexExpressionContext)
-		if !ok {
-			t.Fatalf("index expression type=%T", x)
-		}
-
-		result := visitor.New(q.New(), environ.New()).VisitIndexExpression(ctx)
-		if err, ok := result.(error); ok {
+		result, err := visitor.Visit(c.text)
+		if err != nil {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
 
+			continue
+		}
+		if c.errMsg != "" {
+			t.Errorf("got=nil error, want=%s", c.errMsg)
 			continue
 		}
 
@@ -2919,8 +2921,8 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 			want: "map[aa:[0 0 0 0 0]]",
 		},
 		{
-			text: "array[int[11], 5] aa;",
-			want: "map[aa:unsupported bit size 11]",
+			text:   "array[int[11], 5] aa;",
+			errMsg: "unsupported bit size 11",
 		},
 		{
 			text: "array[uint[8], 5] aa;",
@@ -2939,8 +2941,8 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 			want: "map[aa:[0 0 0]]",
 		},
 		{
-			text: "array[uint[11], 5] aa;",
-			want: "map[aa:unsupported bit size 11]",
+			text:   "array[uint[11], 5] aa;",
+			errMsg: "unsupported bit size 11",
 		},
 		{
 			text: "array[float[32], 3] aa;",
@@ -2951,12 +2953,12 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 			want: "map[aa:[0 0 0]]",
 		},
 		{
-			text: "array[float[11], 5] aa;",
-			want: "map[aa:unsupported bit size 11]",
+			text:   "array[float[11], 5] aa;",
+			errMsg: "unsupported bit size 11",
 		},
 		{
-			text: "array[angle[4], 3] aa;",
-			want: `map[aa:unsupported scalar type "angle[4]"]`,
+			text:   "array[angle[4], 3] aa;",
+			errMsg: `unsupported scalar type "angle[4]"`,
 		},
 		{
 			text: "array[bool, 3] aa;",
@@ -3151,6 +3153,204 @@ func TestVisitor_unimplemented(t *testing.T) {
 
 		if !strings.Contains(c.err.Error(), c.name) {
 			t.Fatalf("got=%v", c.err)
+		}
+	}
+}
+
+func TestVisitor_nestedErrors(t *testing.T) {
+	scopes := []struct {
+		name string
+		text string
+	}{
+		{name: "scope", text: `{ %s }`},
+		{name: "nested scope", text: `{ { %s } touched = 1; }`},
+		{name: "if", text: `if (true) { %s }`},
+		{name: "else", text: `if (false) {} else { %s }`},
+		{name: "for", text: `for int i in [0:1] { %s }`},
+		{name: "while", text: `while (touched < 1) { %s }`},
+		{name: "switch case", text: `switch (1) { case 1 { %s } }`},
+		{name: "switch default", text: `switch (1) { default { %s } }`},
+		{name: "function", text: `def f(qubit arg) { %s } f(q);`},
+		{name: "function without arguments", text: `def f() { %s } f();`},
+		{name: "function initializer", text: `def f(qubit arg) -> int { %s return 1; } int result = f(q);`},
+		{name: "function initializer without arguments", text: `def f() -> int { %s return 1; } int result = f();`},
+		{name: "nested function", text: `def f(qubit arg) { %s } def g(qubit arg) { f(arg); touched = 1; } g(q);`},
+	}
+	cases := []struct {
+		name      string
+		statement string
+		wantErr   string
+		wantLimit bool
+	}{
+		{name: "undefined operand", statement: `reset missing;`, wantErr: `undefined "missing"`},
+		{name: "measurement", statement: `measure missing;`, wantErr: `undefined "missing"`},
+		{name: "measurement assignment", statement: `bit result; measure missing -> result;`, wantErr: `undefined "missing"`},
+		{name: "redeclared variable", statement: `int a = 1; int a = 2;`, wantErr: `"a" redeclared`},
+		{name: "qubit limit", statement: `qubit extra;`, wantLimit: true},
+		{name: "old style qubit limit", statement: `qreg extra[1];`, wantLimit: true},
+	}
+
+	for _, scope := range scopes {
+		for _, c := range cases {
+			name := scope.name + "/" + c.name
+			text := `int touched = 0; qubit q; ` + fmt.Sprintf(scope.text, c.statement+` touched = 1;`) + ` touched = 2;`
+			program, err := xparser.Parse(text)
+			if err != nil {
+				t.Fatalf("%s: %v", name, err)
+			}
+
+			qsim, env := q.New(), environ.New()
+			v := visitor.New(qsim, env, visitor.WithMaxQubits(1))
+			err = v.Run(program)
+
+			switch {
+			case c.wantLimit:
+				if !errors.Is(err, visitor.ErrTooManyQubits) {
+					t.Errorf("%s: got=%v, want=%v", name, err, visitor.ErrTooManyQubits)
+				}
+			case err == nil || err.Error() != c.wantErr:
+				t.Errorf("%s: got=%v, want=%s", name, err, c.wantErr)
+			}
+
+			if got := env.Variable["touched"]; got != int64(0) {
+				t.Errorf("%s: executed statements after error: touched=%v", name, got)
+			}
+
+			if got := qsim.NumQubits(); got != 1 {
+				t.Errorf("%s: got=%d qubits, want=1", name, got)
+			}
+		}
+	}
+}
+
+func TestVisitor_functionErrors(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+	}{
+		{name: "assignment", text: `int result = 0; result = fail(q);`},
+		{name: "constant", text: `const int result = fail(q);`},
+		{name: "integer initializer", text: `int result = fail(q);`},
+		{name: "unsigned initializer", text: `uint result = fail(q);`},
+		{name: "float initializer", text: `float result = fail(q);`},
+		{name: "bool initializer", text: `bool result = fail(q);`},
+		{name: "angle initializer", text: `angle result = fail(q);`},
+		{name: "bit initializer", text: `bit result = fail(q);`},
+		{name: "bit array initializer", text: `bit[1] result = fail(q);`},
+		{name: "array initializer", text: `array[int[64], 2] result = {fail(q), touch(q)};`},
+		{name: "if condition", text: `if (fail(q)) { touched = 1; }`},
+		{name: "while condition", text: `while (fail(q)) { break; }`},
+		{name: "for range", text: `for int i in [0:fail(q)] { break; }`},
+		{name: "switch expression", text: `switch (fail(q)) { default { touched = 1; } }`},
+		{name: "switch case expression", text: `switch (1) { case fail(q), touch(q) { touched = 1; } }`},
+		{name: "builtin argument", text: `mod(fail(q), touch(q));`},
+		{name: "function argument", text: `def g(qubit arg) { touched = 1; } g(fail(q));`},
+		{name: "gate argument", text: `U(fail(q), touch(q), 0) q;`},
+		{name: "gate power", text: `pow(fail(q)) @ U(0, 0, 0) q;`},
+		{name: "gate control", text: `ctrl(fail(q)) @ U(0, 0, 0) q;`},
+		{name: "gate negative control", text: `negctrl(fail(q)) @ U(0, 0, 0) q;`},
+		{name: "cast", text: `int(fail(q));`},
+		{name: "logical and", text: `fail(q) && touch(q);`},
+		{name: "logical and right operand", text: `true && fail(q);`},
+		{name: "logical or", text: `fail(q) || touch(q);`},
+		{name: "logical or right operand", text: `false || fail(q);`},
+		{name: "bitwise and", text: `fail(q) & touch(q);`},
+		{name: "bitwise and right operand", text: `1 & fail(q);`},
+		{name: "bitwise or", text: `fail(q) | touch(q);`},
+		{name: "bitwise or right operand", text: `1 | fail(q);`},
+		{name: "bitwise xor", text: `fail(q) ^ touch(q);`},
+		{name: "bitwise xor right operand", text: `1 ^ fail(q);`},
+		{name: "left shift", text: `fail(q) << touch(q);`},
+		{name: "left shift right operand", text: `1 << fail(q);`},
+		{name: "right shift", text: `fail(q) >> touch(q);`},
+		{name: "right shift right operand", text: `1 >> fail(q);`},
+		{name: "index expression", text: `q[fail(q)];`},
+		{name: "index operand", text: `fail(q)[0];`},
+		{name: "index range", text: `q[0:fail(q)];`},
+		{name: "gate operand index", text: `reset q[fail(q)];`},
+		{name: "assignment index", text: `bit[1] result; result[fail(q)] = touch(q);`},
+		{name: "measurement index", text: `bit[1] result; measure q -> result[fail(q)];`},
+		{name: "qubit size", text: `qubit[fail(q)] result;`},
+		{name: "old style qubit size", text: `qreg result[fail(q)];`},
+		{name: "old style bit size", text: `creg result[fail(q)];`},
+		{name: "bit size", text: `bit[fail(q)] result;`},
+		{name: "angle size", text: `angle[fail(q)] result;`},
+		{name: "array size", text: `array[int[64], fail(q)] result;`},
+		{name: "array element size", text: `array[int[fail(q)], 1] result;`},
+		{name: "unsigned array element size", text: `array[uint[fail(q)], 1] result;`},
+		{name: "float array element size", text: `array[float[fail(q)], 1] result;`},
+		{name: "alias", text: `let result = fail(q) ++ touch(q);`},
+	}
+
+	for _, c := range cases {
+		text := `
+			int touched = 0;
+			qubit q;
+			def fail(qubit arg) -> int { qubit extra; touched = 1; return 1; }
+			def touch(qubit arg) -> int { touched = 2; return 1; }
+		` + c.text + ` touched = 3;`
+		program, err := xparser.Parse(text)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+
+		qsim, env := q.New(), environ.New()
+		v := visitor.New(qsim, env, visitor.WithMaxQubits(1))
+		if err := v.Run(program); !errors.Is(err, visitor.ErrTooManyQubits) {
+			t.Errorf("%s: got=%v, want=%v", c.name, err, visitor.ErrTooManyQubits)
+		}
+
+		if got := env.Variable["touched"]; got != int64(0) {
+			t.Errorf("%s: executed statements after error: touched=%v", c.name, got)
+		}
+
+		for id, val := range env.Variable {
+			if err, ok := val.(error); ok {
+				t.Errorf("%s: stored error in variable %q: %v", c.name, id, err)
+			}
+		}
+
+		if got := qsim.NumQubits(); got != 1 {
+			t.Errorf("%s: got=%d qubits, want=1", c.name, got)
+		}
+	}
+}
+
+func TestVisitor_errorShortCircuit(t *testing.T) {
+	cases := []string{
+		`if (false) { fail(q); }`,
+		`if (true) { touched = 0; } else { fail(q); }`,
+		`while (false) { fail(q); }`,
+		`for int i in [1:0] { fail(q); }`,
+		`switch (1) { case 0 { fail(q); } default { touched = 0; } }`,
+		`bool result = false && fail(q);`,
+		`bool result = true || fail(q);`,
+		`def empty(qubit arg) {} empty(q);`,
+		`def empty() {} empty();`,
+	}
+
+	for _, text := range cases {
+		program, err := xparser.Parse(`
+			int touched = 0;
+			qubit q;
+			def fail(qubit arg) -> bit { qubit extra; touched = 1; return true; }
+		` + text)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		qsim, env := q.New(), environ.New()
+		v := visitor.New(qsim, env, visitor.WithMaxQubits(1))
+		if err := v.Run(program); err != nil {
+			t.Errorf("%s: unexpected error: %v", text, err)
+		}
+
+		if got := env.Variable["touched"]; got != int64(0) {
+			t.Errorf("%s: evaluated skipped branch: touched=%v", text, got)
+		}
+
+		if got := qsim.NumQubits(); got != 1 {
+			t.Errorf("%s: got=%d qubits, want=1", text, got)
 		}
 	}
 }
