@@ -3176,6 +3176,7 @@ func TestVisitor_nestedErrors(t *testing.T) {
 		{name: "function initializer without arguments", text: `def f() -> int { %s return 1; } int result = f();`},
 		{name: "nested function", text: `def f(qubit arg) { %s } def g(qubit arg) { f(arg); touched = 1; } g(q);`},
 	}
+
 	cases := []struct {
 		name      string
 		statement string
@@ -3295,7 +3296,12 @@ func TestVisitor_functionErrors(t *testing.T) {
 		}
 
 		qsim, env := q.New(), environ.New()
-		v := visitor.New(qsim, env, visitor.WithMaxQubits(1))
+		v := visitor.New(
+			qsim,
+			env,
+			visitor.WithMaxQubits(1),
+		)
+
 		if err := v.Run(program); !errors.Is(err, visitor.ErrTooManyQubits) {
 			t.Errorf("%s: got=%v, want=%v", c.name, err, visitor.ErrTooManyQubits)
 		}
@@ -3340,7 +3346,12 @@ func TestVisitor_errorShortCircuit(t *testing.T) {
 		}
 
 		qsim, env := q.New(), environ.New()
-		v := visitor.New(qsim, env, visitor.WithMaxQubits(1))
+		v := visitor.New(
+			qsim,
+			env,
+			visitor.WithMaxQubits(1),
+		)
+
 		if err := v.Run(program); err != nil {
 			t.Errorf("%s: unexpected error: %v", text, err)
 		}

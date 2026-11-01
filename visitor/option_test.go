@@ -32,11 +32,17 @@ func TestWithMaxQubits_enclosed(t *testing.T) {
 
 	for _, c := range cases {
 		qsim := q.New()
-		v := visitor.New(qsim, environ.New(), visitor.WithMaxQubits(c.maxQubits))
+		v := visitor.New(
+			qsim,
+			environ.New(),
+			visitor.WithMaxQubits(c.maxQubits),
+		)
+
 		parent, err := parser.Parse("qubit a;")
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		if err := v.Run(parent); err != nil {
 			t.Fatal(err)
 		}
@@ -44,17 +50,19 @@ func TestWithMaxQubits_enclosed(t *testing.T) {
 		for range c.depth {
 			v = v.Enclosed()
 		}
+
 		program, err := parser.Parse(c.text)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		err = v.Run(program)
-		if c.wantErr {
-			if !errors.Is(err, visitor.ErrTooManyQubits) {
-				t.Errorf("got=%v, want=%v", err, visitor.ErrTooManyQubits)
-			}
-		} else if err != nil {
+		if err != nil && !c.wantErr {
 			t.Fatal(err)
+		}
+
+		if c.wantErr && !errors.Is(err, visitor.ErrTooManyQubits) {
+			t.Errorf("got=%v, want=%v", err, visitor.ErrTooManyQubits)
 		}
 
 		if got := qsim.NumQubits(); got != c.want {
