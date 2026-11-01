@@ -2658,8 +2658,10 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 			if err.Error() != c.errMsg {
 				t.Errorf("got=%v, want=%v", err, c.errMsg)
 			}
+
 			continue
 		}
+
 		if c.errMsg != "" {
 			t.Errorf("got=nil error, want=%s", c.errMsg)
 			continue
@@ -2743,6 +2745,7 @@ func TestVisitor_VisitIndexExpression(t *testing.T) {
 
 			continue
 		}
+
 		if c.errMsg != "" {
 			t.Errorf("got=nil error, want=%s", c.errMsg)
 			continue
@@ -3195,13 +3198,19 @@ func TestVisitor_nestedErrors(t *testing.T) {
 		for _, c := range cases {
 			name := scope.name + "/" + c.name
 			text := `int touched = 0; qubit q; ` + fmt.Sprintf(scope.text, c.statement+` touched = 1;`) + ` touched = 2;`
+
 			program, err := xparser.Parse(text)
 			if err != nil {
 				t.Fatalf("%s: %v", name, err)
 			}
 
 			qsim, env := q.New(), environ.New()
-			v := visitor.New(qsim, env, visitor.WithMaxQubits(1))
+			v := visitor.New(
+				qsim,
+				env,
+				visitor.WithMaxQubits(1),
+			)
+
 			err = v.Run(program)
 
 			switch {
