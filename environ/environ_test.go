@@ -2,8 +2,6 @@ package environ_test
 
 import (
 	"fmt"
-	"reflect"
-	"testing"
 
 	"github.com/itsubaki/q"
 	"github.com/itsubaki/qasm/environ"
@@ -160,32 +158,9 @@ func ExampleEnviron_GetQubit() {
 	fmt.Println(enclosed.GetQubit("r"))
 
 	// Output:
-	// 0 false
+	// -1 false
 	// 0 true
 	// 1 true
-}
-
-func TestQubitBindingShadowing(t *testing.T) {
-	env := environ.New()
-	env.Qubit["scalar"] = 0
-	env.QubitArray["array"] = []q.Qubit{1}
-
-	enclosed := env.NewEnclosed()
-	enclosed.QubitArray["scalar"] = []q.Qubit{2}
-	enclosed.Qubit["array"] = 3
-
-	if _, ok := enclosed.GetQubit("scalar"); ok {
-		t.Error("resolved outer scalar hidden by a local array")
-	}
-	if got, ok := enclosed.GetQubitArray("scalar"); !ok || !reflect.DeepEqual(got, []q.Qubit{2}) {
-		t.Errorf("got=%v, %v, want=[2], true", got, ok)
-	}
-	if _, ok := enclosed.GetQubitArray("array"); ok {
-		t.Error("resolved outer array hidden by a local scalar")
-	}
-	if got, ok := enclosed.GetQubit("array"); !ok || got != 3 {
-		t.Errorf("got=%v, %v, want=3, true", got, ok)
-	}
 }
 
 func ExampleEnviron_GetClBit() {
@@ -282,4 +257,25 @@ func ExampleEnviron_Index() {
 
 	// Output:
 	// [[0] [1 2] [3] [4]]
+}
+
+func ExampleEnviron_shadowing() {
+	env := environ.New()
+	env.Qubit["scalar"] = 0
+	env.QubitArray["array"] = []q.Qubit{1}
+
+	enclosed := env.NewEnclosed()
+	enclosed.QubitArray["scalar"] = []q.Qubit{2}
+	enclosed.Qubit["array"] = 3
+
+	fmt.Println(enclosed.GetQubit("scalar"))
+	fmt.Println(enclosed.GetQubitArray("scalar"))
+	fmt.Println(enclosed.GetQubitArray("array"))
+	fmt.Println(enclosed.GetQubit("array"))
+
+	// Output:
+	// -1 false
+	// [2] true
+	// [] false
+	// 3 true
 }

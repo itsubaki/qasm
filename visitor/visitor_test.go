@@ -477,6 +477,7 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 		if fmt.Sprintf("%v", env.Qubit) != c.want {
 			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
 		}
+
 		if fmt.Sprintf("%v", env.QubitArray) != c.wantArray {
 			t.Errorf("got=%v, want=%v", env.QubitArray, c.wantArray)
 		}
@@ -548,6 +549,7 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 		if fmt.Sprintf("%v", env.Qubit) != c.want {
 			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
 		}
+
 		if fmt.Sprintf("%v", env.QubitArray) != c.wantArray {
 			t.Errorf("got=%v, want=%v", env.QubitArray, c.wantArray)
 		}
@@ -3839,7 +3841,7 @@ func TestVisitor_broadcastMismatch(t *testing.T) {
 			t.Errorf("got=%v, want register size error", err)
 		}
 
-		t.Fatal("got=nil, want register size error")
+		t.Errorf("register size error")
 	}
 }
 

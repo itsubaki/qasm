@@ -797,11 +797,12 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 	}
 
 	qubits := v.qsim.Zeros(int(size))
-	if ctx.QubitType().Designator() == nil {
-		v.env.SetQubit(id, qubits[0])
-	} else {
+	if ctx.QubitType().Designator() != nil {
 		v.env.SetQubitArray(id, qubits)
+		return nil
 	}
+
+	v.env.SetQubit(id, qubits[0])
 	return nil
 }
 
@@ -1737,10 +1738,10 @@ func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) any {
 		return fmt.Errorf("invalid operand %q", ctx.Expression().GetText())
 	}
 
-	return v.indexQubits(operand, ctx.IndexOperator())
+	return v.IndexQubits(operand, ctx.IndexOperator())
 }
 
-func (v *Visitor) indexQubits(operand any, ctx parser.IIndexOperatorContext) any {
+func (v *Visitor) IndexQubits(operand any, ctx parser.IIndexOperatorContext) any {
 	var qubit []q.Qubit
 	switch arg := operand.(type) {
 	case q.Qubit:
@@ -1762,6 +1763,7 @@ func (v *Visitor) indexQubits(operand any, ctx parser.IIndexOperatorContext) any
 		if !ok {
 			return fmt.Errorf("index must be an integer '%v'", value)
 		}
+
 		if index < 0 || index >= int64(len(qubit)) {
 			return fmt.Errorf("qubit index %d out of range for size %d", index, len(qubit))
 		}
@@ -1779,9 +1781,11 @@ func (v *Visitor) indexQubits(operand any, ctx parser.IIndexOperatorContext) any
 		if len(index) != 2 {
 			return fmt.Errorf("qubit range %q: %w", x.GetText(), ErrNotImplemented)
 		}
+
 		if index[0] < 0 || index[1] < index[0] || index[1] > int64(len(qubit)) {
 			return fmt.Errorf("qubit range %q out of range for size %d", x.GetText(), len(qubit))
 		}
+
 		result = append(result, qubit[index[0]:index[1]]...)
 	}
 
@@ -2011,7 +2015,7 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 	}
 
 	for _, index := range ctx.IndexedIdentifier().AllIndexOperator() {
-		result = v.indexQubits(result, index)
+		result = v.IndexQubits(result, index)
 		if err, ok := result.(error); ok && err != nil {
 			return err
 		}

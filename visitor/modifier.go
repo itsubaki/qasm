@@ -89,7 +89,7 @@ type QubitOperand struct {
 
 // broadcast expands operands into rows, repeating scalar operands in each row.
 func broadcast(args []QubitOperand) ([][]q.Qubit, error) {
-	size := 0
+	var size int
 	for _, arg := range args {
 		if len(arg.Qubits) == 0 {
 			return nil, fmt.Errorf("gate operand has size 0")
@@ -114,7 +114,7 @@ func broadcast(args []QubitOperand) ([][]q.Qubit, error) {
 	for i := range rows {
 		rows[i] = make([]q.Qubit, len(args))
 		for j, arg := range args {
-			idx := 0
+			var idx int
 			if arg.IsArray {
 				idx = i
 			}

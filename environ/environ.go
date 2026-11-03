@@ -93,14 +93,14 @@ func (e *Environ) GetQubit(name string) (q.Qubit, bool) {
 	}
 
 	if _, ok := e.QubitArray[name]; ok {
-		return 0, false
+		return -1, false
 	}
 
 	if e.Outer != nil {
 		return e.Outer.GetQubit(name)
 	}
 
-	return 0, false
+	return -1, false
 }
 
 func (e *Environ) SetQubit(name string, qubit q.Qubit) {
@@ -130,8 +130,8 @@ func (e *Environ) SetQubitArray(name string, qubits []q.Qubit) {
 }
 
 func (e *Environ) GetClBit(name string) (bool, bool) {
-	if q, ok := e.ClBit[name]; ok {
-		return q, true
+	if bit, ok := e.ClBit[name]; ok {
+		return bit, true
 	}
 
 	if e.Outer != nil {
@@ -153,8 +153,8 @@ func (e *Environ) SetClBit(name string, bit bool) {
 }
 
 func (e *Environ) GetClBitArray(name string) ([]bool, bool) {
-	if q, ok := e.ClBitArray[name]; ok {
-		return q, true
+	if bits, ok := e.ClBitArray[name]; ok {
+		return bits, true
 	}
 
 	if e.Outer != nil {
