@@ -47,3 +47,24 @@ func TestMod2Pi(t *testing.T) {
 		}
 	}
 }
+
+func TestAngle(t *testing.T) {
+	cases := []struct {
+		bits       uint
+		radian     float64
+		wantK      uint
+		wantBits   string
+		wantRadian float64
+	}{
+		{bits: 3, radian: 2*math.Pi - 0.01, wantK: 0, wantBits: "000", wantRadian: 0},
+		{bits: 3, radian: -0.01, wantK: 0, wantBits: "000", wantRadian: 0},
+		{bits: 3, radian: -math.SmallestNonzeroFloat64, wantK: 0, wantBits: "000", wantRadian: 0},
+	}
+
+	for _, c := range cases {
+		a := angle.New(c.bits, c.radian)
+		if a.K != c.wantK || a.BitString != c.wantBits || a.Radian() != c.wantRadian {
+			t.Errorf("bits=%d radian=%v: got=%v, want K=%d bits=%s radian=%v", c.bits, c.radian, a, c.wantK, c.wantBits, c.wantRadian)
+		}
+	}
+}

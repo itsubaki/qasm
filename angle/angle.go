@@ -13,7 +13,12 @@ type Angle struct {
 
 func New(bits uint, radian float64) *Angle {
 	k := math.Ldexp(Mod2Pi(radian)/(2*math.Pi), int(bits))
-	kr := uint(math.Round(k))
+	rounded := math.Round(k)
+	if rounded == math.Ldexp(1, int(bits)) {
+		rounded = 0
+	}
+
+	kr := uint(rounded)
 	return &Angle{
 		Bits:      bits,
 		BitString: fmt.Sprintf("%0*b", bits, kr),
