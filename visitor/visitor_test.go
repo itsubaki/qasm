@@ -3591,13 +3591,23 @@ func TestVisitor_emptyReturn(t *testing.T) {
 }
 
 func TestVisitor_returnError(t *testing.T) {
-	_, _, err := visitor.Run(`def f() -> int { return missing; } int result = f();`)
-	if err == nil || err.Error() != `undefined "missing"` {
-		t.Errorf("got=%v, want undefined identifier error", err)
+	cases := []struct {
+		code string
+	}{
+		{
+			code: `def f() -> int { return missing; } int result = f();`,
+		},
+	}
+
+	for _, c := range cases {
+		_, _, err := visitor.Run(c.code)
+		if err == nil || err.Error() != `undefined "missing"` {
+			t.Errorf("got=%v, want undefined identifier error", err)
+		}
 	}
 }
 
-func TestVisitor_controlledGateBroadcast(t *testing.T) {
+func TestVisitor_broadcast(t *testing.T) {
 	cases := []struct {
 		name string
 		text string
@@ -3658,10 +3668,20 @@ func TestVisitor_controlledGateBroadcast(t *testing.T) {
 	}
 }
 
-func TestVisitor_controlledGateBroadcastMismatch(t *testing.T) {
-	_, _, err := visitor.Run(`qubit[2] c; qubit[3] t; ctrl @ U(pi,0,pi) c,t;`)
-	if err == nil || !strings.Contains(err.Error(), "size") {
-		t.Errorf("got=%v, want register size error", err)
+func TestVisitor_broadcastMismatch(t *testing.T) {
+	cases := []struct {
+		code string
+	}{
+		{
+			code: `qubit[2] c; qubit[3] t; ctrl @ U(pi,0,pi) c,t;`,
+		},
+	}
+
+	for _, c := range cases {
+		_, _, err := visitor.Run(c.code)
+		if err == nil || !strings.Contains(err.Error(), "size") {
+			t.Errorf("got=%v, want register size error", err)
+		}
 	}
 }
 
