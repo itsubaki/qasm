@@ -1137,8 +1137,9 @@ func TestVisitor_VisitParenthesisExpression(t *testing.T) {
 
 func TestVisitor_VisitCallExpression(t *testing.T) {
 	cases := []struct {
-		text string
-		want string
+		text   string
+		want   string
+		errMsg string
 	}{
 		{
 			text: "sin(1.0);",
@@ -1188,16 +1189,89 @@ func TestVisitor_VisitCallExpression(t *testing.T) {
 			text: "mod(10.0, 3.0);",
 			want: "1",
 		},
+		{
+			text: "sin(0);",
+			want: "0",
+		},
+		{
+			text: "cos(0);",
+			want: "1",
+		},
+		{
+			text: "tan(0);",
+			want: "0",
+		},
+		{
+			text: "arcsin(0);",
+			want: "0",
+		},
+		{
+			text: "arccos(1);",
+			want: "0",
+		},
+		{
+			text: "arctan(0);",
+			want: "0",
+		},
+		{
+			text: "ceiling(1);",
+			want: "1",
+		},
+		{
+			text: "floor(1);",
+			want: "1",
+		},
+		{
+			text: "sqrt(4);",
+			want: "2",
+		},
+		{
+			text: "exp(0);",
+			want: "1",
+		},
+		{
+			text: "log(1);",
+			want: "0",
+		},
+		{
+			text: "mod(5,2);",
+			want: "1",
+		},
+		{
+			text: "sqrt(uint(4));",
+			want: "2",
+		},
+		{
+			text:   "sqrt(true);",
+			errMsg: "unexpected type: bool",
+		},
+		{
+			text:   "mod(true,2);",
+			errMsg: "unexpected type: bool",
+		},
+		{
+			text:   "mod(5,true);",
+			errMsg: "unexpected type: bool",
+		},
 	}
 
 	for _, c := range cases {
 		result, err := visitor.Visit(c.text)
 		if err != nil {
-			t.Fail()
+			if err.Error() != c.errMsg {
+				t.Errorf("%s: got=%v, want=%s", c.text, err, c.errMsg)
+			}
+
+			continue
+		}
+
+		if c.errMsg != "" {
+			t.Errorf("%s: got=nil error, want=%s", c.text, c.errMsg)
+			continue
 		}
 
 		if fmt.Sprintf("%v", result) != c.want {
-			t.Errorf("got=%v, want=%v", result, c.want)
+			t.Errorf("%s: got=%v, want=%v", c.text, result, c.want)
 		}
 	}
 }

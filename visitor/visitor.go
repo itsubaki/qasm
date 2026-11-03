@@ -1517,29 +1517,94 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 	id := v.Visit(ctx.Identifier()).(string)
 	switch id {
 	case "sin":
-		return math.Sin(args[0].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Sin(a.Value().(float64))
 	case "cos":
-		return math.Cos(args[0].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Cos(a.Value().(float64))
 	case "tan":
-		return math.Tan(args[0].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Tan(a.Value().(float64))
 	case "arcsin":
-		return math.Asin(args[0].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Asin(a.Value().(float64))
 	case "arccos":
-		return math.Acos(args[0].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Acos(a.Value().(float64))
 	case "arctan":
-		return math.Atan(args[0].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Atan(a.Value().(float64))
 	case "ceiling":
-		return math.Ceil(args[0].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Ceil(a.Value().(float64))
 	case "floor":
-		return math.Floor(args[0].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Floor(a.Value().(float64))
 	case "sqrt":
-		return math.Sqrt(args[0].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Sqrt(a.Value().(float64))
 	case "exp":
-		return math.Exp(args[0].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Exp(a.Value().(float64))
 	case "log":
-		return math.Log(args[0].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Log(a.Value().(float64))
 	case "mod":
-		return math.Mod(args[0].(float64), args[1].(float64))
+		a, err := value.New(args[0]).Float64()
+		if err != nil {
+			return err
+		}
+
+		b, err := value.New(args[1]).Float64()
+		if err != nil {
+			return err
+		}
+
+		return math.Mod(a.Value().(float64), b.Value().(float64))
 	default:
 		routine, ok := v.env.GetSubroutine(id)
 		if !ok {
