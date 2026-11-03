@@ -1,6 +1,6 @@
 github.com/antlr4-go/antlr/v4 v4.13.1 h1:SqQKkuVZ+zWkMMNkjy5FZe5mr5WURWnlpmOuzYWrPrQ=
 github.com/antlr4-go/antlr/v4 v4.13.1/go.mod h1:GKmUxMtwp6ZgGwZSva4eWPC5mS6vUAmOABFgjdkM7Nw=
-github.com/itsubaki/q v0.0.13-0.20261103024553-467c1e32b90f h1:HQ1Uwi3JSU6ZRDSdHUiO3hjKQ4tFkuWMSsaYE3Zq1wc=
-github.com/itsubaki/q v0.0.13-0.20261103024553-467c1e32b90f/go.mod h1:iu/YVKAxGQ9h/xxmcVveJqPfJ0yR4N3u6krgXEUC3J4=
+github.com/itsubaki/q v0.0.13-0.20261103025435-5403cdbbed89 h1:xWnYmt003yMVUti5KeaCV12S+3pxIJRSnd2N5v8lzI0=
+github.com/itsubaki/q v0.0.13-0.20261103025435-5403cdbbed89/go.mod h1:iu/YVKAxGQ9h/xxmcVveJqPfJ0yR4N3u6krgXEUC3J4=
 golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e h1:HgI6W1OolKK6tcV74is+rl9SMT0njsHlp0TbQiGXI/A=
 golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e/go.mod h1:DBoxwWhjaW8DJJw/YeM4zpeOKMC1FMXSblsYy+1mFSw=
