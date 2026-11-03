@@ -8,9 +8,13 @@ import (
 
 // Parse parses the input text and returns the AST (abstract syntax tree) of the program.
 func Parse(text string) (parser.IProgramContext, error) {
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 	listener := &listener.ErrorListener{}
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	lexer.RemoveErrorListeners()
+	lexer.AddErrorListener(listener)
+
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 	p.RemoveErrorListeners()     // remove default error listeners
 	p.AddErrorListener(listener) // add custom error listener
 
@@ -24,9 +28,13 @@ func Parse(text string) (parser.IProgramContext, error) {
 
 // StringTree parses the input text and returns the string tree of the program.
 func StringTree(text string) (string, error) {
-	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
-	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 	listener := &listener.ErrorListener{}
+
+	lexer := parser.Newqasm3Lexer(antlr.NewInputStream(text))
+	lexer.RemoveErrorListeners()
+	lexer.AddErrorListener(listener)
+
+	p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 	p.RemoveErrorListeners()     // remove default error listeners
 	p.AddErrorListener(listener) // add custom error listener
 

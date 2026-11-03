@@ -33,6 +33,10 @@ type Visitor struct {
 	maxQubits int
 }
 
+type returnValue struct {
+	value any
+}
+
 func New(qsim *q.Q, env *environ.Environ, opt ...Option) *Visitor {
 	v := &Visitor{
 		Baseqasm3ParserVisitor: &parser.Baseqasm3ParserVisitor{},
@@ -106,13 +110,20 @@ func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) any {
 		v.env.Version = v.Visit(ctx.Version()).(string)
 	}
 
+	var result any
 	for _, s := range ctx.AllStatementOrScope() {
-		if res := v.Visit(s); res != nil {
-			return res
+		result = v.Visit(s)
+		switch result.(type) {
+		case error, returnValue:
+			return result
+		}
+
+		if contains(result, Break, Continue, End) {
+			return result
 		}
 	}
 
-	return nil
+	return result
 }
 
 func (v *Visitor) VisitVersion(ctx *parser.VersionContext) any {
@@ -175,20 +186,19 @@ func (v *Visitor) VisitStatement(ctx *parser.StatementContext) any {
 func (v *Visitor) VisitScope(ctx *parser.ScopeContext) any {
 	enclosed := v.Enclosed()
 
-	var list []any
 	for _, s := range ctx.AllStatementOrScope() {
 		result := enclosed.Visit(s)
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, returnValue:
+			return result
 		}
 
-		list = append(list, result)
-		if contains(result, Break, Continue) {
-			return list
+		if contains(result, Break, Continue, End) {
+			return result
 		}
 	}
 
-	return list
+	return nil
 }
 
 func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) any {
@@ -223,16 +233,6 @@ func (v *Visitor) VisitEndStatement(ctx *parser.EndStatementContext) any {
 }
 
 func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) any {
-	unwrap := func(v any) any {
-		if s, ok := v.([]any); ok {
-			if len(s) == 1 && s[0] == nil {
-				return nil
-			}
-		}
-
-		return v
-	}
-
 	condition := v.Visit(ctx.Expression())
 	if err, ok := condition.(error); ok && err != nil {
 		return err
@@ -240,11 +240,11 @@ func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) any {
 
 	enclosed := v.Enclosed()
 	if condition.(bool) {
-		return unwrap(enclosed.Visit(ctx.GetIf_body()))
+		return enclosed.Visit(ctx.GetIf_body())
 	}
 
 	if ctx.GetElse_body() != nil {
-		return unwrap(enclosed.Visit(ctx.GetElse_body()))
+		return enclosed.Visit(ctx.GetElse_body())
 	}
 
 	return nil
@@ -265,6 +265,10 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) any {
 		result := enclosed.Visit(ctx.StatementOrScope())
 		if err, ok := result.(error); ok && err != nil {
 			return err
+		}
+
+		if _, ok := result.(returnValue); ok || contains(result, End) {
+			return result
 		}
 
 		if contains(result, Break) {
@@ -292,6 +296,10 @@ func (v *Visitor) VisitWhileStatement(ctx *parser.WhileStatementContext) any {
 			return err
 		}
 
+		if _, ok := result.(returnValue); ok || contains(result, End) {
+			return result
+		}
+
 		if contains(result, Break) {
 			return nil
 		}
@@ -308,10 +316,7 @@ func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) any {
 
 	for _, item := range ctx.AllSwitchCaseItem() {
 		if item.DEFAULT() != nil {
-			if err, ok := enclosed.Visit(item).(error); ok && err != nil {
-				return err
-			}
-			return nil
+			return enclosed.Visit(item)
 		}
 
 		result := v.Visit(item.ExpressionList())
@@ -324,11 +329,7 @@ func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) any {
 				continue
 			}
 
-			if err, ok := enclosed.Visit(item).(error); ok && err != nil {
-				return err
-			}
-
-			return nil
+			return enclosed.Visit(item)
 		}
 	}
 
@@ -340,11 +341,18 @@ func (v *Visitor) VisitSwitchCaseItem(ctx *parser.SwitchCaseItemContext) any {
 }
 
 func (v *Visitor) VisitReturnStatement(ctx *parser.ReturnStatementContext) any {
+	var result any
 	if ctx.MeasureExpression() != nil {
-		return v.Visit(ctx.MeasureExpression())
+		result = v.Visit(ctx.MeasureExpression())
+	} else if ctx.Expression() != nil {
+		result = v.Visit(ctx.Expression())
 	}
 
-	return v.Visit(ctx.Expression())
+	if err, ok := result.(error); ok && err != nil {
+		return err
+	}
+
+	return returnValue{value: result}
 }
 
 func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) any {
@@ -529,51 +537,58 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		if err, ok := result.(error); ok && err != nil {
 			return err
 		}
+
 		qargs := result.([][]q.Qubit)
+		rows, err := broadcast(qargs)
+		if err != nil {
+			return err
+		}
 
 		var cursor int
-		var ctrl, neg []q.Qubit
+		var negative []int
 		for _, mod := range ctx.AllGateModifier() {
-			switch {
-			case mod.CTRL() != nil:
-				result := v.Visit(mod)
-				if err, ok := result.(error); ok && err != nil {
-					return err
+			if mod.CTRL() == nil && mod.NEGCTRL() == nil {
+				continue
+			}
+
+			result := v.Visit(mod)
+			if err, ok := result.(error); ok && err != nil {
+				return err
+			}
+
+			n, ok := result.(int64)
+			if !ok || n < 1 {
+				return fmt.Errorf("apply %q", mod.GetText())
+			}
+
+			if n > int64(len(qargs)-cursor-1) {
+				return fmt.Errorf("not enough operands for %q", mod.GetText())
+			}
+
+			for range n {
+				if mod.NEGCTRL() != nil {
+					negative = append(negative, cursor)
 				}
 
-				n, ok := result.(int64)
-				if !ok {
-					return fmt.Errorf("apply %q", mod.GetText())
-				}
-
-				for range n {
-					ctrl = append(ctrl, qargs[cursor]...)
-					cursor++
-				}
-			case mod.NEGCTRL() != nil:
-				result := v.Visit(mod)
-				if err, ok := result.(error); ok && err != nil {
-					return err
-				}
-
-				n, ok := result.(int64)
-				if !ok {
-					return fmt.Errorf("apply %q", mod.GetText())
-				}
-
-				for range n {
-					ctrl = append(ctrl, qargs[cursor]...)
-					neg = append(neg, qargs[cursor]...)
-					cursor++
-				}
+				cursor++
 			}
 		}
 
-		v.qsim.X(neg...)
-		defer v.qsim.X(neg...)
+		if len(qargs) != cursor+1 {
+			return fmt.Errorf("expected %d gate operands, got %d", cursor+1, len(qargs))
+		}
 
-		target := qargs[len(qargs)-1]
-		v.qsim.Controlled(u, ctrl, target)
+		for _, row := range rows {
+			neg := make([]q.Qubit, len(negative))
+			for i, idx := range negative {
+				neg[i] = row[idx]
+			}
+
+			v.qsim.X(neg...)
+			v.qsim.Controlled(u, row[:cursor], row[cursor:])
+			v.qsim.X(neg...)
+		}
+
 		return nil
 	}
 
@@ -1541,12 +1556,11 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 			return err
 		}
 
-		list := result.([]any)
-		if len(list) == 0 {
-			return nil
+		if ret, ok := result.(returnValue); ok {
+			return ret.value
 		}
 
-		return list[len(list)-1]
+		return result
 	}
 }
 
@@ -1899,6 +1913,7 @@ func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
 const (
 	Break    string = "break;"
 	Continue string = "continue;"
+	End      string = "end;"
 )
 
 // contains returns true if the result contains substrings.

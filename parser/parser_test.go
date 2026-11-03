@@ -1,8 +1,11 @@
 package parser_test
 
 import (
+	"errors"
+	"strings"
 	"testing"
 
+	"github.com/itsubaki/qasm/listener"
 	"github.com/itsubaki/qasm/parser"
 )
 
@@ -28,6 +31,32 @@ func TestParse(t *testing.T) {
 			}
 
 			continue
+		}
+	}
+}
+
+func TestLexicalErrors(t *testing.T) {
+	const text = "qubit q;\n$ U(pi, 0, pi) q;"
+
+	cases := []struct {
+		name  string
+		parse func(string) error
+	}{
+		{name: "Parse", parse: func(text string) error { _, err := parser.Parse(text); return err }},
+		{name: "StringTree", parse: func(text string) error { _, err := parser.StringTree(text); return err }},
+	}
+
+	for _, c := range cases {
+		err := c.parse(text)
+
+		var syntaxErr *listener.SyntaxError
+		if !errors.As(err, &syntaxErr) {
+			t.Errorf("%s: got=%v, want SyntaxError", c.name, err)
+			continue
+		}
+
+		if syntaxErr.Line != 2 || syntaxErr.Column != 0 || !strings.Contains(syntaxErr.Message, "token recognition error") {
+			t.Errorf("%s: unexpected lexical error: %v", c.name, err)
 		}
 	}
 }

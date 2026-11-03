@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"math"
 	"slices"
 	"strings"
 	"testing"
@@ -3372,5 +3373,182 @@ func TestVisitor_errorShortCircuit(t *testing.T) {
 		if got := qsim.NumQubits(); got != 1 {
 			t.Errorf("%s: got=%d qubits, want=1", text, got)
 		}
+	}
+}
+
+func TestVisitor_programContinuesAfterScope(t *testing.T) {
+	cases := []struct {
+		name string
+		body string
+	}{
+		{name: "if", body: `if (true) { n = 1; n = 2; }`},
+		{name: "else", body: `if (false) {} else { n = 1; n = 2; }`},
+		{name: "empty if", body: `if (true) {}`},
+		{name: "scope", body: `{ n = 1; n = 2; }`},
+		{name: "nested scope", body: `{ if (true) { n = 1; n = 2; } n = 3; }`},
+		{name: "expression", body: `1 + 2;`},
+		{name: "function call", body: `def f() -> int { return 1; } f();`},
+	}
+
+	for _, c := range cases {
+		_, env, err := visitor.Run(`int n = 0; ` + c.body + ` n = n + 10;`)
+		if err != nil {
+			t.Errorf("%s: %v", c.name, err)
+			continue
+		}
+
+		want := int64(12)
+		switch c.name {
+		case "empty if", "expression", "function call":
+			want = 10
+		case "nested scope":
+			want = 13
+		}
+
+		if got := env.Variable["n"]; got != want {
+			t.Errorf("%s: n=%v, want %v", c.name, got, want)
+		}
+	}
+}
+
+func TestVisitor_returnStopsExecution(t *testing.T) {
+	cases := []struct {
+		name string
+		body string
+	}{
+		{name: "direct", body: `return 1;`},
+		{name: "if", body: `if (true) { return 1; touched = 1; }`},
+		{name: "else", body: `if (false) {} else { return 1; touched = 1; }`},
+		{name: "nested scope", body: `{ { return 1; } touched = 1; }`},
+		{name: "for", body: `for int i in [0:2] { return 1; touched = 1; }`},
+		{name: "while", body: `while (true) { return 1; touched = 1; break; }`},
+		{name: "switch case", body: `switch (1) { case 1 { return 1; touched = 1; } }`},
+		{name: "switch default", body: `switch (1) { default { return 1; touched = 1; } }`},
+		{name: "nested function", body: `def g() -> int { return 1; touched = 1; } return g();`},
+	}
+
+	for _, c := range cases {
+		qsim, env, err := visitor.Run(`
+				int touched = 0;
+				qubit q;
+				def f(qubit arg) -> int { ` + c.body + ` U(pi, 0, pi) arg; return 2; }
+				int result = f(q);
+				int after = 3;
+		`)
+		if err != nil {
+			t.Errorf("%s: %v", c.name, err)
+			continue
+		}
+
+		if got := env.Variable["result"]; got != int64(1) {
+			t.Errorf("%s: result=%v, want 1", c.name, got)
+		}
+
+		if got := env.Variable["touched"]; got != int64(0) {
+			t.Errorf("%s: executed statements after return: touched=%v", c.name, got)
+		}
+
+		if got := env.Variable["after"]; got != int64(3) {
+			t.Errorf("%s: caller did not continue: after=%v", c.name, got)
+		}
+
+		if got := qsim.Probability()[0]; math.Abs(got-1) > 1e-8 {
+			t.Errorf("%s: executed gate after return: P(0)=%v", c.name, got)
+		}
+	}
+}
+
+func TestVisitor_emptyReturn(t *testing.T) {
+	_, env, err := visitor.Run(`
+		int touched = 0;
+		def f() { if (true) { return; } touched = 1; }
+		f();
+		int after = 2;
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got := env.Variable["touched"]; got != int64(0) {
+		t.Errorf("touched=%v, want 0", got)
+	}
+
+	if got := env.Variable["after"]; got != int64(2) {
+		t.Errorf("after=%v, want 2", got)
+	}
+}
+
+func TestVisitor_returnError(t *testing.T) {
+	_, _, err := visitor.Run(`def f() -> int { return missing; } int result = f();`)
+	if err == nil || err.Error() != `undefined "missing"` {
+		t.Errorf("got=%v, want undefined identifier error", err)
+	}
+}
+
+func TestVisitor_controlledGateBroadcast(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want int
+	}{
+		{
+			name: "register control and scalar target",
+			text: `qubit[2] c; qubit t; U(pi,0,pi) c[0]; ctrl @ U(pi,0,pi) c,t;`,
+			want: 0b101,
+		},
+		{
+			name: "register control and register target",
+			text: `qubit[2] c; qubit[2] t; U(pi,0,pi) c[0]; ctrl @ U(pi,0,pi) c,t;`,
+			want: 0b1010,
+		},
+		{
+			name: "scalar control and register target",
+			text: `qubit c; qubit[2] t; U(pi,0,pi) c; ctrl @ U(pi,0,pi) c,t;`,
+			want: 0b111,
+		},
+		{
+			name: "negative register control",
+			text: `qubit[2] c; qubit[2] t; U(pi,0,pi) c[0]; negctrl @ U(pi,0,pi) c,t;`,
+			want: 0b1001,
+		},
+		{
+			name: "negative scalar control",
+			text: `qubit c; qubit[2] t; negctrl @ U(pi,0,pi) c,t;`,
+			want: 0b011,
+		},
+		{
+			name: "multiple register controls",
+			text: `qubit[2] a; qubit[2] b; qubit[2] t; U(pi,0,pi) a[0],b[0]; ctrl(2) @ U(pi,0,pi) a,b,t;`,
+			want: 0b101010,
+		},
+		{
+			name: "mixed controls",
+			text: `qubit[2] a; qubit b; qubit[2] t; U(pi,0,pi) a[0]; ctrl @ negctrl @ U(pi,0,pi) a,b,t;`,
+			want: 0b10010,
+		},
+		{
+			name: "user-defined gate",
+			text: `gate cx c,t { ctrl @ U(pi,0,pi) c,t; } qubit[2] c; qubit[2] t; U(pi,0,pi) c[0]; cx c,t;`,
+			want: 0b1010,
+		},
+	}
+
+	for _, c := range cases {
+		qsim, _, err := visitor.Run(c.text)
+		if err != nil {
+			t.Errorf("%s: %v", c.name, err)
+			continue
+		}
+
+		if got := qsim.Probability()[c.want]; math.Abs(got-1) > 1e-8 {
+			t.Errorf("%s: P(%b)=%v, want 1; probabilities=%v", c.name, c.want, got, qsim.Probability())
+		}
+	}
+}
+
+func TestVisitor_controlledGateBroadcastMismatch(t *testing.T) {
+	_, _, err := visitor.Run(`qubit[2] c; qubit[3] t; ctrl @ U(pi,0,pi) c,t;`)
+	if err == nil || !strings.Contains(err.Error(), "size") {
+		t.Errorf("got=%v, want register size error", err)
 	}
 }

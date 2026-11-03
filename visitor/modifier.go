@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/cmplx"
 
+	"github.com/itsubaki/q"
 	"github.com/itsubaki/q/math/epsilon"
 	"github.com/itsubaki/q/math/matrix"
 	"github.com/itsubaki/qasm/gen/parser"
@@ -79,4 +80,39 @@ func Pow2x2(u *matrix.Matrix, p float64, tol ...float64) *matrix.Matrix {
 	cos := complex(math.Cos(p*theta), 0)
 	sin := complex(0, math.Sin(p*theta))
 	return id.Mul(cos).Add(a.Mul(sin)).Mul(phaseP)
+}
+
+// broadcast expands operands into rows, repeating scalar operands in each row.
+func broadcast(args [][]q.Qubit) ([][]q.Qubit, error) {
+	size := 1
+	for _, arg := range args {
+		if len(arg) == 0 {
+			return nil, fmt.Errorf("gate operand has size 0")
+		}
+
+		if len(arg) == 1 {
+			continue
+		}
+
+		if size != 1 && len(arg) != size {
+			return nil, fmt.Errorf("gate operand size mismatch: %d and %d", size, len(arg))
+		}
+
+		size = len(arg)
+	}
+
+	rows := make([][]q.Qubit, size)
+	for i := range rows {
+		rows[i] = make([]q.Qubit, len(args))
+		for j, arg := range args {
+			idx := i
+			if len(arg) == 1 {
+				idx = 0
+			}
+
+			rows[i][j] = arg[idx]
+		}
+	}
+
+	return rows, nil
 }
