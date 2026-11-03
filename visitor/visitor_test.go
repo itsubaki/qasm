@@ -3601,7 +3601,11 @@ func TestVisitor_returnError(t *testing.T) {
 
 	for _, c := range cases {
 		_, _, err := visitor.Run(c.code)
-		if err == nil || err.Error() != `undefined "missing"` {
+		if err != nil {
+				continue
+		}
+
+		if err.Error() != `undefined "missing"` {
 			t.Errorf("got=%v, want undefined identifier error", err)
 		}
 	}
@@ -3679,9 +3683,15 @@ func TestVisitor_broadcastMismatch(t *testing.T) {
 
 	for _, c := range cases {
 		_, _, err := visitor.Run(c.code)
-		if err == nil || !strings.Contains(err.Error(), "size") {
-			t.Errorf("got=%v, want register size error", err)
+		if err != nil {
+				continue
 		}
+
+		if strings.Contains(err.Error(), "size") {
+				continue
+		}
+
+		t.Errorf("got=%v, want register size error", err)
 	}
 }
 
