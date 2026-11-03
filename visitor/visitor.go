@@ -261,7 +261,7 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) any {
 	enclosed := v.Enclosed()
 
 	for i := rx[0]; i <= rx[1]; i++ {
-		enclosed.env.SetVariable(id, i)
+		enclosed.env.Variable[id] = i
 		result := enclosed.Visit(ctx.StatementOrScope())
 		if err, ok := result.(error); ok && err != nil {
 			return err
@@ -455,7 +455,7 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 		}
 
 		for i, p := range g.Params {
-			enclosed.env.SetVariable(p, params[i])
+			enclosed.env.Variable[p] = params[i]
 		}
 	}
 

@@ -3626,3 +3626,56 @@ func TestVisitor_controlledGateBroadcastMismatch(t *testing.T) {
 		t.Errorf("got=%v, want register size error", err)
 	}
 }
+
+func TestVisitor_localBindings(t *testing.T) {
+	cases := []struct {
+		name     string
+		text     string
+		want     string
+		wantProb []float64
+	}{
+		{
+			name: "loop variable",
+			text: `int i=100; int sum=0; for int i in [0:2] { sum=sum+i; }`,
+			want: "map[i:100 sum:3]",
+		},
+		{
+			name: "nested loop variables",
+			text: `int i=100; int sum=0; for int i in [0:1] { for int i in [0:1] { sum=sum+i; } sum=sum+i; }`,
+			want: "map[i:100 sum:3]",
+		},
+		{
+			name:     "gate parameter",
+			text:     `float theta=0.0; gate g(theta) a { U(theta,0,0) a; } qubit q; g(pi) q;`,
+			want:     "map[theta:0]",
+			wantProb: []float64{0, 1},
+		},
+		{
+			name: "nested gate parameters",
+			text: `float theta=0.0;
+				gate inner(theta) a { U(theta,0,0) a; }
+				gate outer(theta) a { inner(2*theta) a; U(theta,0,0) a; }
+				qubit q; outer(pi/2) q;`,
+			want:     "map[theta:0]",
+			wantProb: []float64{0.5, 0.5},
+		},
+	}
+
+	for _, c := range cases {
+		qsim, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Errorf("%s: %v", c.name, err)
+			continue
+		}
+
+		if got := fmt.Sprint(env.Variable); got != c.want {
+			t.Errorf("%s: got=%s, want=%s", c.name, got, c.want)
+		}
+
+		if got := qsim.Probability(); !slices.EqualFunc(got, c.wantProb, func(a, b float64) bool {
+			return math.Abs(a-b) <= 1e-8
+		}) {
+			t.Errorf("%s: probabilities=%v, want=%v", c.name, got, c.wantProb)
+		}
+	}
+}
