@@ -3666,13 +3666,15 @@ func TestVisitor_returnError(t *testing.T) {
 
 	for _, c := range cases {
 		_, _, err := visitor.Run(c.code)
-		if err == nil {
-			t.Fatal("got=nil, want undefined identifier error")
-		}
+		if err != nil {
+			if err.Error() == `undefined "missing"` {
+				continue
+			}
 
-		if err.Error() != `undefined "missing"` {
 			t.Errorf("got=%v, want undefined identifier error", err)
 		}
+
+		t.Fatal("got=nil, want undefined identifier error")
 	}
 }
 
@@ -3828,16 +3830,16 @@ func TestVisitor_broadcastMismatch(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			_, _, err := visitor.Run(c.code)
-			if err == nil {
-				t.Fatal("got=nil, want register size error")
+		_, _, err := visitor.Run(c.code)
+		if err != nil {
+			if strings.Contains(err.Error(), "gate operand size mismatch") {
+				continue
 			}
 
-			if !strings.Contains(err.Error(), "gate operand size mismatch") {
-				t.Errorf("got=%v, want register size error", err)
-			}
-		})
+			t.Errorf("got=%v, want register size error", err)
+		}
+
+		t.Fatal("got=nil, want register size error")
 	}
 }
 
