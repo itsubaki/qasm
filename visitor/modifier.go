@@ -82,35 +82,44 @@ func Pow2x2(u *matrix.Matrix, p float64, tol ...float64) *matrix.Matrix {
 	return id.Mul(cos).Add(a.Mul(sin)).Mul(phaseP)
 }
 
+type QubitOperand struct {
+	Qubits  []q.Qubit
+	IsArray bool
+}
+
 // broadcast expands operands into rows, repeating scalar operands in each row.
-func broadcast(args [][]q.Qubit) ([][]q.Qubit, error) {
-	size := 1
+func broadcast(args []QubitOperand) ([][]q.Qubit, error) {
+	size := 0
 	for _, arg := range args {
-		if len(arg) == 0 {
+		if len(arg.Qubits) == 0 {
 			return nil, fmt.Errorf("gate operand has size 0")
 		}
 
-		if len(arg) == 1 {
+		if !arg.IsArray {
 			continue
 		}
 
-		if size != 1 && len(arg) != size {
-			return nil, fmt.Errorf("gate operand size mismatch: %d and %d", size, len(arg))
+		if size != 0 && len(arg.Qubits) != size {
+			return nil, fmt.Errorf("gate operand size mismatch: %d and %d", size, len(arg.Qubits))
 		}
 
-		size = len(arg)
+		size = len(arg.Qubits)
+	}
+
+	if size == 0 {
+		size = 1
 	}
 
 	rows := make([][]q.Qubit, size)
 	for i := range rows {
 		rows[i] = make([]q.Qubit, len(args))
 		for j, arg := range args {
-			idx := i
-			if len(arg) == 1 {
-				idx = 0
+			idx := 0
+			if arg.IsArray {
+				idx = i
 			}
 
-			rows[i][j] = arg[idx]
+			rows[i][j] = arg.Qubits[idx]
 		}
 	}
 
