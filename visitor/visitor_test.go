@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"maps"
 	"math"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -3196,6 +3198,42 @@ func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
 	}
 }
 
+func TestVisitor_VisitEndStatement(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want string
+	}{
+		{name: "direct", text: `stop();`, want: "map[touched:0]"},
+		{name: "initializer", text: `int result=stop();`, want: "map[touched:0]"},
+		{name: "assignment", text: `int result=0; result=stop();`, want: "map[result:0 touched:0]"},
+		{name: "return", text: `def f() -> int { return stop(); } int result=f();`, want: "map[touched:0]"},
+		{name: "argument", text: `mod(stop(),touch(q));`, want: "map[touched:0]"},
+		{name: "gate argument", text: `U(stop(),0,0) q;`, want: "map[touched:0]"},
+		{name: "loop condition", text: `while (stop()==0) { break; }`, want: "map[touched:0]"},
+	}
+
+	for _, c := range cases {
+		qsim, env, err := visitor.Run(`
+			int touched=0; qubit q;
+			def stop() -> int { end; }
+			def touch(qubit arg) -> int { U(pi,0,pi) arg; return 1; }
+		` + c.text + ` touched=1; U(pi,0,pi) q;`)
+		if err != nil {
+			t.Errorf("%s: %v", c.name, err)
+			continue
+		}
+
+		if got := fmt.Sprint(env.Variable); got != c.want {
+			t.Errorf("%s: variables=%s, want=%s", c.name, got, c.want)
+		}
+
+		if !qsim.Qubit().IsZero() {
+			t.Errorf("%s: executed gate after end: %v", c.name, qsim.Qubit())
+		}
+	}
+}
+
 func TestVisitor_unimplemented(t *testing.T) {
 	v := visitor.New(q.New(), environ.New())
 
@@ -3676,6 +3714,34 @@ func TestVisitor_localBindings(t *testing.T) {
 			return math.Abs(a-b) <= 1e-8
 		}) {
 			t.Errorf("%s: probabilities=%v, want=%v", c.name, got, c.wantProb)
+		}
+	}
+}
+
+func TestVisitor_endInInclude(t *testing.T) {
+	cases := []struct {
+		code string
+		want int64
+	}{
+		{code: "end;", want: 0},
+		{code: "int inside=1;", want: 1},
+		{code: "def stop() -> int { end; } int inside=stop();", want: 0},
+	}
+
+	for _, c := range cases {
+		path := filepath.Join(t.TempDir(), "included.qasm")
+		if err := os.WriteFile(path, []byte(c.code), 0600); err != nil {
+			t.Fatal(err)
+		}
+
+		_, env, err := visitor.Run(fmt.Sprintf(`int touched=0; include %q; touched=1;`, path))
+		if err != nil {
+			t.Errorf("%s: %v", c.code, err)
+			continue
+		}
+
+		if got := env.Variable["touched"]; got != c.want {
+			t.Errorf("%s: touched=%v, want=%v", c.code, got, c.want)
 		}
 	}
 }

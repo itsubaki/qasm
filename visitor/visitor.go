@@ -24,6 +24,7 @@ import (
 var (
 	ErrTooManyQubits  = errors.New("too many qubits")
 	ErrNotImplemented = errors.New("not implemented")
+	ErrEnd            = errors.New("end")
 )
 
 type Visitor struct {
@@ -75,6 +76,10 @@ func Visit(text string) (any, error) {
 
 	result := New(q.New(), environ.New()).Visit(program)
 	if err, ok := result.(error); ok && err != nil {
+		if errors.Is(err, ErrEnd) {
+			return End, nil
+		}
+
 		return nil, err
 	}
 
@@ -86,7 +91,7 @@ func (v *Visitor) Enclosed() *Visitor {
 }
 
 func (v *Visitor) Run(tree antlr.ParseTree) error {
-	if err, ok := v.Visit(tree).(error); ok && err != nil {
+	if err, ok := v.Visit(tree).(error); ok && err != nil && !errors.Is(err, ErrEnd) {
 		return err
 	}
 
@@ -213,7 +218,7 @@ func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) any
 		return fmt.Errorf("include %s: %w", path, err)
 	}
 
-	if err := v.Run(program); err != nil {
+	if err, ok := v.Visit(program).(error); ok && err != nil {
 		return fmt.Errorf("include %s: %w", path, err)
 	}
 
@@ -229,7 +234,7 @@ func (v *Visitor) VisitContinueStatement(ctx *parser.ContinueStatementContext) a
 }
 
 func (v *Visitor) VisitEndStatement(ctx *parser.EndStatementContext) any {
-	return ctx.GetText()
+	return ErrEnd
 }
 
 func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) any {
