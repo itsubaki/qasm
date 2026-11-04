@@ -9,14 +9,14 @@ import (
 
 func ExampleEnviron_NewEnclosed() {
 	env := environ.New()
-	env.Qubit["q0"] = []q.Qubit{0, 1}
+	env.QubitArray["q0"] = []q.Qubit{0, 1}
 
 	enclosed := env.NewEnclosed()
-	enclosed.Qubit["q0"] = []q.Qubit{2, 3}
-	enclosed.Qubit["q1"] = []q.Qubit{4, 5}
+	enclosed.QubitArray["q0"] = []q.Qubit{2, 3}
+	enclosed.QubitArray["q1"] = []q.Qubit{4, 5}
 
-	fmt.Println(enclosed.GetQubit("q0"))
-	fmt.Println(enclosed.GetQubit("q1"))
+	fmt.Println(enclosed.GetQubitArray("q0"))
+	fmt.Println(enclosed.GetQubitArray("q1"))
 
 	// Output:
 	// [2 3] true
@@ -129,21 +129,38 @@ func ExampleEnviron_GetVariable() {
 	// 43 true
 }
 
-func ExampleEnviron_GetQubit() {
+func ExampleEnviron_GetQubitArray() {
 	env := environ.New()
-	env.Qubit["q"] = []q.Qubit{0, 1, 2}
+	env.QubitArray["q"] = []q.Qubit{0, 1, 2}
 
 	enclosed := env.NewEnclosed()
-	enclosed.Qubit["r"] = []q.Qubit{3, 4}
+	enclosed.QubitArray["r"] = []q.Qubit{3, 4}
+
+	fmt.Println(enclosed.GetQubitArray("not found"))
+	fmt.Println(enclosed.GetQubitArray("q"))
+	fmt.Println(enclosed.GetQubitArray("r"))
+
+	// Output:
+	// [] false
+	// [0 1 2] true
+	// [3 4] true
+}
+
+func ExampleEnviron_GetQubit() {
+	env := environ.New()
+	env.Qubit["q"] = 0
+
+	enclosed := env.NewEnclosed()
+	enclosed.Qubit["r"] = 1
 
 	fmt.Println(enclosed.GetQubit("not found"))
 	fmt.Println(enclosed.GetQubit("q"))
 	fmt.Println(enclosed.GetQubit("r"))
 
 	// Output:
-	// [] false
-	// [0 1 2] true
-	// [3 4] true
+	// -1 false
+	// 0 true
+	// 1 true
 }
 
 func ExampleEnviron_GetClBit() {
@@ -230,12 +247,35 @@ func ExampleEnviron_GetSubroutine() {
 
 func ExampleEnviron_Index() {
 	env := environ.New()
-	env.SetQubit("q0", []q.Qubit{0, 1})
-	env.SetQubit("q1", []q.Qubit{2, 3, 4})
+	env.SetQubit("q0", 0)
+	env.SetQubitArray("q1", []q.Qubit{1, 2})
+	env.SetQubitArray("q2", []q.Qubit{3})
+	env.SetQubit("q3", 4)
 
 	index := env.Index()
 	fmt.Println(index)
 
 	// Output:
-	// [[0 1] [2 3 4]]
+	// [[0] [1 2] [3] [4]]
+}
+
+func ExampleEnviron_shadowing() {
+	env := environ.New()
+	env.Qubit["scalar"] = 0
+	env.QubitArray["array"] = []q.Qubit{1}
+
+	enclosed := env.NewEnclosed()
+	enclosed.QubitArray["scalar"] = []q.Qubit{2}
+	enclosed.Qubit["array"] = 3
+
+	fmt.Println(enclosed.GetQubit("scalar"))
+	fmt.Println(enclosed.GetQubitArray("scalar"))
+	fmt.Println(enclosed.GetQubitArray("array"))
+	fmt.Println(enclosed.GetQubit("array"))
+
+	// Output:
+	// -1 false
+	// [2] true
+	// [] false
+	// 3 true
 }

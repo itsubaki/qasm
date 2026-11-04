@@ -10,7 +10,8 @@ type Environ struct {
 	Const      map[string]any
 	Variable   map[string]any
 	QubitOrder []string
-	Qubit      map[string][]q.Qubit
+	Qubit      map[string]q.Qubit
+	QubitArray map[string][]q.Qubit
 	ClBit      map[string]bool
 	ClBitArray map[string][]bool
 	Gate       map[string]*Gate
@@ -36,7 +37,8 @@ func New() *Environ {
 	return &Environ{
 		Const:      make(map[string]any),
 		Variable:   make(map[string]any),
-		Qubit:      make(map[string][]q.Qubit),
+		Qubit:      make(map[string]q.Qubit),
+		QubitArray: make(map[string][]q.Qubit),
 		ClBit:      make(map[string]bool),
 		ClBitArray: make(map[string][]bool),
 		Gate:       make(map[string]*Gate),
@@ -85,26 +87,51 @@ func (e *Environ) SetVariable(name string, value any) {
 	e.Variable[name] = value
 }
 
-func (e *Environ) GetQubit(name string) ([]q.Qubit, bool) {
+func (e *Environ) GetQubit(name string) (q.Qubit, bool) {
 	if q, ok := e.Qubit[name]; ok {
 		return q, true
+	}
+
+	if _, ok := e.QubitArray[name]; ok {
+		return -1, false
 	}
 
 	if e.Outer != nil {
 		return e.Outer.GetQubit(name)
 	}
 
+	return -1, false
+}
+
+func (e *Environ) SetQubit(name string, qubit q.Qubit) {
+	e.Qubit[name] = qubit
+	e.QubitOrder = append(e.QubitOrder, name)
+}
+
+func (e *Environ) GetQubitArray(name string) ([]q.Qubit, bool) {
+	if qubits, ok := e.QubitArray[name]; ok {
+		return qubits, true
+	}
+
+	if _, ok := e.Qubit[name]; ok {
+		return nil, false
+	}
+
+	if e.Outer != nil {
+		return e.Outer.GetQubitArray(name)
+	}
+
 	return nil, false
 }
 
-func (e *Environ) SetQubit(name string, qubits []q.Qubit) {
-	e.Qubit[name] = qubits
+func (e *Environ) SetQubitArray(name string, qubits []q.Qubit) {
+	e.QubitArray[name] = qubits
 	e.QubitOrder = append(e.QubitOrder, name)
 }
 
 func (e *Environ) GetClBit(name string) (bool, bool) {
-	if q, ok := e.ClBit[name]; ok {
-		return q, true
+	if bit, ok := e.ClBit[name]; ok {
+		return bit, true
 	}
 
 	if e.Outer != nil {
@@ -126,8 +153,8 @@ func (e *Environ) SetClBit(name string, bit bool) {
 }
 
 func (e *Environ) GetClBitArray(name string) ([]bool, bool) {
-	if q, ok := e.ClBitArray[name]; ok {
-		return q, true
+	if bits, ok := e.ClBitArray[name]; ok {
+		return bits, true
 	}
 
 	if e.Outer != nil {
@@ -176,7 +203,12 @@ func (e *Environ) GetSubroutine(name string) (*Subroutine, bool) {
 func (e *Environ) Index() [][]int {
 	var index [][]int
 	for _, n := range e.QubitOrder {
-		index = append(index, q.Index(e.Qubit[n]...))
+		if qubit, ok := e.Qubit[n]; ok {
+			index = append(index, q.Index(qubit))
+			continue
+		}
+
+		index = append(index, q.Index(e.QubitArray[n]...))
 	}
 
 	return index

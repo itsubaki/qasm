@@ -464,25 +464,37 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 		}
 	}
 
-	// qargs
+	// Broadcast at the call site so gate parameters are bound to scalar qubits.
+	var qargs []QubitOperand
 	if ctx.GateOperandList() != nil {
 		result := v.Visit(ctx.GateOperandList())
 		if err, ok := result.(error); ok && err != nil {
 			return err
 		}
 
-		qargs := result.([][]q.Qubit)
-		for i, id := range g.QArgs {
-			enclosed.env.Qubit[id] = qargs[i]
-		}
+		qargs = result.([]QubitOperand)
 	}
 
-	// call body
-	for i, s := range g.Body.AllStatementOrScope() {
-		call := s.Statement().GateCallStatement().(*parser.GateCallStatementContext)
-		result := enclosed.VisitGateCallStatement(call)
-		if err, ok := result.(error); ok && err != nil {
-			return fmt.Errorf("gate call[%d]: %w", i, err)
+	if len(qargs) != len(g.QArgs) {
+		return fmt.Errorf("expected %d gate operands, got %d", len(g.QArgs), len(qargs))
+	}
+
+	rows, err := broadcast(qargs)
+	if err != nil {
+		return err
+	}
+
+	for _, row := range rows {
+		for i, id := range g.QArgs {
+			enclosed.env.Qubit[id] = row[i]
+		}
+
+		for i, s := range g.Body.AllStatementOrScope() {
+			call := s.Statement().GateCallStatement().(*parser.GateCallStatementContext)
+			result := enclosed.VisitGateCallStatement(call)
+			if err, ok := result.(error); ok && err != nil {
+				return fmt.Errorf("gate call[%d]: %w", i, err)
+			}
 		}
 	}
 
@@ -543,7 +555,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			return err
 		}
 
-		qargs := result.([][]q.Qubit)
+		qargs := result.([]QubitOperand)
 		rows, err := broadcast(qargs)
 		if err != nil {
 			return err
@@ -607,9 +619,9 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			return err
 		}
 
-		operand := result.([][]q.Qubit)
+		operand := result.([]QubitOperand)
 		for _, o := range operand {
-			qargs = append(qargs, o...)
+			qargs = append(qargs, o.Qubits...)
 		}
 	} else {
 		// all qubits for gphase
@@ -740,7 +752,7 @@ func (v *Visitor) VisitResetStatement(ctx *parser.ResetStatementContext) any {
 		return err
 	}
 
-	v.qsim.Reset(result.([]q.Qubit)...)
+	v.qsim.Reset(result.(QubitOperand).Qubits...)
 	return nil
 }
 
@@ -765,6 +777,10 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 		return fmt.Errorf("%q redeclared", id)
 	}
 
+	if _, ok := v.env.GetQubitArray(id); ok {
+		return fmt.Errorf("%q redeclared", id)
+	}
+
 	result := v.Visit(ctx.QubitType())
 	if err, ok := result.(error); ok && err != nil {
 		return err
@@ -780,7 +796,13 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 		return fmt.Errorf("need=%d, max=%d: %w", need, v.maxQubits, ErrTooManyQubits)
 	}
 
-	v.env.SetQubit(id, v.qsim.Zeros(int(size)))
+	qubits := v.qsim.Zeros(int(size))
+	if ctx.QubitType().Designator() != nil {
+		v.env.SetQubitArray(id, qubits)
+		return nil
+	}
+
+	v.env.SetQubit(id, qubits[0])
 	return nil
 }
 
@@ -1007,12 +1029,23 @@ func (v *Visitor) VisitAliasDeclarationStatement(ctx *parser.AliasDeclarationSta
 		return fmt.Errorf("%q redeclared", id)
 	}
 
+	if _, ok := v.env.GetQubitArray(id); ok {
+		return fmt.Errorf("%q redeclared", id)
+	}
+
 	result := v.Visit(ctx.AliasExpression())
 	if err, ok := result.(error); ok && err != nil {
 		return err
 	}
 
-	v.env.Qubit[id] = result.([]q.Qubit)
+	switch alias := result.(type) {
+	case q.Qubit:
+		v.env.Qubit[id] = alias
+	case []q.Qubit:
+		v.env.QubitArray[id] = alias
+	default:
+		return fmt.Errorf("invalid qubit alias %q", ctx.AliasExpression().GetText())
+	}
 	return nil
 }
 
@@ -1021,6 +1054,10 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 	case ctx.QREG() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
 		if _, ok := v.env.GetQubit(id); ok {
+			return fmt.Errorf("%q redeclared", id)
+		}
+
+		if _, ok := v.env.GetQubitArray(id); ok {
 			return fmt.Errorf("%q redeclared", id)
 		}
 
@@ -1039,7 +1076,7 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 			return fmt.Errorf("need=%d, max=%d: %w", need, v.maxQubits, ErrTooManyQubits)
 		}
 
-		v.env.SetQubit(id, v.qsim.Zeros(int(size)))
+		v.env.SetQubitArray(id, v.qsim.Zeros(int(size)))
 		return nil
 	case ctx.CREG() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
@@ -1081,6 +1118,10 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 		}
 
 		if lit, ok := v.env.GetQubit(s); ok {
+			return lit
+		}
+
+		if lit, ok := v.env.GetQubitArray(s); ok {
 			return lit
 		}
 
@@ -1618,7 +1659,14 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 
 		enclosed := v.Enclosed()
 		for i, p := range routine.QArgs {
-			enclosed.env.Qubit[p] = args[i].([]q.Qubit)
+			switch arg := args[i].(type) {
+			case q.Qubit:
+				enclosed.env.Qubit[p] = arg
+			case []q.Qubit:
+				enclosed.env.QubitArray[p] = arg
+			default:
+				return fmt.Errorf("invalid qubit argument %q", p)
+			}
 		}
 
 		result := enclosed.Visit(routine.Body)
@@ -1661,7 +1709,18 @@ func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) any {
 			return err
 		}
 
-		result = append(result, operand.([]q.Qubit)...)
+		if len(ctx.AllExpression()) == 1 {
+			return operand
+		}
+
+		switch arg := operand.(type) {
+		case q.Qubit:
+			result = append(result, arg)
+		case []q.Qubit:
+			result = append(result, arg...)
+		default:
+			return fmt.Errorf("invalid qubit alias %q", x.GetText())
+		}
 	}
 
 	return result
@@ -1673,30 +1732,65 @@ func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) any {
 		return err
 	}
 
-	qubit, ok := operand.([]q.Qubit)
-	if !ok {
+	switch operand.(type) {
+	case q.Qubit, []q.Qubit:
+	default:
 		return fmt.Errorf("invalid operand %q", ctx.Expression().GetText())
 	}
 
+	return v.IndexQubits(operand, ctx.IndexOperator())
+}
+
+func (v *Visitor) IndexQubits(operand any, ctx parser.IIndexOperatorContext) any {
+	var qubit []q.Qubit
+	switch arg := operand.(type) {
+	case q.Qubit:
+		qubit = []q.Qubit{arg}
+	case []q.Qubit:
+		qubit = arg
+	default:
+		return fmt.Errorf("invalid qubit array operand")
+	}
+
 	var result []q.Qubit
-	for _, x := range ctx.IndexOperator().AllExpression() {
+	for _, x := range ctx.AllExpression() {
 		value := v.Visit(x)
 		if err, ok := value.(error); ok && err != nil {
 			return err
 		}
 
-		index := value.(int64)
+		index, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("index must be an integer '%v'", value)
+		}
+
+		if index < 0 || index >= int64(len(qubit)) {
+			return fmt.Errorf("qubit index %d out of range for size %d", index, len(qubit))
+		}
+
 		result = append(result, qubit[index])
 	}
 
-	for _, x := range ctx.IndexOperator().AllRangeExpression() {
+	for _, x := range ctx.AllRangeExpression() {
 		value := v.Visit(x)
 		if err, ok := value.(error); ok && err != nil {
 			return err
 		}
 
 		index := value.([]int64)
+		if len(index) != 2 {
+			return fmt.Errorf("qubit range %q: %w", x.GetText(), ErrNotImplemented)
+		}
+
+		if index[0] < 0 || index[1] < index[0] || index[1] > int64(len(qubit)) {
+			return fmt.Errorf("qubit range %q out of range for size %d", x.GetText(), len(qubit))
+		}
+
 		result = append(result, qubit[index[0]:index[1]]...)
+	}
+
+	if len(ctx.AllExpression()) == 1 && len(ctx.AllRangeExpression()) == 0 {
+		return result[0]
 	}
 
 	return result
@@ -1708,7 +1802,7 @@ func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) a
 		return err
 	}
 
-	qargs := result.([]q.Qubit)
+	qargs := result.(QubitOperand).Qubits
 	v.qsim.Measure(qargs...)
 
 	var bits []bool
@@ -1911,27 +2005,30 @@ func (v *Visitor) VisitArgumentDefinition(ctx *parser.ArgumentDefinitionContext)
 
 func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 	operand := v.Visit(ctx.IndexedIdentifier().Identifier()).(string)
-	qb, ok := v.env.GetQubit(operand)
-	if !ok {
+	var result any
+	if qb, ok := v.env.GetQubit(operand); ok {
+		result = qb
+	} else if qb, ok := v.env.GetQubitArray(operand); ok {
+		result = qb
+	} else {
 		return fmt.Errorf("undefined %q", operand)
 	}
 
-	result := v.Visit(ctx.IndexedIdentifier())
-	if err, ok := result.(error); ok && err != nil {
-		return err
+	for _, index := range ctx.IndexedIdentifier().AllIndexOperator() {
+		result = v.IndexQubits(result, index)
+		if err, ok := result.(error); ok && err != nil {
+			return err
+		}
 	}
 
-	index := result.([]int64)
-	if len(index) == 0 {
-		return qb
+	switch arg := result.(type) {
+	case q.Qubit:
+		return QubitOperand{Qubits: []q.Qubit{arg}}
+	case []q.Qubit:
+		return QubitOperand{Qubits: arg, IsArray: true}
 	}
 
-	var list []q.Qubit
-	for _, idx := range index {
-		list = append(list, qb[idx])
-	}
-
-	return list
+	return fmt.Errorf("invalid gate operand %q", ctx.GetText())
 }
 
 func (v *Visitor) VisitArgumentDefinitionList(ctx *parser.ArgumentDefinitionListContext) any {
@@ -1967,14 +2064,14 @@ func (v *Visitor) VisitIdentifierList(ctx *parser.IdentifierListContext) any {
 }
 
 func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
-	var list [][]q.Qubit
+	var list []QubitOperand
 	for _, operand := range ctx.AllGateOperand() {
 		op := v.Visit(operand)
 		if err, ok := op.(error); ok && err != nil {
 			return err
 		}
 
-		list = append(list, op.([]q.Qubit))
+		list = append(list, op.(QubitOperand))
 	}
 
 	return list

@@ -130,6 +130,7 @@ func main() {
 			fmt.Printf("%-10s: %v\n", "bit", env.ClBit)
 			fmt.Printf("%-10s: %v\n", "bit[]", env.ClBitArray)
 			fmt.Printf("%-10s: %v\n", "qubit", env.Qubit)
+			fmt.Printf("%-10s: %v\n", "qubit[]", env.QubitArray)
 			fmt.Printf("%-10s: %v\n", "gate", slices.Sorted(maps.Keys(env.Gate)))
 			fmt.Printf("%-10s: %v\n", "subroutine", slices.Sorted(maps.Keys(env.Subroutine)))
 		}
@@ -213,6 +214,7 @@ func REPL(opts ...visitor.Option) {
 				fmt.Printf("%-10s: %v\n", "bit", env.ClBit)
 				fmt.Printf("%-10s: %v\n", "bit[]", env.ClBitArray)
 				fmt.Printf("%-10s: %v\n", "qubit", env.Qubit)
+				fmt.Printf("%-10s: %v\n", "qubit[]", env.QubitArray)
 				fmt.Printf("%-10s: %v\n", "gate", slices.Sorted(maps.Keys(env.Gate)))
 				fmt.Printf("%-10s: %v\n", "subroutine", slices.Sorted(maps.Keys(env.Subroutine)))
 				continue

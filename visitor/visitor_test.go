@@ -416,21 +416,30 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 
 func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   string
-		errMsg string
+		text      string
+		want      string
+		wantArray string
+		errMsg    string
 	}{
 		{
-			text: "qubit q;",
-			want: "map[q:[0]]",
+			text:      "qubit q;",
+			want:      "map[q:0]",
+			wantArray: "map[]",
 		},
 		{
-			text: "qubit[2] q;",
-			want: "map[q:[0 1]]",
+			text:      "qubit[1] q;",
+			want:      "map[]",
+			wantArray: "map[q:[0]]",
 		},
 		{
-			text: "qubit q0; qubit[2] q1; qubit[3] q3; qubit q4;",
-			want: "map[q0:[0] q1:[1 2] q3:[3 4 5] q4:[6]]",
+			text:      "qubit[2] q;",
+			want:      "map[]",
+			wantArray: "map[q:[0 1]]",
+		},
+		{
+			text:      "qubit q0; qubit[2] q1; qubit[3] q3; qubit q4;",
+			want:      "map[q0:0 q4:6]",
+			wantArray: "map[q1:[1 2] q3:[3 4 5]]",
 		},
 		{
 			text:   "qubit[1.1] q;",
@@ -440,44 +449,12 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 			text:   "qubit q; qubit q;",
 			errMsg: `"q" redeclared`,
 		},
-	}
-
-	for _, c := range cases {
-		_, env, err := visitor.Run(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
-			continue
-		}
-
-		if fmt.Sprintf("%v", env.Qubit) != c.want {
-			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
-		}
-	}
-}
-
-func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
-	cases := []struct {
-		text   string
-		want   string
-		errMsg string
-	}{
 		{
-			text: "qubit[5] q; let myreg = q[1:4];",
-			want: "map[myreg:[1 2 3] q:[0 1 2 3 4]]",
+			text:   "qubit q; qubit[1] q;",
+			errMsg: `"q" redeclared`,
 		},
 		{
-			text: "qubit[5] q; let myreg = q[1];",
-			want: "map[myreg:[1] q:[0 1 2 3 4]]",
-		},
-		{
-			text: "qubit[2] one; qubit[10] two; let concatenated = one ++ two;",
-			want: "map[concatenated:[0 1 2 3 4 5 6 7 8 9 10 11] one:[0 1] two:[2 3 4 5 6 7 8 9 10 11]]",
-		},
-		{
-			text:   "qubit[5] q; let q = q[1:4];",
+			text:   "qubit[1] q; qubit q;",
 			errMsg: `"q" redeclared`,
 		},
 	}
@@ -492,8 +469,89 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 			continue
 		}
 
+		if c.errMsg != "" {
+			t.Errorf("got=nil error, want=%s", c.errMsg)
+			continue
+		}
+
 		if fmt.Sprintf("%v", env.Qubit) != c.want {
 			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
+		}
+
+		if fmt.Sprintf("%v", env.QubitArray) != c.wantArray {
+			t.Errorf("got=%v, want=%v", env.QubitArray, c.wantArray)
+		}
+	}
+}
+
+func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
+	cases := []struct {
+		text      string
+		want      string
+		wantArray string
+		errMsg    string
+	}{
+		{
+			text:      "qubit[5] q; let myreg = q[1:4];",
+			want:      "map[]",
+			wantArray: "map[myreg:[1 2 3] q:[0 1 2 3 4]]",
+		},
+		{
+			text:      "qubit[5] q; let myreg = q[1];",
+			want:      "map[myreg:1]",
+			wantArray: "map[q:[0 1 2 3 4]]",
+		},
+		{
+			text:      "qubit[2] one; qubit[10] two; let concatenated = one ++ two;",
+			want:      "map[]",
+			wantArray: "map[concatenated:[0 1 2 3 4 5 6 7 8 9 10 11] one:[0 1] two:[2 3 4 5 6 7 8 9 10 11]]",
+		},
+		{
+			text:      "qubit q; let alias = q;",
+			want:      "map[alias:0 q:0]",
+			wantArray: "map[]",
+		},
+		{
+			text:      "qubit[1] q; let alias = q;",
+			want:      "map[]",
+			wantArray: "map[alias:[0] q:[0]]",
+		},
+		{
+			text:      "qubit a; qubit b; let pair = a ++ b;",
+			want:      "map[a:0 b:1]",
+			wantArray: "map[pair:[0 1]]",
+		},
+		{
+			text:   "qubit[5] q; let q = q[1:4];",
+			errMsg: `"q" redeclared`,
+		},
+		{
+			text:   "qubit q; let q = q;",
+			errMsg: `"q" redeclared`,
+		},
+	}
+
+	for _, c := range cases {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			if err.Error() != c.errMsg {
+				t.Errorf("got=%v, want=%v", err, c.errMsg)
+			}
+
+			continue
+		}
+
+		if c.errMsg != "" {
+			t.Errorf("got=nil error, want=%s", c.errMsg)
+			continue
+		}
+
+		if fmt.Sprintf("%v", env.Qubit) != c.want {
+			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
+		}
+
+		if fmt.Sprintf("%v", env.QubitArray) != c.wantArray {
+			t.Errorf("got=%v, want=%v", env.QubitArray, c.wantArray)
 		}
 	}
 }
@@ -514,6 +572,10 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 		},
 		{
 			text:   "qreg q; qreg q;",
+			errMsg: `"q" redeclared`,
+		},
+		{
+			text:   "qubit q; qreg q[1];",
 			errMsg: `"q" redeclared`,
 		},
 		{
@@ -544,8 +606,13 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 			continue
 		}
 
-		if len(env.Qubit) > 0 && fmt.Sprintf("%v", env.Qubit) != c.want {
-			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
+		if c.errMsg != "" {
+			t.Errorf("got=nil error, want=%s", c.errMsg)
+			continue
+		}
+
+		if len(env.QubitArray) > 0 && fmt.Sprintf("%v", env.QubitArray) != c.want {
+			t.Errorf("got=%v, want=%v", env.QubitArray, c.want)
 		}
 
 		if len(env.ClBit) > 0 && fmt.Sprintf("%v", env.ClBit) != c.want {
@@ -3602,12 +3669,14 @@ func TestVisitor_returnError(t *testing.T) {
 	for _, c := range cases {
 		_, _, err := visitor.Run(c.code)
 		if err != nil {
-			continue
-		}
+			if err.Error() == `undefined "missing"` {
+				continue
+			}
 
-		if err.Error() != `undefined "missing"` {
 			t.Errorf("got=%v, want undefined identifier error", err)
 		}
+
+		t.Fatal("got=nil, want undefined identifier error")
 	}
 }
 
@@ -3657,6 +3726,41 @@ func TestVisitor_broadcast(t *testing.T) {
 			text: `gate cx c,t { ctrl @ U(pi,0,pi) c,t; } qubit[2] c; qubit[2] t; U(pi,0,pi) c[0]; cx c,t;`,
 			want: 0b1010,
 		},
+		{
+			name: "single-element arrays",
+			text: `qubit[1] c; qubit[1] t; U(pi,0,pi) c; ctrl @ U(pi,0,pi) c,t;`,
+			want: 0b11,
+		},
+		{
+			name: "indexed single-element control array",
+			text: `qubit[1] c; qubit[2] t; U(pi,0,pi) c; ctrl @ U(pi,0,pi) c[0],t;`,
+			want: 0b111,
+		},
+		{
+			name: "indexed single-element target array",
+			text: `qubit[2] c; qubit[1] t; U(pi,0,pi) c[0]; ctrl @ U(pi,0,pi) c,t[0];`,
+			want: 0b101,
+		},
+		{
+			name: "scalar alias",
+			text: `qubit[1] a; let c=a[0]; qubit[2] t; U(pi,0,pi) c; ctrl @ U(pi,0,pi) c,t;`,
+			want: 0b111,
+		},
+		{
+			name: "user-defined gate with scalar control",
+			text: `gate cx c,t { ctrl @ U(pi,0,pi) c,t; } qubit c; qubit[2] t; U(pi,0,pi) c; cx c,t;`,
+			want: 0b111,
+		},
+		{
+			name: "nested user-defined gate with single-element arrays",
+			text: `gate cx c,t { ctrl @ U(pi,0,pi) c,t; } gate g c,t { cx c,t; } qubit[1] c; qubit[1] t; U(pi,0,pi) c; g c,t;`,
+			want: 0b11,
+		},
+		{
+			name: "subroutine scalar parameter",
+			text: `def f(qubit c, qubit[2] t) { ctrl @ U(pi,0,pi) c,t; } qubit[1] c; qubit[2] t; U(pi,0,pi) c; f(c[0],t);`,
+			want: 0b111,
+		},
 	}
 
 	for _, c := range cases {
@@ -3674,24 +3778,70 @@ func TestVisitor_broadcast(t *testing.T) {
 
 func TestVisitor_broadcastMismatch(t *testing.T) {
 	cases := []struct {
+		name string
 		code string
 	}{
 		{
+			name: "different array lengths",
 			code: `qubit[2] c; qubit[3] t; ctrl @ U(pi,0,pi) c,t;`,
+		},
+		{
+			name: "single-element control array",
+			code: `qubit[1] c; qubit[2] t; ctrl @ U(pi,0,pi) c,t;`,
+		},
+		{
+			name: "single-element target array",
+			code: `qubit[2] c; qubit[1] t; ctrl @ U(pi,0,pi) c,t;`,
+		},
+		{
+			name: "negative control",
+			code: `qubit[1] c; qubit[2] t; negctrl @ U(pi,0,pi) c,t;`,
+		},
+		{
+			name: "multiple controls",
+			code: `qubit[1] a; qubit[2] b; qubit t; ctrl(2) @ U(pi,0,pi) a,b,t;`,
+		},
+		{
+			name: "old-style register",
+			code: `qreg c[1]; qreg t[2]; ctrl @ U(pi,0,pi) c,t;`,
+		},
+		{
+			name: "array alias",
+			code: `qubit[1] c; qubit[2] t; let a=c; ctrl @ U(pi,0,pi) a,t;`,
+		},
+		{
+			name: "concatenated alias",
+			code: `qubit a; qubit b; let c=a++b; qubit[1] t; ctrl @ U(pi,0,pi) c,t;`,
+		},
+		{
+			name: "user-defined gate",
+			code: `gate cx c,t { ctrl @ U(pi,0,pi) c,t; } qubit[1] c; qubit[2] t; cx c,t;`,
+		},
+		{
+			name: "user-defined gate without a controlled operation",
+			code: `gate g a,b { U(pi,0,pi) a; U(pi,0,pi) b; } qubit[1] a; qubit[2] b; g a,b;`,
+		},
+		{
+			name: "empty user-defined gate",
+			code: `gate g a,b {} qubit[1] a; qubit[2] b; g a,b;`,
+		},
+		{
+			name: "subroutine array parameters",
+			code: `def f(qubit[1] c, qubit[2] t) { ctrl @ U(pi,0,pi) c,t; } qubit[1] c; qubit[2] t; f(c,t);`,
 		},
 	}
 
 	for _, c := range cases {
 		_, _, err := visitor.Run(c.code)
 		if err != nil {
-			continue
+			if strings.Contains(err.Error(), "gate operand size mismatch") {
+				continue
+			}
+
+			t.Errorf("got=%v, want register size error", err)
 		}
 
-		if strings.Contains(err.Error(), "size") {
-			continue
-		}
-
-		t.Errorf("got=%v, want register size error", err)
+		t.Errorf("register size error")
 	}
 }
 

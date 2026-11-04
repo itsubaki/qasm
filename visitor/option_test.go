@@ -131,7 +131,7 @@ func ExampleWithMaxQubits_unlimited() {
 		fmt.Println(err)
 	}
 
-	fmt.Println(env.Qubit)
+	fmt.Println(env.QubitArray)
 
 	// Output:
 	// map[q:[0 1 2 3 4 5 6 7 8 9]]
