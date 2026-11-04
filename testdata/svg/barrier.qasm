@@ -1,6 +1,6 @@
 OPENQASM 3.0;
 
-gate x q { U(pi, 0, pi) q; }
+gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
 
 qubit[3] q;
 qubit[3] a;

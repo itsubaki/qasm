@@ -1,7 +1,7 @@
 OPENQASM 3.0;
 
-gate x q { U(pi, 0, pi) q; }
-gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
+gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
+gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; ctrl @ gphase(-pi/2) q0; }
 
 qubit psi;
 U(1, 2, 3) psi;

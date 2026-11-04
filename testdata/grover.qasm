@@ -1,11 +1,11 @@
 OPENQASM 3.0;
 
-gate x q { U(pi, 0, pi) q; }
-gate h q { U(pi/2.0, 0, pi) q; }
-gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
+gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
+gate h q { U(pi/2.0, 0, pi) q; gphase(-pi/4); }
+gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; ctrl @ gphase(-pi/2) q0; }
 gate xor q0, q1, q2 { cx q0, q2; cx q1, q2; }
 gate cccz c0, c1, c2, t { ctrl(3) @ U(0, 0, pi) c0, c1, c2, t; }
-gate ccccx c0, c1, c2, c3, t { ctrl(4) @ U(pi, 0, pi) c0, c1, c2, c3, t; }
+gate ccccx c0, c1, c2, c3, t { ctrl(4) @ U(pi, 0, pi) c0, c1, c2, c3, t; ctrl(4) @ gphase(-pi/2) c0, c1, c2, c3; }
 
 // The oracle constructs a Grover oracle that checks solutions to a 2x2 sudoku puzzle.
 // The oracle flips the phase when the following uniqueness constraints are satisfied: a != b, c != d, a != c, and b != d.

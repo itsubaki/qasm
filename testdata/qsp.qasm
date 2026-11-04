@@ -1,6 +1,6 @@
 OPENQASM 3.0;
 
-gate Rx(theta) q { U(theta, -pi/2, pi/2) q; }
+gate Rx(theta) q { U(theta, -pi/2, pi/2) q; gphase(-theta/2); }
 gate W(theta) q { Rx(-2*theta) q; }
 gate S(phi) q { U(0, 0, -2*phi) q; }
 

@@ -651,8 +651,8 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 					"map[c:[true true]]",
 				},
 				qubit: []string{
-					"[[00] ( 1.0000 0.0000i): 1.0000]",
-					"[[11] ( 1.0000 0.0000i): 1.0000]",
+					"[[00] ( 0.7071 0.7071i): 1.0000]",
+					"[[11] (-0.7071 0.7071i): 1.0000]",
 				},
 			},
 		},
@@ -671,8 +671,8 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 					"map[c:[true true]]",
 				},
 				qubit: []string{
-					"[[00] ( 1.0000 0.0000i): 1.0000]",
-					"[[11] ( 1.0000 0.0000i): 1.0000]",
+					"[[00] ( 0.7071 0.7071i): 1.0000]",
+					"[[11] (-0.7071 0.7071i): 1.0000]",
 				},
 			},
 		},
@@ -809,7 +809,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 			`,
 			want: Want{
 				bit:   []string{"map[c:true]"},
-				qubit: []string{"[[1] ( 1.0000 0.0000i): 1.0000]"},
+				qubit: []string{"[[1] ( 0.0000 1.0000i): 1.0000]"},
 			},
 		},
 		{
@@ -829,7 +829,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 			`,
 			want: Want{
 				bit:   []string{"map[c:true]"},
-				qubit: []string{"[[010] ( 1.0000 0.0000i): 1.0000]"},
+				qubit: []string{"[[010] ( 0.0000 1.0000i): 1.0000]"},
 			},
 		},
 		{
@@ -841,7 +841,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 			`,
 			want: Want{
 				bit:   []string{"map[c:[true]]"},
-				qubit: []string{"[[1] ( 1.0000 0.0000i): 1.0000]"},
+				qubit: []string{"[[1] ( 0.0000 1.0000i): 1.0000]"},
 			},
 		},
 		{
@@ -858,8 +858,8 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 					"map[c:[true true]]",
 				},
 				qubit: []string{
-					"[[00] ( 1.0000 0.0000i): 1.0000]",
-					"[[11] ( 1.0000 0.0000i): 1.0000]",
+					"[[00] ( 0.7071 0.7071i): 1.0000]",
+					"[[11] (-0.7071 0.7071i): 1.0000]",
 				},
 			},
 		},
@@ -878,8 +878,8 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 					"map[c:[true true]]",
 				},
 				qubit: []string{
-					"[[00] ( 1.0000 0.0000i): 1.0000]",
-					"[[11] ( 1.0000 0.0000i): 1.0000]",
+					"[[00] ( 0.7071 0.7071i): 1.0000]",
+					"[[11] (-0.7071 0.7071i): 1.0000]",
 				},
 			},
 		},
@@ -892,8 +892,8 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 			`,
 			want: Want{
 				qubit: []string{
-					"[[00] ( 1.0000 0.0000i): 1.0000]",
-					"[[11] ( 1.0000 0.0000i): 1.0000]",
+					"[[00] ( 0.7071 0.7071i): 1.0000]",
+					"[[11] (-0.7071 0.7071i): 1.0000]",
 				},
 			},
 		},
@@ -954,7 +954,7 @@ func TestVisitor_VisitResetStatement(t *testing.T) {
 				reset q;
 			`,
 			want: []string{
-				"[0] ( 1.0000 0.0000i): 1.0000",
+				"[0] ( 0.7071 0.7071i): 1.0000",
 			},
 		},
 		{
@@ -1772,14 +1772,14 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 		{
 			text: "qubit q; U(pi, 0, pi) q;",
 			want: []string{
-				"[1] ( 1.0000 0.0000i): 1.0000",
+				"[1] ( 0.0000 1.0000i): 1.0000",
 			},
 		},
 		{
 			text: `qubit q; U(pi/2, 0, pi) q;`,
 			want: []string{
-				"[0] ( 0.7071 0.0000i): 0.5000",
-				"[1] ( 0.7071 0.0000i): 0.5000",
+				"[0] ( 0.5000 0.5000i): 0.5000",
+				"[1] ( 0.5000 0.5000i): 0.5000",
 			},
 		},
 		{
@@ -1795,8 +1795,8 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				ctrl @ U(pi, 0, pi) q[0], q[1];
 			`,
 			want: []string{
-				"[00] ( 0.7071 0.0000i): 0.5000",
-				"[11] ( 0.7071 0.0000i): 0.5000",
+				"[00] ( 0.5000 0.5000i): 0.5000",
+				"[11] (-0.5000 0.5000i): 0.5000",
 			},
 		},
 		{
@@ -1815,7 +1815,7 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				pow(2) @ U(pi/2, 0, pi) q[0];
 			`,
 			want: []string{
-				"[00] ( 1.0000 0.0000i): 1.0000",
+				"[00] ( 0.0000 1.0000i): 1.0000",
 			},
 		},
 		{
@@ -1825,14 +1825,14 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				pow(0.5) @ U(pi, 0, pi) q[0];
 			`,
 			want: []string{
-				"[10] ( 1.0000 0.0000i): 1.0000",
+				"[10] ( 0.0000 1.0000i): 1.0000",
 			},
 		},
 		{
 			text: `qubit[2] q; pow(3) @ U(pi/2, 0, pi) q[0];`,
 			want: []string{
-				"[00] ( 0.7071 0.0000i): 0.5000",
-				"[10] ( 0.7071 0.0000i): 0.5000",
+				"[00] (-0.5000 0.5000i): 0.5000",
+				"[10] (-0.5000 0.5000i): 0.5000",
 			},
 		},
 		{
@@ -1916,8 +1916,8 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		},
 		{
 			text: `
-				gate h q0 { U(pi/2, 0, pi) q0; }
-				gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
+				gate h q0 { U(pi/2, 0, pi) q0; gphase(-pi/4); }
+				gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; ctrl @ gphase(-pi/2) q0; }
 				qubit[2] q;
 				h q[0];
 				cx q[0], q[1];
@@ -1929,8 +1929,8 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		},
 		{
 			text: `
-				gate x q0 { U(pi, 0, pi) q0; }
-				gate y q0 { U(pi, pi/2, pi/2) q0; }
+				gate x q0 { U(pi, 0, pi) q0; gphase(-pi/2); }
+				gate y q0 { U(pi, pi/2, pi/2) q0; gphase(-pi/2); }
 				qubit q;
 				x q;
 				y q;
@@ -1941,8 +1941,8 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		},
 		{
 			text: `
-				gate x q { U(pi, 0, pi) q; }
-				gate y q { U(pi, pi/2, pi/2) q; }
+				gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
+				gate y q { U(pi, pi/2, pi/2) q; gphase(-pi/2); }
 				gate xy q { x q; y q; }
 				qubit q;
 				xy q;
@@ -1958,7 +1958,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				u(pi, 0, pi) q;
 			`,
 			want: []string{
-				"[1] ( 1.0000 0.0000i): 1.0000",
+				"[1] ( 0.0000 1.0000i): 1.0000",
 			},
 		},
 		{
@@ -1968,7 +1968,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				u(pi, 0, pi) q;
 			`,
 			want: []string{
-				"[11] ( 1.0000 0.0000i): 1.0000",
+				"[11] (-1.0000 0.0000i): 1.0000",
 			},
 		},
 		{
@@ -2040,7 +2040,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		// },
 		// {
 		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
 		// 		qubit[2] q;
 		// 		x q[0];
 		// 		ctrl @ x q[0], q[1];
@@ -2051,7 +2051,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		// },
 		// {
 		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
 		// 		gate cx q0, q1 { ctrl @ x q0, q1; }
 		// 		qubit[2] q;
 		// 		qubit t;
@@ -2064,7 +2064,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		// },
 		// {
 		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
 		// 		qubit[2] q;
 		// 		negctrl @ x q[0], q[1];
 		// 	`,
@@ -2074,7 +2074,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		// },
 		// {
 		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
 		// 		gate negcx q0, q1 { negctrl @ x q0, q1; }
 		// 		qubit[3] q;
 		// 		negctrl @ negcx q[0], q[1], q[2];
@@ -2085,7 +2085,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		// },
 		// {
 		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
 		// 		qubit[2] q;
 		// 		x q[1];
 		// 		ctrl @ x q[1], q[0];
@@ -2096,7 +2096,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		// },
 		// {
 		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
 		// 		gate negcx q0, q1 { negctrl @ x q0, q1; }
 		// 		qubit[3] q;
 		// 		negctrl @ negcx q[1], q[2], q[0];
@@ -2107,7 +2107,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		// },
 		// {
 		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
 		// 		gate negcx q0, q1 { negctrl @ x q0, q1; }
 		// 		qubit[3] q;
 		// 		negctrl @ negcx q[2], q[0], q[1];
@@ -2118,7 +2118,7 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 		// },
 		// {
 		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; }
+		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
 		// 		gate cx q0, q1 { ctrl @ x q0, q1; }
 		// 		qubit[3] q;
 		// 		x q[1];
@@ -2165,8 +2165,8 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				ctrl @ U(pi, 0, pi) q0, q1;
 			`,
 			want: []string{
-				"[00] ( 0.7071 0.0000i): 0.5000",
-				"[11] ( 0.7071 0.0000i): 0.5000",
+				"[00] ( 0.5000 0.5000i): 0.5000",
+				"[11] (-0.5000 0.5000i): 0.5000",
 			},
 		},
 		{
@@ -2176,10 +2176,10 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				ctrl @ ctrl @ U(pi, 0, pi) q[0], q[1], q[2];
 			`,
 			want: []string{
-				"[000] ( 0.5000 0.0000i): 0.2500",
-				"[010] ( 0.5000 0.0000i): 0.2500",
-				"[100] ( 0.5000 0.0000i): 0.2500",
-				"[111] ( 0.5000 0.0000i): 0.2500",
+				"[000] ( 0.0000 0.5000i): 0.2500",
+				"[010] ( 0.0000 0.5000i): 0.2500",
+				"[100] ( 0.0000 0.5000i): 0.2500",
+				"[111] (-0.5000 0.0000i): 0.2500",
 			},
 		},
 		{
@@ -2189,10 +2189,10 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				ctrl(2) @ U(pi, 0, pi) q[0], q[1], q[2];
 			`,
 			want: []string{
-				"[000] ( 0.5000 0.0000i): 0.2500",
-				"[010] ( 0.5000 0.0000i): 0.2500",
-				"[100] ( 0.5000 0.0000i): 0.2500",
-				"[111] ( 0.5000 0.0000i): 0.2500",
+				"[000] ( 0.0000 0.5000i): 0.2500",
+				"[010] ( 0.0000 0.5000i): 0.2500",
+				"[100] ( 0.0000 0.5000i): 0.2500",
+				"[111] (-0.5000 0.0000i): 0.2500",
 			},
 		},
 		{
@@ -2203,8 +2203,8 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				negctrl @ U(pi, 0, pi) q0, q1;
 			`,
 			want: []string{
-				"[01] ( 0.7071 0.0000i): 0.5000",
-				"[10] ( 0.7071 0.0000i): 0.5000",
+				"[01] (-0.5000 0.5000i): 0.5000",
+				"[10] ( 0.5000 0.5000i): 0.5000",
 			},
 		},
 		{
@@ -2224,7 +2224,7 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				pow(2) @ U(half, -half, half) q;
 			`,
 			want: []string{
-				"[1] ( 0.0000-1.0000i): 1.0000",
+				"[1] ( 1.0000 0.0000i): 1.0000",
 			},
 		},
 		{
@@ -2240,21 +2240,21 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				inv @ pow(2) @ U(pi, 0, pi) q;
 			`,
 			want: []string{
-				"[0] ( 1.0000 0.0000i): 1.0000",
+				"[0] (-1.0000 0.0000i): 1.0000",
 			},
 		},
 		{
 			text: `qubit q; inv @ pow(0.5) @ U(0.3, 1.1, 2.7) q;`,
 			want: []string{
-				"[0] ( 0.9958 0.0040i): 0.9915",
-				"[1] ( 0.0905-0.0164i): 0.0085",
+				"[0] ( 0.9933-0.0706i): 0.9915",
+				"[1] ( 0.0890-0.0231i): 0.0085",
 			},
 		},
 		{
 			text: `qubit q; pow(0.5) @ inv @ U(0.3, 1.1, 2.7) q;`,
 			want: []string{
-				"[0] ( 0.9958 0.0040i): 0.9915",
-				"[1] ( 0.0905-0.0164i): 0.0085",
+				"[0] ( 0.9933-0.0706i): 0.9915",
+				"[1] ( 0.0890-0.0231i): 0.0085",
 			},
 		},
 		{
@@ -2264,10 +2264,10 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				ctrl @ negctrl @ U(pi, 0, pi) q[0], q[1], q[2];
 			`,
 			want: []string{
-				"[000] ( 0.5000 0.0000i): 0.2500",
-				"[010] ( 0.5000 0.0000i): 0.2500",
-				"[101] ( 0.5000 0.0000i): 0.2500",
-				"[110] ( 0.5000 0.0000i): 0.2500",
+				"[000] ( 0.0000 0.5000i): 0.2500",
+				"[010] ( 0.0000 0.5000i): 0.2500",
+				"[101] (-0.5000 0.0000i): 0.2500",
+				"[110] ( 0.0000 0.5000i): 0.2500",
 			},
 		},
 		{
@@ -2277,7 +2277,7 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				pow(2.0) @ U(pi/2, -pi/2, pi/2) q;
 			`,
 			want: []string{
-				"[1] ( 0.0000-1.0000i): 1.0000",
+				"[1] ( 1.0000 0.0000i): 1.0000",
 			},
 		},
 		{
@@ -2286,8 +2286,8 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				U(pi/2, -pi/2, pi/2) q;
 			`,
 			want: []string{
-				"[0] ( 0.7071 0.0000i): 0.5000",
-				"[1] ( 0.0000-0.7071i): 0.5000",
+				"[0] ( 0.5000 0.5000i): 0.5000",
+				"[1] ( 0.5000-0.5000i): 0.5000",
 			},
 		},
 		{
@@ -2297,8 +2297,8 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				inv @ ctrl @ U(pi, 0, pi) q[0], q[1];
 			`,
 			want: []string{
-				"[00] ( 0.7071 0.0000i): 0.5000",
-				"[11] ( 0.7071 0.0000i): 0.5000",
+				"[00] ( 0.5000 0.5000i): 0.5000",
+				"[11] ( 0.5000-0.5000i): 0.5000",
 			},
 		},
 		{
@@ -2308,8 +2308,8 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				ctrl @ inv @ U(pi, 0, pi) q[0], q[1];
 			`,
 			want: []string{
-				"[00] ( 0.7071 0.0000i): 0.5000",
-				"[11] ( 0.7071 0.0000i): 0.5000",
+				"[00] ( 0.5000 0.5000i): 0.5000",
+				"[11] ( 0.5000-0.5000i): 0.5000",
 			},
 		},
 		{
@@ -2319,8 +2319,8 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				ctrl @ pow(2) @ U(pi/2, -pi/2, pi/2) q[0], q[1];
 			`,
 			want: []string{
-				"[00] ( 0.7071 0.0000i): 0.5000",
-				"[11] ( 0.0000-0.7071i): 0.5000",
+				"[00] ( 0.5000 0.5000i): 0.5000",
+				"[11] ( 0.5000 0.5000i): 0.5000",
 			},
 		},
 		{

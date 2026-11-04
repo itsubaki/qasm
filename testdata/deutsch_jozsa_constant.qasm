@@ -1,8 +1,8 @@
 OPENQASM 3.0;
 
-gate x q { U(pi, 0, pi) q; }
-gate h q { U(pi/2.0, 0, pi) q; }
-gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
+gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
+gate h q { U(pi/2.0, 0, pi) q; gphase(-pi/4); }
+gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; ctrl @ gphase(-pi/2) q0; }
 
 def oracle(qubit q0, qubit q1) {
     constant(q0, q1);
