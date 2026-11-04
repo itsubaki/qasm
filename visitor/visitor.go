@@ -24,7 +24,6 @@ import (
 var (
 	ErrTooManyQubits  = errors.New("too many qubits")
 	ErrNotImplemented = errors.New("not implemented")
-	ErrEnd            = errors.New("end")
 )
 
 type Visitor struct {
@@ -37,6 +36,8 @@ type Visitor struct {
 type returnValue struct {
 	value any
 }
+
+type endSignal struct{}
 
 func New(qsim *q.Q, env *environ.Environ, opt ...Option) *Visitor {
 	v := &Visitor{
@@ -76,11 +77,11 @@ func Visit(text string) (any, error) {
 
 	result := New(q.New(), environ.New()).Visit(program)
 	if err, ok := result.(error); ok && err != nil {
-		if errors.Is(err, ErrEnd) {
-			return End, nil
-		}
-
 		return nil, err
+	}
+
+	if _, ok := result.(endSignal); ok {
+		return End, nil
 	}
 
 	return result, nil
@@ -91,7 +92,7 @@ func (v *Visitor) Enclosed() *Visitor {
 }
 
 func (v *Visitor) Run(tree antlr.ParseTree) error {
-	if err, ok := v.Visit(tree).(error); ok && err != nil && !errors.Is(err, ErrEnd) {
+	if err, ok := v.Visit(tree).(error); ok && err != nil {
 		return err
 	}
 
@@ -119,11 +120,11 @@ func (v *Visitor) VisitProgram(ctx *parser.ProgramContext) any {
 	for _, s := range ctx.AllStatementOrScope() {
 		result = v.Visit(s)
 		switch result.(type) {
-		case error, returnValue:
+		case error, returnValue, endSignal:
 			return result
 		}
 
-		if contains(result, Break, Continue, End) {
+		if contains(result, Break, Continue) {
 			return result
 		}
 	}
@@ -194,11 +195,11 @@ func (v *Visitor) VisitScope(ctx *parser.ScopeContext) any {
 	for _, s := range ctx.AllStatementOrScope() {
 		result := enclosed.Visit(s)
 		switch result.(type) {
-		case error, returnValue:
+		case error, returnValue, endSignal:
 			return result
 		}
 
-		if contains(result, Break, Continue, End) {
+		if contains(result, Break, Continue) {
 			return result
 		}
 	}
@@ -218,8 +219,13 @@ func (v *Visitor) VisitIncludeStatement(ctx *parser.IncludeStatementContext) any
 		return fmt.Errorf("include %s: %w", path, err)
 	}
 
-	if err, ok := v.Visit(program).(error); ok && err != nil {
+	result := v.Visit(program)
+	if err, ok := result.(error); ok && err != nil {
 		return fmt.Errorf("include %s: %w", path, err)
+	}
+
+	if _, ok := result.(endSignal); ok {
+		return result
 	}
 
 	return nil
@@ -234,13 +240,14 @@ func (v *Visitor) VisitContinueStatement(ctx *parser.ContinueStatementContext) a
 }
 
 func (v *Visitor) VisitEndStatement(ctx *parser.EndStatementContext) any {
-	return ErrEnd
+	return endSignal{}
 }
 
 func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) any {
 	condition := v.Visit(ctx.Expression())
-	if err, ok := condition.(error); ok && err != nil {
-		return err
+	switch condition.(type) {
+	case error, endSignal:
+		return condition
 	}
 
 	enclosed := v.Enclosed()
@@ -258,8 +265,9 @@ func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) any {
 func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) any {
 	id := v.Visit(ctx.Identifier()).(string)
 	result := v.Visit(ctx.RangeExpression())
-	if err, ok := result.(error); ok && err != nil {
-		return err
+	switch result.(type) {
+	case error, endSignal:
+		return result
 	}
 
 	rx := result.([]int64)
@@ -268,11 +276,8 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) any {
 	for i := rx[0]; i <= rx[1]; i++ {
 		enclosed.env.Variable[id] = i
 		result := enclosed.Visit(ctx.StatementOrScope())
-		if err, ok := result.(error); ok && err != nil {
-			return err
-		}
-
-		if _, ok := result.(returnValue); ok || contains(result, End) {
+		switch result.(type) {
+		case error, returnValue, endSignal:
 			return result
 		}
 
@@ -288,8 +293,9 @@ func (v *Visitor) VisitWhileStatement(ctx *parser.WhileStatementContext) any {
 	enclosed := v.Enclosed()
 	for {
 		condition := v.Visit(ctx.Expression())
-		if err, ok := condition.(error); ok && err != nil {
-			return err
+		switch condition.(type) {
+		case error, endSignal:
+			return condition
 		}
 
 		if !condition.(bool) {
@@ -297,11 +303,8 @@ func (v *Visitor) VisitWhileStatement(ctx *parser.WhileStatementContext) any {
 		}
 
 		result := enclosed.Visit(ctx.GetBody())
-		if err, ok := result.(error); ok && err != nil {
-			return err
-		}
-
-		if _, ok := result.(returnValue); ok || contains(result, End) {
+		switch result.(type) {
+		case error, returnValue, endSignal:
 			return result
 		}
 
@@ -315,8 +318,9 @@ func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) any {
 	enclosed := v.Enclosed()
 
 	x := v.Visit(ctx.Expression())
-	if err, ok := x.(error); ok && err != nil {
-		return err
+	switch x.(type) {
+	case error, endSignal:
+		return x
 	}
 
 	for _, item := range ctx.AllSwitchCaseItem() {
@@ -325,8 +329,9 @@ func (v *Visitor) VisitSwitchStatement(ctx *parser.SwitchStatementContext) any {
 		}
 
 		result := v.Visit(item.ExpressionList())
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		for _, r := range result.([]any) {
@@ -353,8 +358,9 @@ func (v *Visitor) VisitReturnStatement(ctx *parser.ReturnStatementContext) any {
 		result = v.Visit(ctx.Expression())
 	}
 
-	if err, ok := result.(error); ok && err != nil {
-		return err
+	switch result.(type) {
+	case error, endSignal:
+		return result
 	}
 
 	return returnValue{value: result}
@@ -385,16 +391,19 @@ func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) any {
 	return nil
 }
 
-func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, error) {
+// Params returns numeric parameters, or an error or endSignal as the second result.
+func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, any) {
 	result := v.Visit(xlist)
-	if err, ok := result.(error); ok && err != nil {
-		return nil, err
+	switch result.(type) {
+	case error, endSignal:
+		return nil, result
 	}
 
 	var params []float64
 	for _, e := range result.([]any) {
-		if err, ok := e.(error); ok && err != nil {
-			return nil, err
+		switch e.(type) {
+		case error, endSignal:
+			return nil, e
 		}
 
 		switch param := e.(type) {
@@ -410,11 +419,12 @@ func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, error)
 	return params, nil
 }
 
-func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix, bool, error) {
+// Builtin returns a built-in gate, or an error or endSignal as the third result.
+func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix, bool, any) {
 	if ctx.GPHASE() != nil {
-		params, err := v.Params(ctx.ExpressionList())
-		if err != nil {
-			return nil, false, err
+		params, signal := v.Params(ctx.ExpressionList())
+		if signal != nil {
+			return nil, false, signal
 		}
 
 		// u 2x2
@@ -426,9 +436,9 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix,
 	switch id {
 	case U:
 		// params
-		params, err := v.Params(ctx.ExpressionList())
-		if err != nil {
-			return nil, false, err
+		params, signal := v.Params(ctx.ExpressionList())
+		if signal != nil {
+			return nil, false, signal
 		}
 
 		// u 2x2
@@ -439,7 +449,7 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix,
 	}
 }
 
-func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) error {
+func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) any {
 	if len(ctx.AllGateModifier()) > 0 {
 		// NOTE: Modifiers on user-defined gate calls are not implemented yet.
 		return fmt.Errorf("user-defined call with modifier: %w", ErrNotImplemented)
@@ -454,9 +464,9 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 	// params
 	enclosed := v.Enclosed()
 	if ctx.ExpressionList() != nil {
-		params, err := v.Params(ctx.ExpressionList())
-		if err != nil {
-			return err
+		params, signal := v.Params(ctx.ExpressionList())
+		if signal != nil {
+			return signal
 		}
 
 		for i, p := range g.Params {
@@ -468,8 +478,9 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 	var qargs []QubitOperand
 	if ctx.GateOperandList() != nil {
 		result := v.Visit(ctx.GateOperandList())
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		qargs = result.([]QubitOperand)
@@ -495,6 +506,9 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) erro
 			if err, ok := result.(error); ok && err != nil {
 				return fmt.Errorf("gate call[%d]: %w", i, err)
 			}
+			if _, ok := result.(endSignal); ok {
+				return result
+			}
 		}
 	}
 
@@ -508,14 +522,14 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	}
 
 	// builtin gate
-	u, ok, err := v.Builtin(ctx)
-	if err != nil {
-		return err
+	u, ok, signal := v.Builtin(ctx)
+	if signal != nil {
+		return signal
 	}
 
 	if !ok {
-		if err := v.UserDefinedGateCall(ctx); err != nil {
-			return err
+		if signal := v.UserDefinedGateCall(ctx); signal != nil {
+			return signal
 		}
 
 		return nil
@@ -528,8 +542,9 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			u = u.Dagger()
 		case mod.POW() != nil:
 			result := v.Visit(mod)
-			if err, ok := result.(error); ok && err != nil {
-				return err
+			switch result.(type) {
+			case error, endSignal:
+				return result
 			}
 
 			p, err := value.New(result).Float64()
@@ -551,8 +566,9 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		// ctrl @ U(pi, 0, pi) c, t;
 		// ctrl @ U(pi, 0, pi) c[0], t;
 		result := v.Visit(ctx.GateOperandList())
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		qargs := result.([]QubitOperand)
@@ -569,8 +585,9 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			}
 
 			result := v.Visit(mod)
-			if err, ok := result.(error); ok && err != nil {
-				return err
+			switch result.(type) {
+			case error, endSignal:
+				return result
 			}
 
 			n, ok := result.(int64)
@@ -615,8 +632,9 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		// qubit q0; qubit q1; U q0, q1;
 		// qubit[2] q; U q;
 		result := v.Visit(ctx.GateOperandList())
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		operand := result.([]QubitOperand)
@@ -634,10 +652,11 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	return nil
 }
 
-func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure parser.IMeasureExpressionContext) error {
+func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure parser.IMeasureExpressionContext) any {
 	measured := v.Visit(measure)
-	if err, ok := measured.(error); ok && err != nil {
-		return err
+	switch measured.(type) {
+	case error, endSignal:
+		return measured
 	}
 
 	if id == nil {
@@ -646,8 +665,9 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 
 	operand := v.Visit(id.Identifier()).(string)
 	result := v.Visit(id)
-	if err, ok := result.(error); ok && err != nil {
-		return err
+	switch result.(type) {
+	case error, endSignal:
+		return result
 	}
 
 	index := result.([]int64)
@@ -696,14 +716,16 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 
 	operand := v.Visit(ctx.IndexedIdentifier().Identifier()).(string)
 	result := v.Visit(ctx.IndexedIdentifier())
-	if err, ok := result.(error); ok && err != nil {
-		return err
+	switch result.(type) {
+	case error, endSignal:
+		return result
 	}
 
 	index := result.([]int64)
 	x := v.Visit(ctx.Expression())
-	if err, ok := x.(error); ok && err != nil {
-		return err
+	switch x.(type) {
+	case error, endSignal:
+		return x
 	}
 
 	if bits, ok := v.env.GetClBitArray(operand); ok {
@@ -748,8 +770,9 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 
 func (v *Visitor) VisitResetStatement(ctx *parser.ResetStatementContext) any {
 	result := v.Visit(ctx.GateOperand())
-	if err, ok := result.(error); ok && err != nil {
-		return err
+	switch result.(type) {
+	case error, endSignal:
+		return result
 	}
 
 	v.qsim.Reset(result.(QubitOperand).Qubits...)
@@ -763,8 +786,9 @@ func (v *Visitor) VisitConstDeclarationStatement(ctx *parser.ConstDeclarationSta
 	}
 
 	result := v.Visit(ctx.DeclarationExpression())
-	if err, ok := result.(error); ok && err != nil {
-		return err
+	switch result.(type) {
+	case error, endSignal:
+		return result
 	}
 
 	v.env.Const[id] = result
@@ -782,8 +806,9 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 	}
 
 	result := v.Visit(ctx.QubitType())
-	if err, ok := result.(error); ok && err != nil {
-		return err
+	switch result.(type) {
+	case error, endSignal:
+		return result
 	}
 
 	size, ok := result.(int64)
@@ -809,8 +834,9 @@ func (v *Visitor) VisitQuantumDeclarationStatement(ctx *parser.QuantumDeclaratio
 func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclarationStatementContext) any {
 	setVariable := func(id string, tree antlr.ParseTree) any {
 		result := v.Visit(tree)
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		v.env.SetVariable(id, result)
@@ -901,14 +927,16 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 
 		if ctx.DeclarationExpression() != nil {
 			result := v.Visit(ctx.ScalarType())
-			if err, ok := result.(error); ok && err != nil {
-				return err
+			switch result.(type) {
+			case error, endSignal:
+				return result
 			}
 
 			bits := result.(int64)
 			result = v.Visit(ctx.DeclarationExpression())
-			if err, ok := result.(error); ok && err != nil {
-				return err
+			switch result.(type) {
+			case error, endSignal:
+				return result
 			}
 
 			radian := result.(float64)
@@ -917,8 +945,9 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		}
 
 		result := v.Visit(ctx.ScalarType())
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		bits := result.(int64)
@@ -940,8 +969,9 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 
 		if ctx.DeclarationExpression() != nil {
 			x := v.Visit(ctx.DeclarationExpression())
-			if err, ok := x.(error); ok && err != nil {
-				return err
+			switch x.(type) {
+			case error, endSignal:
+				return x
 			}
 
 			switch {
@@ -978,8 +1008,9 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 		switch {
 		case ctx.ScalarType().Designator() != nil:
 			result := v.Visit(ctx.ScalarType())
-			if err, ok := result.(error); ok && err != nil {
-				return err
+			switch result.(type) {
+			case error, endSignal:
+				return result
 			}
 
 			size := result.(int64)
@@ -1034,8 +1065,9 @@ func (v *Visitor) VisitAliasDeclarationStatement(ctx *parser.AliasDeclarationSta
 	}
 
 	result := v.Visit(ctx.AliasExpression())
-	if err, ok := result.(error); ok && err != nil {
-		return err
+	switch result.(type) {
+	case error, endSignal:
+		return result
 	}
 
 	switch alias := result.(type) {
@@ -1064,8 +1096,9 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 		var size int64 = 1
 		if ctx.Designator() != nil {
 			result := v.Visit(ctx.Designator())
-			if err, ok := result.(error); ok && err != nil {
-				return err
+			switch result.(type) {
+			case error, endSignal:
+				return result
 			}
 
 			size = result.(int64)
@@ -1091,8 +1124,9 @@ func (v *Visitor) VisitOldStyleDeclarationStatement(ctx *parser.OldStyleDeclarat
 		var size int64 = 1
 		if ctx.Designator() != nil {
 			result := v.Visit(ctx.Designator())
-			if err, ok := result.(error); ok && err != nil {
-				return err
+			switch result.(type) {
+			case error, endSignal:
+				return result
 			}
 
 			size = result.(int64)
@@ -1187,8 +1221,9 @@ func (v *Visitor) VisitLiteralExpression(ctx *parser.LiteralExpressionContext) a
 
 func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) any {
 	x := v.Visit(ctx.Expression())
-	if err, ok := x.(error); ok && err != nil {
-		return err
+	switch x.(type) {
+	case error, endSignal:
+		return x
 	}
 
 	switch {
@@ -1220,13 +1255,15 @@ func (v *Visitor) VisitCastExpression(ctx *parser.CastExpressionContext) any {
 
 func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
-	if err, ok := left.(error); ok && err != nil {
-		return err
+	switch left.(type) {
+	case error, endSignal:
+		return left
 	}
 
 	right := v.Visit(ctx.Expression(1))
-	if err, ok := right.(error); ok && err != nil {
-		return err
+	switch right.(type) {
+	case error, endSignal:
+		return right
 	}
 
 	a, b := value.New(left), value.New(right)
@@ -1253,13 +1290,15 @@ func (v *Visitor) VisitAdditiveExpression(ctx *parser.AdditiveExpressionContext)
 
 func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
-	if err, ok := left.(error); ok && err != nil {
-		return err
+	switch left.(type) {
+	case error, endSignal:
+		return left
 	}
 
 	right := v.Visit(ctx.Expression(1))
-	if err, ok := right.(error); ok && err != nil {
-		return err
+	switch right.(type) {
+	case error, endSignal:
+		return right
 	}
 
 	a, b := value.New(left), value.New(right)
@@ -1295,13 +1334,15 @@ func (v *Visitor) VisitMultiplicativeExpression(ctx *parser.MultiplicativeExpres
 
 func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
-	if err, ok := left.(error); ok && err != nil {
-		return err
+	switch left.(type) {
+	case error, endSignal:
+		return left
 	}
 
 	right := v.Visit(ctx.Expression(1))
-	if err, ok := right.(error); ok && err != nil {
-		return err
+	switch right.(type) {
+	case error, endSignal:
+		return right
 	}
 
 	a, b := value.New(left), value.New(right)
@@ -1328,13 +1369,15 @@ func (v *Visitor) VisitEqualityExpression(ctx *parser.EqualityExpressionContext)
 
 func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionContext) any {
 	left := v.Visit(ctx.Expression(0))
-	if err, ok := left.(error); ok && err != nil {
-		return err
+	switch left.(type) {
+	case error, endSignal:
+		return left
 	}
 
 	right := v.Visit(ctx.Expression(1))
-	if err, ok := right.(error); ok && err != nil {
-		return err
+	switch right.(type) {
+	case error, endSignal:
+		return right
 	}
 
 	a, b := value.New(left), value.New(right)
@@ -1376,8 +1419,9 @@ func (v *Visitor) VisitComparisonExpression(ctx *parser.ComparisonExpressionCont
 
 func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) any {
 	x := v.Visit(ctx.Expression())
-	if err, ok := x.(error); ok && err != nil {
-		return err
+	switch x.(type) {
+	case error, endSignal:
+		return x
 	}
 
 	switch {
@@ -1409,13 +1453,15 @@ func (v *Visitor) VisitUnaryExpression(ctx *parser.UnaryExpressionContext) any {
 
 func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) any {
 	base := v.Visit(ctx.Expression(0))
-	if err, ok := base.(error); ok && err != nil {
-		return err
+	switch base.(type) {
+	case error, endSignal:
+		return base
 	}
 
 	exp := v.Visit(ctx.Expression(1))
-	if err, ok := exp.(error); ok && err != nil {
-		return err
+	switch exp.(type) {
+	case error, endSignal:
+		return exp
 	}
 
 	a, b := value.New(base), value.New(exp)
@@ -1430,8 +1476,9 @@ func (v *Visitor) VisitPowerExpression(ctx *parser.PowerExpressionContext) any {
 func (v *Visitor) VisitLogicalAndExpression(ctx *parser.LogicalAndExpressionContext) any {
 	for _, x := range ctx.AllExpression() {
 		result := v.Visit(x)
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		if !result.(bool) {
@@ -1445,8 +1492,9 @@ func (v *Visitor) VisitLogicalAndExpression(ctx *parser.LogicalAndExpressionCont
 func (v *Visitor) VisitLogicalOrExpression(ctx *parser.LogicalOrExpressionContext) any {
 	for _, x := range ctx.AllExpression() {
 		result := v.Visit(x)
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		if result.(bool) {
@@ -1459,15 +1507,17 @@ func (v *Visitor) VisitLogicalOrExpression(ctx *parser.LogicalOrExpressionContex
 
 func (v *Visitor) VisitBitwiseAndExpression(ctx *parser.BitwiseAndExpressionContext) any {
 	left := v.Visit(ctx.AllExpression()[0])
-	if err, ok := left.(error); ok && err != nil {
-		return err
+	switch left.(type) {
+	case error, endSignal:
+		return left
 	}
 
 	result := left.(int64)
 	for _, x := range ctx.AllExpression()[1:] {
 		right := v.Visit(x)
-		if err, ok := right.(error); ok && err != nil {
-			return err
+		switch right.(type) {
+		case error, endSignal:
+			return right
 		}
 
 		result = result & right.(int64)
@@ -1478,15 +1528,17 @@ func (v *Visitor) VisitBitwiseAndExpression(ctx *parser.BitwiseAndExpressionCont
 
 func (v *Visitor) VisitBitwiseOrExpression(ctx *parser.BitwiseOrExpressionContext) any {
 	left := v.Visit(ctx.AllExpression()[0])
-	if err, ok := left.(error); ok && err != nil {
-		return err
+	switch left.(type) {
+	case error, endSignal:
+		return left
 	}
 
 	result := left.(int64)
 	for _, x := range ctx.AllExpression()[1:] {
 		right := v.Visit(x)
-		if err, ok := right.(error); ok && err != nil {
-			return err
+		switch right.(type) {
+		case error, endSignal:
+			return right
 		}
 
 		result = result | right.(int64)
@@ -1497,15 +1549,17 @@ func (v *Visitor) VisitBitwiseOrExpression(ctx *parser.BitwiseOrExpressionContex
 
 func (v *Visitor) VisitBitwiseXorExpression(ctx *parser.BitwiseXorExpressionContext) any {
 	left := v.Visit(ctx.AllExpression()[0])
-	if err, ok := left.(error); ok && err != nil {
-		return err
+	switch left.(type) {
+	case error, endSignal:
+		return left
 	}
 
 	result := left.(int64)
 	for _, x := range ctx.AllExpression()[1:] {
 		right := v.Visit(x)
-		if err, ok := right.(error); ok && err != nil {
-			return err
+		switch right.(type) {
+		case error, endSignal:
+			return right
 		}
 
 		result = result ^ right.(int64)
@@ -1517,14 +1571,16 @@ func (v *Visitor) VisitBitwiseXorExpression(ctx *parser.BitwiseXorExpressionCont
 func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext) any {
 	op := v.Visit(ctx.BitshiftOperator()).(string)
 	left := v.Visit(ctx.AllExpression()[0])
-	if err, ok := left.(error); ok && err != nil {
-		return err
+	switch left.(type) {
+	case error, endSignal:
+		return left
 	}
 	result := left.(int64)
 	for _, x := range ctx.AllExpression()[1:] {
 		right := v.Visit(x)
-		if err, ok := right.(error); ok && err != nil {
-			return err
+		switch right.(type) {
+		case error, endSignal:
+			return right
 		}
 		switch op {
 		case "<<":
@@ -1553,8 +1609,9 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 	var args []any
 	if ctx.ExpressionList() != nil {
 		result := v.Visit(ctx.ExpressionList())
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		args = result.([]any)
@@ -1670,8 +1727,9 @@ func (v *Visitor) VisitCallExpression(ctx *parser.CallExpressionContext) any {
 		}
 
 		result := enclosed.Visit(routine.Body)
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		if ret, ok := result.(returnValue); ok {
@@ -1686,8 +1744,9 @@ func (v *Visitor) VisitRangeExpression(ctx *parser.RangeExpressionContext) any {
 	var list []int64
 	for _, x := range ctx.AllExpression() {
 		result := v.Visit(x)
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		val, err := value.New(result).Int64()
@@ -1705,8 +1764,9 @@ func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) any {
 	var result []q.Qubit
 	for _, x := range ctx.AllExpression() {
 		operand := v.Visit(x)
-		if err, ok := operand.(error); ok && err != nil {
-			return err
+		switch operand.(type) {
+		case error, endSignal:
+			return operand
 		}
 
 		if len(ctx.AllExpression()) == 1 {
@@ -1728,8 +1788,9 @@ func (v *Visitor) VisitAliasExpression(ctx *parser.AliasExpressionContext) any {
 
 func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) any {
 	operand := v.Visit(ctx.Expression())
-	if err, ok := operand.(error); ok && err != nil {
-		return err
+	switch operand.(type) {
+	case error, endSignal:
+		return operand
 	}
 
 	switch operand.(type) {
@@ -1755,8 +1816,9 @@ func (v *Visitor) IndexQubits(operand any, ctx parser.IIndexOperatorContext) any
 	var result []q.Qubit
 	for _, x := range ctx.AllExpression() {
 		value := v.Visit(x)
-		if err, ok := value.(error); ok && err != nil {
-			return err
+		switch value.(type) {
+		case error, endSignal:
+			return value
 		}
 
 		index, ok := value.(int64)
@@ -1773,8 +1835,9 @@ func (v *Visitor) IndexQubits(operand any, ctx parser.IIndexOperatorContext) any
 
 	for _, x := range ctx.AllRangeExpression() {
 		value := v.Visit(x)
-		if err, ok := value.(error); ok && err != nil {
-			return err
+		switch value.(type) {
+		case error, endSignal:
+			return value
 		}
 
 		index := value.([]int64)
@@ -1798,8 +1861,9 @@ func (v *Visitor) IndexQubits(operand any, ctx parser.IIndexOperatorContext) any
 
 func (v *Visitor) VisitMeasureExpression(ctx *parser.MeasureExpressionContext) any {
 	result := v.Visit(ctx.GateOperand())
-	if err, ok := result.(error); ok && err != nil {
-		return err
+	switch result.(type) {
+	case error, endSignal:
+		return result
 	}
 
 	qargs := result.(QubitOperand).Qubits
@@ -1835,8 +1899,9 @@ func (v *Visitor) VisitIndexOperator(ctx *parser.IndexOperatorContext) any {
 	var list []any
 	for _, x := range ctx.AllExpression() {
 		result := v.Visit(x)
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		list = append(list, result)
@@ -1849,8 +1914,9 @@ func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) a
 	var index []int64
 	for _, operator := range ctx.AllIndexOperator() {
 		result := v.Visit(operator)
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		for _, o := range result.([]any) {
@@ -1877,8 +1943,9 @@ func (v *Visitor) VisitGateModifier(ctx *parser.GateModifierContext) any {
 func (v *Visitor) VisitScalarType(ctx *parser.ScalarTypeContext) any {
 	if ctx.Designator() != nil {
 		result := v.Visit(ctx.Designator())
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		val, ok := result.(int64)
@@ -1895,8 +1962,9 @@ func (v *Visitor) VisitScalarType(ctx *parser.ScalarTypeContext) any {
 func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) any {
 	if ctx.Designator() != nil {
 		result := v.Visit(ctx.Designator())
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		val, ok := result.(int64)
@@ -1912,8 +1980,9 @@ func (v *Visitor) VisitQubitType(ctx *parser.QubitTypeContext) any {
 
 func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
 	result := v.Visit(ctx.ExpressionList())
-	if err, ok := result.(error); ok && err != nil {
-		return err
+	switch result.(type) {
+	case error, endSignal:
+		return result
 	}
 
 	size := result.([]any)[0].(int64)
@@ -1922,8 +1991,9 @@ func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
 	switch {
 	case scalar.INT() != nil:
 		result := v.Visit(scalar.Designator())
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		bits := result.(int64)
@@ -1942,8 +2012,9 @@ func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
 
 	case scalar.UINT() != nil:
 		result := v.Visit(scalar.Designator())
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		bits := result.(int64)
@@ -1962,8 +2033,9 @@ func (v *Visitor) VisitArrayType(ctx *parser.ArrayTypeContext) any {
 
 	case scalar.FLOAT() != nil:
 		result := v.Visit(scalar.Designator())
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 		bits := result.(int64)
 		switch bits {
@@ -1985,8 +2057,9 @@ func (v *Visitor) VisitArrayLiteral(ctx *parser.ArrayLiteralContext) any {
 	var list []any
 	for _, x := range ctx.AllExpression() {
 		result := v.Visit(x)
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		list = append(list, result)
@@ -2016,8 +2089,9 @@ func (v *Visitor) VisitGateOperand(ctx *parser.GateOperandContext) any {
 
 	for _, index := range ctx.IndexedIdentifier().AllIndexOperator() {
 		result = v.IndexQubits(result, index)
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 	}
 
@@ -2044,8 +2118,9 @@ func (v *Visitor) VisitExpressionList(ctx *parser.ExpressionListContext) any {
 	var list []any
 	for _, x := range ctx.AllExpression() {
 		result := v.Visit(x)
-		if err, ok := result.(error); ok && err != nil {
-			return err
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
 		list = append(list, result)
@@ -2067,8 +2142,9 @@ func (v *Visitor) VisitGateOperandList(ctx *parser.GateOperandListContext) any {
 	var list []QubitOperand
 	for _, operand := range ctx.AllGateOperand() {
 		op := v.Visit(operand)
-		if err, ok := op.(error); ok && err != nil {
-			return err
+		switch op.(type) {
+		case error, endSignal:
+			return op
 		}
 
 		list = append(list, op.(QubitOperand))
