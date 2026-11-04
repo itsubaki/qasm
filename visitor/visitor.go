@@ -579,12 +579,13 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			return err
 		}
 
-		var cursor int
-		var negative []int
 		arity := 1
 		if ctx.GPHASE() != nil {
 			arity = 0
 		}
+
+		var cursor int
+		var negative []int
 		for _, mod := range ctx.AllGateModifier() {
 			if mod.CTRL() == nil && mod.NEGCTRL() == nil {
 				continue
@@ -620,7 +621,11 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 
 		if arity == 0 {
 			// Use the last control as the target of diag(1, exp(i*phase)).
-			u = matrix.New([]complex128{1, 0}, []complex128{0, u.At(0, 0)})
+			u = matrix.New(
+				[]complex128{1, 0},
+				[]complex128{0, u.At(0, 0)},
+			)
+
 			cursor--
 		}
 
