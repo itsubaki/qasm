@@ -3994,6 +3994,7 @@ func TestVisitor_openQASM3(t *testing.T) {
 		for col := range 2 {
 			var basis [2]complex128
 			basis[col] = 1
+
 			qsim := q.New()
 			env := environ.New()
 			env.Qubit["q"] = qsim.New(basis[:]...)
