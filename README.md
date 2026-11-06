@@ -28,6 +28,8 @@ Usage of qasm:
         Render the circuit as an SVG
   -theme string
         SVG theme (paper/cyber) (default "paper")
+  -top int
+        top results (default -1)
   -validate
         Validate the input without executing it
   -verbose
@@ -48,7 +50,10 @@ qasm> OPENQASM 3.0;
 qasm> 
 qasm> qubit[2] q;
 qasm> U(pi/2, 0, pi) q[0];
+qasm> gphase(-pi/4);
+qasm> 
 qasm> ctrl @ U(pi, 0, pi) q[0], q[1];
+qasm> ctrl @ gphase(-pi/2) q[0];
 qasm> 
 qasm> :print
 --- STATE ---
@@ -59,7 +64,8 @@ const     : map[]
 variable  : map[]
 bit       : map[]
 bit[]     : map[]
-qubit     : map[q:[0 1]]
+qubit     : map[]
+qubit[]   : map[q:[0 1]]
 gate      : []
 subroutine: []
 ```
@@ -78,7 +84,9 @@ qasm> :print
 const     : map[ratio:3.141592653589793]
 variable  : map[n:6.283185307179586]
 bit       : map[]
+bit[]     : map[]
 qubit     : map[]
+qubit[]   : map[]
 gate      : []
 subroutine: []
 ```
