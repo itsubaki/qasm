@@ -1,12 +1,12 @@
 OPENQASM 3.0;
 
-gate x q { U(pi, 0, pi) q; }
-gate h q { U(pi/2.0, 0, pi) q; }
+gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
+gate h q { U(pi/2.0, 0, pi) q; gphase(-pi/4); }
 gate cr(theta) c, t { ctrl @ U(0, 0, theta) c, t; }
-gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; }
+gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; ctrl @ gphase(-pi/2) q0; }
 gate xor q0, q1, q2 { cx q0, q2; cx q1, q2; }
 gate ccccz c0, c1, c2, c3, t { ctrl(4) @ U(0, 0, pi) c0, c1, c2, c3, t; }
-gate cccccx c0, c1, c2, c3, c4, t { ctrl(5) @ U(pi, 0, pi) c0, c1, c2, c3, c4, t; }
+gate cccccx c0, c1, c2, c3, c4, t { ctrl(5) @ U(pi, 0, pi) c0, c1, c2, c3, c4, t; ctrl(5) @ gphase(-pi/2) c0, c1, c2, c3, c4; }
 
 def oracle(qubit[4] r, qubit[4] s, qubit c, qubit a) {
     xor r[0], r[1], s[0];

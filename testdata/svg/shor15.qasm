@@ -1,7 +1,7 @@
 OPENQASM 3.0;
 
-gate x q { U(pi, 0, pi) q; }
-gate h q { U(pi/2.0, 0, pi) q; }
+gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
+gate h q { U(pi/2.0, 0, pi) q; gphase(-pi/4); }
 gate r(theta) q { U(0, 0, theta) q;}
 
 // N=15, a=7

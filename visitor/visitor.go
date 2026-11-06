@@ -446,8 +446,10 @@ func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) any {
 		}
 
 		params := result.([]float64)
-		// u 2x2
-		u := gate.U(params[0], params[1], params[2])
+		// OpenQASM 3 uses a phase convention that is 2*pi-periodic in theta.
+		theta, phi, lambda := params[0], params[1], params[2]
+		phase := cmplx.Exp(complex(0, theta/2))
+		u := gate.U(theta, phi, lambda).Mul(phase)
 		return u
 	default:
 		return nil
@@ -584,6 +586,11 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			return err
 		}
 
+		arity := 1
+		if ctx.GPHASE() != nil {
+			arity = 0
+		}
+
 		var cursor int
 		var negative []int
 		for _, mod := range ctx.AllGateModifier() {
@@ -602,7 +609,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 				return fmt.Errorf("apply %q", mod.GetText())
 			}
 
-			if n > int64(len(qargs)-cursor-1) {
+			if n > int64(len(qargs)-cursor-arity) {
 				return fmt.Errorf("not enough operands for %q", mod.GetText())
 			}
 
@@ -615,8 +622,18 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			}
 		}
 
-		if len(qargs) != cursor+1 {
-			return fmt.Errorf("expected %d gate operands, got %d", cursor+1, len(qargs))
+		if len(qargs) != cursor+arity {
+			return fmt.Errorf("expected %d gate operands, got %d", cursor+arity, len(qargs))
+		}
+
+		if arity == 0 {
+			// Use the last control as the target of diag(1, exp(i*phase)).
+			u = matrix.New(
+				[]complex128{1, 0},
+				[]complex128{0, u.At(0, 0)},
+			)
+
+			cursor--
 		}
 
 		for _, row := range rows {
@@ -648,11 +665,9 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		for _, o := range operand {
 			qargs = append(qargs, o.Qubits...)
 		}
-	} else {
-		// all qubits for gphase
-		for i := range v.qsim.NumQubits() {
-			qargs = append(qargs, q.Qubit(i))
-		}
+	} else if v.qsim.NumQubits() > 0 {
+		// A scalar phase on one qubit multiplies the entire state once.
+		qargs = append(qargs, q.Qubit(0))
 	}
 
 	v.qsim.G(u, qargs...)

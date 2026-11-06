@@ -1,9 +1,9 @@
 OPENQASM 3.0;
 
-gate x q { U(pi, 0, pi) q; }
-gate h q { U(pi/2.0, 0, pi) q; }
-gate cx c, t { ctrl @ U(pi, 0, pi) c, t; }
-gate ccx c0, c1, t { ctrl(2) @ U(pi, 0, pi) c0, c1, t; }
+gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
+gate h q { U(pi/2.0, 0, pi) q; gphase(-pi/4); }
+gate cx c, t { ctrl @ U(pi, 0, pi) c, t; ctrl @ gphase(-pi/2) c; }
+gate ccx c0, c1, t { ctrl(2) @ U(pi, 0, pi) c0, c1, t; ctrl(2) @ gphase(-pi/2) c0, c1; }
 gate cr(theta) c, t { ctrl @ U(0, 0, theta) c, t; }
 
 def modexp(qubit[3] q, qubit[4] a) {

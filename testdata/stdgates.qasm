@@ -1,6 +1,6 @@
 gate i q { U(0, 0, 0) q; }
-gate h q { U(pi/2.0, 0, pi) q; }
-gate x q { U(pi, 0, pi) q; }
-gate y q { U(pi, pi/2.0, pi/2.0) q; }
+gate h q { U(pi/2.0, 0, pi) q; gphase(-pi/4); }
+gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
+gate y q { U(pi, pi/2.0, pi/2.0) q; gphase(-pi/2); }
 gate z q { U(0, 0, pi) q; }
-gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1;}
+gate cx q0, q1 { ctrl @ U(pi, 0, pi) q0, q1; ctrl @ gphase(-pi/2) q0;}

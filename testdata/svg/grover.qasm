@@ -1,12 +1,12 @@
 OPENQASM 3.0;
 
-gate x q { U(pi, 0, pi) q; }
+gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
 gate z q { U(0, 0, pi) q; }
-gate h q { U(pi/2.0, 0, pi) q; }
+gate h q { U(pi/2.0, 0, pi) q; gphase(-pi/4); }
 
 gate xor q0, q1, q2 {
-    ctrl @ U(pi, 0, pi) q0, q2;
-    ctrl @ U(pi, 0, pi) q1, q2;
+    ctrl @ U(pi, 0, pi) q0, q2; ctrl @ gphase(-pi/2) q0;
+    ctrl @ U(pi, 0, pi) q1, q2; ctrl @ gphase(-pi/2) q1;
 }
 
 // The oracle constructs a Grover oracle that checks solutions to a 2x2 sudoku puzzle.
