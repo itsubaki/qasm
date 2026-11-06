@@ -535,10 +535,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		return result
 	}
 
-	u, ok := result.(*matrix.Matrix)
-	if !ok {
+	// If no built-in gate was found, execute a user-defined gate.
+	if result == nil {
 		return v.UserDefinedGateCall(ctx)
 	}
+
+	u := result.(*matrix.Matrix)
 
 	// inv and pow modifiers
 	for _, mod := range ctx.AllGateModifier() {
