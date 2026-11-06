@@ -391,19 +391,19 @@ func (v *Visitor) VisitGateStatement(ctx *parser.GateStatementContext) any {
 	return nil
 }
 
-// Params returns numeric parameters, or an error or endSignal as the second result.
-func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, any) {
+// Params returns []float64, an error, or an endSignal.
+func (v *Visitor) Params(xlist parser.IExpressionListContext) any {
 	result := v.Visit(xlist)
 	switch result.(type) {
 	case error, endSignal:
-		return nil, result
+		return result
 	}
 
 	var params []float64
 	for _, e := range result.([]any) {
 		switch e.(type) {
 		case error, endSignal:
-			return nil, e
+			return e
 		}
 
 		switch param := e.(type) {
@@ -412,40 +412,45 @@ func (v *Visitor) Params(xlist parser.IExpressionListContext) ([]float64, any) {
 		case int64:
 			params = append(params, float64(param))
 		default:
-			return nil, fmt.Errorf("invalid param '%T(%v)'", param, param)
+			return fmt.Errorf("invalid param '%T(%v)'", param, param)
 		}
 	}
 
-	return params, nil
+	return params
 }
 
-// Builtin returns a built-in gate, or an error or endSignal as the third result.
-func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) (*matrix.Matrix, bool, any) {
+// Builtin returns *matrix.Matrix, an error, or an endSignal.
+// It returns nil if the gate is not built-in.
+func (v *Visitor) Builtin(ctx *parser.GateCallStatementContext) any {
 	if ctx.GPHASE() != nil {
-		params, signal := v.Params(ctx.ExpressionList())
-		if signal != nil {
-			return nil, false, signal
+		result := v.Params(ctx.ExpressionList())
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
+		params := result.([]float64)
 		// u 2x2
 		u := gate.I().Mul(cmplx.Exp(complex(0, params[0])))
-		return u, true, nil
+		return u
 	}
 
 	id := v.Visit(ctx.Identifier()).(string)
 	switch id {
 	case U:
 		// params
-		params, signal := v.Params(ctx.ExpressionList())
-		if signal != nil {
-			return nil, false, signal
+		result := v.Params(ctx.ExpressionList())
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
+		params := result.([]float64)
 		// u 2x2
 		u := gate.U(params[0], params[1], params[2])
-		return u, true, nil
+		return u
 	default:
-		return nil, false, nil
+		return nil
 	}
 }
 
@@ -464,11 +469,13 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) any 
 	// params
 	enclosed := v.Enclosed()
 	if ctx.ExpressionList() != nil {
-		params, signal := v.Params(ctx.ExpressionList())
-		if signal != nil {
-			return signal
+		result := v.Params(ctx.ExpressionList())
+		switch result.(type) {
+		case error, endSignal:
+			return result
 		}
 
+		params := result.([]float64)
 		for i, p := range g.Params {
 			enclosed.env.Variable[p] = params[i]
 		}
@@ -522,17 +529,15 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	}
 
 	// builtin gate
-	u, ok, signal := v.Builtin(ctx)
-	if signal != nil {
-		return signal
+	result := v.Builtin(ctx)
+	switch result.(type) {
+	case error, endSignal:
+		return result
 	}
 
+	u, ok := result.(*matrix.Matrix)
 	if !ok {
-		if signal := v.UserDefinedGateCall(ctx); signal != nil {
-			return signal
-		}
-
-		return nil
+		return v.UserDefinedGateCall(ctx)
 	}
 
 	// inv and pow modifiers
