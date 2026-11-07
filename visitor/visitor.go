@@ -1815,13 +1815,61 @@ func (v *Visitor) VisitIndexExpression(ctx *parser.IndexExpressionContext) any {
 		return operand
 	}
 
-	switch operand.(type) {
+	switch arg := operand.(type) {
 	case q.Qubit, []q.Qubit:
+		return v.IndexQubits(operand, ctx.IndexOperator())
+	case []bool:
+		return v.IndexClBits(arg, ctx.IndexOperator())
 	default:
 		return fmt.Errorf("invalid operand %q", ctx.Expression().GetText())
 	}
+}
 
-	return v.IndexQubits(operand, ctx.IndexOperator())
+func (v *Visitor) IndexClBits(bits []bool, ctx parser.IIndexOperatorContext) any {
+	var result []bool
+	for _, x := range ctx.AllExpression() {
+		value := v.Visit(x)
+		switch value.(type) {
+		case error, endSignal:
+			return value
+		}
+
+		index, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("index must be an integer '%v'", value)
+		}
+
+		if index < 0 || index >= int64(len(bits)) {
+			return fmt.Errorf("bit index %d out of range for size %d", index, len(bits))
+		}
+
+		result = append(result, bits[index])
+	}
+
+	for _, x := range ctx.AllRangeExpression() {
+		value := v.Visit(x)
+		switch value.(type) {
+		case error, endSignal:
+			return value
+		}
+
+		index := value.([]int64)
+		if len(index) != 2 {
+			return fmt.Errorf("bit range %q: %w", x.GetText(), ErrNotImplemented)
+		}
+
+		if index[0] < 0 || index[1] < index[0] || index[1] > int64(len(bits)) {
+			return fmt.Errorf("bit range %q out of range for size %d", x.GetText(), len(bits))
+		}
+
+		result = append(result, bits[index[0]:index[1]]...)
+	}
+
+	if len(ctx.AllExpression()) == 1 && len(ctx.AllRangeExpression()) == 0 {
+		return result[0]
+	}
+
+	return result
 }
 
 func (v *Visitor) IndexQubits(operand any, ctx parser.IIndexOperatorContext) any {
