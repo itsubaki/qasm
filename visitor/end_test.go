@@ -51,6 +51,8 @@ func TestEndSignal(t *testing.T) {
 		{name: "nested gate", text: `gate g a { U(stop(),0,0) a; } gate h a { g a; } h q;`},
 		{name: "index", text: `q[stop()];`},
 		{name: "index range", text: `q[0:stop()];`},
+		{name: "bit index", text: `bit[1] m; m[stop()];`},
+		{name: "bit index range", text: `bit[1] m; m[0:stop()];`},
 		{name: "reset operand", text: `reset q[stop()];`},
 		{name: "measurement operand", text: `measure q[stop()];`},
 		{name: "assignment index", text: `bit[1] result; result[stop()]=touch(q);`},
