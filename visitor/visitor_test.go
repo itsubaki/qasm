@@ -2911,6 +2911,105 @@ func TestVisitor_VisitIndexExpression(t *testing.T) {
 		errMsg string
 	}{
 		{
+			text: `bit[2] m = "10"; m[0];`,
+			want: "true",
+		},
+		{
+			text: `bit[2] m = "10"; m[1];`,
+			want: "false",
+		},
+		{
+			text: `bit[2] m = "10"; int i = 0; m[i + 1];`,
+			want: "false",
+		},
+		{
+			text: `bit[2] m = "10"; m[0] != m[1];`,
+			want: "true",
+		},
+		{
+			text: `bit[2] m = "11"; m[0] != m[1];`,
+			want: "false",
+		},
+		{
+			text: `bit[2] m = "10"; bit s = m[0]; s;`,
+			want: "true",
+		},
+		{
+			text: `OPENQASM 3.0; qubit[2] q; bit[2] m; bit s;
+				m[0] = measure q[0]; m[1] = measure q[1];
+				s = m[0] != m[1]; s;`,
+			want: "false",
+		},
+		{
+			text: `OPENQASM 3.0; qubit[2] q; bit[2] m; bit s;
+				U(pi, 0, pi) q[0];
+				m[0] = measure q[0]; m[1] = measure q[1];
+				s = m[0] != m[1]; s;`,
+			want: "true",
+		},
+		{
+			text: `qubit[7] q; bit[7] m; bit s1;
+				U(pi, 0, pi) q[0], q[2], q[4]; m = measure q;
+				s1 = ((m[0] != m[2]) != m[4]) != m[6]; s1;`,
+			want: "true",
+		},
+		{
+			text: `bit[3] m = "101"; m[2, 0];`,
+			want: "[true true]",
+		},
+		{
+			text: `bit[3] m = "101"; m[0:2];`,
+			want: "[true false]",
+		},
+		{
+			text: `bit[3] m = "101"; m[0:3][1];`,
+			want: "false",
+		},
+		{
+			text: `bit[3] m = "101"; m[1:1];`,
+			want: "[]",
+		},
+		{
+			text:   "bit[2] m; m[-1];",
+			errMsg: "bit index -1 out of range for size 2",
+		},
+		{
+			text:   "bit[2] m; m[2];",
+			errMsg: "bit index 2 out of range for size 2",
+		},
+		{
+			text:   "bit[2] m; m[1.1];",
+			errMsg: "index must be an integer '1.1'",
+		},
+		{
+			text:   "bit[2] m; m[i];",
+			errMsg: `undefined "i"`,
+		},
+		{
+			text:   "bit[0] m; m[0];",
+			errMsg: "bit index 0 out of range for size 0",
+		},
+		{
+			text:   "bit[2] m; m[-1:1];",
+			errMsg: `bit range "-1:1" out of range for size 2`,
+		},
+		{
+			text:   "bit[2] m; m[1:0];",
+			errMsg: `bit range "1:0" out of range for size 2`,
+		},
+		{
+			text:   "bit[2] m; m[0:3];",
+			errMsg: `bit range "0:3" out of range for size 2`,
+		},
+		{
+			text:   "bit[2] m; m[0:1:2];",
+			errMsg: `bit range "0:1:2": not implemented`,
+		},
+		{
+			text:   "bit[2] m; m[0:i];",
+			errMsg: `undefined "i"`,
+		},
+		{
 			text:   "int a = 1; a[0];",
 			errMsg: `invalid operand "a"`,
 		},
