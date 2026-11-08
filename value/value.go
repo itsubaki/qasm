@@ -387,6 +387,7 @@ func (v *Value) BitNot() (*Value, error) {
 		for i, bit := range val {
 			result[i] = !bit
 		}
+
 		return New(result), nil
 	}
 
