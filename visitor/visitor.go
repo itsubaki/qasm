@@ -757,6 +757,14 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 			val = []bool{m}
 		case []bool:
 			val = m
+		case int64:
+			if m != 0 && m != 1 {
+				return fmt.Errorf("assign %d to a bit: expected 0 or 1", m)
+			}
+
+			val = []bool{m == 1}
+		default:
+			return fmt.Errorf("assign %v(%T) to %q", x, x, operand)
 		}
 
 		if len(index) == 0 {
@@ -776,6 +784,13 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 		case bool:
 			v.env.SetClBit(operand, bit)
 			return nil
+		case int64:
+			if bit != 0 && bit != 1 {
+				return fmt.Errorf("assign %d to a bit: expected 0 or 1", bit)
+			}
+
+			v.env.SetClBit(operand, bit == 1)
+			return nil
 		case []bool:
 			if len(bit) != 1 {
 				return fmt.Errorf("assign %d bits to a single bit", len(bit))
@@ -783,6 +798,8 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 
 			v.env.SetClBit(operand, bit[0])
 			return nil
+		default:
+			return fmt.Errorf("assign %v(%T) to %q", x, x, operand)
 		}
 	}
 
@@ -1503,7 +1520,12 @@ func (v *Visitor) VisitLogicalAndExpression(ctx *parser.LogicalAndExpressionCont
 			return result
 		}
 
-		if !result.(bool) {
+		val, ok := result.(bool)
+		if !ok {
+			return fmt.Errorf("&&: unexpected operand type: %T", result)
+		}
+
+		if !val {
 			return false
 		}
 	}
@@ -1519,7 +1541,12 @@ func (v *Visitor) VisitLogicalOrExpression(ctx *parser.LogicalOrExpressionContex
 			return result
 		}
 
-		if result.(bool) {
+		val, ok := result.(bool)
+		if !ok {
+			return fmt.Errorf("||: unexpected operand type: %T", result)
+		}
+
+		if val {
 			return true
 		}
 	}
@@ -1534,7 +1561,7 @@ func (v *Visitor) VisitBitwiseAndExpression(ctx *parser.BitwiseAndExpressionCont
 		return left
 	}
 
-	result := left.(int64)
+	result := value.New(left)
 	for _, x := range ctx.AllExpression()[1:] {
 		right := v.Visit(x)
 		switch right.(type) {
@@ -1542,10 +1569,15 @@ func (v *Visitor) VisitBitwiseAndExpression(ctx *parser.BitwiseAndExpressionCont
 			return right
 		}
 
-		result = result & right.(int64)
+		val, err := result.BitAnd(value.New(right))
+		if err != nil {
+			return fmt.Errorf("%v&%v: %w", result.Value(), right, err)
+		}
+
+		result = val
 	}
 
-	return result
+	return result.Value()
 }
 
 func (v *Visitor) VisitBitwiseOrExpression(ctx *parser.BitwiseOrExpressionContext) any {
@@ -1555,7 +1587,7 @@ func (v *Visitor) VisitBitwiseOrExpression(ctx *parser.BitwiseOrExpressionContex
 		return left
 	}
 
-	result := left.(int64)
+	result := value.New(left)
 	for _, x := range ctx.AllExpression()[1:] {
 		right := v.Visit(x)
 		switch right.(type) {
@@ -1563,10 +1595,15 @@ func (v *Visitor) VisitBitwiseOrExpression(ctx *parser.BitwiseOrExpressionContex
 			return right
 		}
 
-		result = result | right.(int64)
+		val, err := result.BitOr(value.New(right))
+		if err != nil {
+			return fmt.Errorf("%v|%v: %w", result.Value(), right, err)
+		}
+
+		result = val
 	}
 
-	return result
+	return result.Value()
 }
 
 func (v *Visitor) VisitBitwiseXorExpression(ctx *parser.BitwiseXorExpressionContext) any {
@@ -1576,7 +1613,7 @@ func (v *Visitor) VisitBitwiseXorExpression(ctx *parser.BitwiseXorExpressionCont
 		return left
 	}
 
-	result := left.(int64)
+	result := value.New(left)
 	for _, x := range ctx.AllExpression()[1:] {
 		right := v.Visit(x)
 		switch right.(type) {
@@ -1584,10 +1621,15 @@ func (v *Visitor) VisitBitwiseXorExpression(ctx *parser.BitwiseXorExpressionCont
 			return right
 		}
 
-		result = result ^ right.(int64)
+		val, err := result.BitXor(value.New(right))
+		if err != nil {
+			return fmt.Errorf("%v^%v: %w", result.Value(), right, err)
+		}
+
+		result = val
 	}
 
-	return result
+	return result.Value()
 }
 
 func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext) any {
@@ -1597,22 +1639,34 @@ func (v *Visitor) VisitBitshiftExpression(ctx *parser.BitshiftExpressionContext)
 	case error, endSignal:
 		return left
 	}
-	result := left.(int64)
+
+	result := value.New(left)
 	for _, x := range ctx.AllExpression()[1:] {
 		right := v.Visit(x)
 		switch right.(type) {
 		case error, endSignal:
 			return right
 		}
+
+		var val *value.Value
+		var err error
 		switch op {
 		case "<<":
-			result = result << right.(int64)
+			val, err = result.ShiftLeft(value.New(right))
 		case ">>":
-			result = result >> right.(int64)
+			val, err = result.ShiftRight(value.New(right))
+		default:
+			return fmt.Errorf("unsupported operator %q", op)
 		}
+
+		if err != nil {
+			return fmt.Errorf("%v%s%v: %w", result.Value(), op, right, err)
+		}
+
+		result = val
 	}
 
-	return result
+	return result.Value()
 }
 
 func (v *Visitor) VisitDeclarationExpression(ctx *parser.DeclarationExpressionContext) any {

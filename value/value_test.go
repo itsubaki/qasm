@@ -1067,8 +1067,16 @@ func TestValue_BitNot(t *testing.T) {
 			hasErr: true,
 		},
 		{
-			v:      true,
-			hasErr: true,
+			v:    true,
+			want: false,
+		},
+		{
+			v:    false,
+			want: true,
+		},
+		{
+			v:    uint(4),
+			want: ^uint(4),
 		},
 		{
 			v:      int(4),

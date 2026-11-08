@@ -8,6 +8,7 @@ import (
 	"math/cmplx"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -4195,6 +4196,187 @@ func TestVisitor_controlledGphase(t *testing.T) {
 			if cmplx.Abs(got-want) > 1e-12 {
 				t.Errorf("amplitude[%d]=%v, want %v", i, got, want)
 			}
+		}
+	}
+}
+
+func TestVisitor_classicalBitOperators(t *testing.T) {
+	cases := []struct {
+		op         string
+		a, b, want bool
+	}{
+		{"&", false, false, false},
+		{"&", false, true, false},
+		{"&", true, false, false},
+		{"&", true, true, true},
+		{"|", false, false, false},
+		{"|", false, true, true},
+		{"|", true, false, true},
+		{"|", true, true, true},
+		{"^", false, false, false},
+		{"^", false, true, true},
+		{"^", true, false, true},
+		{"^", true, true, false},
+	}
+
+	for _, c := range cases {
+		texts := []string{
+			fmt.Sprintf(`bit a = %t; bit b = %t; bit s = a %s b; s;`, c.a, c.b, c.op),
+			fmt.Sprintf(`bit[2] m; m[0] = %t; m[1] = %t; bit s = m[0] %s m[1]; s;`, c.a, c.b, c.op),
+		}
+
+		for _, text := range texts {
+			got, err := visitor.Visit(text)
+			if err != nil {
+				t.Errorf("%s: unexpected error: %v", text, err)
+				continue
+			}
+
+			if got != c.want {
+				t.Errorf("%s: got=%v (%T), want=%v", text, got, got, c.want)
+			}
+		}
+	}
+}
+
+func TestVisitor_bitwiseExpressions(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want any
+	}{
+		{"issue 52", `OPENQASM 3.0; bit[2] m; bit s; m[0] = 1; m[1] = 0; s = m[0] ^ m[1]; s;`, true},
+		{"assign one to bit", `bit s; s = 1; s;`, true},
+		{"assign zero to bit", `bit s = true; s = 0; s;`, false},
+		{"clear indexed bit", `bit[2] m = "11"; m[0] = 0; m[0];`, false},
+		{"syndrome", `bit[7] m = "1010101"; bit s = m[0] ^ m[2] ^ m[4] ^ m[6]; s;`, false},
+		{"syndrome odd parity", `bit[7] m = "1010100"; bit s = m[0] ^ m[2] ^ m[4] ^ m[6]; s;`, true},
+		{"bit not true", `bit a = true; bit s = ~a; s;`, false},
+		{"bit not false", `bit a; bit s = ~a; s;`, true},
+		{"indexed not", `bit[2] m = "10"; ~m[1];`, true},
+		{"bit left shift zero", `bit a = true; a << 0;`, true},
+		{"bit left shift", `bit a = true; a << 1;`, false},
+		{"bit right shift zero", `bit a = true; a >> 0;`, true},
+		{"bit right shift", `bit a = true; a >> 1;`, false},
+		{"register and", `bit[4] a = "1010"; bit[4] b = "1100"; bit[4] c = a & b; c;`, []bool{true, false, false, false}},
+		{"register or", `"1010" | "1100";`, []bool{true, true, true, false}},
+		{"register xor", `"1010" ^ "1100";`, []bool{false, true, true, false}},
+		{"register not", `~"1010";`, []bool{false, true, false, true}},
+		{"register left shift", `"10001111" << 1;`, []bool{false, false, false, true, true, true, true, false}},
+		{"register right shift", `"10001111" >> 2;`, []bool{false, false, true, false, false, false, true, true}},
+		{"register shift zero", `"1010" << 0;`, []bool{true, false, true, false}},
+		{"register shift width", `"1010" << 4;`, []bool{false, false, false, false}},
+		{"register shift beyond width", `"1010" >> 9223372036854775807;`, []bool{false, false, false, false}},
+		{"register chained shift", `"1001" << 1 >> 1;`, []bool{false, false, false, true}},
+		{"precedence", `bit[3] m = "101"; m[0] | m[1] ^ m[2] & ~m[0];`, true},
+		{"cast integer and", `int(10) & 12;`, int64(8)},
+		{"cast integer or", `10 | int(12);`, int64(14)},
+		{"cast integer xor", `int(10) ^ int(12);`, int(6)},
+		{"unsigned and", `uint(10) & uint(12);`, uint(8)},
+		{"unsigned or", `uint(10) | uint(12);`, uint(14)},
+		{"unsigned xor", `uint(10) ^ uint(12);`, uint(6)},
+		{"unsigned not", `~uint(5);`, ^uint(5)},
+		{"cast integer shift", `int(11) << 2;`, int(44)},
+		{"unsigned shift", `uint(11) >> uint(1);`, uint(5)},
+		{"bit logical and", `bit[2] m = "10"; m[0] && m[1];`, false},
+		{"bit logical or", `bit[2] m = "10"; m[0] || m[1];`, true},
+	}
+
+	for _, c := range cases {
+		got, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Errorf("%s: unexpected error: %v", c.name, err)
+			continue
+		}
+
+		if !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%s: got=%v (%T), want=%v (%T)", c.name, got, got, c.want, c.want)
+		}
+	}
+}
+
+func TestVisitor_bitwiseOperandErrors(t *testing.T) {
+	cases := []string{
+		`true & 1;`,
+		`1 | true;`,
+		`1 ^ false;`,
+		`1.5 & 2;`,
+		`1 | 2.5;`,
+		`1.5 ^ 2.5;`,
+		`"10" & "1";`,
+		`"1" | "10";`,
+		`"10" ^ "1";`,
+		`true & "1";`,
+		`"1" | true;`,
+		`"1" ^ 1;`,
+		`~1.5;`,
+		`1.5 << 1;`,
+		`1 >> 1.5;`,
+		`1 << true;`,
+		`1 << -1;`,
+		`1 >> -1;`,
+		`"10" << -1;`,
+		`true >> -1;`,
+		`1 << int(-1);`,
+		`1 && true;`,
+		`true && 1;`,
+		`false || 1;`,
+		`1 || false;`,
+	}
+
+	for _, text := range cases {
+		if _, err := visitor.Visit(text); err == nil {
+			t.Errorf("%s: expected an operand error", text)
+		}
+	}
+
+	undefinedCases := []string{`missing & true;`, `true | missing;`, `true ^ missing;`, `true << missing;`}
+	for _, text := range undefinedCases {
+		if _, err := visitor.Visit(text); err == nil || !strings.Contains(err.Error(), `undefined "missing"`) {
+			t.Errorf("%s: got=%v, want undefined operand error", text, err)
+		}
+	}
+}
+
+func TestVisitor_invalidBitAssignments(t *testing.T) {
+	cases := []string{
+		`bit s; s = 2;`,
+		`bit s; s = 1.5;`,
+		`bit[2] m; m[0] = -1;`,
+		`bit[2] m; m[0] = 1.5;`,
+	}
+
+	for _, text := range cases {
+		if _, err := visitor.Visit(text); err == nil {
+			t.Errorf("%s: expected an assignment error", text)
+		}
+	}
+}
+
+func TestVisitor_bitwiseDoesNotMutateOperands(t *testing.T) {
+	cases := []string{
+		`a & b`,
+		`a | b`,
+		`a ^ b`,
+		`~a`,
+		`a << 0`,
+		`a << 1`,
+		`a >> 1`,
+	}
+
+	for _, expr := range cases {
+		_, env, err := visitor.Run(`bit[4] a = "1010"; bit[4] b = "1100"; bit[4] c = ` + expr + `; c[0] = false;`)
+		if err != nil {
+			t.Errorf("%s: unexpected error: %v", expr, err)
+			continue
+		}
+
+		if !reflect.DeepEqual(env.ClBitArray["a"], []bool{true, false, true, false}) {
+			t.Errorf("%s: operands changed: %v", expr, env.ClBitArray)
+		}
+
+		if !reflect.DeepEqual(env.ClBitArray["b"], []bool{true, true, false, false}) {
+			t.Errorf("%s: operands changed: %v", expr, env.ClBitArray)
 		}
 	}
 }
