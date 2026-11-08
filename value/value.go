@@ -378,6 +378,16 @@ func (v *Value) BitNot() (*Value, error) {
 		return New(^val), nil
 	case int64:
 		return New(^val), nil
+	case uint:
+		return New(^val), nil
+	case bool:
+		return New(!val), nil
+	case []bool:
+		result := make([]bool, len(val))
+		for i, bit := range val {
+			result[i] = !bit
+		}
+		return New(result), nil
 	}
 
 	return nil, fmt.Errorf("unexpected type: %T", v.v)
