@@ -11,9 +11,9 @@ func TestPow(t *testing.T) {
 		a, r int
 		want int
 	}{
-		{0, 4, 0},
-		{2, 0, 1},
-		{2, 3, 8},
+		{a: 0, r: 4, want: 0},
+		{a: 2, r: 0, want: 1},
+		{a: 2, r: 3, want: 8},
 	}
 
 	for _, c := range cases {
