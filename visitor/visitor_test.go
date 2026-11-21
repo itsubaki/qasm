@@ -750,6 +750,241 @@ func ExampleVisitor_VisitAssignmentStatement() {
 	// <nil> bit index 2 out of range for size 2
 }
 
+func ExampleVisitor_compoundAssignment() {
+	fmt.Println(visitor.Visit(`int n = 5; n += 2; n *= 3; n;`))
+
+	// Output:
+	// 21 <nil>
+}
+
+func TestVisitorVisitAssignmentStatement_compound(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want any
+	}{
+		{
+			name: "addition",
+			text: `int n = 5; n += 2; n;`,
+			want: int64(7),
+		},
+		{
+			name: "subtraction",
+			text: `int n = 5; n -= 2; n;`,
+			want: int64(3),
+		},
+		{
+			name: "multiplication",
+			text: `int n = 5; n *= 2; n;`,
+			want: int64(10),
+		},
+		{
+			name: "division",
+			text: `int n = 9; n /= 2; n;`,
+			want: int64(4),
+		},
+		{
+			name: "modulo",
+			text: `int n = 9; n %= 4; n;`,
+			want: int64(1),
+		},
+		{
+			name: "power",
+			text: `int n = 2; n **= 3; n;`,
+			want: int64(8),
+		},
+		{
+			name: "bitwise and",
+			text: `int n = 10; n &= 12; n;`,
+			want: int64(8),
+		},
+		{
+			name: "bitwise or",
+			text: `int n = 10; n |= 12; n;`,
+			want: int64(14),
+		},
+		{
+			name: "bitwise xor",
+			text: `int n = 10; n ^= 12; n;`,
+			want: int64(6),
+		},
+		{
+			name: "left shift",
+			text: `int n = 3; n <<= 2; n;`,
+			want: int64(12),
+		},
+		{
+			name: "right shift",
+			text: `int n = 12; n >>= 2; n;`,
+			want: int64(3),
+		},
+		{
+			name: "float",
+			text: `float n = 2.5; n *= 2; n;`,
+			want: 5.0,
+		},
+		{
+			name: "unsigned integer",
+			text: `uint n = uint(10); n ^= uint(12); n;`,
+			want: uint(6),
+		},
+		{
+			name: "scalar bit",
+			text: `bit b = true; b ^= true; b;`,
+			want: false,
+		},
+		{
+			name: "indexed bit",
+			text: `bit[2] b = "10"; b[1] ^= true; b;`,
+			want: []bool{true, true},
+		},
+		{
+			name: "multiple indices",
+			text: `bit[3] b = "101"; b[0, 2] ^= "11"; b;`,
+			want: []bool{false, false, false},
+		},
+		{
+			name: "register and",
+			text: `bit[4] b = "1010"; b &= "1100"; b;`,
+			want: []bool{true, false, false, false},
+		},
+		{
+			name: "register or",
+			text: `bit[4] b = "1010"; b |= "0101"; b;`,
+			want: []bool{true, true, true, true},
+		},
+		{
+			name: "register xor",
+			text: `bit[4] b = "1010"; b ^= "1100"; b;`,
+			want: []bool{false, true, true, false},
+		},
+		{
+			name: "register left shift",
+			text: `bit[4] b = "1001"; b <<= 1; b;`,
+			want: []bool{false, false, true, false},
+		},
+		{
+			name: "register right shift",
+			text: `bit[4] b = "1001"; b >>= 1; b;`,
+			want: []bool{false, true, false, false},
+		},
+		{
+			name: "nested scope",
+			text: `int n = 5; if (true) { n += 2; } n;`,
+			want: int64(7),
+		},
+		{
+			name: "loop progress",
+			text: `int n = 0; int count = 0; while (n < 3) { n += 1; count = count + 1; if (count > 4) { break; } } count == 3 && n == 3;`,
+			want: true,
+		},
+		{
+			name: "index evaluated once",
+			text: `int calls = 0; def index() -> int { calls = calls + 1; return 1; } bit[2] b = "10"; b[index()] ^= true; calls == 1 && b[1];`,
+			want: true,
+		},
+		{
+			name: "right operand evaluated once",
+			text: `int calls = 0; def rhs() -> int { calls = calls + 1; return 2; } int n = 5; n += rhs(); n == 7 && calls == 1;`,
+			want: true,
+		},
+		{
+			name: "left value read before right operand",
+			text: `int n = 5; def rhs() -> int { n = 9; return 2; } n += rhs(); n;`,
+			want: int64(7),
+		},
+		{
+			name: "left register copied before right operand",
+			text: `bit[2] b = "10"; def rhs() -> bit[2] { b[0] = false; return "01"; } b ^= rhs(); b;`,
+			want: []bool{true, true},
+		},
+		{
+			name: "scalar measurement",
+			text: `qubit q; U(pi, 0, pi) q; bit b = true; b ^= measure q; b;`,
+			want: false,
+		},
+		{
+			name: "register measurement",
+			text: `qubit[2] q; U(pi, 0, pi) q[0]; bit[2] b = "11"; b ^= measure q; b;`,
+			want: []bool{false, true},
+		},
+	}
+
+	for _, c := range cases {
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Errorf("%s: unexpected error: %v", c.name, err)
+			continue
+		}
+
+		if !reflect.DeepEqual(result, c.want) {
+			t.Errorf("%s: got=%v (%T), want=%v (%T)", c.name, result, result, c.want, c.want)
+		}
+	}
+}
+
+func TestVisitorVisitAssignmentStatement_invalidCompound(t *testing.T) {
+	cases := []struct {
+		text string
+		want string
+	}{
+		{
+			text: `missing += 2;`,
+			want: `undefined "missing"`,
+		},
+		{
+			text: `const int n = 5; n += 2;`,
+			want: `cannot assign to constant "n"`,
+		},
+		{
+			text: `int n = 5; n /= 0;`,
+			want: "5/=0: division by zero",
+		},
+		{
+			text: `int n = 5; n %= 0;`,
+			want: "5%=0: modulo by zero",
+		},
+		{
+			text: `int n = 5; n <<= -1;`,
+			want: "5<<=-1: negative shift count: -1",
+		},
+		{
+			text: `int n = 5; n += true;`,
+			want: "5+=true: unexpected int64 and bool",
+		},
+		{
+			text: `bit[2] b = "10"; b ^= "1";`,
+			want: "[true false]^=[true]: bitwise operands have different sizes: 2 and 1",
+		},
+		{
+			text: `bit[2] b = "10"; b[2] ^= true;`,
+			want: "bit index 2 out of range for size 2",
+		},
+		{
+			text: `int n = 5; n[0] += 1;`,
+			want: `invalid compound assignment target "n[0]"`,
+		},
+		{
+			text: `bit[2] b = "10"; b[0:1] ^= "11";`,
+			want: `compound assignment target "b[0:1]": not implemented`,
+		},
+		{
+			text: `int n = 5; n += missing;`,
+			want: `undefined "missing"`,
+		},
+		{
+			text: `int n = 5; n ~= 2;`,
+			want: `unsupported assignment operator "~="`,
+		},
+	}
+
+	for _, c := range cases {
+		if _, err := visitor.Visit(c.text); err == nil || err.Error() != c.want {
+			t.Errorf("%s: got=%v, want=%v", c.text, err, c.want)
+		}
+	}
+}
+
 func TestVisitorVisitAssignmentStatement(t *testing.T) {
 	type Want struct {
 		bit      []string

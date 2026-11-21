@@ -768,7 +768,8 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 }
 
 func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContext) any {
-	if ctx.MeasureExpression() != nil {
+	op := ctx.GetOp().GetText()
+	if ctx.MeasureExpression() != nil && op == "=" {
 		return v.MeasureAssignment(ctx.IndexedIdentifier(), ctx.MeasureExpression())
 	}
 
@@ -780,10 +781,103 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 	}
 
 	index := result.([]int64)
-	x := v.Visit(ctx.Expression())
+	var left any
+	if op != "=" {
+		operators := ctx.IndexedIdentifier().AllIndexOperator()
+		if len(operators) > 1 {
+			return fmt.Errorf("compound assignment target %q: %w", ctx.IndexedIdentifier().GetText(), ErrNotImplemented)
+		}
+
+		for _, operator := range operators {
+			if len(operator.AllRangeExpression()) > 0 || operator.SetExpression() != nil {
+				return fmt.Errorf("compound assignment target %q: %w", ctx.IndexedIdentifier().GetText(), ErrNotImplemented)
+			}
+		}
+
+		if bits, ok := v.env.GetClBitArray(operand); ok {
+			if len(index) == 0 {
+				left = slices.Clone(bits)
+			} else {
+				selected := make([]bool, len(index))
+				for i, idx := range index {
+					if idx < 0 || idx >= int64(len(bits)) {
+						return fmt.Errorf("bit index %d out of range for size %d", idx, len(bits))
+					}
+
+					selected[i] = bits[idx]
+				}
+
+				if len(index) == 1 {
+					left = selected[0]
+				} else {
+					left = selected
+				}
+			}
+		} else {
+			if len(index) > 0 {
+				return fmt.Errorf("invalid compound assignment target %q", ctx.IndexedIdentifier().GetText())
+			}
+
+			if bit, ok := v.env.GetClBit(operand); ok {
+				left = bit
+			} else if variable, ok := v.env.GetVariable(operand); ok {
+				left = variable
+			} else if _, ok := v.env.GetConst(operand); ok {
+				return fmt.Errorf("cannot assign to constant %q", operand)
+			} else {
+				return fmt.Errorf("undefined %q", operand)
+			}
+		}
+	}
+
+	var x any
+	if ctx.MeasureExpression() != nil {
+		x = v.Visit(ctx.MeasureExpression())
+	} else {
+		x = v.Visit(ctx.Expression())
+	}
+
 	switch x.(type) {
 	case error, endSignal:
 		return x
+	}
+
+	if op != "=" {
+		a, b := value.New(left), value.New(x)
+		var val *value.Value
+		var err error
+		switch op {
+		case "+=":
+			val, err = a.Add(b)
+		case "-=":
+			val, err = a.Sub(b)
+		case "*=":
+			val, err = a.Mul(b)
+		case "/=":
+			val, err = a.Div(b)
+		case "%=":
+			val, err = a.Mod(b)
+		case "**=":
+			val, err = a.Pow(b)
+		case "&=":
+			val, err = a.BitAnd(b)
+		case "|=":
+			val, err = a.BitOr(b)
+		case "^=":
+			val, err = a.BitXor(b)
+		case "<<=":
+			val, err = a.ShiftLeft(b)
+		case ">>=":
+			val, err = a.ShiftRight(b)
+		default:
+			return fmt.Errorf("unsupported assignment operator %q", op)
+		}
+
+		if err != nil {
+			return fmt.Errorf("%v%s%v: %w", left, op, x, err)
+		}
+
+		x = val.Value()
 	}
 
 	if bits, ok := v.env.GetClBitArray(operand); ok {
