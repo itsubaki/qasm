@@ -3106,6 +3106,26 @@ func TestVisitorVisitIndexExpression(t *testing.T) {
 			want: "false",
 		},
 		{
+			text: `bit[2] m = "10"; int i = int(1.9); m[i];`,
+			want: "false",
+		},
+		{
+			text: `bit[2] m; m[int(1)] = true; m[1];`,
+			want: "true",
+		},
+		{
+			text: `qubit[2] q; q[int(1)];`,
+			want: "1",
+		},
+		{
+			text: `qubit[2] q; int i = int(1); U(pi, 0, pi) q[i]; bit b = measure q[1]; b;`,
+			want: "true",
+		},
+		{
+			text: `qubit q; bit[2] m; U(pi, 0, pi) q; measure q -> m[int(1)]; m[1];`,
+			want: "true",
+		},
+		{
 			text: `bit[2] m = "10"; m[0] != m[1];`,
 			want: "true",
 		},
@@ -3178,6 +3198,14 @@ func TestVisitorVisitIndexExpression_invalid(t *testing.T) {
 		},
 		{
 			text:   "bit[2] m; m[2];",
+			errMsg: "bit index 2 out of range for size 2",
+		},
+		{
+			text:   "bit[2] m; m[int(-1)];",
+			errMsg: "bit index -1 out of range for size 2",
+		},
+		{
+			text:   "bit[2] m; m[int(2)];",
 			errMsg: "bit index 2 out of range for size 2",
 		},
 		{

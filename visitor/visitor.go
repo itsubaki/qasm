@@ -1888,7 +1888,7 @@ func (v *Visitor) IndexClBits(bits []bool, ctx parser.IIndexOperatorContext) any
 			return value
 		}
 
-		index, ok := value.(int64)
+		index, ok := integerIndex(value)
 		if !ok {
 			return fmt.Errorf("index must be an integer '%v'", value)
 		}
@@ -1945,7 +1945,7 @@ func (v *Visitor) IndexQubits(operand any, ctx parser.IIndexOperatorContext) any
 			return value
 		}
 
-		index, ok := value.(int64)
+		index, ok := integerIndex(value)
 		if !ok {
 			return fmt.Errorf("index must be an integer '%v'", value)
 		}
@@ -2044,7 +2044,7 @@ func (v *Visitor) VisitIndexedIdentifier(ctx *parser.IndexedIdentifierContext) a
 		}
 
 		for _, o := range result.([]any) {
-			idx, ok := o.(int64)
+			idx, ok := integerIndex(o)
 			if !ok {
 				return fmt.Errorf("index must be an integer '%v'", o)
 			}
@@ -2282,6 +2282,17 @@ const (
 	Continue string = "continue;"
 	End      string = "end;"
 )
+
+func integerIndex(value any) (int64, bool) {
+	switch index := value.(type) {
+	case int:
+		return int64(index), true
+	case int64:
+		return index, true
+	default:
+		return 0, false
+	}
+}
 
 // contains returns true if the result contains substrings.
 func contains(result any, substrings ...string) bool {
