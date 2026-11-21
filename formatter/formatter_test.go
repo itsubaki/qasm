@@ -33,9 +33,8 @@ func ExampleFormatter_Format() {
 
 func TestFormat(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   string
-		errMsg string
+		text string
+		want string
 	}{
 		{
 			text: `OPENQASM 3.0; qubit q;`,
@@ -43,6 +42,26 @@ func TestFormat(t *testing.T) {
 qubit q;
 `,
 		},
+	}
+
+	for _, c := range cases {
+		formatted, err := formatter.Format(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if formatted != c.want {
+			t.Errorf("got=%q, want=%q", formatted, c.want)
+		}
+	}
+}
+
+func TestFormat_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
 		{
 			text:   `qubit[ q;`,
 			errMsg: `1:8: mismatched input ';' expecting ']'`,
@@ -50,17 +69,14 @@ qubit q;
 	}
 
 	for _, c := range cases {
-		formatted, err := formatter.Format(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%q, want=%q", err.Error(), c.errMsg)
-			}
-
+		_, err := formatter.Format(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if formatted != c.want {
-			t.Errorf("got=%q, want=%q", formatted, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }

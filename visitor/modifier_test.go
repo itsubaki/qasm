@@ -59,8 +59,7 @@ func TestPow2x2(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got := visitor.Pow2x2(c.in, c.p)
-		if !got.Equal(c.want) {
+		if got := visitor.Pow2x2(c.in, c.p); !got.Equal(c.want) {
 			t.Errorf("got=%v, want=%v", got, c.want)
 		}
 	}
@@ -68,8 +67,9 @@ func TestPow2x2(t *testing.T) {
 
 func TestPow2x2_compose(t *testing.T) {
 	cases := []struct {
-		in   *matrix.Matrix
-		a, b float64
+		in *matrix.Matrix
+		a  float64
+		b  float64
 	}{
 		{
 			in: gate.X(),
@@ -127,18 +127,42 @@ func TestPow2x2_compose(t *testing.T) {
 		// U^a * U^b = U^(a+b)
 		a := visitor.Pow2x2(c.in, c.a)
 		b := visitor.Pow2x2(c.in, c.b)
-		ab := visitor.Pow2x2(c.in, c.a+c.b)
-
-		if !a.MatMul(b).Equal(ab) {
+		if ab := visitor.Pow2x2(c.in, c.a+c.b); !a.MatMul(b).Equal(ab) {
 			t.Fatalf("a=%v b=%v", c.a, c.b)
 		}
 	}
 }
 
 func FuzzPow2x2(f *testing.F) {
-	f.Add(0.5, 0.1, 0.2, 0.3)
-	f.Add(1.0, 0.0, 0.0, 0.0)
-	f.Add(0.3, math.Pi, 0.0, 0.0)
+	cases := []struct {
+		p      float64
+		theta  float64
+		phi    float64
+		lambda float64
+	}{
+		{
+			p:      0.5,
+			theta:  0.1,
+			phi:    0.2,
+			lambda: 0.3,
+		},
+		{
+			p:      1.0,
+			theta:  0.0,
+			phi:    0.0,
+			lambda: 0.0,
+		},
+		{
+			p:      0.3,
+			theta:  math.Pi,
+			phi:    0.0,
+			lambda: 0.0,
+		},
+	}
+
+	for _, c := range cases {
+		f.Add(c.p, c.theta, c.phi, c.lambda)
+	}
 
 	isValid := func(v ...float64) bool {
 		for _, f := range v {
@@ -160,14 +184,16 @@ func FuzzPow2x2(f *testing.F) {
 		}
 
 		theta = math.Mod(theta, math.Pi)
+
 		phi = math.Mod(phi, 2*math.Pi)
+
 		lambda = math.Mod(lambda, 2*math.Pi)
 
 		u := gate.U(theta, phi, lambda)
-		up := visitor.Pow2x2(u, p)
-		back := visitor.Pow2x2(up, 1/p)
 
-		if !back.Equal(u) {
+		up := visitor.Pow2x2(u, p)
+
+		if back := visitor.Pow2x2(up, 1/p); !back.Equal(u) {
 			t.Errorf("p=%v, theta=%v, phi=%v, lambda=%v", p, theta, phi, lambda)
 		}
 	})

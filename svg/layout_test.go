@@ -9,12 +9,24 @@ import (
 func ExampleNewLayout() {
 	circuit := &svg.Circuit{
 		Wires: []svg.Wire{
-			{Name: "q0"},
-			{Name: "q1"},
-			{Name: "q2"},
-			{Name: "q3"},
-			{Name: "c0"},
-			{Name: "c1"},
+			{
+				Name: "q0",
+			},
+			{
+				Name: "q1",
+			},
+			{
+				Name: "q2",
+			},
+			{
+				Name: "q3",
+			},
+			{
+				Name: "c0",
+			},
+			{
+				Name: "c1",
+			},
 		},
 		Ops: []svg.Op{
 			&svg.Gate{
@@ -138,6 +150,7 @@ func ExampleNewLayout() {
 	}
 
 	layout := svg.NewLayout(circuit)
+
 	for _, wire := range layout.Wires {
 		fmt.Println(wire.Label())
 	}

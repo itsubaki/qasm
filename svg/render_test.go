@@ -9,9 +9,15 @@ import (
 func ExampleRender() {
 	circuit := &svg.Circuit{
 		Wires: []svg.Wire{
-			{Name: "q0"},
-			{Name: "q1"},
-			{Name: "c0"},
+			{
+				Name: "q0",
+			},
+			{
+				Name: "q1",
+			},
+			{
+				Name: "c0",
+			},
 		},
 		Ops: []svg.Op{
 			&svg.Gate{

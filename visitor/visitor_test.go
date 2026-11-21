@@ -87,7 +87,7 @@ func ExampleVisitor_VisitErrorNode() {
 	// something went wrong
 }
 
-func TestRun(t *testing.T) {
+func TestRun_invalid(t *testing.T) {
 	cases := []struct {
 		text   string
 		errMsg string
@@ -108,17 +108,18 @@ func TestRun(t *testing.T) {
 
 	for _, c := range cases {
 		_, _, err := visitor.Run(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%q, want=%q", err.Error(), c.errMsg)
-			}
-
+		if err == nil {
+			t.Error("expected an error")
 			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisit(t *testing.T) {
+func TestVisit_invalid(t *testing.T) {
 	cases := []struct {
 		text   string
 		errMsg string
@@ -135,17 +136,18 @@ func TestVisit(t *testing.T) {
 
 	for _, c := range cases {
 		_, err := visitor.Visit(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%q, want=%q", err.Error(), c.errMsg)
-			}
-
+		if err == nil {
+			t.Error("expected an error")
 			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitIncludeStatement(t *testing.T) {
+func TestVisitorVisitIncludeStatement_invalid(t *testing.T) {
 	cases := []struct {
 		text   string
 		errMsg string
@@ -166,21 +168,21 @@ func TestVisitor_VisitIncludeStatement(t *testing.T) {
 
 	for _, c := range cases {
 		_, _, err := visitor.Run(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%q, want=%q", err.Error(), c.errMsg)
-			}
-
+		if err == nil {
+			t.Error("expected an error")
 			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
+func TestVisitorVisitConstDeclarationStatement(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   string
-		errMsg string
+		text string
+		want string
 	}{
 		{
 			text: "const int a = 42;",
@@ -190,19 +192,12 @@ func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 			text: "const uint N = 3 * 5;",
 			want: "map[N:15]",
 		},
-		{
-			text:   "const int a = 42; const int a = 43;",
-			errMsg: `"a" redeclared`,
-		},
 	}
 
 	for _, c := range cases {
 		_, env, err := visitor.Run(c.text)
 		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+			t.Errorf("unexpected error: %v", err)
 			continue
 		}
 
@@ -212,11 +207,34 @@ func TestVisitor_VisitConstDeclarationStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
+func TestVisitorVisitConstDeclarationStatement_invalid(t *testing.T) {
 	cases := []struct {
 		text   string
-		want   string
 		errMsg string
+	}{
+		{
+			text:   "const int a = 42; const int a = 43;",
+			errMsg: `"a" redeclared`,
+		},
+	}
+
+	for _, c := range cases {
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
+			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func TestVisitorVisitClassicalDeclarationStatement(t *testing.T) {
+	cases := []struct {
+		text string
+		want string
 	}{
 		{
 			text: "bool b;",
@@ -261,10 +279,6 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 		{
 			text: `qubit[3] q; U(pi, 0, pi) q[1]; bit c = measure q[1];`,
 			want: "map[c:true]",
-		},
-		{
-			text:   `qubit[3] q; bit c = measure q;`,
-			errMsg: "assign 3 bits to a single bit",
 		},
 		{
 			text: "int ans = 42;",
@@ -334,6 +348,38 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 			text: "angle[4] a = pi;",
 			want: "map[a:3.141592653589793(8,1000)]",
 		},
+	}
+
+	for _, c := range cases {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if len(env.ClBit) > 0 && fmt.Sprintf("%v", env.ClBit) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClBit, c.want)
+		}
+
+		if len(env.ClBitArray) > 0 && fmt.Sprintf("%v", env.ClBitArray) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClBitArray, c.want)
+		}
+
+		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
+			t.Errorf("got=%v, want=%v", env.Variable, c.want)
+		}
+	}
+}
+
+func TestVisitorVisitClassicalDeclarationStatement_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
+		{
+			text:   `qubit[3] q; bit c = measure q;`,
+			errMsg: "assign 3 bits to a single bit",
+		},
 		{
 			text:   "float a = 1; float a = 0;",
 			errMsg: `"a" redeclared`,
@@ -393,35 +439,23 @@ func TestVisitor_VisitClassicalDeclarationStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		_, env, err := visitor.Run(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if len(env.ClBit) > 0 && fmt.Sprintf("%v", env.ClBit) != c.want {
-			t.Errorf("got=%v, want=%v", env.ClBit, c.want)
-		}
-
-		if len(env.ClBitArray) > 0 && fmt.Sprintf("%v", env.ClBitArray) != c.want {
-			t.Errorf("got=%v, want=%v", env.ClBitArray, c.want)
-		}
-
-		if len(env.Variable) > 0 && fmt.Sprintf("%v", env.Variable) != c.want {
-			t.Errorf("got=%v, want=%v", env.Variable, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
+func TestVisitorVisitQuantumDeclarationStatement(t *testing.T) {
 	cases := []struct {
 		text      string
 		want      string
 		wantArray string
-		errMsg    string
 	}{
 		{
 			text:      "qubit q;",
@@ -443,6 +477,30 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 			want:      "map[q0:0 q4:6]",
 			wantArray: "map[q1:[1 2] q3:[3 4 5]]",
 		},
+	}
+
+	for _, c := range cases {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if fmt.Sprintf("%v", env.Qubit) != c.want {
+			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
+		}
+
+		if fmt.Sprintf("%v", env.QubitArray) != c.wantArray {
+			t.Errorf("got=%v, want=%v", env.QubitArray, c.wantArray)
+		}
+	}
+}
+
+func TestVisitorVisitQuantumDeclarationStatement_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
 		{
 			text:   "qubit[1.1] q;",
 			errMsg: `size must be an integer "[1.1]"`,
@@ -462,36 +520,23 @@ func TestVisitor_VisitQuantumDeclarationStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		_, env, err := visitor.Run(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if c.errMsg != "" {
-			t.Errorf("got=nil error, want=%s", c.errMsg)
-			continue
-		}
-
-		if fmt.Sprintf("%v", env.Qubit) != c.want {
-			t.Errorf("got=%v, want=%v", env.Qubit, c.want)
-		}
-
-		if fmt.Sprintf("%v", env.QubitArray) != c.wantArray {
-			t.Errorf("got=%v, want=%v", env.QubitArray, c.wantArray)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
+func TestVisitorVisitAliasDeclarationStatement(t *testing.T) {
 	cases := []struct {
 		text      string
 		want      string
 		wantArray string
-		errMsg    string
 	}{
 		{
 			text:      "qubit[5] q; let myreg = q[1:4];",
@@ -523,28 +568,12 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 			want:      "map[a:0 b:1]",
 			wantArray: "map[pair:[0 1]]",
 		},
-		{
-			text:   "qubit[5] q; let q = q[1:4];",
-			errMsg: `"q" redeclared`,
-		},
-		{
-			text:   "qubit q; let q = q;",
-			errMsg: `"q" redeclared`,
-		},
 	}
 
 	for _, c := range cases {
 		_, env, err := visitor.Run(c.text)
 		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
-			continue
-		}
-
-		if c.errMsg != "" {
-			t.Errorf("got=nil error, want=%s", c.errMsg)
+			t.Errorf("unexpected error: %v", err)
 			continue
 		}
 
@@ -558,11 +587,38 @@ func TestVisitor_VisitAliasDeclarationStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
+func TestVisitorVisitAliasDeclarationStatement_invalid(t *testing.T) {
 	cases := []struct {
 		text   string
-		want   string
 		errMsg string
+	}{
+		{
+			text:   "qubit[5] q; let q = q[1:4];",
+			errMsg: `"q" redeclared`,
+		},
+		{
+			text:   "qubit q; let q = q;",
+			errMsg: `"q" redeclared`,
+		},
+	}
+
+	for _, c := range cases {
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
+			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func TestVisitorVisitOldStyleDeclarationStatement(t *testing.T) {
+	cases := []struct {
+		text string
+		want string
 	}{
 		{
 			text: "qreg q;",
@@ -573,14 +629,6 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 			want: "map[q:[0 1]]",
 		},
 		{
-			text:   "qreg q; qreg q;",
-			errMsg: `"q" redeclared`,
-		},
-		{
-			text:   "qubit q; qreg q[1];",
-			errMsg: `"q" redeclared`,
-		},
-		{
 			text: "creg c;",
 			want: "map[c:[false]]",
 		},
@@ -588,28 +636,12 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 			text: "creg c[2];",
 			want: "map[c:[false false]]",
 		},
-		{
-			text:   "creg c; creg c;",
-			errMsg: `"c" redeclared`,
-		},
-		{
-			text:   "bit c; creg c;",
-			errMsg: `"c" redeclared`,
-		},
 	}
 
 	for _, c := range cases {
 		_, env, err := visitor.Run(c.text)
 		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
-			continue
-		}
-
-		if c.errMsg != "" {
-			t.Errorf("got=nil error, want=%s", c.errMsg)
+			t.Errorf("unexpected error: %v", err)
 			continue
 		}
 
@@ -627,7 +659,43 @@ func TestVisitor_VisitOldStyleDeclarationStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitAssignmentStatement(t *testing.T) {
+func TestVisitorVisitOldStyleDeclarationStatement_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
+		{
+			text:   "qreg q; qreg q;",
+			errMsg: `"q" redeclared`,
+		},
+		{
+			text:   "qubit q; qreg q[1];",
+			errMsg: `"q" redeclared`,
+		},
+		{
+			text:   "creg c; creg c;",
+			errMsg: `"c" redeclared`,
+		},
+		{
+			text:   "bit c; creg c;",
+			errMsg: `"c" redeclared`,
+		},
+	}
+
+	for _, c := range cases {
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
+			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func TestVisitorVisitAssignmentStatement(t *testing.T) {
 	type Want struct {
 		bit      []string
 		qubit    []string
@@ -635,9 +703,8 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 	}
 
 	cases := []struct {
-		text   string
-		want   Want
-		errMsg string
+		text string
+		want Want
 	}{
 		{
 			text: `
@@ -701,10 +768,6 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 			},
 		},
 		{
-			text:   `bit c; c = "10";`,
-			errMsg: `assign 2 bits to a single bit`,
-		},
-		{
 			text: "bit[1] c; c = true;",
 			want: Want{
 				bit: []string{"map[c:[true]]"},
@@ -730,28 +793,18 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 				},
 			},
 		},
-		{
-			text: `
-				qubit q;
-				U(pi/2.0, 0, pi) q;
-				c = measure q;
-			`,
-			errMsg: `undefined "c"`,
-		},
 	}
 
 	for _, c := range cases {
 		qsim, env, err := visitor.Run(c.text)
 		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+			t.Errorf("unexpected error: %v", err)
 			continue
 		}
 
 		if len(c.want.qubit) > 0 {
 			var found bool
+
 			for _, w := range c.want.qubit {
 				if fmt.Sprintf("%v", qsim.State()) == w {
 					found = true
@@ -765,6 +818,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 
 		if len(c.want.bit) > 0 {
 			var found bool
+
 			for _, w := range c.want.bit {
 				if fmt.Sprintf("%v", env.ClBit) == w {
 					found = true
@@ -782,6 +836,7 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 
 		if len(c.want.variable) > 0 {
 			var found bool
+
 			for _, w := range c.want.variable {
 				if fmt.Sprintf("%v", env.Variable) == w {
 					found = true
@@ -795,16 +850,53 @@ func TestVisitor_VisitAssignmentStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
+func TestVisitorVisitAssignmentStatement_invalid(t *testing.T) {
+	type Want struct {
+		bit      []string
+		qubit    []string
+		variable []string
+	}
+
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
+		{
+			text:   `bit c; c = "10";`,
+			errMsg: `assign 2 bits to a single bit`,
+		},
+		{
+			text: `
+				qubit q;
+				U(pi/2.0, 0, pi) q;
+				c = measure q;
+			`,
+			errMsg: `undefined "c"`,
+		},
+	}
+
+	for _, c := range cases {
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
+			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func TestVisitorVisitMeasureArrowAssignmentStatement(t *testing.T) {
 	type Want struct {
 		bit   []string
 		qubit []string
 	}
 
 	cases := []struct {
-		text   string
-		want   Want
-		errMsg string
+		text string
+		want Want
 	}{
 		{
 			text: `
@@ -818,14 +910,6 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 				bit:   []string{"map[c:true]"},
 				qubit: []string{"[[1] ( 1.0000 0.0000i): 1.0000]"},
 			},
-		},
-		{
-			text: `
-				qubit[3] q;
-				bit c;
-				measure q -> c;
-			`,
-			errMsg: "assign 3 bits to a single bit",
 		},
 		{
 			text: `
@@ -917,15 +1001,13 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 	for _, c := range cases {
 		qsim, env, err := visitor.Run(c.text)
 		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+			t.Errorf("unexpected error: %v", err)
 			continue
 		}
 
 		if len(c.want.qubit) > 0 {
 			var found bool
+
 			for _, w := range c.want.qubit {
 				if fmt.Sprintf("%v", qsim.State()) == w {
 					found = true
@@ -939,6 +1021,7 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 
 		if len(c.want.bit) > 0 {
 			var found bool
+
 			for _, w := range c.want.bit {
 				if fmt.Sprintf("%v", env.ClBit) == w {
 					found = true
@@ -956,11 +1039,43 @@ func TestVisitor_VisitMeasureArrowAssignmentStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitResetStatement(t *testing.T) {
+func TestVisitorVisitMeasureArrowAssignmentStatement_invalid(t *testing.T) {
+	type Want struct {
+		bit   []string
+		qubit []string
+	}
+
 	cases := []struct {
 		text   string
-		want   []string
 		errMsg string
+	}{
+		{
+			text: `
+				qubit[3] q;
+				bit c;
+				measure q -> c;
+			`,
+			errMsg: "assign 3 bits to a single bit",
+		},
+	}
+
+	for _, c := range cases {
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
+			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func TestVisitorVisitResetStatement(t *testing.T) {
+	cases := []struct {
+		text string
+		want []string
 	}{
 		{
 			text: `
@@ -973,19 +1088,12 @@ func TestVisitor_VisitResetStatement(t *testing.T) {
 				"[0] ( 1.0000 0.0000i): 1.0000",
 			},
 		},
-		{
-			text:   "int a = 1; reset a;",
-			errMsg: `undefined "a"`,
-		},
 	}
 
 	for _, c := range cases {
 		qsim, _, err := visitor.Run(c.text)
 		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Fatalf("got=%v, want=%v", err, c.errMsg)
-			}
-
+			t.Errorf("unexpected error: %v", err)
 			continue
 		}
 
@@ -997,11 +1105,34 @@ func TestVisitor_VisitResetStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitAdditiveExpression(t *testing.T) {
+func TestVisitorVisitResetStatement_invalid(t *testing.T) {
 	cases := []struct {
 		text   string
-		want   string
 		errMsg string
+	}{
+		{
+			text:   "int a = 1; reset a;",
+			errMsg: `undefined "a"`,
+		},
+	}
+
+	for _, c := range cases {
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
+			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func TestVisitorVisitAdditiveExpression(t *testing.T) {
+	cases := []struct {
+		text string
+		want string
 	}{
 		{
 			text: "1 + 3;",
@@ -1063,6 +1194,26 @@ func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 			text: "1.5-int(2.5);",
 			want: "-0.5",
 		},
+	}
+
+	for _, c := range cases {
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if fmt.Sprintf("%v", result) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
+func TestVisitorVisitAdditiveExpression_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
 		{
 			text:   "9.0 + foobar(1);",
 			errMsg: `undefined "foobar"`,
@@ -1074,26 +1225,22 @@ func TestVisitor_VisitAdditiveExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		result, err := visitor.Visit(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, err := visitor.Visit(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if fmt.Sprintf("%v", result) != c.want {
-			t.Errorf("got=%v, want=%v", result, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
+func TestVisitorVisitMultiplicativeExpression(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   string
-		errMsg string
+		text string
+		want string
 	}{
 		{
 			text: "1 * 3;",
@@ -1171,6 +1318,26 @@ func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
 			text: "9.0 / int(3);",
 			want: "3",
 		},
+	}
+
+	for _, c := range cases {
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if fmt.Sprintf("%v", result) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
+func TestVisitorVisitMultiplicativeExpression_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
 		{
 			text:   "9.0 / foobar(1);",
 			errMsg: `undefined "foobar"`,
@@ -1182,22 +1349,19 @@ func TestVisitor_VisitMultiplicativeExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		result, err := visitor.Visit(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Fatalf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, err := visitor.Visit(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if fmt.Sprintf("%v", result) != c.want {
-			t.Errorf("got=%v, want=%v", result, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitParenthesisExpression(t *testing.T) {
+func TestVisitorVisitParenthesisExpression(t *testing.T) {
 	cases := []struct {
 		text string
 		want string
@@ -1220,11 +1384,10 @@ func TestVisitor_VisitParenthesisExpression(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitCallExpression(t *testing.T) {
+func TestVisitorVisitCallExpression(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   string
-		errMsg string
+		text string
+		want string
 	}{
 		{
 			text: "sin(1.0);",
@@ -1326,6 +1489,26 @@ func TestVisitor_VisitCallExpression(t *testing.T) {
 			text: "sqrt(uint(4));",
 			want: "2",
 		},
+	}
+
+	for _, c := range cases {
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if fmt.Sprintf("%v", result) != c.want {
+			t.Errorf("%s: got=%v, want=%v", c.text, result, c.want)
+		}
+	}
+}
+
+func TestVisitorVisitCallExpression_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
 		{
 			text:   "sqrt(true);",
 			errMsg: "unexpected type: bool",
@@ -1341,31 +1524,22 @@ func TestVisitor_VisitCallExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		result, err := visitor.Visit(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("%s: got=%v, want=%s", c.text, err, c.errMsg)
-			}
-
+		_, err := visitor.Visit(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if c.errMsg != "" {
-			t.Errorf("%s: got=nil error, want=%s", c.text, c.errMsg)
-			continue
-		}
-
-		if fmt.Sprintf("%v", result) != c.want {
-			t.Errorf("%s: got=%v, want=%v", c.text, result, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitPowerExpression(t *testing.T) {
+func TestVisitorVisitPowerExpression(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   string
-		errMsg string
+		text string
+		want string
 	}{
 		{
 			text: "2**3;",
@@ -1375,6 +1549,26 @@ func TestVisitor_VisitPowerExpression(t *testing.T) {
 			text: "2**0.5;",
 			want: "1.4142135623730951",
 		},
+	}
+
+	for _, c := range cases {
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if fmt.Sprintf("%v", result) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
+func TestVisitorVisitPowerExpression_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
 		{
 			text:   "foobar**0.5;",
 			errMsg: `undefined "foobar"`,
@@ -1386,22 +1580,19 @@ func TestVisitor_VisitPowerExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		result, err := visitor.Visit(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Fatalf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, err := visitor.Visit(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if fmt.Sprintf("%v", result) != c.want {
-			t.Errorf("got=%v, want=%v", result, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitLogicalOrExpression(t *testing.T) {
+func TestVisitorVisitLogicalOrExpression(t *testing.T) {
 	cases := []struct {
 		text string
 		want bool
@@ -1436,7 +1627,7 @@ func TestVisitor_VisitLogicalOrExpression(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitLogicalAndExpression(t *testing.T) {
+func TestVisitorVisitLogicalAndExpression(t *testing.T) {
 	cases := []struct {
 		text string
 		want bool
@@ -1471,7 +1662,7 @@ func TestVisitor_VisitLogicalAndExpression(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitBitwiseAndExpression(t *testing.T) {
+func TestVisitorVisitBitwiseAndExpression(t *testing.T) {
 	cases := []struct {
 		text string
 		want int64
@@ -1494,7 +1685,7 @@ func TestVisitor_VisitBitwiseAndExpression(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitBitwiseOrExpression(t *testing.T) {
+func TestVisitorVisitBitwiseOrExpression(t *testing.T) {
 	cases := []struct {
 		text string
 		want int64
@@ -1517,7 +1708,7 @@ func TestVisitor_VisitBitwiseOrExpression(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitBitwiseXorExpression(t *testing.T) {
+func TestVisitorVisitBitwiseXorExpression(t *testing.T) {
 	cases := []struct {
 		text string
 		want int64
@@ -1540,7 +1731,7 @@ func TestVisitor_VisitBitwiseXorExpression(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitBitshiftExpression(t *testing.T) {
+func TestVisitorVisitBitshiftExpression(t *testing.T) {
 	cases := []struct {
 		text string
 		want int64
@@ -1571,11 +1762,10 @@ func TestVisitor_VisitBitshiftExpression(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitEqualityExpression(t *testing.T) {
+func TestVisitorVisitEqualityExpression(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   bool
-		errMsg string
+		text string
+		want bool
 	}{
 		{
 			text: "10.0 == 2.0 * 5;",
@@ -1653,6 +1843,26 @@ func TestVisitor_VisitEqualityExpression(t *testing.T) {
 			text: "float(5.5) != int(3);",
 			want: true,
 		},
+	}
+
+	for _, c := range cases {
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if result.(bool) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
+func TestVisitorVisitEqualityExpression_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
 		{
 			text:   "foobar == 3;",
 			errMsg: `undefined "foobar"`,
@@ -1664,26 +1874,22 @@ func TestVisitor_VisitEqualityExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		result, err := visitor.Visit(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Fatalf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, err := visitor.Visit(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if result.(bool) != c.want {
-			t.Errorf("got=%v, want=%v", result, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitUnaryExpression(t *testing.T) {
+func TestVisitorVisitUnaryExpression(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   bool
-		errMsg string
+		text string
+		want bool
 	}{
 		{
 			text: "!false;",
@@ -1709,19 +1915,12 @@ func TestVisitor_VisitUnaryExpression(t *testing.T) {
 			text: "~5 == -6;",
 			want: true,
 		},
-		{
-			text:   "-foobar;",
-			errMsg: `undefined "foobar"`,
-		},
 	}
 
 	for _, c := range cases {
 		result, err := visitor.Visit(c.text)
 		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Fatalf("got=%v, want=%v", err, c.errMsg)
-			}
-
+			t.Errorf("unexpected error: %v", err)
 			continue
 		}
 
@@ -1731,11 +1930,34 @@ func TestVisitor_VisitUnaryExpression(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitComparisonExpression(t *testing.T) {
+func TestVisitorVisitUnaryExpression_invalid(t *testing.T) {
 	cases := []struct {
 		text   string
-		want   string
 		errMsg string
+	}{
+		{
+			text:   "-foobar;",
+			errMsg: `undefined "foobar"`,
+		},
+	}
+
+	for _, c := range cases {
+		_, err := visitor.Visit(c.text)
+		if err == nil {
+			t.Error("expected an error")
+			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func TestVisitorVisitComparisonExpression(t *testing.T) {
+	cases := []struct {
+		text string
+		want string
 	}{
 		{
 			text: "2.0 < 3;",
@@ -1753,6 +1975,26 @@ func TestVisitor_VisitComparisonExpression(t *testing.T) {
 			text: "2 >= 3;",
 			want: "false",
 		},
+	}
+
+	for _, c := range cases {
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if fmt.Sprintf("%v", result) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
+func TestVisitorVisitComparisonExpression_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
 		{
 			text:   "foobar > 3;",
 			errMsg: `undefined "foobar"`,
@@ -1764,26 +2006,22 @@ func TestVisitor_VisitComparisonExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		result, err := visitor.Visit(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Fatalf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, err := visitor.Visit(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if fmt.Sprintf("%v", result) != c.want {
-			t.Errorf("got=%v, want=%v", result, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitGateCallStatement(t *testing.T) {
+func TestVisitorVisitGateCallStatement(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   []string
-		errMsg string
+		text string
+		want []string
 	}{
 		{
 			text: "qubit q; U(pi, 0, pi) q; gphase(-pi/2);",
@@ -1856,6 +2094,30 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 				"[10] ( 0.7071 0.0000i): 0.5000",
 			},
 		},
+	}
+
+	for _, c := range cases {
+		qsim, _, err := visitor.Run(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		for i, s := range qsim.State() {
+			if s.String() == c.want[i] {
+				continue
+			}
+
+			t.Errorf("got=%v, want=%v", s.String(), c.want[i])
+		}
+	}
+}
+
+func TestVisitorVisitGateCallStatement_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
 		{
 			text:   `qubit q; gphase(true);`,
 			errMsg: "invalid param 'bool(true)'",
@@ -1899,42 +2161,23 @@ func TestVisitor_VisitGateCallStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		qsim, _, err := visitor.Run(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		for i, s := range qsim.State() {
-			if s.String() == c.want[i] {
-				continue
-			}
-
-			t.Errorf("got=%v, want=%v", s.String(), c.want[i])
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
+func TestVisitorVisitGateCallStatement_userDefined(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   []string
-		errMsg string
+		text string
+		want []string
 	}{
-		{
-			text: `
-				gate u q { }
-				gate u q { }
-			`,
-			errMsg: `"u" redeclared`,
-		},
-		{
-			text:   `qubit[2] q; myg(pi, 0, pi) q;`,
-			errMsg: `undefined "myg"`,
-		},
 		{
 			text: `
 				gate h q0 { U(pi/2, 0, pi) q0; gphase(-pi/4); }
@@ -1992,6 +2235,41 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 				"[11] ( 1.0000 0.0000i): 1.0000",
 			},
 		},
+	}
+
+	for _, c := range cases {
+		qsim, _, err := visitor.Run(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		for i, s := range qsim.State() {
+			if s.String() == c.want[i] {
+				continue
+			}
+
+			t.Errorf("got=%v, want=%v", s.String(), c.want[i])
+		}
+	}
+}
+
+func TestVisitorVisitGateCallStatement_invalidUserDefined(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
+		{
+			text: `
+				gate u q { }
+				gate u q { }
+			`,
+			errMsg: `"u" redeclared`,
+		},
+		{
+			text:   `qubit[2] q; myg(pi, 0, pi) q;`,
+			errMsg: `undefined "myg"`,
+		},
 		{
 			text: `
 				gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
@@ -2024,159 +2302,25 @@ func TestVisitor_VisitGateCallStatement_userdefined(t *testing.T) {
 			`,
 			errMsg: "user-defined call with modifier: not implemented",
 		},
-		// not implemented.
-		// {
-		// 	text: `
-		// 		gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
-		// 		const int n = 3;
-		// 		qubit q;
-		// 		pow(n) @ u(pi, 0, pi) q;
-		// 	`,
-		// 	want: []string{
-		// 		"[1] ( 1.0000 0.0000i): 1.0000",
-		// 	},
-		// },
-		// {
-		// 	text: `
-		// 		gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
-		// 		qubit q;
-		// 		u(pi, 0, pi) q;
-		// 		inv @ u(pi, 0, pi) q;
-		// 	`,
-		// 	want: []string{
-		// 		"[0] ( 1.0000 0.0000i): 1.0000",
-		// 	},
-		// },
-		// {
-		// 	text: `
-		// 		gate u(p0, p1, p2) q { U(p0, p1, p2) q; }
-		// 		gate invu(p0, p1, p2) q { inv @ u(p0, p1, p2) q; }
-		// 		qubit q;
-		// 		u(1, 2, 3) q;
-		// 		invu(1, 2, 3) q;
-		// 	`,
-		// 	want: []string{
-		// 		"[0] ( 1.0000 0.0000i): 1.0000",
-		// 	},
-		// },
-		// {
-		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
-		// 		qubit[2] q;
-		// 		x q[0];
-		// 		ctrl @ x q[0], q[1];
-		// 	`,
-		// 	want: []string{
-		// 		"[11] ( 1.0000 0.0000i): 1.0000",
-		// 	},
-		// },
-		// {
-		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
-		// 		gate cx q0, q1 { ctrl @ x q0, q1; }
-		// 		qubit[2] q;
-		// 		qubit t;
-		// 		x q;
-		// 		ctrl @ cx q[0], q[1], t;
-		// 	`,
-		// 	want: []string{
-		// 		"[111] ( 1.0000 0.0000i): 1.0000",
-		// 	},
-		// },
-		// {
-		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
-		// 		qubit[2] q;
-		// 		negctrl @ x q[0], q[1];
-		// 	`,
-		// 	want: []string{
-		// 		"[01] ( 1.0000 0.0000i): 1.0000",
-		// 	},
-		// },
-		// {
-		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
-		// 		gate negcx q0, q1 { negctrl @ x q0, q1; }
-		// 		qubit[3] q;
-		// 		negctrl @ negcx q[0], q[1], q[2];
-		// 	`,
-		// 	want: []string{
-		// 		"[001] ( 1.0000 0.0000i): 1.0000",
-		// 	},
-		// },
-		// {
-		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
-		// 		qubit[2] q;
-		// 		x q[1];
-		// 		ctrl @ x q[1], q[0];
-		// 	`,
-		// 	want: []string{
-		// 		"[11] ( 1.0000 0.0000i): 1.0000",
-		// 	},
-		// },
-		// {
-		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
-		// 		gate negcx q0, q1 { negctrl @ x q0, q1; }
-		// 		qubit[3] q;
-		// 		negctrl @ negcx q[1], q[2], q[0];
-		// 	`,
-		// 	want: []string{
-		// 		"[100] ( 1.0000 0.0000i): 1.0000",
-		// 	},
-		// },
-		// {
-		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
-		// 		gate negcx q0, q1 { negctrl @ x q0, q1; }
-		// 		qubit[3] q;
-		// 		negctrl @ negcx q[2], q[0], q[1];
-		// 	`,
-		// 	want: []string{
-		// 		"[010] ( 1.0000 0.0000i): 1.0000",
-		// 	},
-		// },
-		// {
-		// 	text: `
-		// 		gate x q { U(pi, 0, pi) q; gphase(-pi/2); }
-		// 		gate cx q0, q1 { ctrl @ x q0, q1; }
-		// 		qubit[3] q;
-		// 		x q[1];
-		// 		x q[2];
-		// 		ctrl @ cx q[1], q[2], q[0];
-		// 	`,
-		// 	want: []string{
-		// 		"[111] ( 1.0000 0.0000i): 1.0000",
-		// 	},
-		// },
 	}
 
 	for _, c := range cases {
-		qsim, _, err := visitor.Run(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		for i, s := range qsim.State() {
-			if s.String() == c.want[i] {
-				continue
-			}
-
-			t.Errorf("got=%v, want=%v", s.String(), c.want[i])
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitGateModifier(t *testing.T) {
+func TestVisitorVisitGateModifier(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   []string
-		errMsg string
+		text string
+		want []string
 	}{
 		{
 			text: `
@@ -2256,13 +2400,6 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 			want: []string{
 				"[1] ( 0.0000-1.0000i): 1.0000",
 			},
-		},
-		{
-			text: `
-				qubit q;
-				pow(true) @ U(pi, 0, pi) q;
-			`,
-			errMsg: `apply "pow(true)@": unexpected type: bool`,
 		},
 		{
 			text: `
@@ -2364,6 +2501,37 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 				"[11] ( 0.0000-0.7071i): 0.5000",
 			},
 		},
+	}
+
+	for _, c := range cases {
+		qsim, _, err := visitor.Run(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		for i, s := range qsim.State() {
+			if s.String() == c.want[i] {
+				continue
+			}
+
+			t.Errorf("got=%v, want=%v", s.String(), c.want[i])
+		}
+	}
+}
+
+func TestVisitorVisitGateModifier_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
+		{
+			text: `
+				qubit q;
+				pow(true) @ U(pi, 0, pi) q;
+			`,
+			errMsg: `apply "pow(true)@": unexpected type: bool`,
+		},
 		{
 			// not implemented
 			text: `
@@ -2385,30 +2553,22 @@ func TestVisitor_VisitGateModifier(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		qsim, _, err := visitor.Run(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		for i, s := range qsim.State() {
-			if s.String() == c.want[i] {
-				continue
-			}
-
-			t.Errorf("got=%v, want=%v", s.String(), c.want[i])
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitDefStatement(t *testing.T) {
+func TestVisitorVisitDefStatement(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   string
-		errMsg string
+		text string
+		want string
 	}{
 		{
 			text: `
@@ -2434,6 +2594,30 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 			`,
 			want: "map[c:true]",
 		},
+	}
+
+	for _, c := range cases {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if len(env.ClBit) > 0 && fmt.Sprintf("%v", env.ClBit) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClBit, c.want)
+		}
+
+		if len(env.ClBitArray) > 0 && fmt.Sprintf("%v", env.ClBitArray) != c.want {
+			t.Errorf("got=%v, want=%v", env.ClBitArray, c.want)
+		}
+	}
+}
+
+func TestVisitorVisitDefStatement_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
 		{
 			text: `
 				qubit q;
@@ -2448,26 +2632,19 @@ func TestVisitor_VisitDefStatement(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		_, env, err := visitor.Run(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if len(env.ClBit) > 0 && fmt.Sprintf("%v", env.ClBit) != c.want {
-			t.Errorf("got=%v, want=%v", env.ClBit, c.want)
-		}
-
-		if len(env.ClBitArray) > 0 && fmt.Sprintf("%v", env.ClBitArray) != c.want {
-			t.Errorf("got=%v, want=%v", env.ClBitArray, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitIfStatement(t *testing.T) {
+func TestVisitorVisitIfStatement(t *testing.T) {
 	cases := []struct {
 		text string
 		want string
@@ -2501,7 +2678,7 @@ func TestVisitor_VisitIfStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitForStatement(t *testing.T) {
+func TestVisitorVisitForStatement(t *testing.T) {
 	cases := []struct {
 		text string
 		want string
@@ -2557,7 +2734,7 @@ func TestVisitor_VisitForStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitBreakStatement(t *testing.T) {
+func TestVisitorVisitBreakStatement(t *testing.T) {
 	cases := []struct {
 		text string
 		want string
@@ -2589,7 +2766,7 @@ func TestVisitor_VisitBreakStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitContinueStatement(t *testing.T) {
+func TestVisitorVisitContinueStatement(t *testing.T) {
 	cases := []struct {
 		text string
 		want string
@@ -2621,7 +2798,7 @@ func TestVisitor_VisitContinueStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitWhileStatement(t *testing.T) {
+func TestVisitorVisitWhileStatement(t *testing.T) {
 	cases := []struct {
 		text string
 		want string
@@ -2705,7 +2882,7 @@ func TestVisitor_VisitWhileStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitSwitchStatement(t *testing.T) {
+func TestVisitorVisitSwitchStatement(t *testing.T) {
 	cases := []struct {
 		text string
 		want string
@@ -2777,11 +2954,10 @@ func TestVisitor_VisitSwitchStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitCastExpression(t *testing.T) {
+func TestVisitorVisitCastExpression(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   string
-		errMsg string
+		text string
+		want string
 	}{
 		{
 			text: "int a = 42; float b = float(a); float c = b + 0.1;",
@@ -2808,22 +2984,6 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 			want: "map[a:42]",
 		},
 		{
-			text:   "bool a = true; int b = int(a);",
-			errMsg: "int(true): unexpected type: bool",
-		},
-		{
-			text:   "bool a = true; uint b = uint(a);",
-			errMsg: "uint(true): unexpected type: bool",
-		},
-		{
-			text:   "bool a = true; float b = float(a);",
-			errMsg: "float64(true): unexpected type: bool",
-		},
-		{
-			text:   "bool a = bool(1);",
-			errMsg: `unsupported scalar type "bool"`,
-		},
-		{
 			text: "int[32] a = 42;",
 			want: "map[a:42]",
 		},
@@ -2840,15 +3000,7 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 	for _, c := range cases {
 		_, env, err := visitor.Run(c.text)
 		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
-			continue
-		}
-
-		if c.errMsg != "" {
-			t.Errorf("got=nil error, want=%s", c.errMsg)
+			t.Errorf("unexpected error: %v", err)
 			continue
 		}
 
@@ -2858,10 +3010,45 @@ func TestVisitor_VisitCastExpression(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitIndexedIdentifier(t *testing.T) {
+func TestVisitorVisitCastExpression_invalid(t *testing.T) {
 	cases := []struct {
 		text   string
-		want   []int64
+		errMsg string
+	}{
+		{
+			text:   "bool a = true; int b = int(a);",
+			errMsg: "int(true): unexpected type: bool",
+		},
+		{
+			text:   "bool a = true; uint b = uint(a);",
+			errMsg: "uint(true): unexpected type: bool",
+		},
+		{
+			text:   "bool a = true; float b = float(a);",
+			errMsg: "float64(true): unexpected type: bool",
+		},
+		{
+			text:   "bool a = bool(1);",
+			errMsg: `unsupported scalar type "bool"`,
+		},
+	}
+
+	for _, c := range cases {
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
+			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func TestVisitorVisitIndexedIdentifier_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
 		errMsg string
 	}{
 		{
@@ -2875,6 +3062,7 @@ func TestVisitor_VisitIndexedIdentifier(t *testing.T) {
 
 	for _, c := range cases {
 		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+
 		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
 		id := p.Program().
@@ -2891,25 +3079,22 @@ func TestVisitor_VisitIndexedIdentifier(t *testing.T) {
 		}
 
 		result := visitor.New(q.New(), environ.New()).VisitIndexedIdentifier(ctx)
-		if err, ok := result.(error); ok {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		err, ok := result.(error)
+		if !ok {
+			t.Errorf("got=%v (%T), want error", result, result)
 			continue
 		}
 
-		if fmt.Sprintf("%v", result) != fmt.Sprintf("%v", c.want) {
-			t.Errorf("got=%v, want=%v", result, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitIndexExpression(t *testing.T) {
+func TestVisitorVisitIndexExpression(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   string
-		errMsg string
+		text string
+		want string
 	}{
 		{
 			text: `bit[2] m = "10"; m[0];`,
@@ -2970,6 +3155,26 @@ func TestVisitor_VisitIndexExpression(t *testing.T) {
 			text: `bit[3] m = "101"; m[1:1];`,
 			want: "[]",
 		},
+	}
+
+	for _, c := range cases {
+		result, err := visitor.Visit(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if fmt.Sprintf("%v", result) != c.want {
+			t.Errorf("got=%v, want=%v", result, c.want)
+		}
+	}
+}
+
+func TestVisitorVisitIndexExpression_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
 		{
 			text:   "bit[2] m; m[-1];",
 			errMsg: "bit index -1 out of range for size 2",
@@ -3021,44 +3226,32 @@ func TestVisitor_VisitIndexExpression(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		result, err := visitor.Visit(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, err := visitor.Visit(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if c.errMsg != "" {
-			t.Errorf("got=nil error, want=%s", c.errMsg)
-			continue
-		}
-
-		if fmt.Sprintf("%v", result) != c.want {
-			t.Errorf("got=%v, want=%v", result, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitScalarType(t *testing.T) {
+func TestVisitorVisitScalarType(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   int64
-		errMsg string
+		text string
+		want int64
 	}{
 		{
 			text: "angle a = 0;",
 			want: 1,
 		},
-		{
-			text:   "angle[1.1] a;",
-			errMsg: `size must be an integer "[1.1]"`,
-		},
 	}
 
 	for _, c := range cases {
 		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+
 		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
 		scalar := p.Program().
@@ -3074,10 +3267,7 @@ func TestVisitor_VisitScalarType(t *testing.T) {
 
 		result := visitor.New(q.New(), environ.New()).VisitScalarType(ctx)
 		if err, ok := result.(error); ok {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+			t.Errorf("unexpected error: %v", err)
 			continue
 		}
 
@@ -3092,24 +3282,60 @@ func TestVisitor_VisitScalarType(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitQubitType(t *testing.T) {
+func TestVisitorVisitScalarType_invalid(t *testing.T) {
 	cases := []struct {
 		text   string
-		want   int64
 		errMsg string
 	}{
 		{
-			text: "qubit q;",
-			want: 1,
-		},
-		{
-			text:   "qubit[1.1] q;",
+			text:   "angle[1.1] a;",
 			errMsg: `size must be an integer "[1.1]"`,
 		},
 	}
 
 	for _, c := range cases {
 		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		scalar := p.Program().
+			StatementOrScope(0).
+			Statement().
+			ClassicalDeclarationStatement().
+			ScalarType()
+
+		ctx, ok := scalar.(*parser.ScalarTypeContext)
+		if !ok {
+			t.Fatalf("scalar type=%T", scalar)
+		}
+
+		result := visitor.New(q.New(), environ.New()).VisitScalarType(ctx)
+		err, ok := result.(error)
+		if !ok {
+			t.Errorf("got=%v (%T), want error", result, result)
+			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func TestVisitorVisitQubitType(t *testing.T) {
+	cases := []struct {
+		text string
+		want int64
+	}{
+		{
+			text: "qubit q;",
+			want: 1,
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+
 		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
 		qb := p.Program().
@@ -3125,10 +3351,7 @@ func TestVisitor_VisitQubitType(t *testing.T) {
 
 		result := visitor.New(q.New(), environ.New()).VisitQubitType(ctx)
 		if err, ok := result.(error); ok {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+			t.Errorf("unexpected error: %v", err)
 			continue
 		}
 
@@ -3143,10 +3366,49 @@ func TestVisitor_VisitQubitType(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitRangeExpression(t *testing.T) {
+func TestVisitorVisitQubitType_invalid(t *testing.T) {
 	cases := []struct {
 		text   string
-		want   []int64
+		errMsg string
+	}{
+		{
+			text:   "qubit[1.1] q;",
+			errMsg: `size must be an integer "[1.1]"`,
+		},
+	}
+
+	for _, c := range cases {
+		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+
+		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
+
+		qb := p.Program().
+			StatementOrScope(0).
+			Statement().
+			QuantumDeclarationStatement().
+			QubitType()
+
+		ctx, ok := qb.(*parser.QubitTypeContext)
+		if !ok {
+			t.Fatalf("qubit type=%T", qb)
+		}
+
+		result := visitor.New(q.New(), environ.New()).VisitQubitType(ctx)
+		err, ok := result.(error)
+		if !ok {
+			t.Errorf("got=%v (%T), want error", result, result)
+			continue
+		}
+
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func TestVisitorVisitRangeExpression_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
 		errMsg string
 	}{
 		{
@@ -3157,6 +3419,7 @@ func TestVisitor_VisitRangeExpression(t *testing.T) {
 
 	for _, c := range cases {
 		lexer := parser.Newqasm3Lexer(antlr.NewInputStream(c.text))
+
 		p := parser.Newqasm3Parser(antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel))
 
 		x := p.Program().
@@ -3171,25 +3434,22 @@ func TestVisitor_VisitRangeExpression(t *testing.T) {
 		}
 
 		result := visitor.New(q.New(), environ.New()).VisitRangeExpression(ctx)
-		if err, ok := result.(error); ok {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		err, ok := result.(error)
+		if !ok {
+			t.Errorf("got=%v (%T), want error", result, result)
 			continue
 		}
 
-		if fmt.Sprintf("%v", result) != fmt.Sprintf("%v", c.want) {
-			t.Errorf("got=%v, want=%v", result, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitArrayType(t *testing.T) {
+func TestVisitorVisitArrayType(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   string
-		errMsg string
+		text string
+		want string
 	}{
 		{
 			text: "array[int[8], 5] aa;",
@@ -3208,10 +3468,6 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 			want: "map[aa:[0 0 0 0 0]]",
 		},
 		{
-			text:   "array[int[11], 5] aa;",
-			errMsg: "unsupported bit size 11",
-		},
-		{
 			text: "array[uint[8], 5] aa;",
 			want: "map[aa:[0 0 0 0 0]]",
 		},
@@ -3228,16 +3484,44 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 			want: "map[aa:[0 0 0]]",
 		},
 		{
-			text:   "array[uint[11], 5] aa;",
-			errMsg: "unsupported bit size 11",
-		},
-		{
 			text: "array[float[32], 3] aa;",
 			want: "map[aa:[0 0 0]]",
 		},
 		{
 			text: "array[float[64], 3] aa;",
 			want: "map[aa:[0 0 0]]",
+		},
+		{
+			text: "array[bool, 3] aa;",
+			want: "map[aa:[false false false]]",
+		},
+	}
+
+	for _, c := range cases {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			continue
+		}
+
+		if fmt.Sprintf("%v", env.Variable) != c.want {
+			t.Errorf("got=%v, want=%v", env.Variable, c.want)
+		}
+	}
+}
+
+func TestVisitorVisitArrayType_invalid(t *testing.T) {
+	cases := []struct {
+		text   string
+		errMsg string
+	}{
+		{
+			text:   "array[int[11], 5] aa;",
+			errMsg: "unsupported bit size 11",
+		},
+		{
+			text:   "array[uint[11], 5] aa;",
+			errMsg: "unsupported bit size 11",
 		},
 		{
 			text:   "array[float[11], 5] aa;",
@@ -3248,36 +3532,28 @@ func TestVisitor_VisitArrayType(t *testing.T) {
 			errMsg: `unsupported scalar type "angle[4]"`,
 		},
 		{
-			text: "array[bool, 3] aa;",
-			want: "map[aa:[false false false]]",
-		},
-		{
 			text:   "array[int[64], 5] aa;array[float[64], 5] aa;",
 			errMsg: `"aa" redeclared`,
 		},
 	}
 
 	for _, c := range cases {
-		_, env, err := visitor.Run(c.text)
-		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
-
+		_, _, err := visitor.Run(c.text)
+		if err == nil {
+			t.Error("expected an error")
 			continue
 		}
 
-		if fmt.Sprintf("%v", env.Variable) != c.want {
-			t.Errorf("got=%v, want=%v", env.Variable, c.want)
+		if err.Error() != c.errMsg {
+			t.Errorf("got=%v, want=%v", err, c.errMsg)
 		}
 	}
 }
 
-func TestVisitor_VisitArrayLiteral(t *testing.T) {
+func TestVisitorVisitArrayLiteral(t *testing.T) {
 	cases := []struct {
-		text   string
-		want   string
-		errMsg string
+		text string
+		want string
 	}{
 		{
 			text: "array[int[8], 3] aa = {0, 1, 2};",
@@ -3288,9 +3564,7 @@ func TestVisitor_VisitArrayLiteral(t *testing.T) {
 	for _, c := range cases {
 		_, env, err := visitor.Run(c.text)
 		if err != nil {
-			if err.Error() != c.errMsg {
-				t.Errorf("got=%v, want=%v", err, c.errMsg)
-			}
+			t.Errorf("unexpected error: %v", err)
 
 			continue
 		}
@@ -3301,7 +3575,7 @@ func TestVisitor_VisitArrayLiteral(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitMeasureExpression(t *testing.T) {
+func TestVisitorVisitMeasureExpression(t *testing.T) {
 	cases := []struct {
 		text string
 		want any
@@ -3331,6 +3605,7 @@ func TestVisitor_VisitMeasureExpression(t *testing.T) {
 		statements := p.Program().AllStatementOrScope()
 
 		v := visitor.New(q.New(), environ.New())
+
 		for _, s := range statements[:len(statements)-1] {
 			if err := v.Run(s); err != nil {
 				t.Fatalf("got=%v, want no error", err)
@@ -3366,7 +3641,7 @@ func TestVisitor_VisitMeasureExpression(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
+func TestVisitorVisitMeasureExpression_invalidAssignment(t *testing.T) {
 	cases := []struct {
 		text   string
 		errMsg string
@@ -3383,6 +3658,7 @@ func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
 		statements := p.Program().AllStatementOrScope()
 
 		v := visitor.New(q.New(), environ.New())
+
 		if err := v.Run(statements[0]); err != nil {
 			t.Fatalf("got=%v, want no error", err)
 		}
@@ -3393,7 +3669,6 @@ func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
 			DeclarationExpression().
 			MeasureExpression(),
 		)
-
 		err, ok := x.(error)
 		if !ok {
 			t.Fatalf("got=%T, want error", x)
@@ -3405,19 +3680,47 @@ func TestVisitor_VisitMeasureExpression_assign(t *testing.T) {
 	}
 }
 
-func TestVisitor_VisitEndStatement(t *testing.T) {
+func TestVisitorVisitEndStatement(t *testing.T) {
 	cases := []struct {
 		name string
 		text string
 		want string
 	}{
-		{name: "direct", text: `stop();`, want: "map[touched:0]"},
-		{name: "initializer", text: `int result=stop();`, want: "map[touched:0]"},
-		{name: "assignment", text: `int result=0; result=stop();`, want: "map[result:0 touched:0]"},
-		{name: "return", text: `def f() -> int { return stop(); } int result=f();`, want: "map[touched:0]"},
-		{name: "argument", text: `mod(stop(),touch(q));`, want: "map[touched:0]"},
-		{name: "gate argument", text: `U(stop(),0,0) q;`, want: "map[touched:0]"},
-		{name: "loop condition", text: `while (stop()==0) { break; }`, want: "map[touched:0]"},
+		{
+			name: "direct",
+			text: `stop();`,
+			want: "map[touched:0]",
+		},
+		{
+			name: "initializer",
+			text: `int result=stop();`,
+			want: "map[touched:0]",
+		},
+		{
+			name: "assignment",
+			text: `int result=0; result=stop();`,
+			want: "map[result:0 touched:0]",
+		},
+		{
+			name: "return",
+			text: `def f() -> int { return stop(); } int result=f();`,
+			want: "map[touched:0]",
+		},
+		{
+			name: "argument",
+			text: `mod(stop(),touch(q));`,
+			want: "map[touched:0]",
+		},
+		{
+			name: "gate argument",
+			text: `U(stop(),0,0) q;`,
+			want: "map[touched:0]",
+		},
+		{
+			name: "loop condition",
+			text: `while (stop()==0) { break; }`,
+			want: "map[touched:0]",
+		},
 	}
 
 	for _, c := range cases {
@@ -3441,63 +3744,204 @@ func TestVisitor_VisitEndStatement(t *testing.T) {
 	}
 }
 
-func TestVisitor_unimplemented(t *testing.T) {
-	v := visitor.New(q.New(), environ.New())
-
+func TestVisitor_invalidUnimplemented(t *testing.T) {
 	cases := []struct {
-		name string
-		err  error
+		name  string
+		visit func(*visitor.Visitor) any
 	}{
-		{name: "VisitPragma", err: v.VisitPragma(&parser.PragmaContext{}).(error)},
-		{name: "VisitAnnotation", err: v.VisitAnnotation(&parser.AnnotationContext{}).(error)},
-		{name: "VisitDurationofExpression", err: v.VisitDurationofExpression(&parser.DurationofExpressionContext{}).(error)},
-		{name: "VisitSetExpression", err: v.VisitSetExpression(&parser.SetExpressionContext{}).(error)},
-		{name: "VisitArrayReferenceType", err: v.VisitArrayReferenceType(&parser.ArrayReferenceTypeContext{}).(error)},
-		{name: "VisitDefcalArgumentDefinitionList", err: v.VisitDefcalArgumentDefinitionList(&parser.DefcalArgumentDefinitionListContext{}).(error)},
-		{name: "VisitDefcalArgumentDefinition", err: v.VisitDefcalArgumentDefinition(&parser.DefcalArgumentDefinitionContext{}).(error)},
-		{name: "VisitDefcalTarget", err: v.VisitDefcalTarget(&parser.DefcalTargetContext{}).(error)},
-		{name: "VisitDefcalOperandList", err: v.VisitDefcalOperandList(&parser.DefcalOperandListContext{}).(error)},
-		{name: "VisitDefcalOperand", err: v.VisitDefcalOperand(&parser.DefcalOperandContext{}).(error)},
-		{name: "VisitIoDeclarationStatement", err: v.VisitIoDeclarationStatement(&parser.IoDeclarationStatementContext{}).(error)},
-		{name: "VisitExternStatement", err: v.VisitExternStatement(&parser.ExternStatementContext{}).(error)},
-		{name: "VisitExternArgumentList", err: v.VisitExternArgumentList(&parser.ExternArgumentListContext{}).(error)},
-		{name: "VisitExternArgument", err: v.VisitExternArgument(&parser.ExternArgumentContext{}).(error)},
-		{name: "VisitCalStatement", err: v.VisitCalStatement(&parser.CalStatementContext{}).(error)},
-		{name: "VisitDefcalStatement", err: v.VisitDefcalStatement(&parser.DefcalStatementContext{}).(error)},
-		{name: "VisitCalibrationGrammarStatement", err: v.VisitCalibrationGrammarStatement(&parser.CalibrationGrammarStatementContext{}).(error)},
-		{name: "VisitBoxStatement", err: v.VisitBoxStatement(&parser.BoxStatementContext{}).(error)},
-		{name: "VisitDelayStatement", err: v.VisitDelayStatement(&parser.DelayStatementContext{}).(error)},
+		{
+			name: "VisitPragma",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitPragma(&parser.PragmaContext{})
+			},
+		},
+		{
+			name: "VisitAnnotation",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitAnnotation(&parser.AnnotationContext{})
+			},
+		},
+		{
+			name: "VisitDurationofExpression",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitDurationofExpression(&parser.DurationofExpressionContext{})
+			},
+		},
+		{
+			name: "VisitSetExpression",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitSetExpression(&parser.SetExpressionContext{})
+			},
+		},
+		{
+			name: "VisitArrayReferenceType",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitArrayReferenceType(&parser.ArrayReferenceTypeContext{})
+			},
+		},
+		{
+			name: "VisitDefcalArgumentDefinitionList",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitDefcalArgumentDefinitionList(&parser.DefcalArgumentDefinitionListContext{})
+			},
+		},
+		{
+			name: "VisitDefcalArgumentDefinition",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitDefcalArgumentDefinition(&parser.DefcalArgumentDefinitionContext{})
+			},
+		},
+		{
+			name: "VisitDefcalTarget",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitDefcalTarget(&parser.DefcalTargetContext{})
+			},
+		},
+		{
+			name: "VisitDefcalOperandList",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitDefcalOperandList(&parser.DefcalOperandListContext{})
+			},
+		},
+		{
+			name: "VisitDefcalOperand",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitDefcalOperand(&parser.DefcalOperandContext{})
+			},
+		},
+		{
+			name: "VisitIoDeclarationStatement",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitIoDeclarationStatement(&parser.IoDeclarationStatementContext{})
+			},
+		},
+		{
+			name: "VisitExternStatement",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitExternStatement(&parser.ExternStatementContext{})
+			},
+		},
+		{
+			name: "VisitExternArgumentList",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitExternArgumentList(&parser.ExternArgumentListContext{})
+			},
+		},
+		{
+			name: "VisitExternArgument",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitExternArgument(&parser.ExternArgumentContext{})
+			},
+		},
+		{
+			name: "VisitCalStatement",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitCalStatement(&parser.CalStatementContext{})
+			},
+		},
+		{
+			name: "VisitDefcalStatement",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitDefcalStatement(&parser.DefcalStatementContext{})
+			},
+		},
+		{
+			name: "VisitCalibrationGrammarStatement",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitCalibrationGrammarStatement(&parser.CalibrationGrammarStatementContext{})
+			},
+		},
+		{
+			name: "VisitBoxStatement",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitBoxStatement(&parser.BoxStatementContext{})
+			},
+		},
+		{
+			name: "VisitDelayStatement",
+			visit: func(v *visitor.Visitor) any {
+				return v.VisitDelayStatement(&parser.DelayStatementContext{})
+			},
+		},
 	}
 
 	for _, c := range cases {
-		if !errors.Is(c.err, visitor.ErrNotImplemented) {
-			t.Fatalf("got=%v", c.err)
+		v := visitor.New(q.New(), environ.New())
+
+		result := c.visit(v)
+		err, ok := result.(error)
+		if !ok {
+			t.Errorf("%s: got=%v (%T), want error", c.name, result, result)
+			continue
 		}
 
-		if !strings.Contains(c.err.Error(), c.name) {
-			t.Fatalf("got=%v", c.err)
+		if !errors.Is(err, visitor.ErrNotImplemented) {
+			t.Fatalf("got=%v", err)
+		}
+
+		if !strings.Contains(err.Error(), c.name) {
+			t.Fatalf("got=%v", err)
 		}
 	}
 }
 
-func TestVisitor_nestedErrors(t *testing.T) {
+func TestVisitor_invalidNested(t *testing.T) {
 	scopes := []struct {
 		name string
 		text string
 	}{
-		{name: "scope", text: `{ %s }`},
-		{name: "nested scope", text: `{ { %s } touched = 1; }`},
-		{name: "if", text: `if (true) { %s }`},
-		{name: "else", text: `if (false) {} else { %s }`},
-		{name: "for", text: `for int i in [0:1] { %s }`},
-		{name: "while", text: `while (touched < 1) { %s }`},
-		{name: "switch case", text: `switch (1) { case 1 { %s } }`},
-		{name: "switch default", text: `switch (1) { default { %s } }`},
-		{name: "function", text: `def f(qubit arg) { %s } f(q);`},
-		{name: "function without arguments", text: `def f() { %s } f();`},
-		{name: "function initializer", text: `def f(qubit arg) -> int { %s return 1; } int result = f(q);`},
-		{name: "function initializer without arguments", text: `def f() -> int { %s return 1; } int result = f();`},
-		{name: "nested function", text: `def f(qubit arg) { %s } def g(qubit arg) { f(arg); touched = 1; } g(q);`},
+		{
+			name: "scope",
+			text: `{ %s }`,
+		},
+		{
+			name: "nested scope",
+			text: `{ { %s } touched = 1; }`,
+		},
+		{
+			name: "if",
+			text: `if (true) { %s }`,
+		},
+		{
+			name: "else",
+			text: `if (false) {} else { %s }`,
+		},
+		{
+			name: "for",
+			text: `for int i in [0:1] { %s }`,
+		},
+		{
+			name: "while",
+			text: `while (touched < 1) { %s }`,
+		},
+		{
+			name: "switch case",
+			text: `switch (1) { case 1 { %s } }`,
+		},
+		{
+			name: "switch default",
+			text: `switch (1) { default { %s } }`,
+		},
+		{
+			name: "function",
+			text: `def f(qubit arg) { %s } f(q);`,
+		},
+		{
+			name: "function without arguments",
+			text: `def f() { %s } f();`,
+		},
+		{
+			name: "function initializer",
+			text: `def f(qubit arg) -> int { %s return 1; } int result = f(q);`,
+		},
+		{
+			name: "function initializer without arguments",
+			text: `def f() -> int { %s return 1; } int result = f();`,
+		},
+		{
+			name: "nested function",
+			text: `def f(qubit arg) { %s } def g(qubit arg) { f(arg); touched = 1; } g(q);`,
+		},
 	}
 
 	cases := []struct {
@@ -3506,12 +3950,36 @@ func TestVisitor_nestedErrors(t *testing.T) {
 		wantErr   string
 		wantLimit bool
 	}{
-		{name: "undefined operand", statement: `reset missing;`, wantErr: `undefined "missing"`},
-		{name: "measurement", statement: `measure missing;`, wantErr: `undefined "missing"`},
-		{name: "measurement assignment", statement: `bit result; measure missing -> result;`, wantErr: `undefined "missing"`},
-		{name: "redeclared variable", statement: `int a = 1; int a = 2;`, wantErr: `"a" redeclared`},
-		{name: "qubit limit", statement: `qubit extra;`, wantLimit: true},
-		{name: "old style qubit limit", statement: `qreg extra[1];`, wantLimit: true},
+		{
+			name:      "undefined operand",
+			statement: `reset missing;`,
+			wantErr:   `undefined "missing"`,
+		},
+		{
+			name:      "measurement",
+			statement: `measure missing;`,
+			wantErr:   `undefined "missing"`,
+		},
+		{
+			name:      "measurement assignment",
+			statement: `bit result; measure missing -> result;`,
+			wantErr:   `undefined "missing"`,
+		},
+		{
+			name:      "redeclared variable",
+			statement: `int a = 1; int a = 2;`,
+			wantErr:   `"a" redeclared`,
+		},
+		{
+			name:      "qubit limit",
+			statement: `qubit extra;`,
+			wantLimit: true,
+		},
+		{
+			name:      "old style qubit limit",
+			statement: `qreg extra[1];`,
+			wantLimit: true,
+		},
 	}
 
 	for _, scope := range scopes {
@@ -3553,63 +4021,219 @@ func TestVisitor_nestedErrors(t *testing.T) {
 	}
 }
 
-func TestVisitor_functionErrors(t *testing.T) {
+func TestVisitor_invalidFunction(t *testing.T) {
 	cases := []struct {
 		name string
 		text string
 	}{
-		{name: "assignment", text: `int result = 0; result = fail(q);`},
-		{name: "constant", text: `const int result = fail(q);`},
-		{name: "integer initializer", text: `int result = fail(q);`},
-		{name: "unsigned initializer", text: `uint result = fail(q);`},
-		{name: "float initializer", text: `float result = fail(q);`},
-		{name: "bool initializer", text: `bool result = fail(q);`},
-		{name: "angle initializer", text: `angle result = fail(q);`},
-		{name: "bit initializer", text: `bit result = fail(q);`},
-		{name: "bit array initializer", text: `bit[1] result = fail(q);`},
-		{name: "array initializer", text: `array[int[64], 2] result = {fail(q), touch(q)};`},
-		{name: "if condition", text: `if (fail(q)) { touched = 1; }`},
-		{name: "while condition", text: `while (fail(q)) { break; }`},
-		{name: "for range", text: `for int i in [0:fail(q)] { break; }`},
-		{name: "switch expression", text: `switch (fail(q)) { default { touched = 1; } }`},
-		{name: "switch case expression", text: `switch (1) { case fail(q), touch(q) { touched = 1; } }`},
-		{name: "builtin argument", text: `mod(fail(q), touch(q));`},
-		{name: "function argument", text: `def g(qubit arg) { touched = 1; } g(fail(q));`},
-		{name: "gate argument", text: `U(fail(q), touch(q), 0) q;`},
-		{name: "gate power", text: `pow(fail(q)) @ U(0, 0, 0) q;`},
-		{name: "gate control", text: `ctrl(fail(q)) @ U(0, 0, 0) q;`},
-		{name: "gate negative control", text: `negctrl(fail(q)) @ U(0, 0, 0) q;`},
-		{name: "cast", text: `int(fail(q));`},
-		{name: "logical and", text: `fail(q) && touch(q);`},
-		{name: "logical and right operand", text: `true && fail(q);`},
-		{name: "logical or", text: `fail(q) || touch(q);`},
-		{name: "logical or right operand", text: `false || fail(q);`},
-		{name: "bitwise and", text: `fail(q) & touch(q);`},
-		{name: "bitwise and right operand", text: `1 & fail(q);`},
-		{name: "bitwise or", text: `fail(q) | touch(q);`},
-		{name: "bitwise or right operand", text: `1 | fail(q);`},
-		{name: "bitwise xor", text: `fail(q) ^ touch(q);`},
-		{name: "bitwise xor right operand", text: `1 ^ fail(q);`},
-		{name: "left shift", text: `fail(q) << touch(q);`},
-		{name: "left shift right operand", text: `1 << fail(q);`},
-		{name: "right shift", text: `fail(q) >> touch(q);`},
-		{name: "right shift right operand", text: `1 >> fail(q);`},
-		{name: "index expression", text: `q[fail(q)];`},
-		{name: "index operand", text: `fail(q)[0];`},
-		{name: "index range", text: `q[0:fail(q)];`},
-		{name: "gate operand index", text: `reset q[fail(q)];`},
-		{name: "assignment index", text: `bit[1] result; result[fail(q)] = touch(q);`},
-		{name: "measurement index", text: `bit[1] result; measure q -> result[fail(q)];`},
-		{name: "qubit size", text: `qubit[fail(q)] result;`},
-		{name: "old style qubit size", text: `qreg result[fail(q)];`},
-		{name: "old style bit size", text: `creg result[fail(q)];`},
-		{name: "bit size", text: `bit[fail(q)] result;`},
-		{name: "angle size", text: `angle[fail(q)] result;`},
-		{name: "array size", text: `array[int[64], fail(q)] result;`},
-		{name: "array element size", text: `array[int[fail(q)], 1] result;`},
-		{name: "unsigned array element size", text: `array[uint[fail(q)], 1] result;`},
-		{name: "float array element size", text: `array[float[fail(q)], 1] result;`},
-		{name: "alias", text: `let result = fail(q) ++ touch(q);`},
+		{
+			name: "assignment",
+			text: `int result = 0; result = fail(q);`,
+		},
+		{
+			name: "constant",
+			text: `const int result = fail(q);`,
+		},
+		{
+			name: "integer initializer",
+			text: `int result = fail(q);`,
+		},
+		{
+			name: "unsigned initializer",
+			text: `uint result = fail(q);`,
+		},
+		{
+			name: "float initializer",
+			text: `float result = fail(q);`,
+		},
+		{
+			name: "bool initializer",
+			text: `bool result = fail(q);`,
+		},
+		{
+			name: "angle initializer",
+			text: `angle result = fail(q);`,
+		},
+		{
+			name: "bit initializer",
+			text: `bit result = fail(q);`,
+		},
+		{
+			name: "bit array initializer",
+			text: `bit[1] result = fail(q);`,
+		},
+		{
+			name: "array initializer",
+			text: `array[int[64], 2] result = {fail(q), touch(q)};`,
+		},
+		{
+			name: "if condition",
+			text: `if (fail(q)) { touched = 1; }`,
+		},
+		{
+			name: "while condition",
+			text: `while (fail(q)) { break; }`,
+		},
+		{
+			name: "for range",
+			text: `for int i in [0:fail(q)] { break; }`,
+		},
+		{
+			name: "switch expression",
+			text: `switch (fail(q)) { default { touched = 1; } }`,
+		},
+		{
+			name: "switch case expression",
+			text: `switch (1) { case fail(q), touch(q) { touched = 1; } }`,
+		},
+		{
+			name: "builtin argument",
+			text: `mod(fail(q), touch(q));`,
+		},
+		{
+			name: "function argument",
+			text: `def g(qubit arg) { touched = 1; } g(fail(q));`,
+		},
+		{
+			name: "gate argument",
+			text: `U(fail(q), touch(q), 0) q;`,
+		},
+		{
+			name: "gate power",
+			text: `pow(fail(q)) @ U(0, 0, 0) q;`,
+		},
+		{
+			name: "gate control",
+			text: `ctrl(fail(q)) @ U(0, 0, 0) q;`,
+		},
+		{
+			name: "gate negative control",
+			text: `negctrl(fail(q)) @ U(0, 0, 0) q;`,
+		},
+		{
+			name: "cast",
+			text: `int(fail(q));`,
+		},
+		{
+			name: "logical and",
+			text: `fail(q) && touch(q);`,
+		},
+		{
+			name: "logical and right operand",
+			text: `true && fail(q);`,
+		},
+		{
+			name: "logical or",
+			text: `fail(q) || touch(q);`,
+		},
+		{
+			name: "logical or right operand",
+			text: `false || fail(q);`,
+		},
+		{
+			name: "bitwise and",
+			text: `fail(q) & touch(q);`,
+		},
+		{
+			name: "bitwise and right operand",
+			text: `1 & fail(q);`,
+		},
+		{
+			name: "bitwise or",
+			text: `fail(q) | touch(q);`,
+		},
+		{
+			name: "bitwise or right operand",
+			text: `1 | fail(q);`,
+		},
+		{
+			name: "bitwise xor",
+			text: `fail(q) ^ touch(q);`,
+		},
+		{
+			name: "bitwise xor right operand",
+			text: `1 ^ fail(q);`,
+		},
+		{
+			name: "left shift",
+			text: `fail(q) << touch(q);`,
+		},
+		{
+			name: "left shift right operand",
+			text: `1 << fail(q);`,
+		},
+		{
+			name: "right shift",
+			text: `fail(q) >> touch(q);`,
+		},
+		{
+			name: "right shift right operand",
+			text: `1 >> fail(q);`,
+		},
+		{
+			name: "index expression",
+			text: `q[fail(q)];`,
+		},
+		{
+			name: "index operand",
+			text: `fail(q)[0];`,
+		},
+		{
+			name: "index range",
+			text: `q[0:fail(q)];`,
+		},
+		{
+			name: "gate operand index",
+			text: `reset q[fail(q)];`,
+		},
+		{
+			name: "assignment index",
+			text: `bit[1] result; result[fail(q)] = touch(q);`,
+		},
+		{
+			name: "measurement index",
+			text: `bit[1] result; measure q -> result[fail(q)];`,
+		},
+		{
+			name: "qubit size",
+			text: `qubit[fail(q)] result;`,
+		},
+		{
+			name: "old style qubit size",
+			text: `qreg result[fail(q)];`,
+		},
+		{
+			name: "old style bit size",
+			text: `creg result[fail(q)];`,
+		},
+		{
+			name: "bit size",
+			text: `bit[fail(q)] result;`,
+		},
+		{
+			name: "angle size",
+			text: `angle[fail(q)] result;`,
+		},
+		{
+			name: "array size",
+			text: `array[int[64], fail(q)] result;`,
+		},
+		{
+			name: "array element size",
+			text: `array[int[fail(q)], 1] result;`,
+		},
+		{
+			name: "unsigned array element size",
+			text: `array[uint[fail(q)], 1] result;`,
+		},
+		{
+			name: "float array element size",
+			text: `array[float[fail(q)], 1] result;`,
+		},
+		{
+			name: "alias",
+			text: `let result = fail(q) ++ touch(q);`,
+		},
 	}
 
 	for _, c := range cases {
@@ -3652,24 +4276,44 @@ func TestVisitor_functionErrors(t *testing.T) {
 }
 
 func TestVisitor_errorShortCircuit(t *testing.T) {
-	cases := []string{
-		`if (false) { fail(q); }`,
-		`if (true) { touched = 0; } else { fail(q); }`,
-		`while (false) { fail(q); }`,
-		`for int i in [1:0] { fail(q); }`,
-		`switch (1) { case 0 { fail(q); } default { touched = 0; } }`,
-		`bool result = false && fail(q);`,
-		`bool result = true || fail(q);`,
-		`def empty(qubit arg) {} empty(q);`,
-		`def empty() {} empty();`,
+	cases := []struct {
+		text string
+	}{
+		{
+			text: `if (false) { fail(q); }`,
+		},
+		{
+			text: `if (true) { touched = 0; } else { fail(q); }`,
+		},
+		{
+			text: `while (false) { fail(q); }`,
+		},
+		{
+			text: `for int i in [1:0] { fail(q); }`,
+		},
+		{
+			text: `switch (1) { case 0 { fail(q); } default { touched = 0; } }`,
+		},
+		{
+			text: `bool result = false && fail(q);`,
+		},
+		{
+			text: `bool result = true || fail(q);`,
+		},
+		{
+			text: `def empty(qubit arg) {} empty(q);`,
+		},
+		{
+			text: `def empty() {} empty();`,
+		},
 	}
 
-	for _, text := range cases {
+	for _, c := range cases {
 		program, err := xparser.Parse(`
 			int touched = 0;
 			qubit q;
 			def fail(qubit arg) -> bit { qubit extra; touched = 1; return true; }
-		` + text)
+		` + c.text)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -3682,15 +4326,15 @@ func TestVisitor_errorShortCircuit(t *testing.T) {
 		)
 
 		if err := v.Run(program); err != nil {
-			t.Errorf("%s: unexpected error: %v", text, err)
+			t.Errorf("%s: unexpected error: %v", c.text, err)
 		}
 
 		if got := env.Variable["touched"]; got != int64(0) {
-			t.Errorf("%s: evaluated skipped branch: touched=%v", text, got)
+			t.Errorf("%s: evaluated skipped branch: touched=%v", c.text, got)
 		}
 
 		if got := qsim.NumQubits(); got != 1 {
-			t.Errorf("%s: got=%d qubits, want=1", text, got)
+			t.Errorf("%s: got=%d qubits, want=1", c.text, got)
 		}
 	}
 }
@@ -3699,14 +4343,43 @@ func TestVisitor_programContinuesAfterScope(t *testing.T) {
 	cases := []struct {
 		name string
 		body string
+		want int64
 	}{
-		{name: "if", body: `if (true) { n = 1; n = 2; }`},
-		{name: "else", body: `if (false) {} else { n = 1; n = 2; }`},
-		{name: "empty if", body: `if (true) {}`},
-		{name: "scope", body: `{ n = 1; n = 2; }`},
-		{name: "nested scope", body: `{ if (true) { n = 1; n = 2; } n = 3; }`},
-		{name: "expression", body: `1 + 2;`},
-		{name: "function call", body: `def f() -> int { return 1; } f();`},
+		{
+			name: "if",
+			body: `if (true) { n = 1; n = 2; }`,
+			want: 12,
+		},
+		{
+			name: "else",
+			body: `if (false) {} else { n = 1; n = 2; }`,
+			want: 12,
+		},
+		{
+			name: "empty if",
+			body: `if (true) {}`,
+			want: 10,
+		},
+		{
+			name: "scope",
+			body: `{ n = 1; n = 2; }`,
+			want: 12,
+		},
+		{
+			name: "nested scope",
+			body: `{ if (true) { n = 1; n = 2; } n = 3; }`,
+			want: 13,
+		},
+		{
+			name: "expression",
+			body: `1 + 2;`,
+			want: 10,
+		},
+		{
+			name: "function call",
+			body: `def f() -> int { return 1; } f();`,
+			want: 10,
+		},
 	}
 
 	for _, c := range cases {
@@ -3716,16 +4389,8 @@ func TestVisitor_programContinuesAfterScope(t *testing.T) {
 			continue
 		}
 
-		want := int64(12)
-		switch c.name {
-		case "empty if", "expression", "function call":
-			want = 10
-		case "nested scope":
-			want = 13
-		}
-
-		if got := env.Variable["n"]; got != want {
-			t.Errorf("%s: n=%v, want %v", c.name, got, want)
+		if got := env.Variable["n"]; got != c.want {
+			t.Errorf("%s: n=%v, want %v", c.name, got, c.want)
 		}
 	}
 }
@@ -3735,15 +4400,42 @@ func TestVisitor_returnStopsExecution(t *testing.T) {
 		name string
 		body string
 	}{
-		{name: "direct", body: `return 1;`},
-		{name: "if", body: `if (true) { return 1; touched = 1; }`},
-		{name: "else", body: `if (false) {} else { return 1; touched = 1; }`},
-		{name: "nested scope", body: `{ { return 1; } touched = 1; }`},
-		{name: "for", body: `for int i in [0:2] { return 1; touched = 1; }`},
-		{name: "while", body: `while (true) { return 1; touched = 1; break; }`},
-		{name: "switch case", body: `switch (1) { case 1 { return 1; touched = 1; } }`},
-		{name: "switch default", body: `switch (1) { default { return 1; touched = 1; } }`},
-		{name: "nested function", body: `def g() -> int { return 1; touched = 1; } return g();`},
+		{
+			name: "direct",
+			body: `return 1;`,
+		},
+		{
+			name: "if",
+			body: `if (true) { return 1; touched = 1; }`,
+		},
+		{
+			name: "else",
+			body: `if (false) {} else { return 1; touched = 1; }`,
+		},
+		{
+			name: "nested scope",
+			body: `{ { return 1; } touched = 1; }`,
+		},
+		{
+			name: "for",
+			body: `for int i in [0:2] { return 1; touched = 1; }`,
+		},
+		{
+			name: "while",
+			body: `while (true) { return 1; touched = 1; break; }`,
+		},
+		{
+			name: "switch case",
+			body: `switch (1) { case 1 { return 1; touched = 1; } }`,
+		},
+		{
+			name: "switch default",
+			body: `switch (1) { default { return 1; touched = 1; } }`,
+		},
+		{
+			name: "nested function",
+			body: `def g() -> int { return 1; touched = 1; } return g();`,
+		},
 	}
 
 	for _, c := range cases {
@@ -3778,26 +4470,40 @@ func TestVisitor_returnStopsExecution(t *testing.T) {
 }
 
 func TestVisitor_emptyReturn(t *testing.T) {
-	_, env, err := visitor.Run(`
+	cases := []struct {
+		text        string
+		wantTouched int64
+		wantAfter   int64
+	}{
+		{
+			text: `
 		int touched = 0;
 		def f() { if (true) { return; } touched = 1; }
 		f();
 		int after = 2;
-	`)
-	if err != nil {
-		t.Fatal(err)
+	`,
+			wantTouched: 0,
+			wantAfter:   2,
+		},
 	}
 
-	if got := env.Variable["touched"]; got != int64(0) {
-		t.Errorf("touched=%v, want 0", got)
-	}
+	for _, c := range cases {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if got := env.Variable["after"]; got != int64(2) {
-		t.Errorf("after=%v, want 2", got)
+		if got := env.Variable["touched"]; got != c.wantTouched {
+			t.Errorf("touched=%v, want=%v", got, c.wantTouched)
+		}
+
+		if got := env.Variable["after"]; got != c.wantAfter {
+			t.Errorf("after=%v, want=%v", got, c.wantAfter)
+		}
 	}
 }
 
-func TestVisitor_returnError(t *testing.T) {
+func TestVisitor_invalidReturn(t *testing.T) {
 	cases := []struct {
 		code string
 	}{
@@ -3807,8 +4513,7 @@ func TestVisitor_returnError(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		_, _, err := visitor.Run(c.code)
-		if err != nil {
+		if _, _, err := visitor.Run(c.code); err != nil {
 			if err.Error() == `undefined "missing"` {
 				continue
 			}
@@ -3916,7 +4621,7 @@ func TestVisitor_broadcast(t *testing.T) {
 	}
 }
 
-func TestVisitor_broadcastMismatch(t *testing.T) {
+func TestVisitor_invalidBroadcast(t *testing.T) {
 	cases := []struct {
 		name string
 		code string
@@ -3972,8 +4677,7 @@ func TestVisitor_broadcastMismatch(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		_, _, err := visitor.Run(c.code)
-		if err != nil {
+		if _, _, err := visitor.Run(c.code); err != nil {
 			if strings.Contains(err.Error(), "gate operand size mismatch") {
 				continue
 			}
@@ -4043,9 +4747,18 @@ func TestVisitor_endInInclude(t *testing.T) {
 		code string
 		want int64
 	}{
-		{code: "end;", want: 0},
-		{code: "int inside=1;", want: 1},
-		{code: "def stop() -> int { end; } int inside=stop();", want: 0},
+		{
+			code: "end;",
+			want: 0,
+		},
+		{
+			code: "int inside=1;",
+			want: 1,
+		},
+		{
+			code: "def stop() -> int { end; } int inside=stop();",
+			want: 0,
+		},
 	}
 
 	for _, c := range cases {
@@ -4067,17 +4780,55 @@ func TestVisitor_endInInclude(t *testing.T) {
 }
 
 func TestVisitor_openQASM3(t *testing.T) {
-	for _, params := range [][3]float64{
-		{0, 0, 0},
-		{math.Pi, 0, math.Pi},
-		{math.Pi / 2, 0, math.Pi},
-		{2 * math.Pi, 0, 0},
-		{0.7, 0.3, 1.1},
-		{0.7 + 2*math.Pi, 0.3, 1.1},
-		{0.7, 0.3 + 2*math.Pi, 1.1},
-		{0.7, 0.3, 1.1 + 2*math.Pi},
-	} {
-		theta, phi, lambda := params[0], params[1], params[2]
+	cases := []struct {
+		theta  float64
+		phi    float64
+		lambda float64
+	}{
+		{
+			theta:  0,
+			phi:    0,
+			lambda: 0,
+		},
+		{
+			theta:  math.Pi,
+			phi:    0,
+			lambda: math.Pi,
+		},
+		{
+			theta:  math.Pi / 2,
+			phi:    0,
+			lambda: math.Pi,
+		},
+		{
+			theta:  2 * math.Pi,
+			phi:    0,
+			lambda: 0,
+		},
+		{
+			theta:  0.7,
+			phi:    0.3,
+			lambda: 1.1,
+		},
+		{
+			theta:  0.7 + 2*math.Pi,
+			phi:    0.3,
+			lambda: 1.1,
+		},
+		{
+			theta:  0.7,
+			phi:    0.3 + 2*math.Pi,
+			lambda: 1.1,
+		},
+		{
+			theta:  0.7,
+			phi:    0.3,
+			lambda: 1.1 + 2*math.Pi,
+		},
+	}
+
+	for _, c := range cases {
+		theta, phi, lambda := c.theta, c.phi, c.lambda
 		// Directly use the specification's matrix, independently of gate.U.
 		// https://openqasm.com/versions/3.0/language/gates.html#built-in-single-qubit-gate-u
 		e := cmplx.Exp(complex(0, theta))
@@ -4098,6 +4849,7 @@ func TestVisitor_openQASM3(t *testing.T) {
 			qsim := q.New()
 			env := environ.New()
 			env.Qubit["q"] = qsim.New(basis[:]...)
+
 			if err := visitor.New(qsim, env).Run(tree); err != nil {
 				t.Fatal(err)
 			}
@@ -4173,12 +4925,42 @@ func TestVisitor_controlledGphase(t *testing.T) {
 		text   string
 		active func(int) bool
 	}{
-		{`ctrl @ gphase(pi/2) q[0];`, func(i int) bool { return i&0b100 != 0 }},
-		{`negctrl @ gphase(pi/2) q[0];`, func(i int) bool { return i&0b100 == 0 }},
-		{`ctrl(2) @ gphase(pi/2) q[0], q[1];`, func(i int) bool { return i&0b110 == 0b110 }},
-		{`ctrl @ negctrl @ gphase(pi/2) q[0], q[1];`, func(i int) bool { return i&0b110 == 0b100 }},
-		{`inv @ ctrl @ gphase(-pi/2) q[0];`, func(i int) bool { return i&0b100 != 0 }},
-		{`ctrl @ pow(2) @ gphase(pi/4) q[0];`, func(i int) bool { return i&0b100 != 0 }},
+		{
+			text: `ctrl @ gphase(pi/2) q[0];`,
+			active: func(i int) bool {
+				return i&0b100 != 0
+			},
+		},
+		{
+			text: `negctrl @ gphase(pi/2) q[0];`,
+			active: func(i int) bool {
+				return i&0b100 == 0
+			},
+		},
+		{
+			text: `ctrl(2) @ gphase(pi/2) q[0], q[1];`,
+			active: func(i int) bool {
+				return i&0b110 == 0b110
+			},
+		},
+		{
+			text: `ctrl @ negctrl @ gphase(pi/2) q[0], q[1];`,
+			active: func(i int) bool {
+				return i&0b110 == 0b100
+			},
+		},
+		{
+			text: `inv @ ctrl @ gphase(-pi/2) q[0];`,
+			active: func(i int) bool {
+				return i&0b100 != 0
+			},
+		},
+		{
+			text: `ctrl @ pow(2) @ gphase(pi/4) q[0];`,
+			active: func(i int) bool {
+				return i&0b100 != 0
+			},
+		},
 	}
 
 	for _, c := range cases {
@@ -4189,6 +4971,7 @@ func TestVisitor_controlledGphase(t *testing.T) {
 
 		for i, got := range qsim.Amplitude() {
 			want := complex(1/math.Sqrt(8), 0)
+
 			if c.active(i) {
 				want *= 1i
 			}
@@ -4202,21 +4985,83 @@ func TestVisitor_controlledGphase(t *testing.T) {
 
 func TestVisitor_classicalBitOperators(t *testing.T) {
 	cases := []struct {
-		op         string
-		a, b, want bool
+		op   string
+		a    bool
+		b    bool
+		want bool
 	}{
-		{"&", false, false, false},
-		{"&", false, true, false},
-		{"&", true, false, false},
-		{"&", true, true, true},
-		{"|", false, false, false},
-		{"|", false, true, true},
-		{"|", true, false, true},
-		{"|", true, true, true},
-		{"^", false, false, false},
-		{"^", false, true, true},
-		{"^", true, false, true},
-		{"^", true, true, false},
+		{
+			op:   "&",
+			a:    false,
+			b:    false,
+			want: false,
+		},
+		{
+			op:   "&",
+			a:    false,
+			b:    true,
+			want: false,
+		},
+		{
+			op:   "&",
+			a:    true,
+			b:    false,
+			want: false,
+		},
+		{
+			op:   "&",
+			a:    true,
+			b:    true,
+			want: true,
+		},
+		{
+			op:   "|",
+			a:    false,
+			b:    false,
+			want: false,
+		},
+		{
+			op:   "|",
+			a:    false,
+			b:    true,
+			want: true,
+		},
+		{
+			op:   "|",
+			a:    true,
+			b:    false,
+			want: true,
+		},
+		{
+			op:   "|",
+			a:    true,
+			b:    true,
+			want: true,
+		},
+		{
+			op:   "^",
+			a:    false,
+			b:    false,
+			want: false,
+		},
+		{
+			op:   "^",
+			a:    false,
+			b:    true,
+			want: true,
+		},
+		{
+			op:   "^",
+			a:    true,
+			b:    false,
+			want: true,
+		},
+		{
+			op:   "^",
+			a:    true,
+			b:    true,
+			want: false,
+		},
 	}
 
 	for _, c := range cases {
@@ -4245,41 +5090,181 @@ func TestVisitor_bitwiseExpressions(t *testing.T) {
 		text string
 		want any
 	}{
-		{"issue 52", `OPENQASM 3.0; bit[2] m; bit s; m[0] = 1; m[1] = 0; s = m[0] ^ m[1]; s;`, true},
-		{"assign one to bit", `bit s; s = 1; s;`, true},
-		{"assign zero to bit", `bit s = true; s = 0; s;`, false},
-		{"clear indexed bit", `bit[2] m = "11"; m[0] = 0; m[0];`, false},
-		{"syndrome", `bit[7] m = "1010101"; bit s = m[0] ^ m[2] ^ m[4] ^ m[6]; s;`, false},
-		{"syndrome odd parity", `bit[7] m = "1010100"; bit s = m[0] ^ m[2] ^ m[4] ^ m[6]; s;`, true},
-		{"bit not true", `bit a = true; bit s = ~a; s;`, false},
-		{"bit not false", `bit a; bit s = ~a; s;`, true},
-		{"indexed not", `bit[2] m = "10"; ~m[1];`, true},
-		{"bit left shift zero", `bit a = true; a << 0;`, true},
-		{"bit left shift", `bit a = true; a << 1;`, false},
-		{"bit right shift zero", `bit a = true; a >> 0;`, true},
-		{"bit right shift", `bit a = true; a >> 1;`, false},
-		{"register and", `bit[4] a = "1010"; bit[4] b = "1100"; bit[4] c = a & b; c;`, []bool{true, false, false, false}},
-		{"register or", `"1010" | "1100";`, []bool{true, true, true, false}},
-		{"register xor", `"1010" ^ "1100";`, []bool{false, true, true, false}},
-		{"register not", `~"1010";`, []bool{false, true, false, true}},
-		{"register left shift", `"10001111" << 1;`, []bool{false, false, false, true, true, true, true, false}},
-		{"register right shift", `"10001111" >> 2;`, []bool{false, false, true, false, false, false, true, true}},
-		{"register shift zero", `"1010" << 0;`, []bool{true, false, true, false}},
-		{"register shift width", `"1010" << 4;`, []bool{false, false, false, false}},
-		{"register shift beyond width", `"1010" >> 9223372036854775807;`, []bool{false, false, false, false}},
-		{"register chained shift", `"1001" << 1 >> 1;`, []bool{false, false, false, true}},
-		{"precedence", `bit[3] m = "101"; m[0] | m[1] ^ m[2] & ~m[0];`, true},
-		{"cast integer and", `int(10) & 12;`, int64(8)},
-		{"cast integer or", `10 | int(12);`, int64(14)},
-		{"cast integer xor", `int(10) ^ int(12);`, int(6)},
-		{"unsigned and", `uint(10) & uint(12);`, uint(8)},
-		{"unsigned or", `uint(10) | uint(12);`, uint(14)},
-		{"unsigned xor", `uint(10) ^ uint(12);`, uint(6)},
-		{"unsigned not", `~uint(5);`, ^uint(5)},
-		{"cast integer shift", `int(11) << 2;`, int(44)},
-		{"unsigned shift", `uint(11) >> uint(1);`, uint(5)},
-		{"bit logical and", `bit[2] m = "10"; m[0] && m[1];`, false},
-		{"bit logical or", `bit[2] m = "10"; m[0] || m[1];`, true},
+		{
+			name: "issue 52",
+			text: `OPENQASM 3.0; bit[2] m; bit s; m[0] = 1; m[1] = 0; s = m[0] ^ m[1]; s;`,
+			want: true,
+		},
+		{
+			name: "assign one to bit",
+			text: `bit s; s = 1; s;`,
+			want: true,
+		},
+		{
+			name: "assign zero to bit",
+			text: `bit s = true; s = 0; s;`,
+			want: false,
+		},
+		{
+			name: "clear indexed bit",
+			text: `bit[2] m = "11"; m[0] = 0; m[0];`,
+			want: false,
+		},
+		{
+			name: "syndrome",
+			text: `bit[7] m = "1010101"; bit s = m[0] ^ m[2] ^ m[4] ^ m[6]; s;`,
+			want: false,
+		},
+		{
+			name: "syndrome odd parity",
+			text: `bit[7] m = "1010100"; bit s = m[0] ^ m[2] ^ m[4] ^ m[6]; s;`,
+			want: true,
+		},
+		{
+			name: "bit not true",
+			text: `bit a = true; bit s = ~a; s;`,
+			want: false,
+		},
+		{
+			name: "bit not false",
+			text: `bit a; bit s = ~a; s;`,
+			want: true,
+		},
+		{
+			name: "indexed not",
+			text: `bit[2] m = "10"; ~m[1];`,
+			want: true,
+		},
+		{
+			name: "bit left shift zero",
+			text: `bit a = true; a << 0;`,
+			want: true,
+		},
+		{
+			name: "bit left shift",
+			text: `bit a = true; a << 1;`,
+			want: false,
+		},
+		{
+			name: "bit right shift zero",
+			text: `bit a = true; a >> 0;`,
+			want: true,
+		},
+		{
+			name: "bit right shift",
+			text: `bit a = true; a >> 1;`,
+			want: false,
+		},
+		{
+			name: "register and",
+			text: `bit[4] a = "1010"; bit[4] b = "1100"; bit[4] c = a & b; c;`,
+			want: []bool{true, false, false, false},
+		},
+		{
+			name: "register or",
+			text: `"1010" | "1100";`,
+			want: []bool{true, true, true, false},
+		},
+		{
+			name: "register xor",
+			text: `"1010" ^ "1100";`,
+			want: []bool{false, true, true, false},
+		},
+		{
+			name: "register not",
+			text: `~"1010";`,
+			want: []bool{false, true, false, true},
+		},
+		{
+			name: "register left shift",
+			text: `"10001111" << 1;`,
+			want: []bool{false, false, false, true, true, true, true, false},
+		},
+		{
+			name: "register right shift",
+			text: `"10001111" >> 2;`,
+			want: []bool{false, false, true, false, false, false, true, true},
+		},
+		{
+			name: "register shift zero",
+			text: `"1010" << 0;`,
+			want: []bool{true, false, true, false},
+		},
+		{
+			name: "register shift width",
+			text: `"1010" << 4;`,
+			want: []bool{false, false, false, false},
+		},
+		{
+			name: "register shift beyond width",
+			text: `"1010" >> 9223372036854775807;`,
+			want: []bool{false, false, false, false},
+		},
+		{
+			name: "register chained shift",
+			text: `"1001" << 1 >> 1;`,
+			want: []bool{false, false, false, true},
+		},
+		{
+			name: "precedence",
+			text: `bit[3] m = "101"; m[0] | m[1] ^ m[2] & ~m[0];`,
+			want: true,
+		},
+		{
+			name: "cast integer and",
+			text: `int(10) & 12;`,
+			want: int64(8),
+		},
+		{
+			name: "cast integer or",
+			text: `10 | int(12);`,
+			want: int64(14),
+		},
+		{
+			name: "cast integer xor",
+			text: `int(10) ^ int(12);`,
+			want: int(6),
+		},
+		{
+			name: "unsigned and",
+			text: `uint(10) & uint(12);`,
+			want: uint(8),
+		},
+		{
+			name: "unsigned or",
+			text: `uint(10) | uint(12);`,
+			want: uint(14),
+		},
+		{
+			name: "unsigned xor",
+			text: `uint(10) ^ uint(12);`,
+			want: uint(6),
+		},
+		{
+			name: "unsigned not",
+			text: `~uint(5);`,
+			want: ^uint(5),
+		},
+		{
+			name: "cast integer shift",
+			text: `int(11) << 2;`,
+			want: int(44),
+		},
+		{
+			name: "unsigned shift",
+			text: `uint(11) >> uint(1);`,
+			want: uint(5),
+		},
+		{
+			name: "bit logical and",
+			text: `bit[2] m = "10"; m[0] && m[1];`,
+			want: false,
+		},
+		{
+			name: "bit logical or",
+			text: `bit[2] m = "10"; m[0] || m[1];`,
+			want: true,
+		},
 	}
 
 	for _, c := range cases {
@@ -4295,88 +5280,184 @@ func TestVisitor_bitwiseExpressions(t *testing.T) {
 	}
 }
 
-func TestVisitor_bitwiseOperandErrors(t *testing.T) {
-	cases := []string{
-		`true & 1;`,
-		`1 | true;`,
-		`1 ^ false;`,
-		`1.5 & 2;`,
-		`1 | 2.5;`,
-		`1.5 ^ 2.5;`,
-		`"10" & "1";`,
-		`"1" | "10";`,
-		`"10" ^ "1";`,
-		`true & "1";`,
-		`"1" | true;`,
-		`"1" ^ 1;`,
-		`~1.5;`,
-		`1.5 << 1;`,
-		`1 >> 1.5;`,
-		`1 << true;`,
-		`1 << -1;`,
-		`1 >> -1;`,
-		`"10" << -1;`,
-		`true >> -1;`,
-		`1 << int(-1);`,
-		`1 && true;`,
-		`true && 1;`,
-		`false || 1;`,
-		`1 || false;`,
+func TestVisitor_invalidBitwiseOperand(t *testing.T) {
+	cases := []struct {
+		text string
+	}{
+		{
+			text: `true & 1;`,
+		},
+		{
+			text: `1 | true;`,
+		},
+		{
+			text: `1 ^ false;`,
+		},
+		{
+			text: `1.5 & 2;`,
+		},
+		{
+			text: `1 | 2.5;`,
+		},
+		{
+			text: `1.5 ^ 2.5;`,
+		},
+		{
+			text: `"10" & "1";`,
+		},
+		{
+			text: `"1" | "10";`,
+		},
+		{
+			text: `"10" ^ "1";`,
+		},
+		{
+			text: `true & "1";`,
+		},
+		{
+			text: `"1" | true;`,
+		},
+		{
+			text: `"1" ^ 1;`,
+		},
+		{
+			text: `~1.5;`,
+		},
+		{
+			text: `1.5 << 1;`,
+		},
+		{
+			text: `1 >> 1.5;`,
+		},
+		{
+			text: `1 << true;`,
+		},
+		{
+			text: `1 << -1;`,
+		},
+		{
+			text: `1 >> -1;`,
+		},
+		{
+			text: `"10" << -1;`,
+		},
+		{
+			text: `true >> -1;`,
+		},
+		{
+			text: `1 << int(-1);`,
+		},
+		{
+			text: `1 && true;`,
+		},
+		{
+			text: `true && 1;`,
+		},
+		{
+			text: `false || 1;`,
+		},
+		{
+			text: `1 || false;`,
+		},
 	}
 
-	for _, text := range cases {
-		if _, err := visitor.Visit(text); err == nil {
-			t.Errorf("%s: expected an operand error", text)
+	for _, c := range cases {
+		if _, err := visitor.Visit(c.text); err == nil {
+			t.Errorf("%s: expected an operand error", c.text)
 		}
 	}
+}
 
-	undefinedCases := []string{`missing & true;`, `true | missing;`, `true ^ missing;`, `true << missing;`}
-	for _, text := range undefinedCases {
-		if _, err := visitor.Visit(text); err == nil || !strings.Contains(err.Error(), `undefined "missing"`) {
-			t.Errorf("%s: got=%v, want undefined operand error", text, err)
+func TestVisitor_invalidUndefinedBitwiseOperand(t *testing.T) {
+	cases := []struct {
+		text string
+	}{
+		{
+			text: `missing & true;`,
+		},
+		{
+			text: `true | missing;`,
+		},
+		{
+			text: `true ^ missing;`,
+		},
+		{
+			text: `true << missing;`,
+		},
+	}
+
+	for _, c := range cases {
+		if _, err := visitor.Visit(c.text); err == nil || !strings.Contains(err.Error(), `undefined "missing"`) {
+			t.Errorf("%s: got=%v, want undefined operand error", c.text, err)
 		}
 	}
 }
 
 func TestVisitor_invalidBitAssignments(t *testing.T) {
-	cases := []string{
-		`bit s; s = 2;`,
-		`bit s; s = 1.5;`,
-		`bit[2] m; m[0] = -1;`,
-		`bit[2] m; m[0] = 1.5;`,
+	cases := []struct {
+		text string
+	}{
+		{
+			text: `bit s; s = 2;`,
+		},
+		{
+			text: `bit s; s = 1.5;`,
+		},
+		{
+			text: `bit[2] m; m[0] = -1;`,
+		},
+		{
+			text: `bit[2] m; m[0] = 1.5;`,
+		},
 	}
 
-	for _, text := range cases {
-		if _, err := visitor.Visit(text); err == nil {
-			t.Errorf("%s: expected an assignment error", text)
+	for _, c := range cases {
+		if _, err := visitor.Visit(c.text); err == nil {
+			t.Errorf("%s: expected an assignment error", c.text)
 		}
 	}
 }
 
 func TestVisitor_bitwiseDoesNotMutateOperands(t *testing.T) {
-	cases := []string{
-		`a & b`,
-		`a | b`,
-		`a ^ b`,
-		`~a`,
-		`a << 0`,
-		`a << 1`,
-		`a >> 1`,
+	cases := []struct {
+		expr string
+	}{
+		{
+			expr: `a & b`,
+		},
+		{
+			expr: `a | b`,
+		},
+		{
+			expr: `a ^ b`,
+		},
+		{
+			expr: `~a`,
+		},
+		{
+			expr: `a << 0`,
+		},
+		{
+			expr: `a << 1`,
+		},
+		{
+			expr: `a >> 1`,
+		},
 	}
 
-	for _, expr := range cases {
-		_, env, err := visitor.Run(`bit[4] a = "1010"; bit[4] b = "1100"; bit[4] c = ` + expr + `; c[0] = false;`)
+	for _, c := range cases {
+		_, env, err := visitor.Run(`bit[4] a = "1010"; bit[4] b = "1100"; bit[4] c = ` + c.expr + `; c[0] = false;`)
 		if err != nil {
-			t.Errorf("%s: unexpected error: %v", expr, err)
+			t.Errorf("%s: unexpected error: %v", c.expr, err)
 			continue
 		}
 
 		if !reflect.DeepEqual(env.ClBitArray["a"], []bool{true, false, true, false}) {
-			t.Errorf("%s: operands changed: %v", expr, env.ClBitArray)
+			t.Errorf("%s: operands changed: %v", c.expr, env.ClBitArray)
 		}
 
 		if !reflect.DeepEqual(env.ClBitArray["b"], []bool{true, true, false, false}) {
-			t.Errorf("%s: operands changed: %v", expr, env.ClBitArray)
+			t.Errorf("%s: operands changed: %v", c.expr, env.ClBitArray)
 		}
 	}
 }

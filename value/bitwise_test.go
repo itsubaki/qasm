@@ -7,41 +7,71 @@ import (
 	"github.com/itsubaki/qasm/value"
 )
 
-func TestValue_BitAnd(t *testing.T) {
+func TestValueBitAnd(t *testing.T) {
 	cases := []struct {
-		a, b   any
-		want   any
-		hasErr bool
+		a    any
+		b    any
+		want any
 	}{
-		{a: int(10), b: int(12), want: int(8)},
-		{a: int64(10), b: int64(12), want: int64(8)},
-		{a: int(10), b: int64(12), want: int64(8)},
-		{a: int64(10), b: int(12), want: int64(8)},
-		{a: uint(10), b: uint(12), want: uint(8)},
-		{a: false, b: false, want: false},
-		{a: false, b: true, want: false},
-		{a: true, b: false, want: false},
-		{a: true, b: true, want: true},
-		{a: []bool{true, false, true, false}, b: []bool{true, true, false, false}, want: []bool{true, false, false, false}},
-		{a: []bool{}, b: []bool{}, want: []bool{}},
-		{a: 1.5, b: 2.5, hasErr: true},
-		{a: int64(1), b: 2.5, hasErr: true},
-		{a: true, b: int64(1), hasErr: true},
-		{a: []bool{true}, b: true, hasErr: true},
-		{a: true, b: []bool{true}, hasErr: true},
-		{a: []bool{true}, b: []bool{true, false}, hasErr: true},
-		{a: nil, b: int64(1), hasErr: true},
+		{
+			a:    int(10),
+			b:    int(12),
+			want: int(8),
+		},
+		{
+			a:    int64(10),
+			b:    int64(12),
+			want: int64(8),
+		},
+		{
+			a:    int(10),
+			b:    int64(12),
+			want: int64(8),
+		},
+		{
+			a:    int64(10),
+			b:    int(12),
+			want: int64(8),
+		},
+		{
+			a:    uint(10),
+			b:    uint(12),
+			want: uint(8),
+		},
+		{
+			a:    false,
+			b:    false,
+			want: false,
+		},
+		{
+			a:    false,
+			b:    true,
+			want: false,
+		},
+		{
+			a:    true,
+			b:    false,
+			want: false,
+		},
+		{
+			a:    true,
+			b:    true,
+			want: true,
+		},
+		{
+			a:    []bool{true, false, true, false},
+			b:    []bool{true, true, false, false},
+			want: []bool{true, false, false, false},
+		},
+		{
+			a:    []bool{},
+			b:    []bool{},
+			want: []bool{},
+		},
 	}
 
 	for _, c := range cases {
 		got, err := value.New(c.a).BitAnd(value.New(c.b))
-		if c.hasErr {
-			if err == nil {
-				t.Errorf("%v & %v: expected an error", c.a, c.b)
-			}
-			continue
-		}
-
 		if err != nil {
 			t.Errorf("%v & %v: unexpected error: %v", c.a, c.b, err)
 			continue
@@ -53,41 +83,114 @@ func TestValue_BitAnd(t *testing.T) {
 	}
 }
 
-func TestValue_BitOr(t *testing.T) {
+func TestValueBitAnd_invalid(t *testing.T) {
 	cases := []struct {
-		a, b   any
-		want   any
-		hasErr bool
+		a any
+		b any
 	}{
-		{a: int(10), b: int(12), want: int(14)},
-		{a: int64(10), b: int64(12), want: int64(14)},
-		{a: int(10), b: int64(12), want: int64(14)},
-		{a: int64(10), b: int(12), want: int64(14)},
-		{a: uint(10), b: uint(12), want: uint(14)},
-		{a: false, b: false, want: false},
-		{a: false, b: true, want: true},
-		{a: true, b: false, want: true},
-		{a: true, b: true, want: true},
-		{a: []bool{true, false, true, false}, b: []bool{true, true, false, false}, want: []bool{true, true, true, false}},
-		{a: []bool{}, b: []bool{}, want: []bool{}},
-		{a: 1.5, b: 2.5, hasErr: true},
-		{a: int64(1), b: 2.5, hasErr: true},
-		{a: true, b: int64(1), hasErr: true},
-		{a: []bool{true}, b: true, hasErr: true},
-		{a: true, b: []bool{true}, hasErr: true},
-		{a: []bool{true}, b: []bool{true, false}, hasErr: true},
-		{a: nil, b: int64(1), hasErr: true},
+		{
+			a: 1.5,
+			b: 2.5,
+		},
+		{
+			a: int64(1),
+			b: 2.5,
+		},
+		{
+			a: true,
+			b: int64(1),
+		},
+		{
+			a: []bool{true},
+			b: true,
+		},
+		{
+			a: true,
+			b: []bool{true},
+		},
+		{
+			a: []bool{true},
+			b: []bool{true, false},
+		},
+		{
+			a: nil,
+			b: int64(1),
+		},
+	}
+
+	for _, c := range cases {
+		if _, err := value.New(c.a).BitAnd(value.New(c.b)); err == nil {
+			t.Error("expected an error")
+			continue
+		}
+	}
+}
+
+func TestValueBitOr(t *testing.T) {
+	cases := []struct {
+		a    any
+		b    any
+		want any
+	}{
+		{
+			a:    int(10),
+			b:    int(12),
+			want: int(14),
+		},
+		{
+			a:    int64(10),
+			b:    int64(12),
+			want: int64(14),
+		},
+		{
+			a:    int(10),
+			b:    int64(12),
+			want: int64(14),
+		},
+		{
+			a:    int64(10),
+			b:    int(12),
+			want: int64(14),
+		},
+		{
+			a:    uint(10),
+			b:    uint(12),
+			want: uint(14),
+		},
+		{
+			a:    false,
+			b:    false,
+			want: false,
+		},
+		{
+			a:    false,
+			b:    true,
+			want: true,
+		},
+		{
+			a:    true,
+			b:    false,
+			want: true,
+		},
+		{
+			a:    true,
+			b:    true,
+			want: true,
+		},
+		{
+			a:    []bool{true, false, true, false},
+			b:    []bool{true, true, false, false},
+			want: []bool{true, true, true, false},
+		},
+		{
+			a:    []bool{},
+			b:    []bool{},
+			want: []bool{},
+		},
 	}
 
 	for _, c := range cases {
 		got, err := value.New(c.a).BitOr(value.New(c.b))
-		if c.hasErr {
-			if err == nil {
-				t.Errorf("%v | %v: expected an error", c.a, c.b)
-			}
-			continue
-		}
-
 		if err != nil {
 			t.Errorf("%v | %v: unexpected error: %v", c.a, c.b, err)
 			continue
@@ -99,41 +202,114 @@ func TestValue_BitOr(t *testing.T) {
 	}
 }
 
-func TestValue_BitXor(t *testing.T) {
+func TestValueBitOr_invalid(t *testing.T) {
 	cases := []struct {
-		a, b   any
-		want   any
-		hasErr bool
+		a any
+		b any
 	}{
-		{a: int(10), b: int(12), want: int(6)},
-		{a: int64(10), b: int64(12), want: int64(6)},
-		{a: int(10), b: int64(12), want: int64(6)},
-		{a: int64(10), b: int(12), want: int64(6)},
-		{a: uint(10), b: uint(12), want: uint(6)},
-		{a: false, b: false, want: false},
-		{a: false, b: true, want: true},
-		{a: true, b: false, want: true},
-		{a: true, b: true, want: false},
-		{a: []bool{true, false, true, false}, b: []bool{true, true, false, false}, want: []bool{false, true, true, false}},
-		{a: []bool{}, b: []bool{}, want: []bool{}},
-		{a: 1.5, b: 2.5, hasErr: true},
-		{a: int64(1), b: 2.5, hasErr: true},
-		{a: true, b: int64(1), hasErr: true},
-		{a: []bool{true}, b: true, hasErr: true},
-		{a: true, b: []bool{true}, hasErr: true},
-		{a: []bool{true}, b: []bool{true, false}, hasErr: true},
-		{a: nil, b: int64(1), hasErr: true},
+		{
+			a: 1.5,
+			b: 2.5,
+		},
+		{
+			a: int64(1),
+			b: 2.5,
+		},
+		{
+			a: true,
+			b: int64(1),
+		},
+		{
+			a: []bool{true},
+			b: true,
+		},
+		{
+			a: true,
+			b: []bool{true},
+		},
+		{
+			a: []bool{true},
+			b: []bool{true, false},
+		},
+		{
+			a: nil,
+			b: int64(1),
+		},
+	}
+
+	for _, c := range cases {
+		if _, err := value.New(c.a).BitOr(value.New(c.b)); err == nil {
+			t.Error("expected an error")
+			continue
+		}
+	}
+}
+
+func TestValueBitXor(t *testing.T) {
+	cases := []struct {
+		a    any
+		b    any
+		want any
+	}{
+		{
+			a:    int(10),
+			b:    int(12),
+			want: int(6),
+		},
+		{
+			a:    int64(10),
+			b:    int64(12),
+			want: int64(6),
+		},
+		{
+			a:    int(10),
+			b:    int64(12),
+			want: int64(6),
+		},
+		{
+			a:    int64(10),
+			b:    int(12),
+			want: int64(6),
+		},
+		{
+			a:    uint(10),
+			b:    uint(12),
+			want: uint(6),
+		},
+		{
+			a:    false,
+			b:    false,
+			want: false,
+		},
+		{
+			a:    false,
+			b:    true,
+			want: true,
+		},
+		{
+			a:    true,
+			b:    false,
+			want: true,
+		},
+		{
+			a:    true,
+			b:    true,
+			want: false,
+		},
+		{
+			a:    []bool{true, false, true, false},
+			b:    []bool{true, true, false, false},
+			want: []bool{false, true, true, false},
+		},
+		{
+			a:    []bool{},
+			b:    []bool{},
+			want: []bool{},
+		},
 	}
 
 	for _, c := range cases {
 		got, err := value.New(c.a).BitXor(value.New(c.b))
-		if c.hasErr {
-			if err == nil {
-				t.Errorf("%v ^ %v: expected an error", c.a, c.b)
-			}
-			continue
-		}
-
 		if err != nil {
 			t.Errorf("%v ^ %v: unexpected error: %v", c.a, c.b, err)
 			continue
@@ -145,43 +321,129 @@ func TestValue_BitXor(t *testing.T) {
 	}
 }
 
-func TestValue_ShiftLeft(t *testing.T) {
+func TestValueBitXor_invalid(t *testing.T) {
 	cases := []struct {
-		a, b   any
-		want   any
-		hasErr bool
+		a any
+		b any
 	}{
-		{a: int(11), b: int(2), want: int(44)},
-		{a: int64(11), b: int64(2), want: int64(44)},
-		{a: uint(11), b: uint(2), want: uint(44)},
-		{a: int64(11), b: uint(2), want: int64(44)},
-		{a: int64(11), b: int64(0), want: int64(11)},
-		{a: int64(11), b: int64(64), want: int64(0)},
-		{a: true, b: int64(0), want: true},
-		{a: false, b: int64(0), want: false},
-		{a: true, b: int64(1), want: false},
-		{a: []bool{true, false, true, true}, b: int64(1), want: []bool{false, true, true, false}},
-		{a: []bool{true, false, true, true}, b: int64(0), want: []bool{true, false, true, true}},
-		{a: []bool{true, false, true, true}, b: int64(4), want: []bool{false, false, false, false}},
-		{a: []bool{true, false, true, true}, b: ^uint(0), want: []bool{false, false, false, false}},
-		{a: []bool{}, b: int64(0), want: []bool{}},
-		{a: int64(1), b: int(-1), hasErr: true},
-		{a: int64(1), b: int64(-1), hasErr: true},
-		{a: []bool{true}, b: int64(-1), hasErr: true},
-		{a: int64(1), b: 1.5, hasErr: true},
-		{a: int64(1), b: true, hasErr: true},
-		{a: 1.5, b: int64(1), hasErr: true},
+		{
+			a: 1.5,
+			b: 2.5,
+		},
+		{
+			a: int64(1),
+			b: 2.5,
+		},
+		{
+			a: true,
+			b: int64(1),
+		},
+		{
+			a: []bool{true},
+			b: true,
+		},
+		{
+			a: true,
+			b: []bool{true},
+		},
+		{
+			a: []bool{true},
+			b: []bool{true, false},
+		},
+		{
+			a: nil,
+			b: int64(1),
+		},
+	}
+
+	for _, c := range cases {
+		if _, err := value.New(c.a).BitXor(value.New(c.b)); err == nil {
+			t.Error("expected an error")
+			continue
+		}
+	}
+}
+
+func TestValueShiftLeft(t *testing.T) {
+	cases := []struct {
+		a    any
+		b    any
+		want any
+	}{
+		{
+			a:    int(11),
+			b:    int(2),
+			want: int(44),
+		},
+		{
+			a:    int64(11),
+			b:    int64(2),
+			want: int64(44),
+		},
+		{
+			a:    uint(11),
+			b:    uint(2),
+			want: uint(44),
+		},
+		{
+			a:    int64(11),
+			b:    uint(2),
+			want: int64(44),
+		},
+		{
+			a:    int64(11),
+			b:    int64(0),
+			want: int64(11),
+		},
+		{
+			a:    int64(11),
+			b:    int64(64),
+			want: int64(0),
+		},
+		{
+			a:    true,
+			b:    int64(0),
+			want: true,
+		},
+		{
+			a:    false,
+			b:    int64(0),
+			want: false,
+		},
+		{
+			a:    true,
+			b:    int64(1),
+			want: false,
+		},
+		{
+			a:    []bool{true, false, true, true},
+			b:    int64(1),
+			want: []bool{false, true, true, false},
+		},
+		{
+			a:    []bool{true, false, true, true},
+			b:    int64(0),
+			want: []bool{true, false, true, true},
+		},
+		{
+			a:    []bool{true, false, true, true},
+			b:    int64(4),
+			want: []bool{false, false, false, false},
+		},
+		{
+			a:    []bool{true, false, true, true},
+			b:    ^uint(0),
+			want: []bool{false, false, false, false},
+		},
+		{
+			a:    []bool{},
+			b:    int64(0),
+			want: []bool{},
+		},
 	}
 
 	for _, c := range cases {
 		got, err := value.New(c.a).ShiftLeft(value.New(c.b))
-		if c.hasErr {
-			if err == nil {
-				t.Errorf("%v << %v: expected an error", c.a, c.b)
-			}
-			continue
-		}
-
 		if err != nil {
 			t.Errorf("%v << %v: unexpected error: %v", c.a, c.b, err)
 			continue
@@ -193,44 +455,130 @@ func TestValue_ShiftLeft(t *testing.T) {
 	}
 }
 
-func TestValue_ShiftRight(t *testing.T) {
+func TestValueShiftLeft_invalid(t *testing.T) {
 	cases := []struct {
-		a, b   any
-		want   any
-		hasErr bool
+		a any
+		b any
 	}{
-		{a: int(11), b: int(1), want: int(5)},
-		{a: int64(11), b: int64(1), want: int64(5)},
-		{a: uint(11), b: uint(1), want: uint(5)},
-		{a: int64(11), b: uint(1), want: int64(5)},
-		{a: int64(11), b: int64(0), want: int64(11)},
-		{a: int64(-8), b: int64(1), want: int64(-4)},
-		{a: int64(11), b: int64(64), want: int64(0)},
-		{a: true, b: int64(0), want: true},
-		{a: false, b: int64(0), want: false},
-		{a: true, b: int64(1), want: false},
-		{a: []bool{true, false, true, true}, b: int64(1), want: []bool{false, true, false, true}},
-		{a: []bool{true, false, true, true}, b: int64(0), want: []bool{true, false, true, true}},
-		{a: []bool{true, false, true, true}, b: int64(4), want: []bool{false, false, false, false}},
-		{a: []bool{true, false, true, true}, b: ^uint(0), want: []bool{false, false, false, false}},
-		{a: []bool{}, b: int64(0), want: []bool{}},
-		{a: int64(1), b: int(-1), hasErr: true},
-		{a: int64(1), b: int64(-1), hasErr: true},
-		{a: []bool{true}, b: int64(-1), hasErr: true},
-		{a: int64(1), b: 1.5, hasErr: true},
-		{a: int64(1), b: true, hasErr: true},
-		{a: 1.5, b: int64(1), hasErr: true},
+		{
+			a: int64(1),
+			b: int(-1),
+		},
+		{
+			a: int64(1),
+			b: int64(-1),
+		},
+		{
+			a: []bool{true},
+			b: int64(-1),
+		},
+		{
+			a: int64(1),
+			b: 1.5,
+		},
+		{
+			a: int64(1),
+			b: true,
+		},
+		{
+			a: 1.5,
+			b: int64(1),
+		},
+	}
+
+	for _, c := range cases {
+		if _, err := value.New(c.a).ShiftLeft(value.New(c.b)); err == nil {
+			t.Error("expected an error")
+			continue
+		}
+	}
+}
+
+func TestValueShiftRight(t *testing.T) {
+	cases := []struct {
+		a    any
+		b    any
+		want any
+	}{
+		{
+			a:    int(11),
+			b:    int(1),
+			want: int(5),
+		},
+		{
+			a:    int64(11),
+			b:    int64(1),
+			want: int64(5),
+		},
+		{
+			a:    uint(11),
+			b:    uint(1),
+			want: uint(5),
+		},
+		{
+			a:    int64(11),
+			b:    uint(1),
+			want: int64(5),
+		},
+		{
+			a:    int64(11),
+			b:    int64(0),
+			want: int64(11),
+		},
+		{
+			a:    int64(-8),
+			b:    int64(1),
+			want: int64(-4),
+		},
+		{
+			a:    int64(11),
+			b:    int64(64),
+			want: int64(0),
+		},
+		{
+			a:    true,
+			b:    int64(0),
+			want: true,
+		},
+		{
+			a:    false,
+			b:    int64(0),
+			want: false,
+		},
+		{
+			a:    true,
+			b:    int64(1),
+			want: false,
+		},
+		{
+			a:    []bool{true, false, true, true},
+			b:    int64(1),
+			want: []bool{false, true, false, true},
+		},
+		{
+			a:    []bool{true, false, true, true},
+			b:    int64(0),
+			want: []bool{true, false, true, true},
+		},
+		{
+			a:    []bool{true, false, true, true},
+			b:    int64(4),
+			want: []bool{false, false, false, false},
+		},
+		{
+			a:    []bool{true, false, true, true},
+			b:    ^uint(0),
+			want: []bool{false, false, false, false},
+		},
+		{
+			a:    []bool{},
+			b:    int64(0),
+			want: []bool{},
+		},
 	}
 
 	for _, c := range cases {
 		got, err := value.New(c.a).ShiftRight(value.New(c.b))
-		if c.hasErr {
-			if err == nil {
-				t.Errorf("%v >> %v: expected an error", c.a, c.b)
-			}
-			continue
-		}
-
 		if err != nil {
 			t.Errorf("%v >> %v: unexpected error: %v", c.a, c.b, err)
 			continue
@@ -242,9 +590,49 @@ func TestValue_ShiftRight(t *testing.T) {
 	}
 }
 
-func TestValue_BitNotBits(t *testing.T) {
+func TestValueShiftRight_invalid(t *testing.T) {
 	cases := []struct {
-		v, want []bool
+		a any
+		b any
+	}{
+		{
+			a: int64(1),
+			b: int(-1),
+		},
+		{
+			a: int64(1),
+			b: int64(-1),
+		},
+		{
+			a: []bool{true},
+			b: int64(-1),
+		},
+		{
+			a: int64(1),
+			b: 1.5,
+		},
+		{
+			a: int64(1),
+			b: true,
+		},
+		{
+			a: 1.5,
+			b: int64(1),
+		},
+	}
+
+	for _, c := range cases {
+		if _, err := value.New(c.a).ShiftRight(value.New(c.b)); err == nil {
+			t.Error("expected an error")
+			continue
+		}
+	}
+}
+
+func TestValueBitNot_bits(t *testing.T) {
+	cases := []struct {
+		v    []bool
+		want []bool
 	}{
 		{
 			v:    []bool{true, false, true, false},

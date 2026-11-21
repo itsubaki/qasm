@@ -21,6 +21,7 @@ qubit q0 q1;
 	p.AddErrorListener(listener) // add custom error listener
 
 	_ = p.Program()
+
 	for _, err := range listener.Errors {
 		fmt.Println(err)
 	}

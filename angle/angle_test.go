@@ -10,6 +10,7 @@ import (
 
 func ExampleAngle() {
 	a := angle.New(4, math.Pi)
+
 	fmt.Println(a.Radian())
 
 	fmt.Println("bits:", a.Bits)
@@ -41,8 +42,7 @@ func TestMod2Pi(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got := angle.Mod2Pi(c.radian)
-		if got != c.want {
+		if got := angle.Mod2Pi(c.radian); got != c.want {
 			t.Errorf("Mod2Pi(%f) = %f, want %f", c.radian, got, c.want)
 		}
 	}
@@ -56,14 +56,31 @@ func TestAngle(t *testing.T) {
 		wantBits   string
 		wantRadian float64
 	}{
-		{bits: 3, radian: 2*math.Pi - 0.01, wantK: 0, wantBits: "000", wantRadian: 0},
-		{bits: 3, radian: -0.01, wantK: 0, wantBits: "000", wantRadian: 0},
-		{bits: 3, radian: -math.SmallestNonzeroFloat64, wantK: 0, wantBits: "000", wantRadian: 0},
+		{
+			bits:       3,
+			radian:     2*math.Pi - 0.01,
+			wantK:      0,
+			wantBits:   "000",
+			wantRadian: 0,
+		},
+		{
+			bits:       3,
+			radian:     -0.01,
+			wantK:      0,
+			wantBits:   "000",
+			wantRadian: 0,
+		},
+		{
+			bits:       3,
+			radian:     -math.SmallestNonzeroFloat64,
+			wantK:      0,
+			wantBits:   "000",
+			wantRadian: 0,
+		},
 	}
 
 	for _, c := range cases {
-		a := angle.New(c.bits, c.radian)
-		if a.K != c.wantK || a.BitString != c.wantBits || a.Radian() != c.wantRadian {
+		if a := angle.New(c.bits, c.radian); a.K != c.wantK || a.BitString != c.wantBits || a.Radian() != c.wantRadian {
 			t.Errorf("bits=%d radian=%v: got=%v, want K=%d bits=%s radian=%v", c.bits, c.radian, a, c.wantK, c.wantBits, c.wantRadian)
 		}
 	}

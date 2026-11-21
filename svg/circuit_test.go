@@ -7,9 +7,17 @@ import (
 )
 
 func ExampleWire_Label() {
-	index := 0
-	fmt.Println((svg.Wire{Name: "q"}).Label())
-	fmt.Println((svg.Wire{Name: "q", Index: &index}).Label())
+	var index int
+	wire := svg.Wire{
+		Name: "q",
+	}
+	indexed := svg.Wire{
+		Name:  "q",
+		Index: &index,
+	}
+
+	fmt.Println(wire.Label())
+	fmt.Println(indexed.Label())
 
 	// Output:
 	// q
@@ -45,12 +53,14 @@ func ExampleMeasurement_WireIDs() {
 	m := &svg.Measurement{
 		Wire: []svg.WireID{0},
 	}
+
 	fmt.Println(m.WireIDs())
 
 	m01 := &svg.Measurement{
 		Wire:   []svg.WireID{0},
 		Target: []svg.WireID{1},
 	}
+
 	fmt.Println(m01.WireIDs())
 
 	// Output:
@@ -60,6 +70,7 @@ func ExampleMeasurement_WireIDs() {
 
 func ExampleBarrier_WireIDs() {
 	b := &svg.Barrier{}
+
 	fmt.Println(b.WireIDs())
 
 	// Output:
