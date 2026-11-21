@@ -703,6 +703,10 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 		}
 
 		if len(index) == 0 {
+			if len(val) != len(bits) {
+				return fmt.Errorf("bit assignment size mismatch: values=%d, size=%d", len(val), len(bits))
+			}
+
 			v.env.SetClBitArray(operand, val)
 			return nil
 		}
@@ -778,6 +782,10 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 		}
 
 		if len(index) == 0 {
+			if len(val) != len(bits) {
+				return fmt.Errorf("bit assignment size mismatch: values=%d, size=%d", len(val), len(bits))
+			}
+
 			v.env.SetClBitArray(operand, slices.Clone(val))
 			return nil
 		}
@@ -1035,16 +1043,29 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 
 			switch {
 			case ctx.ScalarType().Designator() != nil:
-				switch bits := x.(type) {
+				result := v.Visit(ctx.ScalarType())
+				switch result.(type) {
+				case error, endSignal:
+					return result
+				}
+
+				size := result.(int64)
+				var bits []bool
+				switch value := x.(type) {
 				case bool:
-					v.env.SetClBitArray(id, []bool{bits})
-					return nil
+					bits = []bool{value}
 				case []bool:
-					v.env.SetClBitArray(id, slices.Clone(bits))
-					return nil
+					bits = value
 				default:
 					return fmt.Errorf("assign %v(%T) to %q", x, x, id)
 				}
+
+				if int64(len(bits)) != size {
+					return fmt.Errorf("bit assignment size mismatch: values=%d, size=%d", len(bits), size)
+				}
+
+				v.env.SetClBitArray(id, slices.Clone(bits))
+				return nil
 			default:
 				switch bit := x.(type) {
 				case bool:

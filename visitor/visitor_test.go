@@ -269,6 +269,18 @@ func TestVisitorVisitClassicalDeclarationStatement(t *testing.T) {
 			want: "map[a:[true]]",
 		},
 		{
+			text: `const int n = 2; bit[n] a = "10";`,
+			want: "map[a:[true false]]",
+		},
+		{
+			text: `qubit q; U(pi, 0, pi) q; bit[1] a = measure q;`,
+			want: "map[a:[true]]",
+		},
+		{
+			text: `qubit[2] q; U(pi, 0, pi) q[0]; bit[2] a = measure q;`,
+			want: "map[a:[true false]]",
+		},
+		{
 			text: `bit a = "1";`,
 			want: "map[a:true]",
 		},
@@ -387,6 +399,34 @@ func TestVisitorVisitClassicalDeclarationStatement_invalid(t *testing.T) {
 		{
 			text:   `qubit[3] q; bit c = measure q;`,
 			errMsg: "assign 3 bits to a single bit",
+		},
+		{
+			text:   `bit[2] a = "1";`,
+			errMsg: "bit assignment size mismatch: values=1, size=2",
+		},
+		{
+			text:   `bit[2] a = "111";`,
+			errMsg: "bit assignment size mismatch: values=3, size=2",
+		},
+		{
+			text:   `bit[2] a = true;`,
+			errMsg: "bit assignment size mismatch: values=1, size=2",
+		},
+		{
+			text:   `qubit q; bit[2] a = measure q;`,
+			errMsg: "bit assignment size mismatch: values=1, size=2",
+		},
+		{
+			text:   `qubit[3] q; bit[2] a = measure q;`,
+			errMsg: "bit assignment size mismatch: values=3, size=2",
+		},
+		{
+			text:   `bit[missing] a = "00";`,
+			errMsg: `undefined "missing"`,
+		},
+		{
+			text:   `bit[true] a = "00";`,
+			errMsg: `size must be an integer "[true]"`,
 		},
 		{
 			text:   "float a = 1; float a = 0;",
@@ -875,6 +915,10 @@ func TestVisitorVisitAssignmentStatement_invalid(t *testing.T) {
 			errMsg: `assign 2 bits to a single bit`,
 		},
 		{
+			text:   `creg c[2]; c = "1";`,
+			errMsg: "bit assignment size mismatch: values=1, size=2",
+		},
+		{
 			text: `
 				qubit q;
 				U(pi/2.0, 0, pi) q;
@@ -893,6 +937,85 @@ func TestVisitorVisitAssignmentStatement_invalid(t *testing.T) {
 
 		if err.Error() != c.errMsg {
 			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func ExampleVisitor_VisitClassicalDeclarationStatement() {
+	fmt.Println(visitor.Visit(`bit[2] b = "1";`))
+
+	// Output:
+	// <nil> bit assignment size mismatch: values=1, size=2
+}
+
+func TestVisitorVisitAssignmentStatement_invalidBitSize(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want string
+	}{
+		{
+			name: "short bit string",
+			text: `b = "1";`,
+			want: "bit assignment size mismatch: values=1, size=2",
+		},
+		{
+			name: "long bit string",
+			text: `b = "111";`,
+			want: "bit assignment size mismatch: values=3, size=2",
+		},
+		{
+			name: "boolean value",
+			text: `b = true;`,
+			want: "bit assignment size mismatch: values=1, size=2",
+		},
+		{
+			name: "integer value",
+			text: `b = 1;`,
+			want: "bit assignment size mismatch: values=1, size=2",
+		},
+		{
+			name: "short measurement",
+			text: `measure q[0] -> b;`,
+			want: "bit assignment size mismatch: values=1, size=2",
+		},
+		{
+			name: "long measurement",
+			text: `measure q -> b;`,
+			want: "bit assignment size mismatch: values=3, size=2",
+		},
+		{
+			name: "short measurement assignment",
+			text: `b = measure q[0];`,
+			want: "bit assignment size mismatch: values=1, size=2",
+		},
+		{
+			name: "long measurement assignment",
+			text: `b = measure q;`,
+			want: "bit assignment size mismatch: values=3, size=2",
+		},
+		{
+			name: "assignment from nested scope",
+			text: `if (true) { b = "1"; }`,
+			want: "bit assignment size mismatch: values=1, size=2",
+		},
+	}
+
+	for _, c := range cases {
+		program, err := xparser.Parse(`qubit[3] q; bit[2] b = "10"; ` + c.text)
+		if err != nil {
+			t.Errorf("%s: unexpected parse error: %v", c.name, err)
+			continue
+		}
+
+		qsim, env := q.New(), environ.New()
+
+		if err := visitor.New(qsim, env).Run(program); err == nil || err.Error() != c.want {
+			t.Errorf("%s: got=%v, want=%v", c.name, err, c.want)
+		}
+
+		if got := env.ClBitArray["b"]; !slices.Equal(got, []bool{true, false}) {
+			t.Errorf("%s: bits changed after invalid assignment: %v", c.name, got)
 		}
 	}
 }
