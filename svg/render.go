@@ -100,7 +100,7 @@ func Render(layout *Layout, config Config) string {
 			switch o := op.(type) {
 			case *Gate:
 				// wires
-				for _, c := range o.Control {
+				for _, c := range slices.Concat(o.Control, o.NegativeControl) {
 					for _, t := range o.Target {
 						cy := config.WireStartY + int(c)*config.WireGap
 						ty := config.WireStartY + int(t)*config.WireGap
@@ -112,13 +112,24 @@ func Render(layout *Layout, config Config) string {
 							ty,
 							config.Theme.GateStroke,
 						)
-
-						fmt.Fprintf(&b, `<circle cx="%d" cy="%d" r="6" fill="%s" />`,
-							x+config.OpWidth/2,
-							cy,
-							config.Theme.GateStroke,
-						)
 					}
+				}
+
+				for _, c := range o.Control {
+					fmt.Fprintf(&b, `<circle cx="%d" cy="%d" r="6" fill="%s" />`,
+						x+config.OpWidth/2,
+						config.WireStartY+int(c)*config.WireGap,
+						config.Theme.GateStroke,
+					)
+				}
+
+				for _, c := range o.NegativeControl {
+					fmt.Fprintf(&b, `<circle cx="%d" cy="%d" r="6" fill="%s" stroke="%s" stroke-width="2" />`,
+						x+config.OpWidth/2,
+						config.WireStartY+int(c)*config.WireGap,
+						config.Theme.Background,
+						config.Theme.GateStroke,
+					)
 				}
 
 				// operation box

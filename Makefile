@@ -50,5 +50,6 @@ svg:
 	go run main.go -svg --theme cyber < testdata/svg/grover.qasm                > testdata/svg/grover.svg
 	go run main.go -svg --theme cyber < testdata/svg/inv_qft.qasm               > testdata/svg/inv_qft.svg
 	go run main.go -svg --theme cyber < testdata/svg/measurement.qasm           > testdata/svg/measurement.svg
+	go run main.go -svg --theme cyber < testdata/svg/negctrl.qasm               > testdata/svg/negctrl.svg
 	go run main.go -svg --theme cyber < testdata/svg/quantum_teleportation.qasm > testdata/svg/quantum_teleportation.svg
 	go run main.go -svg --theme cyber < testdata/svg/shor15.qasm                > testdata/svg/shor15.svg

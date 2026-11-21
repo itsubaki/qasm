@@ -80,7 +80,7 @@ func NewLayout(circuit *Circuit) *Layout {
 
 	for _, cur := range circuit.Ops {
 		// controlled gates must be in their own layer
-		if g, ok := cur.(*Gate); ok && len(g.Control) > 0 {
+		if g, ok := cur.(*Gate); ok && len(g.Control)+len(g.NegativeControl) > 0 {
 			layout.NewLayer([]Op{cur}, true)
 			continue
 		}

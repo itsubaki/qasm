@@ -277,8 +277,8 @@ func TestVisitorBuild_invalidGphase(t *testing.T) {
 			want: "gphase control operand mismatch: controls=1, operands=2",
 		},
 		{
-			text: `qubit q; negctrl @ gphase(pi/2) q;`,
-			want: "negctrl on gphase: not implemented",
+			text: `negctrl @ gphase(pi/2);`,
+			want: `not enough operands for "negctrl@"`,
 		},
 	}
 
@@ -708,6 +708,198 @@ func TestCast_invalid(t *testing.T) {
 		if _, err := svg.CastInt(c.result); err == nil {
 			t.Error("expected an error")
 			continue
+		}
+	}
+}
+
+func ExampleBuild_negativeControl() {
+	program, err := xparser.Parse(`qubit[2] q; negctrl @ x q[0], q[1];`)
+	if err != nil {
+		panic(err)
+	}
+
+	circuit, err := svg.Build(program)
+	if err != nil {
+		panic(err)
+	}
+
+	gate := circuit.Ops[0].(*svg.Gate)
+	fmt.Println(gate.Name, gate.Control, gate.NegativeControl, gate.Target)
+
+	// Output:
+	// X [] [0] [1]
+}
+
+func TestVisitorBuild_negativeControl(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want []svg.Op
+	}{
+		{
+			name: "single",
+			text: `qubit[2] q; negctrl @ x q[0], q[1];`,
+			want: []svg.Op{
+				&svg.Gate{
+					Name:            "X",
+					NegativeControl: []svg.WireID{0},
+					Target:          []svg.WireID{1},
+				},
+			},
+		},
+		{
+			name: "multiple",
+			text: `qubit[3] q; negctrl(2) @ x q[0], q[1], q[2];`,
+			want: []svg.Op{
+				&svg.Gate{
+					Name:            "X",
+					NegativeControl: []svg.WireID{0, 1},
+					Target:          []svg.WireID{2},
+				},
+			},
+		},
+		{
+			name: "positiveThenNegative",
+			text: `qubit[3] q; ctrl @ negctrl @ x q[0], q[1], q[2];`,
+			want: []svg.Op{
+				&svg.Gate{
+					Name:            "X",
+					Control:         []svg.WireID{0},
+					NegativeControl: []svg.WireID{1},
+					Target:          []svg.WireID{2},
+				},
+			},
+		},
+		{
+			name: "negativeThenPositive",
+			text: `qubit[3] q; negctrl @ ctrl @ x q[0], q[1], q[2];`,
+			want: []svg.Op{
+				&svg.Gate{
+					Name:            "X",
+					Control:         []svg.WireID{1},
+					NegativeControl: []svg.WireID{0},
+					Target:          []svg.WireID{2},
+				},
+			},
+		},
+		{
+			name: "phase",
+			text: `qubit q; negctrl @ gphase(pi/2) q;`,
+			want: []svg.Op{
+				&svg.Gate{
+					Name:   "X",
+					Target: []svg.WireID{0},
+				},
+				&svg.Gate{
+					Name:   "P",
+					Target: []svg.WireID{0},
+				},
+				&svg.Gate{
+					Name:   "X",
+					Target: []svg.WireID{0},
+				},
+			},
+		},
+		{
+			name: "negativePhaseControl",
+			text: `qubit[2] q; negctrl @ ctrl @ gphase(pi/2) q[0], q[1];`,
+			want: []svg.Op{
+				&svg.Gate{
+					Name:            "P",
+					NegativeControl: []svg.WireID{0},
+					Target:          []svg.WireID{1},
+				},
+			},
+		},
+		{
+			name: "positivePhaseControl",
+			text: `qubit[2] q; ctrl @ negctrl @ gphase(pi/2) q[0], q[1];`,
+			want: []svg.Op{
+				&svg.Gate{
+					Name:   "X",
+					Target: []svg.WireID{1},
+				},
+				&svg.Gate{
+					Name:    "P",
+					Control: []svg.WireID{0},
+					Target:  []svg.WireID{1},
+				},
+				&svg.Gate{
+					Name:   "X",
+					Target: []svg.WireID{1},
+				},
+			},
+		},
+		{
+			name: "multiplePhaseControls",
+			text: `qubit[2] q; negctrl(2) @ gphase(pi/2) q[0], q[1];`,
+			want: []svg.Op{
+				&svg.Gate{
+					Name:   "X",
+					Target: []svg.WireID{1},
+				},
+				&svg.Gate{
+					Name:            "P",
+					NegativeControl: []svg.WireID{0},
+					Target:          []svg.WireID{1},
+				},
+				&svg.Gate{
+					Name:   "X",
+					Target: []svg.WireID{1},
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		program, err := xparser.Parse(c.text)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+
+		circuit, err := svg.Build(program)
+		if err != nil {
+			t.Errorf("%s: %v", c.name, err)
+			continue
+		}
+
+		if !reflect.DeepEqual(circuit.Ops, c.want) {
+			t.Errorf("%s: got=%#v, want=%#v", c.name, circuit.Ops, c.want)
+		}
+	}
+}
+
+func TestVisitorBuild_invalidNegativeControl(t *testing.T) {
+	cases := []struct {
+		text string
+		want string
+	}{
+		{
+			text: `qubit q; negctrl(0) @ x q;`,
+			want: "control count must be positive: 0",
+		},
+		{
+			text: `qubit[2] q; negctrl(3) @ x q[0], q[1];`,
+			want: `not enough operands for "negctrl(3)@"`,
+		},
+		{
+			text: `qubit[2] q; ctrl @ negctrl(2) @ x q[0], q[1];`,
+			want: `not enough operands for "negctrl(2)@"`,
+		},
+		{
+			text: `qubit[2] q; negctrl @ gphase(pi/2) q[0], q[1];`,
+			want: "gphase control operand mismatch: controls=1, operands=2",
+		},
+	}
+
+	for _, c := range cases {
+		program, err := xparser.Parse(c.text)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err := svg.Build(program); err == nil || err.Error() != c.want {
+			t.Errorf("%s: got=%v, want=%q", c.text, err, c.want)
 		}
 	}
 }

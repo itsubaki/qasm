@@ -141,3 +141,55 @@ func TestSVG_invalid(t *testing.T) {
 		}
 	}
 }
+
+func TestSVG_negativeControl(t *testing.T) {
+	cases := []struct {
+		name  string
+		theme svg.Theme
+	}{
+		{
+			name:  "paper",
+			theme: svg.Paper,
+		},
+		{
+			name:  "cyber",
+			theme: svg.Cyber,
+		},
+	}
+
+	for _, c := range cases {
+		config := svg.DefaultConfig
+		config.Theme = c.theme
+
+		diagram, err := svg.SVG(`qubit[3] q; ctrl @ negctrl @ x q[0], q[1], q[2];`, config)
+		if err != nil {
+			t.Errorf("%s: %v", c.name, err)
+			continue
+		}
+
+		var root struct {
+			Circles []struct {
+				Y      int    `xml:"cy,attr"`
+				Fill   string `xml:"fill,attr"`
+				Stroke string `xml:"stroke,attr"`
+			} `xml:"circle"`
+		}
+		if err := xml.Unmarshal([]byte(diagram), &root); err != nil {
+			t.Errorf("%s: invalid SVG XML: %v", c.name, err)
+			continue
+		}
+
+		if len(root.Circles) != 2 {
+			t.Errorf("%s: control circles=%d, want=2", c.name, len(root.Circles))
+			continue
+		}
+
+		if got := root.Circles[0]; got.Y != config.WireStartY || got.Fill != c.theme.GateStroke {
+			t.Errorf("%s: incorrect positive control: %+v", c.name, got)
+		}
+
+		if got := root.Circles[1]; got.Y != config.WireStartY+config.WireGap || got.Fill != c.theme.Background || got.Stroke != c.theme.GateStroke {
+			t.Errorf("%s: incorrect negative control: %+v", c.name, got)
+		}
+	}
+}

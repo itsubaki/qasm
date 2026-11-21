@@ -2,6 +2,7 @@ package svg_test
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/itsubaki/qasm/svg"
 )
@@ -162,4 +163,56 @@ func ExampleNewLayout() {
 	// q3
 	// c0
 	// c1
+}
+
+func TestNewLayout_negativeControl(t *testing.T) {
+	cases := []struct {
+		name string
+		gate *svg.Gate
+	}{
+		{
+			name: "negative",
+			gate: &svg.Gate{
+				Name:            "X",
+				NegativeControl: []svg.WireID{0},
+				Target:          []svg.WireID{2},
+			},
+		},
+		{
+			name: "mixed",
+			gate: &svg.Gate{
+				Name:            "X",
+				Control:         []svg.WireID{2},
+				NegativeControl: []svg.WireID{0},
+				Target:          []svg.WireID{1},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		circuit := &svg.Circuit{
+			Ops: []svg.Op{
+				&svg.Gate{
+					Name:   "H",
+					Target: []svg.WireID{1},
+				},
+				c.gate,
+				&svg.Gate{
+					Name:   "H",
+					Target: []svg.WireID{1},
+				},
+			},
+		}
+
+		layout := svg.NewLayout(circuit)
+
+		if len(layout.Layers) != 3 {
+			t.Errorf("%s: layers=%d, want=3", c.name, len(layout.Layers))
+			continue
+		}
+
+		if !layout.Layers[1].Wires[0] {
+			t.Errorf("%s: negative control wire is missing", c.name)
+		}
+	}
 }

@@ -2,6 +2,7 @@ package svg
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -260,10 +261,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 
 		var controlled bool
 		for _, mod := range ctx.AllGateModifier() {
-			if mod.NEGCTRL() != nil {
-				return fmt.Errorf("negctrl on gphase: not implemented")
-			}
-			if mod.CTRL() != nil {
+			if mod.CTRL() != nil || mod.NEGCTRL() != nil {
 				controlled = true
 			}
 		}
@@ -298,9 +296,10 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 	// ctrl(n) @ h q0, q1,...;
 	var cursor int
 	var ctrls []WireID
+	var negctrls []WireID
 	for _, mod := range ctx.AllGateModifier() {
 		switch {
-		case mod.CTRL() != nil:
+		case mod.CTRL() != nil || mod.NEGCTRL() != nil:
 			n, err := cast[int64](v.Visit(mod))
 			if err != nil {
 				return err
@@ -314,7 +313,12 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			}
 
 			for range n {
-				ctrls = append(ctrls, qargs[cursor])
+				if mod.NEGCTRL() != nil {
+					negctrls = append(negctrls, qargs[cursor])
+				} else {
+					ctrls = append(ctrls, qargs[cursor])
+				}
+
 				cursor++
 			}
 		}
@@ -322,6 +326,10 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 
 	ctrlSet := make(map[WireID]struct{})
 	for _, c := range ctrls {
+		ctrlSet[c] = struct{}{}
+	}
+
+	for _, c := range negctrls {
 		ctrlSet[c] = struct{}{}
 	}
 
@@ -334,6 +342,7 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		targets = append(targets, qargs[i])
 	}
 
+	var flipTarget bool
 	if ctx.GPHASE() != nil {
 		if cursor != len(qargs) {
 			return fmt.Errorf("gphase control operand mismatch: controls=%d, operands=%d", cursor, len(qargs))
@@ -341,17 +350,43 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 
 		// A controlled global phase is a phase gate on the last control.
 		targets = []WireID{qargs[cursor-1]}
-		ctrls = nil
-		if cursor > 1 {
-			ctrls = qargs[:cursor-1]
+		if slices.Contains(negctrls, targets[0]) {
+			negctrls = negctrls[:len(negctrls)-1]
+			flipTarget = true
+		} else {
+			ctrls = ctrls[:len(ctrls)-1]
+		}
+
+		if len(ctrls) == 0 {
+			ctrls = nil
+		}
+
+		if len(negctrls) == 0 {
+			negctrls = nil
 		}
 	}
 
+	// A phase conditioned on zero is X P X on the last control.
+	if flipTarget {
+		v.circuit.Ops = append(v.circuit.Ops, &Gate{
+			Name:   "X",
+			Target: targets,
+		})
+	}
+
 	v.circuit.Ops = append(v.circuit.Ops, &Gate{
-		Name:    strings.ToUpper(gate),
-		Control: ctrls,
-		Target:  targets,
+		Name:            strings.ToUpper(gate),
+		Control:         ctrls,
+		NegativeControl: negctrls,
+		Target:          targets,
 	})
+
+	if flipTarget {
+		v.circuit.Ops = append(v.circuit.Ops, &Gate{
+			Name:   "X",
+			Target: targets,
+		})
+	}
 
 	return nil
 }

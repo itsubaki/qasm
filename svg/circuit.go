@@ -37,14 +37,16 @@ func (w Wire) Label() string {
 }
 
 type Gate struct {
-	Name    string   `json:"name"`
-	Control []WireID `json:"control,omitempty"`
-	Target  []WireID `json:"target,omitempty"`
+	Name            string   `json:"name"`
+	Control         []WireID `json:"control,omitempty"`
+	NegativeControl []WireID `json:"negativeControl,omitempty"`
+	Target          []WireID `json:"target,omitempty"`
 }
 
 func (g *Gate) WireIDs() []WireID {
 	var wires []WireID
 	wires = append(wires, g.Control...)
+	wires = append(wires, g.NegativeControl...)
 	wires = append(wires, g.Target...)
 	return wires
 }
