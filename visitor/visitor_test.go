@@ -851,12 +851,6 @@ func TestVisitorVisitAssignmentStatement(t *testing.T) {
 }
 
 func TestVisitorVisitAssignmentStatement_invalid(t *testing.T) {
-	type Want struct {
-		bit      []string
-		qubit    []string
-		variable []string
-	}
-
 	cases := []struct {
 		text   string
 		errMsg string
@@ -1040,11 +1034,6 @@ func TestVisitorVisitMeasureArrowAssignmentStatement(t *testing.T) {
 }
 
 func TestVisitorVisitMeasureArrowAssignmentStatement_invalid(t *testing.T) {
-	type Want struct {
-		bit   []string
-		qubit []string
-	}
-
 	cases := []struct {
 		text   string
 		errMsg string
