@@ -1,8 +1,9 @@
 package svg
 
 type Layout struct {
-	Wires  []Wire  `json:"wires"`
-	Layers []Layer `json:"layers"`
+	Wires        []Wire   `json:"wires"`
+	Layers       []Layer  `json:"layers"`
+	GlobalPhases []string `json:"globalPhases,omitempty"`
 }
 
 func (l *Layout) NewLayer(ops []Op, separated ...bool) {
@@ -72,8 +73,9 @@ func (l *Layer) Conflicts(cur Op) bool {
 
 func NewLayout(circuit *Circuit) *Layout {
 	layout := &Layout{
-		Wires:  circuit.Wires,
-		Layers: []Layer{},
+		Wires:        circuit.Wires,
+		Layers:       []Layer{},
+		GlobalPhases: circuit.GlobalPhases,
 	}
 
 	for _, cur := range circuit.Ops {

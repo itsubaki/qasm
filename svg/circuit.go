@@ -14,8 +14,9 @@ type Op interface {
 }
 
 type Circuit struct {
-	Wires []Wire `json:"wires"`
-	Ops   []Op   `json:"ops"`
+	Wires        []Wire   `json:"wires"`
+	Ops          []Op     `json:"ops"`
+	GlobalPhases []string `json:"globalPhases,omitempty"`
 }
 
 // WireID is the position of a wire in Circuit.Wires.

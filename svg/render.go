@@ -2,8 +2,10 @@ package svg
 
 import (
 	"fmt"
+	"html"
 	"slices"
 	"strings"
+	"unicode/utf8"
 )
 
 type Config struct {
@@ -29,8 +31,18 @@ var DefaultConfig = Config{
 }
 
 func Render(layout *Layout, config Config) string {
+	var phaseLabel string
+	if len(layout.GlobalPhases) > 0 {
+		phaseLabel = "Global phase: " + strings.Join(layout.GlobalPhases, "; ")
+		config.WireStartY += config.FontSize + 16
+	}
+
 	// the size of the SVG canvas
 	width := config.WireStartX + len(layout.Layers)*config.WireGap + config.WireGap/2
+	if phaseLabel != "" {
+		width = max(width, utf8.RuneCountInString(phaseLabel)*(config.FontSize*2+2)/3+32)
+	}
+
 	height := config.WireStartY + len(layout.Wires)*config.WireGap
 
 	// svg
@@ -53,6 +65,14 @@ func Render(layout *Layout, config Config) string {
 	fmt.Fprintf(&b, `.gate-label { font-family: ui-monospace, monospace; font-size: %dpx; font-weight: 600; }`, config.FontSize)
 	fmt.Fprintf(&b, `.wire-label { font-family: ui-monospace, monospace; font-size: %dpx; font-weight: 500; }`, config.FontSize)
 	b.WriteString(`</style>`)
+
+	if phaseLabel != "" {
+		fmt.Fprintf(&b, `<text x="16" y="%d" fill="%s" class="wire-label">%s</text>`,
+			config.FontSize+12,
+			config.Theme.Text,
+			html.EscapeString(phaseLabel),
+		)
+	}
 
 	// wires
 	for i, w := range layout.Wires {

@@ -145,6 +145,156 @@ func TestVisitorBuild_wireIDs(t *testing.T) {
 	}
 }
 
+func ExampleBuild_gphase() {
+	program, err := xparser.Parse(`qubit q; gphase(pi/4); ctrl @ gphase(pi/2) q;`)
+	if err != nil {
+		panic(err)
+	}
+
+	circuit, err := svg.Build(program)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(circuit.GlobalPhases)
+	gate := circuit.Ops[0].(*svg.Gate)
+	fmt.Println(gate.Name, gate.Control, gate.Target)
+
+	// Output:
+	// [gphase(pi/4)]
+	// P [] [0]
+}
+
+func TestVisitorBuild_gphase(t *testing.T) {
+	cases := []struct {
+		text       string
+		wantPhases []string
+		wantOps    []svg.Op
+	}{
+		{
+			text:       `gphase(pi/2);`,
+			wantPhases: []string{"gphase(pi/2)"},
+		},
+		{
+			text:       `qubit q; h q; gphase(pi/4);`,
+			wantPhases: []string{"gphase(pi/4)"},
+			wantOps: []svg.Op{
+				&svg.Gate{
+					Name:   "H",
+					Target: []svg.WireID{0},
+				},
+			},
+		},
+		{
+			text:       `qubit q; inv @ gphase(pi/4); pow(2) @ gphase(pi/8);`,
+			wantPhases: []string{"inv@gphase(pi/4)", "pow(2)@gphase(pi/8)"},
+		},
+		{
+			text: `qubit q; ctrl @ gphase(pi/2) q;`,
+			wantOps: []svg.Op{
+				&svg.Gate{
+					Name:   "P",
+					Target: []svg.WireID{0},
+				},
+			},
+		},
+		{
+			text: `qubit[2] q; ctrl(2) @ gphase(pi/2) q[0], q[1];`,
+			wantOps: []svg.Op{
+				&svg.Gate{
+					Name:    "P",
+					Control: []svg.WireID{0},
+					Target:  []svg.WireID{1},
+				},
+			},
+		},
+		{
+			text: `qubit[2] q; ctrl @ ctrl @ gphase(pi/2) q[0], q[1];`,
+			wantOps: []svg.Op{
+				&svg.Gate{
+					Name:    "P",
+					Control: []svg.WireID{0},
+					Target:  []svg.WireID{1},
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		program, err := xparser.Parse(c.text)
+		if err != nil {
+			t.Errorf("%s: unexpected parse error: %v", c.text, err)
+			continue
+		}
+
+		circuit, err := svg.Build(program)
+		if err != nil {
+			t.Errorf("%s: unexpected error: %v", c.text, err)
+			continue
+		}
+
+		if !reflect.DeepEqual(circuit.GlobalPhases, c.wantPhases) {
+			t.Errorf("%s: phases=%v, want=%v", c.text, circuit.GlobalPhases, c.wantPhases)
+		}
+
+		if !reflect.DeepEqual(circuit.Ops, c.wantOps) {
+			t.Errorf("%s: ops=%#v, want=%#v", c.text, circuit.Ops, c.wantOps)
+		}
+	}
+}
+
+func TestVisitorBuild_invalidGphase(t *testing.T) {
+	cases := []struct {
+		text string
+		want string
+	}{
+		{
+			text: `gphase();`,
+			want: "gphase expects one parameter",
+		},
+		{
+			text: `gphase(1, 2);`,
+			want: "gphase expects one parameter",
+		},
+		{
+			text: `qubit q; gphase(pi) q;`,
+			want: "gphase does not take target operands",
+		},
+		{
+			text: `ctrl @ gphase(pi/2);`,
+			want: `not enough operands for "ctrl@"`,
+		},
+		{
+			text: `qubit q; ctrl(2) @ gphase(pi/2) q;`,
+			want: `not enough operands for "ctrl(2)@"`,
+		},
+		{
+			text: `qubit q; ctrl(0) @ gphase(pi/2) q;`,
+			want: "control count must be positive: 0",
+		},
+		{
+			text: `qubit[2] q; ctrl @ gphase(pi/2) q[0], q[1];`,
+			want: "gphase control operand mismatch: controls=1, operands=2",
+		},
+		{
+			text: `qubit q; negctrl @ gphase(pi/2) q;`,
+			want: "negctrl on gphase: not implemented",
+		},
+	}
+
+	for _, c := range cases {
+		program, err := xparser.Parse(c.text)
+		if err != nil {
+			t.Errorf("%s: unexpected parse error: %v", c.text, err)
+			continue
+		}
+
+		if _, err := svg.Build(program); err == nil || err.Error() != c.want {
+			t.Errorf("%s: got=%v, want=%v", c.text, err, c.want)
+		}
+	}
+}
+
 func TestVisitorGetWireIDs(t *testing.T) {
 	cases := []struct {
 		name  string

@@ -214,14 +214,47 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 }
 
 func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) any {
-	gate, err := cast[string](v.Visit(ctx.Identifier()))
-	if err != nil {
-		return err
+	var gate string
+	if ctx.GPHASE() != nil {
+		if ctx.ExpressionList() == nil || len(ctx.ExpressionList().AllExpression()) != 1 {
+			return fmt.Errorf("gphase expects one parameter")
+		}
+
+		var controlled bool
+		for _, mod := range ctx.AllGateModifier() {
+			if mod.NEGCTRL() != nil {
+				return fmt.Errorf("negctrl on gphase: not implemented")
+			}
+			if mod.CTRL() != nil {
+				controlled = true
+			}
+		}
+
+		if !controlled {
+			if ctx.GateOperandList() != nil {
+				return fmt.Errorf("gphase does not take target operands")
+			}
+
+			v.circuit.GlobalPhases = append(v.circuit.GlobalPhases, strings.TrimSuffix(ctx.GetText(), ";"))
+			return nil
+		}
+
+		gate = "P"
+	} else {
+		var err error
+		gate, err = cast[string](v.Visit(ctx.Identifier()))
+		if err != nil {
+			return err
+		}
 	}
 
-	qargs, err := cast[[]WireID](v.Visit(ctx.GateOperandList()))
-	if err != nil {
-		return err
+	var qargs []WireID
+	if ctx.GateOperandList() != nil {
+		var err error
+		qargs, err = cast[[]WireID](v.Visit(ctx.GateOperandList()))
+		if err != nil {
+			return err
+		}
 	}
 
 	// ctrl(n) @ h q0, q1,...;
@@ -233,6 +266,13 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 			n, err := cast[int64](v.Visit(mod))
 			if err != nil {
 				return err
+			}
+
+			if n < 1 {
+				return fmt.Errorf("control count must be positive: %d", n)
+			}
+			if n > int64(len(qargs)-cursor) {
+				return fmt.Errorf("not enough operands for %q", mod.GetText())
 			}
 
 			for range n {
@@ -254,6 +294,19 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 
 		targets = append(targets, qargs[i])
+	}
+
+	if ctx.GPHASE() != nil {
+		if cursor != len(qargs) {
+			return fmt.Errorf("gphase control operand mismatch: controls=%d, operands=%d", cursor, len(qargs))
+		}
+
+		// A controlled global phase is a phase gate on the last control.
+		targets = []WireID{qargs[cursor-1]}
+		ctrls = nil
+		if cursor > 1 {
+			ctrls = qargs[:cursor-1]
+		}
 	}
 
 	v.circuit.Ops = append(v.circuit.Ops, &Gate{

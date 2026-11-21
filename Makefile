@@ -46,6 +46,7 @@ svg:
 	go run main.go -svg --theme cyber < testdata/svg/barrier.qasm               > testdata/svg/barrier.svg
 	go run main.go -svg --theme cyber < testdata/svg/bell.qasm                  > testdata/svg/bell.svg
 	go run main.go -svg --theme cyber < testdata/svg/ghz.qasm                   > testdata/svg/ghz.svg
+	go run main.go -svg --theme cyber < testdata/svg/gphase.qasm                > testdata/svg/gphase.svg
 	go run main.go -svg --theme cyber < testdata/svg/grover.qasm                > testdata/svg/grover.svg
 	go run main.go -svg --theme cyber < testdata/svg/inv_qft.qasm               > testdata/svg/inv_qft.svg
 	go run main.go -svg --theme cyber < testdata/svg/quantum_teleportation.qasm > testdata/svg/quantum_teleportation.svg
