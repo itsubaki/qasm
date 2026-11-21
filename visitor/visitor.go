@@ -265,16 +265,33 @@ func (v *Visitor) VisitIfStatement(ctx *parser.IfStatementContext) any {
 
 func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) any {
 	id := v.Visit(ctx.Identifier()).(string)
-	result := v.Visit(ctx.RangeExpression())
+	x := ctx.RangeExpression()
+	if x == nil {
+		return fmt.Errorf("for loop without range: %w", ErrNotImplemented)
+	}
+
+	result := v.Visit(x)
 	switch result.(type) {
 	case error, endSignal:
 		return result
 	}
 
 	rx := result.([]int64)
-	enclosed := v.Enclosed()
+	if len(rx) != len(x.AllCOLON())+1 {
+		return fmt.Errorf("for range %q: %w", x.GetText(), ErrNotImplemented)
+	}
 
-	for i := rx[0]; i <= rx[1]; i++ {
+	start, stop, step := rx[0], rx[1], int64(1)
+	if len(rx) == 3 {
+		step, stop = rx[1], rx[2]
+	}
+
+	if step == 0 {
+		return fmt.Errorf("for range step cannot be zero")
+	}
+
+	enclosed := v.Enclosed()
+	for i := start; step > 0 && i <= stop || step < 0 && i >= stop; i += step {
 		enclosed.env.Variable[id] = i
 		result := enclosed.Visit(ctx.StatementOrScope())
 		switch result.(type) {
@@ -284,6 +301,11 @@ func (v *Visitor) VisitForStatement(ctx *parser.ForStatementContext) any {
 
 		if contains(result, Break) {
 			return nil
+		}
+
+		// Stop before the increment overflows and wraps the loop counter.
+		if step > 0 && i > math.MaxInt64-step || step < 0 && i < math.MinInt64-step {
+			break
 		}
 	}
 

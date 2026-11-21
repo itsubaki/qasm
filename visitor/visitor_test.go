@@ -2988,6 +2988,175 @@ func TestVisitorVisitIfStatement(t *testing.T) {
 	}
 }
 
+func ExampleVisitor_VisitForStatement() {
+	text := `
+		int total = 0;
+		for int i in [0:2:6] {
+			total = total + i;
+		}
+		total;
+	`
+
+	fmt.Println(visitor.Visit(text))
+
+	// Output:
+	// 12 <nil>
+}
+
+func TestVisitorVisitForStatement_step(t *testing.T) {
+	cases := []struct {
+		name       string
+		text       string
+		wantCount  int64
+		wantResult int64
+	}{
+		{
+			name:       "positive step",
+			text:       `for int i in [0:2:6] { count = count + 1; result = result * 10 + i; }`,
+			wantCount:  4,
+			wantResult: 246,
+		},
+		{
+			name:       "negative step",
+			text:       `for int i in [6:-2:0] { count = count + 1; result = result * 10 + i; }`,
+			wantCount:  4,
+			wantResult: 6420,
+		},
+		{
+			name:       "positive step past end",
+			text:       `for int i in [1:3:8] { count = count + 1; result = result * 10 + i; }`,
+			wantCount:  3,
+			wantResult: 147,
+		},
+		{
+			name:       "negative step past end",
+			text:       `for int i in [5:-2:0] { count = count + 1; result = result * 10 + i; }`,
+			wantCount:  3,
+			wantResult: 531,
+		},
+		{
+			name:       "equal bounds positive step",
+			text:       `for int i in [3:2:3] { count = count + 1; result = i; }`,
+			wantCount:  1,
+			wantResult: 3,
+		},
+		{
+			name:       "equal bounds negative step",
+			text:       `for int i in [3:-2:3] { count = count + 1; result = i; }`,
+			wantCount:  1,
+			wantResult: 3,
+		},
+		{
+			name:       "empty positive range",
+			text:       `for int i in [3:2:0] { count = count + 1; result = i; }`,
+			wantCount:  0,
+			wantResult: 0,
+		},
+		{
+			name:       "empty negative range",
+			text:       `for int i in [0:-2:3] { count = count + 1; result = i; }`,
+			wantCount:  0,
+			wantResult: 0,
+		},
+		{
+			name:       "step expression",
+			text:       `const int stride = 2; for int i in [1:stride:5] { count = count + 1; result = result * 10 + i; }`,
+			wantCount:  3,
+			wantResult: 135,
+		},
+		{
+			name:       "break",
+			text:       `for int i in [6:-2:0] { count = count + 1; result = result * 10 + i; if (i == 4) { break; } }`,
+			wantCount:  2,
+			wantResult: 64,
+		},
+		{
+			name:       "continue",
+			text:       `for int i in [0:2:6] { if (i == 2) { continue; } count = count + 1; result = result * 10 + i; }`,
+			wantCount:  3,
+			wantResult: 46,
+		},
+		{
+			name:       "maximum integer default step",
+			text:       `for int i in [9223372036854775807:9223372036854775807] { count = count + 1; result = i; if (count == 2) { break; } }`,
+			wantCount:  1,
+			wantResult: math.MaxInt64,
+		},
+		{
+			name:       "minimum integer negative step",
+			text:       `for int i in [(-9223372036854775807-1):-1:(-9223372036854775807-1)] { count = count + 1; result = i; if (count == 2) { break; } }`,
+			wantCount:  1,
+			wantResult: math.MinInt64,
+		},
+		{
+			name:       "positive step overflow",
+			text:       `for int i in [9223372036854775806:2:9223372036854775807] { count = count + 1; result = i; if (count == 2) { break; } }`,
+			wantCount:  1,
+			wantResult: math.MaxInt64 - 1,
+		},
+		{
+			name:       "negative step overflow",
+			text:       `for int i in [-9223372036854775807:-2:(-9223372036854775807-1)] { count = count + 1; result = i; if (count == 2) { break; } }`,
+			wantCount:  1,
+			wantResult: math.MinInt64 + 1,
+		},
+	}
+
+	for _, c := range cases {
+		_, env, err := visitor.Run(`int count = 0; int result = 0; ` + c.text)
+		if err != nil {
+			t.Errorf("%s: unexpected error: %v", c.name, err)
+			continue
+		}
+
+		if got := env.Variable["count"]; got != c.wantCount {
+			t.Errorf("%s: count=%v, want=%v", c.name, got, c.wantCount)
+		}
+
+		if got := env.Variable["result"]; got != c.wantResult {
+			t.Errorf("%s: result=%v, want=%v", c.name, got, c.wantResult)
+		}
+	}
+}
+
+func TestVisitorVisitForStatement_invalid(t *testing.T) {
+	cases := []struct {
+		text string
+		want string
+	}{
+		{
+			text: `for int i in [0:0:3] { break; }`,
+			want: "for range step cannot be zero",
+		},
+		{
+			text: `for int i in [3:0:0] { break; }`,
+			want: "for range step cannot be zero",
+		},
+		{
+			text: `for int i in [0:] { break; }`,
+			want: `for range "0:": not implemented`,
+		},
+		{
+			text: `for int i in [:3] { break; }`,
+			want: `for range ":3": not implemented`,
+		},
+		{
+			text: `for int i in [0::3] { break; }`,
+			want: `for range "0::3": not implemented`,
+		},
+		{
+			text: `for int i in {0, 1} { break; }`,
+			want: "for loop without range: not implemented",
+		},
+	}
+
+	for _, c := range cases {
+		if _, _, err := visitor.Run(c.text); err == nil || err.Error() != c.want {
+			t.Errorf("%s: got=%v, want=%v", c.text, err, c.want)
+		}
+	}
+}
+
 func TestVisitorVisitForStatement(t *testing.T) {
 	cases := []struct {
 		text string
