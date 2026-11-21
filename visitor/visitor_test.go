@@ -325,6 +325,14 @@ func TestVisitorVisitClassicalDeclarationStatement(t *testing.T) {
 			want: "map[z:0]",
 		},
 		{
+			text: "float z; z = z + 1.0;",
+			want: "map[z:1]",
+		},
+		{
+			text: "float z; z = z + 1;",
+			want: "map[z:1]",
+		},
+		{
 			text: "int z;",
 			want: "map[z:0]",
 		},

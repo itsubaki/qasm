@@ -928,7 +928,7 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 			return setVariable(id, ctx.DeclarationExpression())
 		}
 
-		v.env.SetVariable(id, float32(0))
+		v.env.SetVariable(id, float64(0))
 		return nil
 	case ctx.ScalarType().BOOL() != nil:
 		id := v.Visit(ctx.Identifier()).(string)
