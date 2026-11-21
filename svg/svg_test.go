@@ -86,6 +86,42 @@ func TestSVG_gphase(t *testing.T) {
 	}
 }
 
+func TestSVG_measurementAssignment(t *testing.T) {
+	cases := []struct {
+		text string
+		want int
+	}{
+		{
+			text: `qubit q; bit c; c = measure q;`,
+			want: 1,
+		},
+		{
+			text: `qubit q; bit c = measure q;`,
+			want: 1,
+		},
+		{
+			text: `qubit[2] q; bit[2] c; c = measure q;`,
+			want: 2,
+		},
+		{
+			text: `qubit[2] q; bit[2] c = measure q;`,
+			want: 2,
+		},
+	}
+
+	for _, c := range cases {
+		diagram, err := svg.SVG(c.text, svg.DefaultConfig)
+		if err != nil {
+			t.Errorf("%s: unexpected error: %v", c.text, err)
+			continue
+		}
+
+		if got := strings.Count(diagram, "<polygon"); got != c.want {
+			t.Errorf("%s: measurement arrows=%d, want=%d", c.text, got, c.want)
+		}
+	}
+}
+
 func TestSVG_invalid(t *testing.T) {
 	cases := []struct {
 		text string

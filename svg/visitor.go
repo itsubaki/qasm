@@ -194,21 +194,59 @@ func (v *Visitor) VisitMeasureArrowAssignmentStatement(ctx *parser.MeasureArrowA
 		return fmt.Errorf("undefined %q", cargs)
 	}
 
-	if len(targetIDs) > 1 {
-		for i := range wireIDs {
-			v.circuit.Ops = append(v.circuit.Ops, &Measurement{
-				Wire:   []WireID{wireIDs[i]},
-				Target: []WireID{targetIDs[i]},
-			})
-		}
+	if len(wireIDs) != len(targetIDs) {
+		return fmt.Errorf("measurement size mismatch: qubits=%d, bits=%d", len(wireIDs), len(targetIDs))
+	}
 
+	for i, wire := range wireIDs {
+		v.circuit.Ops = append(v.circuit.Ops, &Measurement{
+			Wire:   []WireID{wire},
+			Target: []WireID{targetIDs[i]},
+		})
+	}
+
+	return nil
+}
+
+func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContext) any {
+	if ctx.MeasureExpression() == nil {
 		return nil
 	}
 
-	v.circuit.Ops = append(v.circuit.Ops, &Measurement{
-		Wire:   wireIDs,
-		Target: targetIDs,
-	})
+	if op := ctx.GetOp().GetText(); op != "=" {
+		return fmt.Errorf("measurement assignment with operator %q: not implemented", op)
+	}
+
+	wireIDs, err := cast[[]WireID](v.Visit(ctx.MeasureExpression()))
+	if err != nil {
+		return err
+	}
+
+	index, err := cast[[]int64](v.Visit(ctx.IndexedIdentifier()))
+	if err != nil {
+		return err
+	}
+
+	cargs, err := cast[string](v.Visit(ctx.IndexedIdentifier().Identifier()))
+	if err != nil {
+		return err
+	}
+
+	targetIDs, ok := v.GetWireIDs(cargs, index...)
+	if !ok {
+		return fmt.Errorf("undefined %q", cargs)
+	}
+
+	if len(wireIDs) != len(targetIDs) {
+		return fmt.Errorf("measurement size mismatch: qubits=%d, bits=%d", len(wireIDs), len(targetIDs))
+	}
+
+	for i, wire := range wireIDs {
+		v.circuit.Ops = append(v.circuit.Ops, &Measurement{
+			Wire:   []WireID{wire},
+			Target: []WireID{targetIDs[i]},
+		})
+	}
 
 	return nil
 }
@@ -463,15 +501,36 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 					return err
 				}
 			}
-
-			return nil
 		default:
 			if err := v.AddWire(Wire{Name: name}); err != nil {
 				return err
 			}
-
-			return nil
 		}
+
+		if decl := ctx.DeclarationExpression(); decl != nil && decl.MeasureExpression() != nil {
+			wireIDs, err := cast[[]WireID](v.Visit(decl.MeasureExpression()))
+			if err != nil {
+				return err
+			}
+
+			targetIDs, ok := v.GetWireIDs(name)
+			if !ok {
+				return fmt.Errorf("undefined %q", name)
+			}
+
+			if len(wireIDs) != len(targetIDs) {
+				return fmt.Errorf("measurement size mismatch: qubits=%d, bits=%d", len(wireIDs), len(targetIDs))
+			}
+
+			for i, wire := range wireIDs {
+				v.circuit.Ops = append(v.circuit.Ops, &Measurement{
+					Wire:   []WireID{wire},
+					Target: []WireID{targetIDs[i]},
+				})
+			}
+		}
+
+		return nil
 	}
 
 	return nil

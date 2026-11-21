@@ -295,6 +295,150 @@ func TestVisitorBuild_invalidGphase(t *testing.T) {
 	}
 }
 
+func ExampleBuild_measurementAssignment() {
+	program, err := xparser.Parse(`qubit q; bit c = measure q;`)
+	if err != nil {
+		panic(err)
+	}
+
+	circuit, err := svg.Build(program)
+	if err != nil {
+		panic(err)
+	}
+
+	measurement := circuit.Ops[0].(*svg.Measurement)
+	fmt.Println(measurement.Wire, measurement.Target)
+
+	// Output:
+	// [0] [1]
+}
+
+func TestVisitorBuild_measurementAssignment(t *testing.T) {
+	cases := []struct {
+		text      string
+		reference string
+	}{
+		{
+			text:      `qubit q; bit c; c = measure q;`,
+			reference: `qubit q; bit c; measure q -> c;`,
+		},
+		{
+			text:      `qubit q; bit c = measure q;`,
+			reference: `qubit q; bit c; measure q -> c;`,
+		},
+		{
+			text:      `qubit[2] q; bit[2] c; c = measure q;`,
+			reference: `qubit[2] q; bit[2] c; measure q -> c;`,
+		},
+		{
+			text:      `qubit[2] q; bit[2] c = measure q;`,
+			reference: `qubit[2] q; bit[2] c; measure q -> c;`,
+		},
+		{
+			text:      `qubit[2] q; bit[2] c; c[1] = measure q[0];`,
+			reference: `qubit[2] q; bit[2] c; measure q[0] -> c[1];`,
+		},
+		{
+			text:      `qubit[1] q; bit[1] c = measure q;`,
+			reference: `qubit[1] q; bit[1] c; measure q -> c;`,
+		},
+		{
+			text:      `qubit[2] q; bit flag = measure q[0]; bit[2] c; c[1] = measure q[1];`,
+			reference: `qubit[2] q; bit flag; measure q[0] -> flag; bit[2] c; measure q[1] -> c[1];`,
+		},
+		{
+			text:      `qubit q; bit c; h q; c = measure q; x q; bit d = measure q;`,
+			reference: `qubit q; bit c; h q; measure q -> c; x q; bit d; measure q -> d;`,
+		},
+	}
+
+	for _, c := range cases {
+		program, err := xparser.Parse(c.text)
+		if err != nil {
+			t.Errorf("%s: unexpected parse error: %v", c.text, err)
+			continue
+		}
+
+		circuit, err := svg.Build(program)
+		if err != nil {
+			t.Errorf("%s: unexpected error: %v", c.text, err)
+			continue
+		}
+
+		reference, err := xparser.Parse(c.reference)
+		if err != nil {
+			t.Errorf("%s: unexpected reference parse error: %v", c.reference, err)
+			continue
+		}
+
+		want, err := svg.Build(reference)
+		if err != nil {
+			t.Errorf("%s: unexpected reference error: %v", c.reference, err)
+			continue
+		}
+
+		if !reflect.DeepEqual(circuit, want) {
+			t.Errorf("%s: circuit=%#v, want=%#v", c.text, circuit, want)
+		}
+	}
+}
+
+func TestVisitorBuild_invalidMeasurementAssignment(t *testing.T) {
+	cases := []struct {
+		text string
+		want string
+	}{
+		{
+			text: `bit c; c = measure missing;`,
+			want: `undefined "missing"`,
+		},
+		{
+			text: `bit c = measure missing;`,
+			want: `undefined "missing"`,
+		},
+		{
+			text: `qubit q; c = measure q;`,
+			want: `undefined "c"`,
+		},
+		{
+			text: `qubit q; bit[2] c; c[2] = measure q;`,
+			want: `undefined "c"`,
+		},
+		{
+			text: `qubit q; bit[2] c; c = measure q;`,
+			want: "measurement size mismatch: qubits=1, bits=2",
+		},
+		{
+			text: `qubit[3] q; bit[2] c = measure q;`,
+			want: "measurement size mismatch: qubits=3, bits=2",
+		},
+		{
+			text: `qubit[3] q; bit[2] c; measure q -> c;`,
+			want: "measurement size mismatch: qubits=3, bits=2",
+		},
+		{
+			text: `qubit[2] q; bit c; c = measure q;`,
+			want: "measurement size mismatch: qubits=2, bits=1",
+		},
+		{
+			text: `qubit q; bit c; c ^= measure q;`,
+			want: `measurement assignment with operator "^=": not implemented`,
+		},
+	}
+
+	for _, c := range cases {
+		program, err := xparser.Parse(c.text)
+		if err != nil {
+			t.Errorf("%s: unexpected parse error: %v", c.text, err)
+			continue
+		}
+
+		if _, err := svg.Build(program); err == nil || err.Error() != c.want {
+			t.Errorf("%s: got=%v, want=%v", c.text, err, c.want)
+		}
+	}
+}
+
 func TestVisitorGetWireIDs(t *testing.T) {
 	cases := []struct {
 		name  string
