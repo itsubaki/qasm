@@ -5443,6 +5443,57 @@ func TestVisitor_invalidBitAssignments(t *testing.T) {
 	}
 }
 
+func TestVisitor_bitRegisterAssignmentCopies(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want string
+	}{
+		{
+			name: "declaration then write destination",
+			text: `bit[2] a = "10"; bit[2] b = a; b[0] = false;`,
+			want: "map[a:[true false] b:[false false]]",
+		},
+		{
+			name: "declaration then write source",
+			text: `bit[2] a = "10"; bit[2] b = a; a[0] = false;`,
+			want: "map[a:[false false] b:[true false]]",
+		},
+		{
+			name: "assignment then write destination",
+			text: `bit[2] a = "10"; bit[2] b = "00"; b = a; b[0] = false;`,
+			want: "map[a:[true false] b:[false false]]",
+		},
+		{
+			name: "assignment then write source",
+			text: `bit[2] a = "10"; bit[2] b = "00"; b = a; a[0] = false;`,
+			want: "map[a:[false false] b:[true false]]",
+		},
+		{
+			name: "assignment from nested scope",
+			text: `bit[2] a = "10"; bit[2] b = "00"; if (true) { b = a; b[0] = false; }`,
+			want: "map[a:[true false] b:[false false]]",
+		},
+		{
+			name: "measurement into destination",
+			text: `qubit q; reset q; bit[2] a = "10"; bit[2] b = a; measure q -> b[0];`,
+			want: "map[a:[true false] b:[false false]]",
+		},
+	}
+
+	for _, c := range cases {
+		_, env, err := visitor.Run(c.text)
+		if err != nil {
+			t.Errorf("%s: unexpected error: %v", c.name, err)
+			continue
+		}
+
+		if got := fmt.Sprint(env.ClBitArray); got != c.want {
+			t.Errorf("%s: got=%v, want=%v", c.name, got, c.want)
+		}
+	}
+}
+
 func TestVisitor_bitwiseDoesNotMutateOperands(t *testing.T) {
 	cases := []struct {
 		expr string

@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/cmplx"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -768,7 +769,7 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 		}
 
 		if len(index) == 0 {
-			v.env.SetClBitArray(operand, val)
+			v.env.SetClBitArray(operand, slices.Clone(val))
 			return nil
 		}
 
@@ -1020,7 +1021,7 @@ func (v *Visitor) VisitClassicalDeclarationStatement(ctx *parser.ClassicalDeclar
 					v.env.SetClBitArray(id, []bool{bits})
 					return nil
 				case []bool:
-					v.env.SetClBitArray(id, bits)
+					v.env.SetClBitArray(id, slices.Clone(bits))
 					return nil
 				default:
 					return fmt.Errorf("assign %v(%T) to %q", x, x, id)
