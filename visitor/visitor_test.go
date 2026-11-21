@@ -703,6 +703,13 @@ func TestVisitorVisitOldStyleDeclarationStatement_invalid(t *testing.T) {
 	}
 }
 
+func ExampleVisitor_VisitAssignmentStatement() {
+	fmt.Println(visitor.Visit(`bit[2] b = "00"; b[2] = true;`))
+
+	// Output:
+	// <nil> bit index 2 out of range for size 2
+}
+
 func TestVisitorVisitAssignmentStatement(t *testing.T) {
 	type Want struct {
 		bit      []string
@@ -886,6 +893,88 @@ func TestVisitorVisitAssignmentStatement_invalid(t *testing.T) {
 
 		if err.Error() != c.errMsg {
 			t.Errorf("got=%v, want=%v", err, c.errMsg)
+		}
+	}
+}
+
+func TestVisitorVisitAssignmentStatement_invalidBitIndices(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want string
+	}{
+		{
+			name: "negative index",
+			text: `b[-1] = true;`,
+			want: "bit index -1 out of range for size 2",
+		},
+		{
+			name: "index at size",
+			text: `b[2] = true;`,
+			want: "bit index 2 out of range for size 2",
+		},
+		{
+			name: "invalid second index",
+			text: `b[0, 2] = "11";`,
+			want: "bit index 2 out of range for size 2",
+		},
+		{
+			name: "too many values",
+			text: `b[0] = "11";`,
+			want: "bit assignment size mismatch: values=2, indices=1",
+		},
+		{
+			name: "too few values",
+			text: `b[0, 1] = "1";`,
+			want: "bit assignment size mismatch: values=1, indices=2",
+		},
+		{
+			name: "negative measurement index",
+			text: `measure q[0] -> b[-1];`,
+			want: "bit index -1 out of range for size 2",
+		},
+		{
+			name: "measurement index at size",
+			text: `measure q[0] -> b[2];`,
+			want: "bit index 2 out of range for size 2",
+		},
+		{
+			name: "invalid second measurement index",
+			text: `measure q -> b[0, 2];`,
+			want: "bit index 2 out of range for size 2",
+		},
+		{
+			name: "too many measured values",
+			text: `measure q -> b[0];`,
+			want: "bit assignment size mismatch: values=2, indices=1",
+		},
+		{
+			name: "too few measured values",
+			text: `measure q[0] -> b[0, 1];`,
+			want: "bit assignment size mismatch: values=1, indices=2",
+		},
+		{
+			name: "measurement assignment index at size",
+			text: `b[2] = measure q[0];`,
+			want: "bit index 2 out of range for size 2",
+		},
+	}
+
+	for _, c := range cases {
+		program, err := xparser.Parse(`qubit[2] q; U(pi, 0, pi) q; bit[2] b = "00"; ` + c.text)
+		if err != nil {
+			t.Errorf("%s: unexpected parse error: %v", c.name, err)
+			continue
+		}
+
+		qsim, env := q.New(), environ.New()
+
+		if err := visitor.New(qsim, env).Run(program); err == nil || err.Error() != c.want {
+			t.Errorf("%s: got=%v, want=%v", c.name, err, c.want)
+		}
+
+		if got := env.ClBitArray["b"]; !slices.Equal(got, []bool{false, false}) {
+			t.Errorf("%s: bits changed after invalid assignment: %v", c.name, got)
 		}
 	}
 }
@@ -3212,6 +3301,14 @@ func TestVisitorVisitIndexExpression(t *testing.T) {
 		},
 		{
 			text: `bit[2] m; m[int(1)] = true; m[1];`,
+			want: "true",
+		},
+		{
+			text: `bit[2] m = "00"; m[1, 0] = "10"; m[1];`,
+			want: "true",
+		},
+		{
+			text: `qubit[2] q; U(pi, 0, pi) q[0]; bit[2] m = "00"; measure q -> m[1, 0]; m[1];`,
 			want: "true",
 		},
 		{

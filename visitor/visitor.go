@@ -707,6 +707,16 @@ func (v *Visitor) MeasureAssignment(id parser.IIndexedIdentifierContext, measure
 			return nil
 		}
 
+		if len(val) != len(index) {
+			return fmt.Errorf("bit assignment size mismatch: values=%d, indices=%d", len(val), len(index))
+		}
+
+		for _, i := range index {
+			if i < 0 || i >= int64(len(bits)) {
+				return fmt.Errorf("bit index %d out of range for size %d", i, len(bits))
+			}
+		}
+
 		for i, bit := range val {
 			bits[index[i]] = bit
 		}
@@ -770,6 +780,16 @@ func (v *Visitor) VisitAssignmentStatement(ctx *parser.AssignmentStatementContex
 		if len(index) == 0 {
 			v.env.SetClBitArray(operand, slices.Clone(val))
 			return nil
+		}
+
+		if len(val) != len(index) {
+			return fmt.Errorf("bit assignment size mismatch: values=%d, indices=%d", len(val), len(index))
+		}
+
+		for _, i := range index {
+			if i < 0 || i >= int64(len(bits)) {
+				return fmt.Errorf("bit index %d out of range for size %d", i, len(bits))
+			}
 		}
 
 		for i, bit := range val {
