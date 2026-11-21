@@ -511,8 +511,7 @@ func (v *Visitor) UserDefinedGateCall(ctx *parser.GateCallStatementContext) any 
 		}
 
 		for i, s := range g.Body.AllStatementOrScope() {
-			call := s.Statement().GateCallStatement().(*parser.GateCallStatementContext)
-			result := enclosed.VisitGateCallStatement(call)
+			result := enclosed.Visit(s)
 			if err, ok := result.(error); ok && err != nil {
 				return fmt.Errorf("gate call[%d]: %w", i, err)
 			}

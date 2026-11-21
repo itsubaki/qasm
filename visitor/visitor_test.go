@@ -2251,6 +2251,79 @@ func TestVisitorVisitGateCallStatement_userDefined(t *testing.T) {
 	}
 }
 
+func ExampleVisitor_UserDefinedGateCall() {
+	text := `
+		gate x a {
+			barrier a;
+			U(pi, 0, pi) a;
+			gphase(-pi/2);
+		}
+		qubit q;
+		x q;
+	`
+
+	qsim, _, err := visitor.Run(text)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(qsim.State()[0])
+
+	// Output:
+	// [1] ( 1.0000 0.0000i): 1.0000
+}
+
+func TestVisitorVisitGateCallStatement_barrier(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want int
+	}{
+		{
+			name: "barrier only",
+			text: `gate g a { barrier a; } qubit q; g q;`,
+			want: 0b0,
+		},
+		{
+			name: "barrier before gate",
+			text: `gate g a { barrier a; U(pi, 0, pi) a; } qubit q; g q;`,
+			want: 0b1,
+		},
+		{
+			name: "barrier between gates",
+			text: `gate g a { U(pi, 0, pi) a; barrier a; inv @ U(pi, 0, pi) a; } qubit q; g q;`,
+			want: 0b0,
+		},
+		{
+			name: "barrier without operands",
+			text: `gate g a { barrier; U(pi, 0, pi) a; } qubit q; g q;`,
+			want: 0b1,
+		},
+		{
+			name: "nested gate",
+			text: `gate g a { barrier a; U(pi, 0, pi) a; } gate h a { g a; barrier a; } qubit q; h q;`,
+			want: 0b1,
+		},
+		{
+			name: "parameterized broadcast",
+			text: `gate g(theta) a { U(theta, 0, pi) a; barrier a; } qubit[2] q; g(pi) q;`,
+			want: 0b11,
+		},
+	}
+
+	for _, c := range cases {
+		qsim, _, err := visitor.Run(c.text)
+		if err != nil {
+			t.Errorf("%s: unexpected error: %v", c.name, err)
+			continue
+		}
+
+		if got := qsim.Probability()[c.want]; math.Abs(got-1) > 1e-8 {
+			t.Errorf("%s: P(%b)=%v, want 1", c.name, c.want, got)
+		}
+	}
+}
+
 func TestVisitorVisitGateCallStatement_invalidUserDefined(t *testing.T) {
 	cases := []struct {
 		text   string
@@ -2290,6 +2363,10 @@ func TestVisitorVisitGateCallStatement_invalidUserDefined(t *testing.T) {
 				myg q;
 			`,
 			errMsg: `gate call[0]: undefined "myx"`,
+		},
+		{
+			text:   `gate g a { barrier a; missing a; } qubit q; g q;`,
+			errMsg: `gate call[1]: undefined "missing"`,
 		},
 		{
 			text: `
