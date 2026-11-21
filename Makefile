@@ -45,6 +45,7 @@ validate:
 svg:
 	go run main.go -svg --theme cyber < testdata/svg/barrier.qasm               > testdata/svg/barrier.svg
 	go run main.go -svg --theme cyber < testdata/svg/bell.qasm                  > testdata/svg/bell.svg
+	go run main.go -svg --theme cyber < testdata/svg/broadcast.qasm             > testdata/svg/broadcast.svg
 	go run main.go -svg --theme cyber < testdata/svg/ghz.qasm                   > testdata/svg/ghz.svg
 	go run main.go -svg --theme cyber < testdata/svg/gphase.qasm                > testdata/svg/gphase.svg
 	go run main.go -svg --theme cyber < testdata/svg/grover.qasm                > testdata/svg/grover.svg

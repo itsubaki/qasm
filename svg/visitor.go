@@ -284,19 +284,36 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 	}
 
-	var qargs []WireID
+	var qargs [][]WireID
+	var size int
 	if ctx.GateOperandList() != nil {
-		var err error
-		qargs, err = cast[[]WireID](v.Visit(ctx.GateOperandList()))
-		if err != nil {
-			return err
+		for _, operand := range ctx.GateOperandList().AllGateOperand() {
+			wireIDs, err := cast[[]WireID](v.Visit(operand))
+			if err != nil {
+				return err
+			}
+
+			// An unindexed register remains an array, even with one element.
+			if len(operand.IndexedIdentifier().AllIndexOperator()) == 0 && v.circuit.Wires[wireIDs[0]].Index != nil {
+				if size != 0 && len(wireIDs) != size {
+					return fmt.Errorf("gate operand size mismatch: %d and %d", size, len(wireIDs))
+				}
+
+				size = len(wireIDs)
+			}
+
+			qargs = append(qargs, wireIDs)
 		}
+	}
+
+	if size == 0 {
+		size = 1
 	}
 
 	// ctrl(n) @ h q0, q1,...;
 	var cursor int
-	var ctrls []WireID
-	var negctrls []WireID
+	var ctrls []int
+	var negctrls []int
 	for _, mod := range ctx.AllGateModifier() {
 		switch {
 		case mod.CTRL() != nil || mod.NEGCTRL() != nil:
@@ -314,32 +331,14 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 
 			for range n {
 				if mod.NEGCTRL() != nil {
-					negctrls = append(negctrls, qargs[cursor])
+					negctrls = append(negctrls, cursor)
 				} else {
-					ctrls = append(ctrls, qargs[cursor])
+					ctrls = append(ctrls, cursor)
 				}
 
 				cursor++
 			}
 		}
-	}
-
-	ctrlSet := make(map[WireID]struct{})
-	for _, c := range ctrls {
-		ctrlSet[c] = struct{}{}
-	}
-
-	for _, c := range negctrls {
-		ctrlSet[c] = struct{}{}
-	}
-
-	var targets []WireID
-	for i := range qargs {
-		if _, ok := ctrlSet[qargs[i]]; ok {
-			continue
-		}
-
-		targets = append(targets, qargs[i])
 	}
 
 	var flipTarget bool
@@ -349,43 +348,57 @@ func (v *Visitor) VisitGateCallStatement(ctx *parser.GateCallStatementContext) a
 		}
 
 		// A controlled global phase is a phase gate on the last control.
-		targets = []WireID{qargs[cursor-1]}
-		if slices.Contains(negctrls, targets[0]) {
+		cursor--
+		if slices.Contains(negctrls, cursor) {
 			negctrls = negctrls[:len(negctrls)-1]
 			flipTarget = true
 		} else {
 			ctrls = ctrls[:len(ctrls)-1]
 		}
-
-		if len(ctrls) == 0 {
-			ctrls = nil
-		}
-
-		if len(negctrls) == 0 {
-			negctrls = nil
-		}
 	}
 
-	// A phase conditioned on zero is X P X on the last control.
-	if flipTarget {
-		v.circuit.Ops = append(v.circuit.Ops, &Gate{
-			Name:   "X",
-			Target: targets,
-		})
-	}
+	for i := range size {
+		row := make([]WireID, len(qargs))
+		for j, operand := range qargs {
+			var index int
+			if len(operand) > 1 {
+				index = i
+			}
 
-	v.circuit.Ops = append(v.circuit.Ops, &Gate{
-		Name:            strings.ToUpper(gate),
-		Control:         ctrls,
-		NegativeControl: negctrls,
-		Target:          targets,
-	})
+			row[j] = operand[index]
+		}
 
-	if flipTarget {
+		var controls []WireID
+		for _, c := range ctrls {
+			controls = append(controls, row[c])
+		}
+
+		var negativeControls []WireID
+		for _, c := range negctrls {
+			negativeControls = append(negativeControls, row[c])
+		}
+
+		// A phase conditioned on zero is X P X on the last control.
+		if flipTarget {
+			v.circuit.Ops = append(v.circuit.Ops, &Gate{
+				Name:   "X",
+				Target: row[cursor:],
+			})
+		}
+
 		v.circuit.Ops = append(v.circuit.Ops, &Gate{
-			Name:   "X",
-			Target: targets,
+			Name:            strings.ToUpper(gate),
+			Control:         controls,
+			NegativeControl: negativeControls,
+			Target:          row[cursor:],
 		})
+
+		if flipTarget {
+			v.circuit.Ops = append(v.circuit.Ops, &Gate{
+				Name:   "X",
+				Target: row[cursor:],
+			})
+		}
 	}
 
 	return nil

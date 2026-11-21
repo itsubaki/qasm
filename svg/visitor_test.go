@@ -903,3 +903,200 @@ func TestVisitorBuild_invalidNegativeControl(t *testing.T) {
 		}
 	}
 }
+
+func ExampleBuild_broadcast() {
+	program, err := xparser.Parse(`qubit[2] c; qubit[2] t; ctrl @ x c, t;`)
+	if err != nil {
+		panic(err)
+	}
+
+	circuit, err := svg.Build(program)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, op := range circuit.Ops {
+		gate := op.(*svg.Gate)
+		fmt.Println(gate.Name, gate.Control, gate.Target)
+	}
+
+	// Output:
+	// X [0] [2]
+	// X [1] [3]
+}
+
+func TestVisitorBuild_broadcast(t *testing.T) {
+	cases := []struct {
+		name      string
+		decl      string
+		text      string
+		reference string
+	}{
+		{
+			name:      "arrayControlAndArrayTarget",
+			decl:      `qubit[2] c; qubit[2] t;`,
+			text:      `ctrl @ x c, t;`,
+			reference: `ctrl @ x c[0], t[0]; ctrl @ x c[1], t[1];`,
+		},
+		{
+			name:      "arrayControlAndScalarTarget",
+			decl:      `qubit[2] c; qubit t;`,
+			text:      `ctrl @ x c, t;`,
+			reference: `ctrl @ x c[0], t; ctrl @ x c[1], t;`,
+		},
+		{
+			name:      "scalarControlAndArrayTarget",
+			decl:      `qubit c; qubit[2] t;`,
+			text:      `ctrl @ x c, t;`,
+			reference: `ctrl @ x c, t[0]; ctrl @ x c, t[1];`,
+		},
+		{
+			name:      "negativeControl",
+			decl:      `qubit[2] c; qubit[2] t;`,
+			text:      `negctrl @ x c, t;`,
+			reference: `negctrl @ x c[0], t[0]; negctrl @ x c[1], t[1];`,
+		},
+		{
+			name:      "multipleControls",
+			decl:      `qubit[2] a; qubit[2] b; qubit[2] t;`,
+			text:      `ctrl(2) @ x a, b, t;`,
+			reference: `ctrl(2) @ x a[0], b[0], t[0]; ctrl(2) @ x a[1], b[1], t[1];`,
+		},
+		{
+			name:      "mixedControls",
+			decl:      `qubit[2] a; qubit b; qubit[2] t;`,
+			text:      `ctrl @ negctrl @ x a, b, t;`,
+			reference: `ctrl @ negctrl @ x a[0], b, t[0]; ctrl @ negctrl @ x a[1], b, t[1];`,
+		},
+		{
+			name:      "singleElementArrays",
+			decl:      `qubit[1] c; qubit[1] t;`,
+			text:      `ctrl @ x c, t;`,
+			reference: `ctrl @ x c[0], t[0];`,
+		},
+		{
+			name:      "indexedSingleElementControl",
+			decl:      `qubit[1] c; qubit[2] t;`,
+			text:      `ctrl @ x c[0], t;`,
+			reference: `ctrl @ x c[0], t[0]; ctrl @ x c[0], t[1];`,
+		},
+		{
+			name:      "indexedSingleElementTarget",
+			decl:      `qubit[2] c; qubit[1] t;`,
+			text:      `ctrl @ x c, t[0];`,
+			reference: `ctrl @ x c[0], t[0]; ctrl @ x c[1], t[0];`,
+		},
+		{
+			name:      "singleQubitGate",
+			decl:      `qubit[2] q;`,
+			text:      `h q;`,
+			reference: `h q[0]; h q[1];`,
+		},
+		{
+			name:      "multipleTargets",
+			decl:      `qubit c; qubit[2] a; qubit[2] b;`,
+			text:      `ctrl @ swap c, a, b;`,
+			reference: `ctrl @ swap c, a[0], b[0]; ctrl @ swap c, a[1], b[1];`,
+		},
+		{
+			name:      "controlledPhase",
+			decl:      `qubit[2] q;`,
+			text:      `ctrl @ gphase(pi/2) q;`,
+			reference: `ctrl @ gphase(pi/2) q[0]; ctrl @ gphase(pi/2) q[1];`,
+		},
+		{
+			name:      "negativeControlledPhase",
+			decl:      `qubit[2] q;`,
+			text:      `negctrl @ gphase(pi/2) q;`,
+			reference: `negctrl @ gphase(pi/2) q[0]; negctrl @ gphase(pi/2) q[1];`,
+		},
+		{
+			name:      "mixedControlledPhase",
+			decl:      `qubit[2] c; qubit t;`,
+			text:      `ctrl @ negctrl @ gphase(pi/2) c, t;`,
+			reference: `ctrl @ negctrl @ gphase(pi/2) c[0], t; ctrl @ negctrl @ gphase(pi/2) c[1], t;`,
+		},
+	}
+
+	for _, c := range cases {
+		program, err := xparser.Parse(c.decl + c.text)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+
+		circuit, err := svg.Build(program)
+		if err != nil {
+			t.Errorf("%s: %v", c.name, err)
+			continue
+		}
+
+		reference, err := xparser.Parse(c.decl + c.reference)
+		if err != nil {
+			t.Fatalf("%s: reference: %v", c.name, err)
+		}
+
+		want, err := svg.Build(reference)
+		if err != nil {
+			t.Fatalf("%s: reference: %v", c.name, err)
+		}
+
+		if !reflect.DeepEqual(circuit, want) {
+			t.Errorf("%s: ops=%#v, want=%#v", c.name, circuit.Ops, want.Ops)
+		}
+	}
+}
+
+func TestVisitorBuild_invalidBroadcast(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want string
+	}{
+		{
+			name: "differentArrayLengths",
+			text: `qubit[2] c; qubit[3] t; ctrl @ x c, t;`,
+			want: "gate operand size mismatch: 2 and 3",
+		},
+		{
+			name: "singleElementControlArray",
+			text: `qubit[1] c; qubit[2] t; ctrl @ x c, t;`,
+			want: "gate operand size mismatch: 1 and 2",
+		},
+		{
+			name: "singleElementTargetArray",
+			text: `qubit[2] c; qubit[1] t; ctrl @ x c, t;`,
+			want: "gate operand size mismatch: 2 and 1",
+		},
+		{
+			name: "negativeControl",
+			text: `qubit[1] c; qubit[2] t; negctrl @ x c, t;`,
+			want: "gate operand size mismatch: 1 and 2",
+		},
+		{
+			name: "multipleControls",
+			text: `qubit[1] a; qubit[2] b; qubit t; ctrl(2) @ x a, b, t;`,
+			want: "gate operand size mismatch: 1 and 2",
+		},
+		{
+			name: "arrayIsOneOperand",
+			text: `qubit[3] q; ctrl(2) @ x q;`,
+			want: `not enough operands for "ctrl(2)@"`,
+		},
+		{
+			name: "phaseControlCount",
+			text: `qubit[2] q; ctrl(2) @ gphase(pi/2) q;`,
+			want: `not enough operands for "ctrl(2)@"`,
+		},
+	}
+
+	for _, c := range cases {
+		program, err := xparser.Parse(c.text)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+
+		if _, err := svg.Build(program); err == nil || err.Error() != c.want {
+			t.Errorf("%s: got=%v, want=%q", c.name, err, c.want)
+		}
+	}
+}
