@@ -127,6 +127,11 @@ func (v *Value) Div(w *Value) (*Value, error) {
 		return nil, err
 	}
 
+	switch b.v {
+	case int(0), int64(0), uint(0):
+		return nil, fmt.Errorf("division by zero")
+	}
+
 	switch left := a.v.(type) {
 	case int:
 		return New(left / b.v.(int)), nil
@@ -145,6 +150,11 @@ func (v *Value) Mod(w *Value) (*Value, error) {
 	a, b, err := Promote(v, w)
 	if err != nil {
 		return nil, err
+	}
+
+	switch b.v {
+	case int(0), int64(0), uint(0):
+		return nil, fmt.Errorf("modulo by zero")
 	}
 
 	switch left := a.v.(type) {

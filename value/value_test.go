@@ -2,6 +2,7 @@ package value_test
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/itsubaki/qasm/value"
@@ -371,6 +372,60 @@ func TestValueDiv(t *testing.T) {
 	}
 }
 
+func ExampleValue_Div() {
+	a, b := value.New(1), value.New(0)
+
+	_, err := a.Div(b)
+
+	fmt.Println(err)
+
+	// Output:
+	// division by zero
+}
+
+func TestValueDiv_floatZeroDivisor(t *testing.T) {
+	cases := []struct {
+		a    any
+		b    any
+		want float64
+	}{
+		{
+			a:    1.0,
+			b:    0,
+			want: math.Inf(1),
+		},
+		{
+			a:    -1,
+			b:    0.0,
+			want: math.Inf(-1),
+		},
+		{
+			a:    1.0,
+			b:    math.Copysign(0, -1),
+			want: math.Inf(-1),
+		},
+		{
+			a:    0.0,
+			b:    0.0,
+			want: math.NaN(),
+		},
+	}
+
+	for _, c := range cases {
+		a, b := value.New(c.a), value.New(c.b)
+
+		v, err := a.Div(b)
+		if err != nil {
+			t.Errorf("%v / %v: unexpected error: %v", c.a, c.b, err)
+			continue
+		}
+
+		if got := v.Value().(float64); got != c.want && !(math.IsNaN(got) && math.IsNaN(c.want)) {
+			t.Errorf("%v / %v: got=%v, want=%v", c.a, c.b, got, c.want)
+		}
+	}
+}
+
 func TestValueDiv_invalid(t *testing.T) {
 	cases := []struct {
 		a any
@@ -383,6 +438,30 @@ func TestValueDiv_invalid(t *testing.T) {
 		{
 			a: true,
 			b: true,
+		},
+		{
+			a: int(1),
+			b: int(0),
+		},
+		{
+			a: int64(1),
+			b: int64(0),
+		},
+		{
+			a: int(1),
+			b: int64(0),
+		},
+		{
+			a: int64(1),
+			b: int(0),
+		},
+		{
+			a: uint(1),
+			b: uint(0),
+		},
+		{
+			a: int(0),
+			b: int(0),
 		},
 	}
 
@@ -446,6 +525,30 @@ func TestValueMod_invalid(t *testing.T) {
 		{
 			a: true,
 			b: true,
+		},
+		{
+			a: int(1),
+			b: int(0),
+		},
+		{
+			a: int64(1),
+			b: int64(0),
+		},
+		{
+			a: int(1),
+			b: int64(0),
+		},
+		{
+			a: int64(1),
+			b: int(0),
+		},
+		{
+			a: uint(1),
+			b: uint(0),
+		},
+		{
+			a: int(0),
+			b: int(0),
 		},
 	}
 

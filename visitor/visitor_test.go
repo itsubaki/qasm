@@ -1343,6 +1343,30 @@ func TestVisitorVisitMultiplicativeExpression_invalid(t *testing.T) {
 			text:   "foobar(1) / 9.0;",
 			errMsg: `undefined "foobar"`,
 		},
+		{
+			text:   "1 / 0;",
+			errMsg: "1/0: division by zero",
+		},
+		{
+			text:   "int(1) / int(0);",
+			errMsg: "1/0: division by zero",
+		},
+		{
+			text:   "uint(1) / uint(0);",
+			errMsg: "1/0: division by zero",
+		},
+		{
+			text:   "1 % 0;",
+			errMsg: "1%0: modulo by zero",
+		},
+		{
+			text:   "int(1) % int(0);",
+			errMsg: "1%0: modulo by zero",
+		},
+		{
+			text:   "uint(1) % uint(0);",
+			errMsg: "1%0: modulo by zero",
+		},
 	}
 
 	for _, c := range cases {
